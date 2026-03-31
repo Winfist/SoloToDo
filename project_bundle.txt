@@ -1,6 +1,134 @@
+
+--- FILE: .firebaserc ---
+{
+  "projects": {
+    "default": "solo-todo"
+  }
+}
+
+
+--- FILE: .gitignore ---
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Firebase
+.firebase/
+firebase-debug.log*
+.firebaserc
+
+
+--- FILE: firebase.json ---
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
+
+
+--- FILE: index.html ---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solo To-Do | Arise</title>
+    <!-- Favicon / Sword Emoji as Icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #060610;">
+    <div id="root"></div>
+    <script type="module" src="/main.jsx"></script>
+  </body>
+</html>
+
+
+--- FILE: main.jsx ---
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './solo-leveling-v5.jsx'
+
+// Polyfill window.storage if it's missing (using localStorage)
+if (!window.storage) {
+  window.storage = {
+    get: async (key) => {
+      const val = localStorage.getItem(key);
+      return val ? { value: val } : null;
+    },
+    set: async (key, val) => {
+      localStorage.setItem(key, val);
+      return true;
+    }
+  };
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+
+
+--- FILE: package.json ---
+{
+  "name": "solo-todo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@vitejs/plugin-react": "^4.2.1",
+    "firebase-tools": "^15.12.0",
+    "vite": "^5.2.0"
+  }
+}
+
+
+--- FILE: solo-leveling-v5.jsx ---
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { JOBS } from "./data/jobs";
-import { JOB_QUESTS } from "./data/jobQuests";
 
 // ─── RANKS ────────────────────────────────────────────────────
 const RANKS = [
@@ -181,9 +309,9 @@ function createShadowFromQuest(quest, playerLevel) {
   };
 }
 
-function calcFormationBonus(shadowArmy, allShadowsActive=false) {
+function calcFormationBonus(shadowArmy) {
   if (!shadowArmy) return { dungeonBonus:0, xpBonus:0, goldBonus:0 };
-  const deployed = (shadowArmy.shadows||[]).filter(s=>allShadowsActive || s.isDeployed);
+  const deployed = (shadowArmy.shadows||[]).filter(s=>s.isDeployed);
   let dungeonBonus = 0, xpBonus = 0, goldBonus = 0;
   const vCount = deployed.filter(s=>s.deploymentSlot==="vanguard").length;
   const cCount  = deployed.filter(s=>s.deploymentSlot==="core").length;
@@ -584,30 +712,9 @@ const DEFAULT_STATE = {
   emergencyFailed: false,    // failed today (penalty active)?
   hiddenQuests: { discovered:[], completed:[] },
   weeklyQuestReset: null,    // ISO date of last weekly reset
-  jobs: {
-    current: null,        // aktiver Job
-    levels: {
-      berserker: 0,
-      archmage: 0,
-      guardian: 0,
-      assassin: 0,
-      monarch: 0,
-      necromancer: 0
-    },
-    xp: {
-      berserker: 0,
-      archmage: 0,
-      guardian: 0,
-      assassin: 0,
-      monarch: 0,
-      necromancer: 0
-    },
-    activeAbilityCooldowns: {} // jobAbilityKey: timestamp
-  }
 };
 
 // ─── HELPERS ──────────────────────────────────────────────────
-const JOB_XP_LEVELS = [0, 100, 250, 500, 1000, 1750, 2750, 4000, 5500, 7500];
 const getRank       = (lv) => RANKS.find(r => lv >= r.minLv && lv <= r.maxLv) || RANKS[0];
 const getXpForLevel = (lv) => getRank(lv).xpPerLv;
 const getRankIndex  = (n)  => RANKS.findIndex(r => r.name === n);
@@ -666,72 +773,7 @@ function generateDungeons(playerRankName) {
   const expires = new Date(Date.now() + 24*60*60*1000).toISOString();
   return shuffled.slice(0,3).map(d => ({ ...d, instanceId:genId(), cleared:false, expiresAt:expires }));
 }
-
-function getJobBonuses(state) {
-  const bonuses = { 
-    xpGlobal: 0, goldBonus: 0, dungeonBonus: 0, streakShield: 0, 
-    shopDiscount: 0, xpCatBonus: {}, stratBonus: {}, 
-    dungeonTimeReduction: 0, floorSkipChance: 0, xpGlobalMultiplier: 1.0, 
-    dungeonFailureRewards: 0, autoSolvePuzzle: false
-  };
-  if (!state?.jobs?.current) return bonuses;
-  
-  const currentJob = state.jobs.current;
-  const level = state.jobs.levels[currentJob] || 0;
-  const now = Date.now();
-  const cooldowns = state.jobs.activeAbilityCooldowns || {};
-
-  // PASSIVE BONI
-  if (currentJob === "berserker") {
-    // if level>=1: questCompletionSpeed(str) += 30% (Not directly used in XP but theoretical)
-    if (level >= 3) bonuses.xpCatBonus.str = (bonuses.xpCatBonus.str || 0) + 0.10;
-    if (level >= 5) bonuses.stratBonus.str = (bonuses.stratBonus.str || 0) + 20; // Aggressive = str
-    if (level >= 7) bonuses.xpGlobalMultiplier = 1.25; // xpBonus.hardBoss += 0.25 (using global mult as proxy for now)
-  } else if (currentJob === "archmage") {
-    if (level >= 1) bonuses.xpCatBonus.int = (bonuses.xpCatBonus.int || 0) + 0.30;
-    if (level >= 3) bonuses.shopDiscount = (state.stats.int || 0) / 5;
-    if (level >= 5) bonuses.stratBonus.int = (bonuses.stratBonus.int || 0) + 15;
-    if (level >= 7) bonuses.autoSolvePuzzle = true;
-  } else if (currentJob === "guardian") {
-    if (level >= 1) bonuses.streakShield += 3;
-    if (level >= 5) bonuses.dungeonFailureRewards = 0.5;
-  } else if (currentJob === "assassin") {
-    if (level >= 1) bonuses.goldBonus += 0.50;
-    if (level >= 5) bonuses.dungeonTimeReduction += 0.20;
-    if (level >= 7) bonuses.floorSkipChance += 0.10;
-  } else if (currentJob === "monarch") {
-    if (level >= 1) bonuses.xpGlobal += 0.15;
-    // level>=3: capacity += 10 handled elsewhere (in shadow subAgent capacity)
-  } else if (currentJob === "necromancer") {
-    // level>=1: shadowXp += 30% handled elsewhere
-  }
-
-  // ACTIVE ABILITIES EFFECTS
-  const cooldownDuration = 3600000; // 1h buff duration for most things
-  
-  // Rage Mode (Berserker) - 2x XP for 1h
-  if (cooldowns.rage_mode && now < cooldowns.rage_mode + cooldownDuration) {
-    bonuses.xpGlobalMultiplier *= 2.0;
-  }
-  
-  // Domain Expansion (Monarch) - all bonuses doubled for 1h
-  if (cooldowns.domain_expansion && now < cooldowns.domain_expansion + cooldownDuration) {
-    bonuses.xpGlobal *= 2.0;
-    bonuses.goldBonus *= 2.0;
-    bonuses.dungeonBonus *= 2.0;
-    bonuses.xpGlobalMultiplier *= 1.5;
-  }
-
-  // Army of the Dead (Necromancer) - all shadows count as deployed
-  // This will be handled in calcFormationBonus (if I can find it) or we can add a flag here.
-  if (cooldowns.army_of_the_dead && now < cooldowns.army_of_the_dead + cooldownDuration) {
-    bonuses.allShadowsActive = true;
-  }
-
-  return bonuses;
-}
-
-function calcSuccessChance(dungeon, stats, stratKey, skillBonuses, modifier, formationBonus, jobBonuses={}) {
+function calcSuccessChance(dungeon, stats, stratKey, skillBonuses, modifier, formationBonus) {
   let chance = 28;
   const reqs = Object.entries(dungeon.requirements);
   const metCount = reqs.filter(([k,v]) => (stats[k]||0) >= v).length;
@@ -745,11 +787,6 @@ function calcSuccessChance(dungeon, stats, stratKey, skillBonuses, modifier, for
   if (modifier?.successBonus) chance += modifier.successBonus;
   chance += (skillBonuses.stratBonus?.[stratKey]||0);
   chance += formationBonus?.dungeonBonus || 0;
-  
-  // Job bonuses
-  chance += (jobBonuses.stratBonus?.[stratKey]||0);
-  chance += (jobBonuses.dungeonBonus || 0);
-
   return Math.max(10, Math.min(93, Math.round(chance)));
 }
 function getEquipDropForDungeon(dungeonRank) {
@@ -786,14 +823,6 @@ function migrateState(oldState) {
   }
   if (!oldState.shadowArmy) {
     oldState.shadowArmy = { shadows:[], capacity:20, formations:{ vanguard:[], core:[], rearguard:[] }, totalShadowXp:0 };
-  }
-  if (!oldState.jobs) {
-    oldState.jobs = {
-      current: null,
-      levels: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
-      xp: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
-      activeAbilityCooldowns: {}
-    };
   }
   return oldState;
 }
@@ -1640,17 +1669,9 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
 
   const rankData=RANKS.find(r=>r.name===dungeon.rank)||RANKS[0];
   const bossPhaseDefs=BOSS_PHASES[dungeon.rank]||BOSS_PHASES.E;
-  const jobBonuses=getJobBonuses(state);
-  const chance=calcSuccessChance(dungeon,playerStats,strategy.key,skillBonuses,modifier,formationBonus,jobBonuses);
+  const chance=calcSuccessChance(dungeon,playerStats,strategy.key,skillBonuses,modifier,formationBonus);
   const chanceLabel=chance>=65?"HIGH":chance>=40?"MEDIUM":"RISKY";
   const chanceColor=chance>=65?"#22c55e":chance>=40?"#f59e0b":"#ef4444";
-  
-  // Archmage Insight: Best strategy
-  const isInsightActive = jobBonuses.autoSolvePuzzle || (state.jobs.activeAbilityCooldowns?.insight && Date.now() < state.jobs.activeAbilityCooldowns.insight + 43200000);
-  const bestStrat = isInsightActive ? CATEGORIES.reduce((best, cur) => {
-    const curChance = calcSuccessChance(dungeon, playerStats, cur.key, skillBonuses, modifier, formationBonus, jobBonuses);
-    return curChance > best.chance ? { key: cur.key, chance: curChance } : best;
-  }, { key: "", chance: -1 }) : null;
 
   useEffect(()=>{
     if(phase!=="entering")return;
@@ -1797,7 +1818,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
     const goldResult=won?Math.round((dungeon.gold+goldBonus)*goldMult):0;
     const drop=won?getEquipDropForDungeon(dungeon.rank):null;
     setEquipDrop(drop);
-    setResult({won,xp:xpResult,gold:goldResult,drop,floorsCleared:completedFloors.length,totalFloors:dungeon.floors,goldBonus, strategy: strategy.key});
+    setResult({won,xp:xpResult,gold:goldResult,drop,floorsCleared:completedFloors.length,totalFloors:dungeon.floors,goldBonus});
     setPhase("result");
   };
 
@@ -1850,10 +1871,8 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
             {STRATEGIES.map(s=>{
               const isActive=strategy.key===s.key;
-              const isBest = bestStrat?.key === s.key;
               return(
-                <button key={s.key} onClick={()=>setStrategy(s)} style={{padding:"14px 12px",borderRadius:12,textAlign:"left",background:isActive?s.color+"14":isBest?s.color+"08":"rgba(10,10,20,0.6)",border:`1px solid ${isActive?s.color+"66":isBest?s.color+"33":"#1e2940"}`,color:isActive?s.color:isBest?s.color+"aa":"#64748b",transition:"all 0.22s",position:"relative"}}>
-                  {isBest && <div style={{position:"absolute", top:-8, right:-6, fontSize:14, animation:"pulse 2s infinite"}}>👁️</div>}
+                <button key={s.key} onClick={()=>setStrategy(s)} style={{padding:"14px 12px",borderRadius:12,textAlign:"left",background:isActive?s.color+"14":"rgba(10,10,20,0.6)",border:`1px solid ${isActive?s.color+"66":"#1e2940"}`,color:isActive?s.color:"#64748b",transition:"all 0.22s"}}>
                   <div style={{fontSize:22,marginBottom:6}}>{s.icon}</div>
                   <div style={{fontSize:12,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{s.label}</div>
                   <div style={{fontSize:10,opacity:0.7,marginTop:2,lineHeight:1.4}}>{s.desc}</div>
@@ -1902,29 +1921,6 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
           </div>
           {/* Floor Progress */}
           <FloorProgressBar floors={floorPlan} currentFloor={currentFloor} totalFloors={dungeon.floors}/>
-          {/* Shadow Step Skip Button */}
-          {phase==="floors" && state.jobs?.current === "assassin" && (
-            <div style={{marginTop:8, display:"flex", justifyContent:"center"}}>
-              <button 
-                onClick={() => {
-                  const now = Date.now();
-                  const lastUsed = state.jobs.activeAbilityCooldowns?.shadow_step || 0;
-                  if (now < lastUsed + 28800000) {
-                      notify("Shadow Step auf Cooldown.", "info");
-                      return;
-                  }
-                  // Notify and skip
-                  addLog({text:"✨ SHADOW STEP: Floor übersprungen!", type:"shadow"});
-                  setTimeout(() => runNextFloor(currentFloor + 1, [...floorsCompleted, currentFloor]), 1000);
-                  // Update cooldown in global state
-                  const newCooldowns = {...state.jobs.activeAbilityCooldowns, shadow_step: now};
-                  persist({...state, jobs: {...state.jobs, activeAbilityCooldowns: newCooldowns}});
-                }}
-                disabled={Date.now() < (state.jobs.activeAbilityCooldowns?.shadow_step || 0) + 28800000}
-                style={{padding:"8px 16px", borderRadius:10, fontSize:10, fontWeight:900, background:"rgba(20,184,166,0.15)", color:"#14b8a6", border:"1px solid #14b8a655", fontFamily:"'JetBrains Mono',monospace", letterSpacing:1}}
-              >✨ SHADOW STEP (SKIP FLOOR)</button>
-            </div>
-          )}
           {/* Boss Phase UI */}
           {phase==="boss"&&<BossPhaseUI rank={dungeon.rank} bossHp={bossHp} bossMaxHp={100} currentPhase={bossPhase} phases={bossPhaseDefs}/>}
           {/* Battle Log */}
@@ -2068,26 +2064,22 @@ export default function App() {
     return{...nextState,xp:nextState.xp+xpBonus,gold:nextState.gold+goldBonus,totalGoldEarned:(nextState.totalGoldEarned||0)+goldBonus,achievements:{...nextState.achievements,unlocked}};
   },[]);
 
-  const computeXpGain = useCallback((quest, streakBonus, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses = {}) => {
-    const diff = DIFFICULTIES.find(d => d.key === quest.difficulty);
-    let xp = diff.xp;
-    xp *= (1 + streakBonus / 100);
-    xp *= (1 + (equipBonuses.xpBonus || 0));
-    xp *= (1 + (skillBonuses.xpCatBonus?.[quest.category] || 0));
-    xp *= (1 + (jobBonuses.xpCatBonus?.[quest.category] || 0));
-    if (quest.difficulty === "hard" || quest.difficulty === "boss") xp *= (1 + (skillBonuses.xpHardBonus || 0));
-    xp *= (1 + (skillBonuses.xpGlobal || 0));
-    xp *= (1 + (jobBonuses.xpGlobal || 0));
-    xp *= (1 + (formBonus?.xpBonus || 0));
-    if (penaltyActive) xp *= 0.8;
-    // Job multi
-    xp *= (jobBonuses.xpGlobalMultiplier || 1.0);
+  const computeXpGain=useCallback((quest,streakBonus,equipBonuses,skillBonuses,penaltyActive,formBonus)=>{
+    const diff=DIFFICULTIES.find(d=>d.key===quest.difficulty);
+    let xp=diff.xp;
+    xp*=(1+streakBonus/100);
+    xp*=(1+(equipBonuses.xpBonus||0));
+    xp*=(1+(skillBonuses.xpCatBonus?.[quest.category]||0));
+    if(quest.difficulty==="hard"||quest.difficulty==="boss") xp*=(1+(skillBonuses.xpHardBonus||0));
+    xp*=(1+(skillBonuses.xpGlobal||0));
+    xp*=(1+(formBonus?.xpBonus||0));
+    if(penaltyActive) xp*=0.8;
     // Sprint 2: type multiplier + chain multiplier
-    const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
-    xp *= (typeCfg.xpMult || 1);
-    xp *= (quest.chainMultiplier || 1);
+    const typeCfg=QUEST_TYPES_CONFIG[quest.type]||QUEST_TYPES_CONFIG.side;
+    xp*=(typeCfg.xpMult||1);
+    xp*=(quest.chainMultiplier||1);
     return Math.round(xp);
-  }, []);
+  },[]);
 
   const completeQuest=useCallback((questId,rect)=>{
     if(!state) return;
@@ -2098,10 +2090,9 @@ export default function App() {
     const streakBonusPct=Math.min(newStreak,5)*10;
     const equipBonuses=getEquipBonuses(state.equipment);
     const skillBonuses=getSkillBonuses(null,state.stats);
-    const jobBonuses=getJobBonuses(state);
-    const formBonus=calcFormationBonus(state.shadowArmy, jobBonuses.allShadowsActive);
+    const formBonus=calcFormationBonus(state.shadowArmy);
     const penaltyActive=state.penaltyZone?.active;
-    const xpGain=computeXpGain(quest,streakBonusPct,equipBonuses,skillBonuses,penaltyActive,formBonus,jobBonuses);
+    const xpGain=computeXpGain(quest,streakBonusPct,equipBonuses,skillBonuses,penaltyActive,formBonus);
     const diff=DIFFICULTIES.find(d=>d.key===quest.difficulty);
     const typeCfg=QUEST_TYPES_CONFIG[quest.type]||QUEST_TYPES_CONFIG.side;
     let goldMult=(1+(equipBonuses.goldBonus||0)+(skillBonuses.goldBonus||0)+(formBonus?.goldBonus||0))*(typeCfg.goldMult||1)*(quest.chainMultiplier||1);
@@ -2149,28 +2140,13 @@ export default function App() {
       ...(quest.type==="daily"?state.quests.map(q=>q.id===questId?{...q,completed:true}:q):state.quests.filter(q=>q.id!==questId)),
       ...extraQuests
     ];
-    // Job XP calculation
-    let newJobs = { ...state.jobs };
-    if (newJobs.current) {
-        const cur = newJobs.current;
-        const jobDef = JOBS[cur];
-        if (quest.category === jobDef.statFocus) {
-            newJobs.xp[cur] += 10;
-            const curLv = newJobs.levels[cur];
-            if (curLv < JOB_XP_LEVELS.length - 1 && newJobs.xp[cur] >= JOB_XP_LEVELS[curLv + 1]) {
-                newJobs.levels[cur]++;
-                notify(`JOB LEVEL UP: ${jobDef.name} ist nun Level ${newJobs.levels[cur]}!`, "levelup");
-            }
-        }
-    }
     let next={...state,xp:newXp,level:newLevel,gold:state.gold+goldGain,totalGoldEarned:(state.totalGoldEarned||0)+goldGain,
       stats:{...state.stats,[quest.category]:(state.stats[quest.category]||0)+Math.ceil(xpGain/20)},
       quests:updatedQuests,completedQuests:[...(state.completedQuests||[]),{...quest,completedAt:today}],
       streak:newStreak,lastActiveDate:today,shadowArmy:newShadowArmy,
       totalXpEarned:(state.totalXpEarned||0)+xpGain,
       totalQuestsCompleted:(state.totalQuestsCompleted||0)+1,
-      penaltyZone:newPenalty,hiddenQuests:newHiddenQuests,
-      jobs: newJobs};
+      penaltyZone:newPenalty,hiddenQuests:newHiddenQuests};
     // Check hidden quest triggers after state update
     const newlyDiscoveredHQ=checkHiddenQuestTriggers(next);
     if(newlyDiscoveredHQ.length>0){
@@ -2237,7 +2213,6 @@ export default function App() {
     const goldGain=Math.round(diff.gold*2.5);
     let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false;
     const oldRank=getRank(state.level);
-    const jobBonuses=getJobBonuses(state);
     while(newXp>=getXpForLevel(newLevel)&&newLevel<100){newXp-=getXpForLevel(newLevel);newLevel++;didLevelUp=true;}
     let next={...state,xp:newXp,level:newLevel,gold:state.gold+goldGain,
       totalGoldEarned:(state.totalGoldEarned||0)+goldGain,
@@ -2275,28 +2250,13 @@ export default function App() {
     });
     const newShadowArmy={...state.shadowArmy,shadows:updatedShadows};
     const totalGold=result.gold+(result.goldBonus?Math.round(result.goldBonus*(state.todayModifier?.goldMult||1)):0);
-    // Job XP calculation for dungeons
-    let newJobs = { ...state.jobs };
-    if (newJobs.current) {
-        const cur = newJobs.current;
-        const jobDef = JOBS[cur];
-        if (result.won && result.strategy === jobDef.statFocus) {
-            newJobs.xp[cur] += 50;
-            const curLv = newJobs.levels[cur];
-            if (curLv < JOB_XP_LEVELS.length - 1 && newJobs.xp[cur] >= JOB_XP_LEVELS[curLv + 1]) {
-                newJobs.levels[cur]++;
-                notify(`JOB LEVEL UP: ${jobDef.name} ist nun Level ${newJobs.levels[cur]}!`, "levelup");
-            }
-        }
-    }
     let next={...state,xp:newXp,level:newLevel,gold:state.gold+totalGold,
       totalGoldEarned:(state.totalGoldEarned||0)+totalGold,
       dungeons:state.dungeons.map(d=>d.instanceId===dungeon.instanceId?{...d,cleared:true}:d),
       dungeonHistory:[...(state.dungeonHistory||[]),{dungeonId:dungeon.id,dungeonName:dungeon.name,dungeonRank:dungeon.rank,won:result.won,xp:result.xp,gold:totalGold,floorsCleared:result.floorsCleared||dungeon.floors,date:getToday()}],
       totalXpEarned:(state.totalXpEarned||0)+result.xp,
       equipment:{...state.equipment,inventory:newInventory},
-      shadowArmy:newShadowArmy,
-      jobs: newJobs};
+      shadowArmy:newShadowArmy};
     // Check named shadow unlocks after dungeon
     const newNameds=checkNamedShadowUnlocks(next);
     if(newNameds.length>0){
@@ -2317,10 +2277,7 @@ export default function App() {
     next=processAchievements(next);
     persist(next); setActiveDungeon(null);
     if(didLevelUp){setPrevRank(oldRank);setLevelUp(newLevel);}
-    else if (result.won) notify(`${dungeon.name} bezwungen! +${result.xp} XP · ${result.floorsCleared||"?"}/${dungeon.floors} Floors`, "dungeon");
-    else if (newJobs.current === "guardian" && getJobBonuses(state).dungeonFailureRewards > 0) {
-      notify(`Guardian-Passiv: Teilweise Belohnung trotz Niederlage!`, "success");
-    } else notify(`Niederlage in ${dungeon.name}.`, "defeat");
+    else notify(result.won?`${dungeon.name} bezwungen! +${result.xp} XP · ${result.floorsCleared||"?"}/${dungeon.floors} Floors`:`Niederlage in ${dungeon.name}.`,result.won?"dungeon":"defeat");
   },[state,persist,processAchievements,notify]);
 
   const deployShadow=useCallback((shadowId,slot)=>{
@@ -2370,55 +2327,8 @@ export default function App() {
   const equipItem=(item,slot)=>{const newSlots={...state.equipment.slots,[slot]:item};let next={...state,equipment:{...state.equipment,slots:newSlots}};next=processAchievements(next);persist(next);notify(`${item.name} ausgerüstet!`,"info");};
   const unequipItem=slot=>persist({...state,equipment:{...state.equipment,slots:{...state.equipment.slots,[slot]:null}}});
 
-  const switchJob = useCallback((jobKey) => {
-    if (!state) return;
-    const job = JOBS[jobKey];
-    if (state.level < job.unlockRequirement.level) {
-      notify(`Mindestlevel ${job.unlockRequirement.level} erforderlich für ${job.name}.`, "info");
-      return;
-    }
-    const newJobs = { ...state.jobs, current: jobKey };
-    persist({ ...state, jobs: newJobs });
-    notify(`Job gewechselt zu: ${job.name}`, "success");
-  }, [state, persist, notify]);
-
-  const activateJobAbility = useCallback((jobKey) => {
-    if (!state) return;
-    const job = JOBS[jobKey];
-    const level = state.jobs.levels[jobKey] || 0;
-    const ability = job.activeAbility;
-    
-    if (level < ability.unlockLevel) {
-      notify(`${job.name} Level ${ability.unlockLevel} benötigt für ${ability.name}.`, "info");
-      return;
-    }
-    
-    const now = Date.now();
-    const cooldowns = { ...state.jobs.activeAbilityCooldowns || {} };
-    const lastUsed = cooldowns[ability.key] || 0;
-    
-    if (now < lastUsed + (ability.cooldown * 1000)) {
-      const remaining = Math.ceil((lastUsed + (ability.cooldown * 1000) - now) / 1000);
-      const h = Math.floor(remaining / 3600);
-      const m = Math.floor((remaining % 3600) / 60);
-      notify(`Fähigkeit auf Cooldown. Noch ${h}h ${m}m`, "info");
-      return;
-    }
-    
-    cooldowns[ability.key] = now;
-    const newJobs = { ...state.jobs, activeAbilityCooldowns: cooldowns };
-    persist({ ...state, jobs: newJobs });
-    notify(`${ability.name} AKTIVIERT!`, "levelup");
-  }, [state, persist, notify]);
-
   const finishSetup=name=>{
-    const s={...DEFAULT_STATE,hunterName:name||"Hunter",lastActiveDate:getToday(),dungeons:generateDungeons("E"),lastDungeonRefresh:getToday(),achievements:{unlocked:[],notified:[]},skills:{unlocked:[]},equipment:{slots:{weapon:null,armor:null,ring1:null,ring2:null},inventory:[]},penaltyZone:{active:false,redemptionLeft:0,questsCompletedInPenalty:0},todayModifier:getDailyModifier(),emergencyQuest:generateEmergencyQuest(1),emergencyDone:false,emergencyFailed:false,hiddenQuests:{discovered:[],completed:[]},
-      jobs: {
-        current: null,
-        levels: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
-        xp: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
-        activeAbilityCooldowns: {}
-      }};
+    const s={...DEFAULT_STATE,hunterName:name||"Hunter",lastActiveDate:getToday(),dungeons:generateDungeons("E"),lastDungeonRefresh:getToday(),achievements:{unlocked:[],notified:[]},skills:{unlocked:[]},equipment:{slots:{weapon:null,armor:null,ring1:null,ring2:null},inventory:[]},penaltyZone:{active:false,redemptionLeft:0,questsCompletedInPenalty:0},todayModifier:getDailyModifier(),emergencyQuest:generateEmergencyQuest(1),emergencyDone:false,emergencyFailed:false,hiddenQuests:{discovered:[],completed:[]}};
     persist(s); setShowSetup(false);
   };
 
@@ -2447,8 +2357,7 @@ export default function App() {
   const achUnlocked=state.achievements?.unlocked||[];
   const penaltyActive=state.penaltyZone?.active;
   const shadowArmy=state.shadowArmy||{shadows:[],capacity:20};
-  const jobBonuses=getJobBonuses(state);
-  const formationBonus=calcFormationBonus(shadowArmy, jobBonuses.allShadowsActive);
+  const formationBonus=calcFormationBonus(shadowArmy);
   const namedShadows=shadowArmy.shadows.filter(s=>s.isNamed);
   const totalShadows=shadowArmy.shadows.length;
 
@@ -2796,110 +2705,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ═══ JOBS ═══ */}
-        {view==="jobs"&&(
-          <div style={{animation:"fadeIn 0.35s ease"}}>
-            {state.jobs?.current ? (
-              <div style={{background:`linear-gradient(135deg, ${JOBS[state.jobs.current].color}22, ${theme.card})`, border:`1px solid ${JOBS[state.jobs.current].color}44`, borderRadius:20, padding:20, marginBottom:20, position:"relative", overflow:"hidden"}}>
-                <div style={{position:"absolute", top:-20, right:-20, fontSize:100, opacity:0.05, transform:"rotate(15deg)"}}>{JOBS[state.jobs.current].icon}</div>
-                <div style={{display:"flex", alignItems:"center", gap:15, marginBottom:15}}>
-                  <div style={{fontSize:40}}>{JOBS[state.jobs.current].icon}</div>
-                  <div>
-                    <div style={{fontSize:10, letterSpacing:2, color:JOBS[state.jobs.current].color, fontWeight:700, fontFamily:"'JetBrains Mono',monospace"}}>AKTIVER JOB</div>
-                    <h2 style={{fontSize:24, color:"#fff", fontFamily:"'Cinzel',serif", letterSpacing:2}}>{JOBS[state.jobs.current].name}</h2>
-                    <div style={{fontSize:12, color:"#64748b"}}>Level {state.jobs.levels[state.jobs.current]} Hunter</div>
-                  </div>
-                </div>
-
-                {/* Job XP Bar */}
-                <div style={{marginBottom:20}}>
-                  <div style={{display:"flex", justifyContent:"space-between", fontSize:10, fontFamily:"'JetBrains Mono',monospace", color:"#94a3b8", marginBottom:6}}>
-                    <span>JOB XP</span>
-                    <span>{state.jobs.xp[state.jobs.current]} / {JOB_XP_LEVELS[state.jobs.levels[state.jobs.current]+1] || "MAX"}</span>
-                  </div>
-                  <div style={{height:6, background:"rgba(0,0,0,0.3)", borderRadius:3, overflow:"hidden"}}>
-                    <div style={{width:`${Math.min((state.jobs.xp[state.jobs.current] / (JOB_XP_LEVELS[state.jobs.levels[state.jobs.current]+1] || 1)) * 100, 100)}%`, height:"100%", background:JOBS[state.jobs.current].color, boxShadow:`0 0 10px ${JOBS[state.jobs.current].color}88`, transition:"width 0.5s ease"}} />
-                  </div>
-                </div>
-
-                {/* Active Ability */}
-                <div style={{background:"rgba(0,0,0,0.2)", borderRadius:14, padding:15, border:"1px solid rgba(255,255,255,0.05)"}}>
-                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10}}>
-                    <div style={{display:"flex", alignItems:"center", gap:8}}>
-                      <span style={{fontSize:20}}>{JOBS[state.jobs.current].activeAbility.icon}</span>
-                      <span style={{fontSize:14, fontWeight:700, color:"#e2e8f0", fontFamily:"'Cinzel',serif"}}>{JOBS[state.jobs.current].activeAbility.name}</span>
-                    </div>
-                    {state.jobs.levels[state.jobs.current] >= JOBS[state.jobs.current].activeAbility.unlockLevel ? (
-                      <button 
-                        onClick={() => activateJobAbility(state.jobs.current)}
-                        style={{padding:"6px 12px", borderRadius:8, fontSize:10, fontWeight:700, background:JOBS[state.jobs.current].color, color:"#fff", border:"none", fontFamily:"'JetBrains Mono',monospace", letterSpacing:1}}
-                      >AKTIVIEREN</button>
-                    ) : (
-                      <span style={{fontSize:9, color:"#ef4444", fontFamily:"'JetBrains Mono',monospace"}}>LOCKED (Lv.{JOBS[state.jobs.current].activeAbility.unlockLevel})</span>
-                    )}
-                  </div>
-                  <p style={{fontSize:11, color:"#94a3b8", lineHeight:1.4}}>{JOBS[state.jobs.current].activeAbility.desc}</p>
-                </div>
-              </div>
-            ) : (
-              <div style={{textAlign:"center", padding:30, background:theme.card, borderRadius:20, border:`1px dashed ${theme.primary}22`, marginBottom:20}}>
-                <div style={{fontSize:40, marginBottom:15}}>🎭</div>
-                <h3 style={{fontSize:18, color:"#fff", fontFamily:"'Cinzel',serif", marginBottom:8}}>Kein Job gewählt</h3>
-                <p style={{fontSize:12, color:"#64748b", maxWidth:250, margin:"0 auto"}}>Wähle eine Spezialisierung, um mächtige passive Boni und aktive Fähigkeiten freizuschalten.</p>
-              </div>
-            )}
-
-            <div style={{fontSize:10, letterSpacing:3, color:"#64748b", fontFamily:"'JetBrains Mono',monospace", marginBottom:15, marginTop:10}}>VERFÜGBARE JOBS</div>
-            <div style={{display:"grid", gridTemplateColumns:"1fr", gap:12}}>
-              {Object.values(JOBS).map(job => {
-                const isCurrent = state.jobs?.current === job.id;
-                const isLocked = state.level < job.unlockRequirement.level;
-                return (
-                  <div key={job.id} style={{
-                    background: isCurrent ? `${job.color}15` : theme.card,
-                    border: `1px solid ${isCurrent ? job.color + "44" : theme.primary + "12"}`,
-                    borderRadius: 16, padding: "16px", display: "flex", gap: 15, opacity: isLocked ? 0.6 : 1, transition: "all 0.3s"
-                  }}>
-                    <div style={{fontSize:32, opacity: isLocked ? 0.3 : 1}}>{job.icon}</div>
-                    <div style={{flex:1}}>
-                      <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4}}>
-                        <div>
-                          <h4 style={{fontSize:16, fontWeight:700, color: isCurrent ? job.color : "#e2e8f0", fontFamily:"'Cinzel',serif"}}>{job.name}</h4>
-                          <div style={{fontSize:10, color:CATEGORIES.find(c=>c.key===job.statFocus).color, fontWeight:600}}>{job.statFocus.toUpperCase()}-Fokus</div>
-                        </div>
-                        {isLocked ? (
-                          <div style={{fontSize:9, background:"#ef444422", color:"#ef4444", padding:"4px 8px", borderRadius:6, fontFamily:"'JetBrains Mono',monospace"}}>AB LV.{job.unlockRequirement.level}</div>
-                        ) : (
-                          !isCurrent && <button 
-                            onClick={() => switchJob(job.id)} 
-                            style={{padding:"6px 12px", borderRadius:8, fontSize:10, fontWeight:700, background:"rgba(255,255,255,0.05)", color:job.color, border:`1px solid ${job.color}44`, fontFamily:"'JetBrains Mono',monospace"}}
-                          >WÄHLEN</button>
-                        )}
-                        {isCurrent && <div style={{fontSize:9, color:job.color, fontWeight:700, fontFamily:"'JetBrains Mono',monospace"}}>AKTIV</div>}
-                      </div>
-
-                      <div style={{marginTop:8}}>
-                        <div style={{fontSize:9, color:"#475569", letterSpacing:1, marginBottom:4, fontFamily:"'JetBrains Mono',monospace"}}>PASSIVE BONI</div>
-                        <div style={{display:"flex", flexWrap:"wrap", gap:6}}>
-                          {Object.entries(job.passives).map(([key, desc]) => {
-                            const lvReq = key === "base" ? 0 : parseInt(key.replace("level", ""));
-                            const unlocked = state.jobs.levels[job.id] >= lvReq;
-                            return (
-                              <div key={key} style={{fontSize:9, padding:"3px 8px", borderRadius:6, background: unlocked ? `${job.color}18` : "rgba(0,0,0,0.2)", color: unlocked ? "#e2e8f0" : "#475569", border: `1px solid ${unlocked ? job.color + "33" : "transparent"}`}}>
-                                {key === "base" ? "Base" : "Lv."+lvReq}: {desc}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* ═══ EQUIPMENT ═══ */}
         {view==="equipment"&&(
           <div style={{animation:"fadeIn 0.35s ease"}}>
@@ -3061,7 +2866,6 @@ export default function App() {
             {key:"dungeon",    icon:"🌀",  label:"Gates",   badge:activeDungeons.length},
             {key:"shadows",    icon:"🌑",  label:"Army",    badge:namedShadows.length>0?namedShadows.length:0},
             {key:"stats",      icon:"📊",  label:"Stats"},
-            {key:"jobs",       icon:"🎭",  label:"Jobs"},
             {key:"equipment",  icon:"🗡️",  label:"Equip",   badge:(state.equipment?.inventory||[]).length>0&&!Object.values(state.equipment?.slots||{}).every(Boolean)?1:0},
             {key:"achievements",icon:"🏆", label:"Ach.",    badge:ACHIEVEMENTS.filter(a=>!achUnlocked.includes(a.id)&&a.check(state)).length},
             {key:"shop",       icon:"🛒",  label:"Shop"},
@@ -3193,3 +2997,15 @@ function SetupScreen({ onFinish, theme }) {
     </div>
   );
 }
+
+
+--- FILE: vite.config.js ---
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+
+
