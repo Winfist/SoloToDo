@@ -2445,7 +2445,7 @@ function AbilityActivationCinematic({ ability, job, onClose }) {
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────
-export default function App() {
+export default function App({ initialHunterName }) {
   const [state,setState]=useState(null);
   const [loading,setLoading]=useState(true);
   const [view,setView]=useState("dashboard");
@@ -2505,11 +2505,27 @@ export default function App() {
           s.lastDungeonRefresh=today;
           s.todayModifier=getDailyModifier();
         }
+
+        // --- AUTH INTEGRATION ---
+        if(!s.hunterName && initialHunterName) {
+          s.hunterName = initialHunterName;
+        }
+        
         setState(s);
-      } else setShowSetup(true);
+        if(!s.hunterName) setShowSetup(true);
+      } else {
+        const startState = { ...DEFAULT_STATE };
+        if(initialHunterName) {
+          startState.hunterName = initialHunterName;
+          setShowSetup(false);
+        } else {
+          setShowSetup(true);
+        }
+        setState(startState);
+      }
       setLoading(false);
     });
-  },[]);
+  },[initialHunterName]);
 
   const persist=useCallback(s=>{setState(s);saveState(s);},[]);
 
