@@ -1,11 +1,10 @@
+// main.jsx – Auth + App Root
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './solo-leveling-v5.jsx'
 import AuthScreen from './AuthScreen.jsx'
-import { auth } from './firebase'
-import { onAuthStateChanged } from 'firebase/auth'
 
-// Polyfill window.storage if it's missing (using localStorage)
+// Polyfill window.storage with localStorage
 if (!window.storage) {
   window.storage = {
     get: async (key) => {
@@ -15,35 +14,47 @@ if (!window.storage) {
     set: async (key, val) => {
       localStorage.setItem(key, val);
       return true;
-    }
+    },
+    delete: async (key) => {
+      localStorage.removeItem(key);
+      return true;
+    },
   };
 }
 
 function Root() {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
   const [hunterName, setHunterName] = useState("");
-  
+
   useEffect(() => {
-    // Listen for Firebase Auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setHunterName(user.displayName || "Hunter");
-        setIsAuthenticated(true);
-      } else {
+    const checkAuth = async () => {
+      try {
+        const authData = await window.storage.get("sl-auth");
+        if (authData) {
+          const parsed = JSON.parse(authData.value);
+          setHunterName(parsed.hunterName || "Hunter");
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch {
         setIsAuthenticated(false);
       }
-    });
-    
-    return () => unsubscribe();
+    };
+    checkAuth();
   }, []);
-  
-  const handleAuthSuccess = (name) => {
-    // This is now purely for visual transition until Firebase listener catches up
+
+  const handleAuthSuccess = async (name) => {
+    await window.storage.set("sl-auth", JSON.stringify({
+      hunterName: name,
+      loggedIn: true,
+      timestamp: Date.now(),
+    }));
     setHunterName(name);
     setIsAuthenticated(true);
   };
-  
-  // Loading state
+
+  // Loading screen
   if (isAuthenticated === null) {
     return (
       <div style={{
@@ -60,15 +71,16 @@ function Root() {
             letterSpacing: 4,
             color: "#7c3aed",
             fontFamily: "monospace",
+            animation: "pulse 1.5s ease-in-out infinite",
           }}>
             LOADING SYSTEM...
           </div>
         </div>
+        <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
       </div>
     );
   }
-  
-  // Show auth screen or main app
+
   return isAuthenticated ? (
     <App initialHunterName={hunterName} />
   ) : (
@@ -79,5 +91,5 @@ function Root() {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Root />
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);
