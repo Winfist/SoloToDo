@@ -18,10 +18,10 @@ const RANKS = [
 ];
 
 const DIFFICULTIES = [
-  { key:"easy",   label:"Easy",   xp:5,   gold:2,   color:"#6b7280", icon:"◇", waitHours:1 },
-  { key:"normal", label:"Normal", xp:15,  gold:5,   color:"#22d3ee", icon:"◆", waitHours:2 },
-  { key:"hard",   label:"Hard",   xp:40,  gold:15,  color:"#a78bfa", icon:"★", waitHours:4 },
-  { key:"boss",   label:"Boss",   xp:100, gold:40,  color:"#ef4444", icon:"♛", waitHours:8 },
+  { key:"easy",   label:"Easy",   xp:5,   gold:10,  color:"#6b7280", icon:"◇", waitHours:1 },
+  { key:"normal", label:"Normal", xp:15,  gold:25,  color:"#22d3ee", icon:"◆", waitHours:2 },
+  { key:"hard",   label:"Hard",   xp:40,  gold:60,  color:"#a78bfa", icon:"★", waitHours:4 },
+  { key:"boss",   label:"Boss",   xp:100, gold:150, color:"#ef4444", icon:"♛", waitHours:8 },
 ];
 
 const CATEGORIES = [
@@ -3841,56 +3841,54 @@ export default function App({ initialHunterName, onLogout }) {
             gameState={state}
             theme={theme}
             onChapterComplete={(chapter) => {
-              persist(prev => {
-                const completedChapters = [...(prev.story?.completedChapters || [])];
+              const prev = state;
+              const completedChapters = [...(prev.story?.completedChapters || [])];
+              
+              // Abuse Protection: Only give XP and Gold if chapter isn't already completed
+              if (!completedChapters.includes(chapter.id)) {
+                completedChapters.push(chapter.id);
                 
-                // Abuse Protection: Only give XP and Gold if chapter isn't already completed
-                if (!completedChapters.includes(chapter.id)) {
-                  completedChapters.push(chapter.id);
-                  
-                  // XP und Gold vergeben
-                  const xpGain = chapter.rewards?.xp || 0;
-                  const goldGain = chapter.rewards?.gold || 0;
-                  let newXp = (prev.xp || 0) + xpGain;
-                  let newLevel = prev.level;
-                  let newGold = (prev.gold || 0) + goldGain;
-                  let levelsGained = 0;
+                // XP und Gold vergeben
+                const xpGain = chapter.rewards?.xp || 0;
+                const goldGain = chapter.rewards?.gold || 0;
+                let newXp = (prev.xp || 0) + xpGain;
+                let newLevel = prev.level;
+                let newGold = (prev.gold || 0) + goldGain;
+                let levelsGained = 0;
 
-                  // Level-Up Logik
-                  while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
-                    newXp -= getXpForLevel(newLevel);
-                    newLevel++;
-                    levelsGained++;
-                  }
-                  const earnedPoints = levelsGained * 5;
-
-                  // Titel vergeben falls vorhanden
-                  let newTitle = prev.selectedTitle;
-                  if (chapter.rewards?.title) {
-                    newTitle = chapter.rewards.title;
-                  }
-
-                  notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
-
-                  return {
-                    ...prev,
-                    xp: newXp,
-                    level: newLevel,
-                    gold: newGold,
-                    statPoints: (prev.statPoints || 0) + earnedPoints,
-                    totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
-                    selectedTitle: newTitle,
-                    story: {
-                      ...prev.story,
-                      completedChapters,
-                      totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
-                    },
-                  };
-                } else {
-                  notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
-                  return prev; // Do not modify state, no XP
+                // Level-Up Logik
+                while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
+                  newXp -= getXpForLevel(newLevel);
+                  newLevel++;
+                  levelsGained++;
                 }
-              });
+                const earnedPoints = levelsGained * 5;
+
+                // Titel vergeben falls vorhanden
+                let newTitle = prev.selectedTitle;
+                if (chapter.rewards?.title) {
+                  newTitle = chapter.rewards.title;
+                }
+
+                notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
+
+                persist({
+                  ...prev,
+                  xp: newXp,
+                  level: newLevel,
+                  gold: newGold,
+                  statPoints: (prev.statPoints || 0) + earnedPoints,
+                  totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
+                  selectedTitle: newTitle,
+                  story: {
+                    ...prev.story,
+                    completedChapters,
+                    totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
+                  },
+                });
+              } else {
+                notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
+              }
             }}
           />
         )}
