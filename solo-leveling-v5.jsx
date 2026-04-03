@@ -478,16 +478,16 @@ function checkHiddenQuestTriggers(state) {
 // Generate the daily emergency quest (resets each day)
 function generateEmergencyQuest(playerLevel) {
   const templates = [
-    { title:"NOTFALL: Körperlicher Einsatz gefordert", category:"str", difficulty:"hard",
-      desc:"Das System verlangt sofortigen körperlichen Einsatz!" },
-    { title:"NOTFALL: Geistige Ausdauer testen", category:"int", difficulty:"hard",
-      desc:"Keine Pause – Wissen ist Macht!" },
-    { title:"NOTFALL: Erholungsprotokoll aktiviert", category:"vit", difficulty:"hard",
-      desc:"Dein Körper benötigt sofortige Erholung." },
-    { title:"NOTFALL: Agilitäts-Direktive", category:"agi", difficulty:"hard",
-      desc:"Bewegung ist Überleben. Jetzt handeln!" },
-    { title:"NOTFALL: Soziale Mission", category:"cha", difficulty:"normal",
-      desc:"Ein Hunter muss auch ohne Klinge kämpfen können." },
+    { title:"NOTFALL: Körperlicher Einsatz", category:"str", difficulty:"hard",
+      desc:"Das System verlangt sofortige Bewegung. Mache sofort 20 Liegestütze oder 30 Kniebeugen!" },
+    { title:"NOTFALL: Geistiger Fokus", category:"int", difficulty:"hard",
+      desc:"Stoppe alles Ablenkende. Lese 15 Minuten konzentriert oder meditiere, ohne Smartphone." },
+    { title:"NOTFALL: Dehydrations-Warnung", category:"vit", difficulty:"hard",
+      desc:"VIT-Stats sinken! Trinke als Sofortmaßnahme 1 Liter Wasser." },
+    { title:"NOTFALL: Umgebungswechsel", category:"agi", difficulty:"hard",
+      desc:"Sauerstoff-Mangel! Verlasse das aktuelle Gebiet sofort für 10 Minuten (frische Luft)." },
+    { title:"NOTFALL: Soziale Direktive", category:"cha", difficulty:"normal",
+      desc:"Verbindung zu Fragmenten herstellen: Melde dich bei jemandem, mit dem du länger nicht gesprochen hast." },
   ];
   const seed = parseInt(getToday().replace(/-/g,"")) % templates.length;
   const tmpl = templates[seed];
@@ -594,6 +594,7 @@ const DEFAULT_STATE = {
   emergencyFailed: false,    // failed today (penalty active)?
   hiddenQuests: { discovered:[], completed:[] },
   weeklyQuestReset: null,    // ISO date of last weekly reset
+  lastSystemTaskTime: null,  // timestamp for periodic pool quests
   jobs: {
     current: null,        // aktiver Job
     levels: {
@@ -1782,6 +1783,7 @@ function ChainedQuestProgress({ quest }) {
 // ─── QUEST CARD ───────────────────────────────────────────────
 function QuestCard({ quest, index, theme, onComplete, onDelete }) {
   const [completing,setCompleting]=useState(false);
+  const [confirming,setConfirming]=useState(false);
   const [hover,setHover]=useState(false);
   const cardRef=useRef(null);
   const diff=DIFFICULTIES.find(d=>d.key===quest.difficulty);
@@ -1790,7 +1792,14 @@ function QuestCard({ quest, index, theme, onComplete, onDelete }) {
   const xpGain=Math.round((diff?.xp||50)*(quest.chainMultiplier||1)*(typeCfg.xpMult||1));
   const goldGain=Math.round((diff?.gold||25)*(quest.chainMultiplier||1)*(typeCfg.goldMult||1));
   const isHidden=quest.type==="hidden";
-  const handleComplete=()=>{setCompleting(true);const rect=cardRef.current?.getBoundingClientRect();setTimeout(()=>onComplete(quest.id,rect?{x:rect.left+rect.width/2,y:rect.top}:null),500);};
+  const handleComplete=()=>{
+    if (!confirming) {
+      setConfirming(true);
+      setTimeout(()=>setConfirming(false), 3000); // 3 seconds to confirm
+      return;
+    }
+    setCompleting(true);const rect=cardRef.current?.getBoundingClientRect();setTimeout(()=>onComplete(quest.id,rect?{x:rect.left+rect.width/2,y:rect.top}:null),500);
+  };
   return (
     <div ref={cardRef} onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} style={{
       background:completing?`linear-gradient(135deg,${diff.color}15,transparent)`:hover?`linear-gradient(135deg,${theme.card},${diff.color}08)`:theme.card,
@@ -1800,11 +1809,12 @@ function QuestCard({ quest, index, theme, onComplete, onDelete }) {
       display:"flex",alignItems:"flex-start",gap:12,transition:"all 0.25s cubic-bezier(0.4,0,0.2,1)",
       transform:hover&&!completing?"translateX(4px)":"none",backdropFilter:"blur(8px)",
       boxShadow:isHidden?`0 0 12px ${typeCfg.color}18`:"none"}}>
-      <button onClick={handleComplete} style={{width:38,height:38,borderRadius:10,flexShrink:0,marginTop:2,
-        background:completing?diff.color+"22":"transparent",border:`2px solid ${completing?diff.color:diff.color+"44"}`,
-        color:diff.color,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",
-        transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",transform:completing?"scale(1.1)":hover?"scale(1.05)":"scale(1)"}}>
-        {completing?<span style={{animation:"checkPop 0.4s ease forwards",display:"inline-block"}}>✓</span>:<span style={{opacity:0.5}}>✓</span>}
+      <button onClick={handleComplete} style={{width:confirming?46:38,height:38,borderRadius:10,flexShrink:0,marginTop:2,
+        background:completing?diff.color+"22":confirming?"#f59e0b22":"transparent",
+        border:`2px solid ${completing?diff.color:confirming?"#f59e0b":diff.color+"44"}`,
+        color:confirming?"#f59e0b":diff.color,fontSize:confirming?11:15,display:"flex",alignItems:"center",justifyContent:"center",
+        transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",transform:completing?"scale(1.1)":confirming?"scale(1.05)":hover?"scale(1.05)":"scale(1)"}}>
+        {completing?<span style={{animation:"checkPop 0.4s ease forwards",display:"inline-block"}}>✓</span>:confirming?<span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:800}}>JA?</span>:<span style={{opacity:0.5}}>✓</span>}
       </button>
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:4,flexWrap:"wrap"}}>
@@ -2804,6 +2814,48 @@ export default function App({ initialHunterName }) {
     });
   },[initialHunterName, triggerSystemMessage]);
 
+  // --- 3 HOURS TASK ASSIGNMENT ---
+  useEffect(() => {
+    if (!state || loading) return;
+    const TASK_INTERVAL = 3 * 3600 * 1000; // 3 hours
+
+    const assignRandomTask = () => {
+      const now = Date.now();
+      const lastTime = state.lastSystemTaskTime || 0;
+      if (now - lastTime >= TASK_INTERVAL) {
+        // Find tasks in QUEST_POOL not currently in state.quests
+        const availablePool = QUEST_POOL.filter(q => !state.quests.some(sq => sq.title === q.title));
+        if (availablePool.length > 0) {
+          const randTask = availablePool[Math.floor(Math.random() * availablePool.length)];
+          const newQuest = {
+            id: genId(), title: randTask.title, difficulty: randTask.diff || "normal",
+            category: randTask.cat || "str", type: "side", createdAt: getToday(),
+            xpMult: 1, goldMult: 1, isSystem: true
+          };
+          
+          triggerSystemMessage("NEUE AUFGABE", [
+            "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
+            `"${randTask.title}"`,
+            "Schließen Sie diese zeitnah ab, Hunter."
+          ]);
+          
+          persist({
+             ...state,
+             lastSystemTaskTime: now,
+             quests: [...state.quests, newQuest]
+          });
+          notify("Neue Aufgabe aus dem Pool erhalten!", "info");
+        } else {
+          // If pool exhausted, just update time
+          persist({ ...state, lastSystemTaskTime: now });
+        }
+      }
+    };
+
+    assignRandomTask();
+    const intervalId = setInterval(assignRandomTask, 60000);
+    return () => clearInterval(intervalId);
+  }, [state, loading, persist, triggerSystemMessage, notify]);
 
   const removeNotif=useCallback(id=>setNotifications(prev=>prev.filter(n=>n.id!==id)),[]);
 
@@ -3433,6 +3485,7 @@ export default function App({ initialHunterName }) {
               <div style={{position:"absolute",top:0,right:0,width:"60%",height:"100%",background:`radial-gradient(circle at 100% 30%,${theme.primary}0a,transparent 70%)`,pointerEvents:"none"}}/>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,position:"relative"}}>
                 <div>
+                  <div style={{fontSize:9,color:"#22d3ee",fontFamily:"'JetBrains Mono',monospace",marginBottom:10,letterSpacing:1,animation:"pulse 2s infinite"}}>&gt; SYSTEM ONLINE. WILLKOMMEN, {state.hunterName.toUpperCase()}.</div>
                   <div style={{fontSize:9,color:"#64748b",letterSpacing:4,fontFamily:"'JetBrains Mono',monospace",marginBottom:6}}>HUNTER LEVEL</div>
                   <div style={{fontSize:56,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif",lineHeight:1,textShadow:`0 0 40px ${theme.primary}33`}}>{state.level}</div>
                   {streakBonus>0&&<div style={{fontSize:10,color:"#f59e0b",marginTop:6,fontFamily:"'JetBrains Mono',monospace",display:"flex",alignItems:"center",gap:4}}>🔥 +{streakBonus}% XP</div>}
