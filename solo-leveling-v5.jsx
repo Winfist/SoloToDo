@@ -1719,6 +1719,7 @@ function QuestTypeBadge({ type }) {
 // ─── EMERGENCY QUEST CARD ─────────────────────────────────────
 function EmergencyQuestCard({ quest, done, failed, onComplete, theme }) {
   const [hover, setHover]=useState(false);
+  const [confirming, setConfirming]=useState(false);
   if (!quest) return null;
   const diff=DIFFICULTIES.find(d=>d.key===quest.difficulty)||DIFFICULTIES[1];
   const cat=CATEGORIES.find(c=>c.key===quest.category)||CATEGORIES[0];
@@ -1756,8 +1757,15 @@ function EmergencyQuestCard({ quest, done, failed, onComplete, theme }) {
           <span style={{color:"#fbbf24"}}>+{diff.gold*2.5|0} G</span>
         </div>
         {!done&&!failed&&!expired&&(
-          <button onClick={()=>onComplete(quest)} style={{padding:"7px 16px",borderRadius:10,fontSize:11,fontWeight:700,background:"linear-gradient(135deg,#ef444425,#ef444410)",color:"#ef4444",border:"1px solid #ef444455",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>
-            ERFÜLLEN
+          <button onClick={()=>{
+            if (!confirming) {
+              setConfirming(true);
+              setTimeout(()=>setConfirming(false), 3000);
+            } else {
+              onComplete(quest);
+            }
+          }} style={{padding:"7px 16px",borderRadius:10,fontSize:11,fontWeight:800,background:confirming?"rgba(245,158,11,0.2)":"linear-gradient(135deg,#ef444425,#ef444410)",color:confirming?"#f59e0b":"#ef4444",border:`1px solid ${confirming?"#f59e0b":"#ef444455"}`,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,transition:"all 0.3s"}}>
+            {confirming ? "JA?" : "ERFÜLLEN"}
           </button>
         )}
       </div>
@@ -2675,7 +2683,7 @@ export default function App({ initialHunterName }) {
   const [qCat,setQCat]=useState("agi");
   const [qType,setQType]=useState("side");
   const [showHiddenQuestModal,setShowHiddenQuestModal]=useState(null); // hq object
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem("soloMusicPlaying") !== "false");
 
   const notify=useCallback((msg,type="info")=>setNotifications(prev=>[...prev,{id:genId(),msg,type}]),[]);
   const persist=useCallback(s=>{
@@ -2773,17 +2781,18 @@ export default function App({ initialHunterName }) {
             s.dungeons=generateDungeons(getRank(s.level || 1).name);
             s.lastDungeonRefresh=today;
             s.todayModifier=getDailyModifier();
-            
-            // Trigger System Message for new day
-            setTimeout(() => {
-              triggerSystemMessage("SYSTEM REKALIBRIERUNG", [
-                `Willkommen zurück, Hunter ${s.hunterName || "Unbekannt"}.`,
-                "Ein neuer Tag ist angebrochen. Das System hat neue Aufgaben für Sie vorbereitet.",
-                "3 Tägliche Quests wurden Ihrem Logbuch hinzugefügt.",
-                "Die Dungeons wurden zurückgesetzt. Viel Erfolg beim Grind."
-              ]);
-            }, 1000);
           }
+
+          // Trigger Welcome Message every time app loads
+          setTimeout(() => {
+            const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
+            const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "⚠️ NOTFALL-MISSION AKTIV" : "Ihre Aufgabe wartet.";
+            triggerSystemMessage("SYSTEM ONLINE", [
+              `Willkommen zurück, Hunter ${s.hunterName || "Unbekannt"}.`,
+              `Aktive Tages-Quests: ${activeDailies.length}`,
+              urgentMsg
+            ]);
+          }, 1500);
 
           // --- STATS INITIALIZATION FOR OLD USERS ---
           if (s.statPoints === undefined) s.statPoints = 0;
@@ -2828,8 +2837,9 @@ export default function App({ initialHunterName }) {
         if (availablePool.length > 0) {
           const randTask = availablePool[Math.floor(Math.random() * availablePool.length)];
           const newQuest = {
-            id: genId(), title: randTask.title, difficulty: randTask.diff || "normal",
-            category: randTask.cat || "str", type: "side", createdAt: getToday(),
+            id: genId(), title: randTask.title, difficulty: randTask.difficulty || "normal",
+            category: randTask.category || "str", desc: randTask.desc || "",
+            type: "side", createdAt: getToday(),
             xpMult: 1, goldMult: 1, isSystem: true
           };
           
@@ -3438,7 +3448,11 @@ export default function App({ initialHunterName }) {
               <span style={{fontWeight:700}}>{state.streak}</span>
             </div>
             <button 
-              onClick={() => setIsMusicPlaying(!isMusicPlaying)}
+              onClick={() => setIsMusicPlaying(prev => {
+                const next = !prev;
+                localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
+                return next;
+              })}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
                 width: 32, height: 32, borderRadius: 8,
@@ -3524,7 +3538,7 @@ export default function App({ initialHunterName }) {
             )}
 
             {/* ── QUEST FILTERS + ADD ── */}
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,gap:6}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,gap:6,flexWrap:"wrap"}}>
               <div style={{display:"flex",gap:4,overflowX:"auto",paddingBottom:2,flex:1}}>
                 {[
                   {key:"all",label:"Alle",color:theme.accent},
@@ -3543,7 +3557,7 @@ export default function App({ initialHunterName }) {
                   }}>{f.label}</button>
                 ))}
               </div>
-              <button onClick={()=>setShowCreate(true)} style={{padding:"10px 20px",borderRadius:12,fontSize:12,fontWeight:900,background:`linear-gradient(135deg,${theme.primary},${theme.secondary})`,color:"#fff",border:"none",boxShadow:`0 4px 16px ${theme.glow}`,textShadow:"0 1px 4px rgba(0,0,0,0.4)",fontFamily:"'Cinzel',serif",letterSpacing:1.5,display:"flex",alignItems:"center",gap:6,flexShrink:0,transition:"all 0.3s",transform:"translateY(-1px)",animation:"float 3s ease-in-out infinite"}}>+ NEUES TO-DO (QUEST)</button>
+              <button onClick={()=>setShowCreate(true)} style={{padding:"8px 14px",borderRadius:12,fontSize:11,fontWeight:900,background:`linear-gradient(135deg,${theme.primary},${theme.secondary})`,color:"#fff",border:"none",boxShadow:`0 4px 16px ${theme.glow}`,textShadow:"0 1px 4px rgba(0,0,0,0.4)",fontFamily:"'Cinzel',serif",letterSpacing:1.5,display:"flex",alignItems:"center",gap:6,flexShrink:0,transition:"all 0.3s",transform:"translateY(-1px)",animation:"float 3s ease-in-out infinite"}}>+ QUEST</button>
             </div>
 
             {filteredQuests.length===0?(
