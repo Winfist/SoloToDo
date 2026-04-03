@@ -6,13 +6,13 @@ import { getAnalytics } from "firebase/analytics";
 
 // Replace with your Firebase config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyDR7cm2PnhKY58k6NSKMq6JjdqAMUoAUjc",
   authDomain: "solo-todo.firebaseapp.com",
   projectId: "solo-todo",
   storageBucket: "solo-todo.firebasestorage.app",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  messagingSenderId: "528898647146",
+  appId: "1:528898647146:web:66f34f35cc3ef944449613",
+  measurementId: "G-RCBGS0F6N4"
 };
 
 // Initialize Firebase
