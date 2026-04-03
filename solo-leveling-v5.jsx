@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { JOBS } from "./data/jobs";
 import { JOB_QUESTS } from "./data/jobQuests";
+import { QUEST_POOL } from "./data/questPool";
 import StoryView, { STORY_ARCS } from "./StoryView.jsx";
 
 // ─── RANKS ────────────────────────────────────────────────────
@@ -575,6 +575,7 @@ const THEMES = {
 const DEFAULT_STATE = {
   hunterName:"", level:1, xp:0, gold:0, totalGoldEarned:0,
   stats:{ str:0, int:0, vit:0, agi:0, cha:0 },
+  statPoints:0,
   quests:[], completedQuests:[], streak:0, lastActiveDate:null,
   shopPurchases:[], selectedTheme:"default", selectedTitle:"",
   shadowArmy:{ shadows:[], capacity:20, formations:{ vanguard:[], core:[], rearguard:[] }, totalShadowXp:0 },
@@ -702,6 +703,17 @@ function generateDungeons(playerRankName) {
   const shuffled = [...pool].sort(() => Math.random()-0.5);
   const expires = new Date(Date.now() + 24*60*60*1000).toISOString();
   return shuffled.slice(0,3).map(d => ({ ...d, instanceId:genId(), cleared:false, expiresAt:expires }));
+}
+
+function generateDailySystemQuests(count = 3) {
+  const shuffled = [...QUEST_POOL].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count).map(q => ({
+    ...q,
+    id: `sys_${genId()}`,
+    type: "daily",
+    isSystem: true,
+    createdAt: getToday()
+  }));
 }
 
 function getJobBonuses(state) {
@@ -2518,6 +2530,74 @@ function AbilityActivationCinematic({ ability, job, onClose }) {
   );
 }
 
+function SystemCLI({ message, onClose }) {
+  const [displayedLines, setDisplayedLines] = useState([]);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (currentLineIndex < message.lines.length) {
+      const currentLine = message.lines[currentLineIndex];
+      if (currentCharIndex < currentLine.length) {
+        const timeout = setTimeout(() => {
+          setDisplayedLines(prev => {
+            const next = [...prev];
+            next[currentLineIndex] = (next[currentLineIndex] || "") + currentLine[currentCharIndex];
+            return next;
+          });
+          setCurrentCharIndex(prev => prev + 1);
+        }, 30);
+        return () => clearTimeout(timeout);
+      } else {
+        const timeout = setTimeout(() => {
+          setCurrentLineIndex(prev => prev + 1);
+          setCurrentCharIndex(0);
+        }, 400);
+        return () => clearTimeout(timeout);
+      }
+    } else {
+      setIsComplete(true);
+    }
+  }, [currentLineIndex, currentCharIndex, message.lines]);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(2, 2, 8, 0.85)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.3s ease" }}>
+      <div style={{ width: "100%", maxWidth: 600, background: "rgba(10, 10, 20, 0.95)", border: "1px solid #6366f144", borderRadius: 12, padding: "24px", boxShadow: "0 0 40px rgba(99, 102, 241, 0.2)", position: "relative", overflow: "hidden" }}>
+        {/* Scanline effect */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03))", backgroundSize: "100% 4px, 3px 100%", pointerEvents: "none" }} />
+        
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, borderBottom: "1px solid #6366f122", paddingBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#6366f1", boxShadow: "0 0 10px #6366f1" }} />
+            <div style={{ fontSize: 12, color: "#6366f1", fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, letterSpacing: 3 }}>SYSTEM NACHRICHT</div>
+          </div>
+          <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono', monospace" }}>UID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
+        </div>
+
+        <div style={{ minHeight: 120, marginBottom: 24 }}>
+          {displayedLines.map((line, i) => (
+            <div key={i} style={{ color: i === 0 && message.title ? "#fff" : "#cbd5e1", fontSize: i === 0 && message.title ? 18 : 14, fontWeight: i === 0 && message.title ? 900 : 400, fontFamily: i === 0 && message.title ? "'Cinzel', serif" : "'JetBrains Mono', monospace", marginBottom: 12, lineHeight: 1.6, display: "flex", gap: 10 }}>
+              <span style={{ color: "#6366f166", flexShrink: 0 }}>&gt;</span>
+              <span>{line}</span>
+            </div>
+          ))}
+          {!isComplete && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+              <span style={{ color: "#6366f166", fontSize: 12 }}>&gt;</span>
+              <div style={{ width: 7, height: 13, background: "#6366f1", animation: "cursorBlink 1s infinite" }} />
+            </div>
+          )}
+        </div>
+
+        {isComplete && (
+          <button onClick={() => { if(message.onComplete) message.onComplete(); onClose(); }} style={{ width: "100%", padding: "14px", borderRadius: 8, background: "rgba(99, 102, 241, 0.1)", color: "#6366f1", border: "1px solid #6366f144", fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2, cursor: "pointer", transition: "all 0.3s" }}>[ NACHRICHT BESTÄTIGEN ]</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────
 export default function App({ initialHunterName }) {
   const [state,setState]=useState(null);
@@ -2525,6 +2605,7 @@ export default function App({ initialHunterName }) {
   const [view,setView]=useState("dashboard");
   const [showCreate,setShowCreate]=useState(false);
   const [levelUp,setLevelUp]=useState(null);
+  const [systemMessage,setSystemMessage]=useState(null);
   const [showSetup,setShowSetup]=useState(false);
   const [questFilter,setQuestFilter]=useState("all");
   const [notifications,setNotifications]=useState([]);
@@ -2555,7 +2636,13 @@ export default function App({ initialHunterName }) {
               s.penaltyZone={active:true,redemptionLeft:3,questsCompletedInPenalty:0};
             }
           }
-          s.quests=s.quests?.map(q=>q.type==="daily"?{...q,completed:false}:q)||[];
+          // Reset existing dailies and add new system quests
+          s.quests=s.quests?.map(q=>q.type==="daily"&&!q.isSystem?{...q,completed:false}:q)||[];
+          // Filter out old system quests and add new ones
+          s.quests = s.quests.filter(q => !q.isSystem);
+          const newSysQuests = generateDailySystemQuests(3);
+          s.quests = [...s.quests, ...newSysQuests];
+          
           // Reset emergency quest daily
           s.emergencyQuest=null;
           s.emergencyDone=false;
@@ -2573,12 +2660,31 @@ export default function App({ initialHunterName }) {
           s.emergencyQuest=generateEmergencyQuest(s.level||1);
           s.emergencyDone=false;
           s.emergencyFailed=false;
+          // Trigger System Message for Emergency Quest
+          setTimeout(() => {
+            triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
+              "ACHTUNG: Eine temporale Anomalie wurde registriert.",
+              `Mission: ${s.emergencyQuest.title}`,
+              "Die Belohnungen für diese Aufgabe wurden verdoppelt.",
+              "Versagen wird nicht toleriert."
+            ]);
+          }, 2500);
         }
         if(!s.hiddenQuests) s.hiddenQuests={discovered:[],completed:[]};
         if(!s.lastDungeonRefresh||s.lastDungeonRefresh!==today){
           s.dungeons=generateDungeons(getRank(s.level).name);
           s.lastDungeonRefresh=today;
           s.todayModifier=getDailyModifier();
+          
+          // Trigger System Message for new day
+          setTimeout(() => {
+            triggerSystemMessage("SYSTEM REKALIBRIERUNG", [
+              `Willkommen zurück, Hunter ${s.hunterName}.`,
+              "Ein neuer Tag ist angebrochen. Das System hat neue Aufgaben für Sie vorbereitet.",
+              "3 Tägliche Quests wurden Ihrem Logbuch hinzugefügt.",
+              "Die Dungeons wurden zurückgesetzt. Viel Erfolg beim Grind."
+            ]);
+          }, 1000);
         }
 
         // --- AUTH INTEGRATION ---
@@ -2660,9 +2766,15 @@ export default function App({ initialHunterName }) {
     const goldGain=Math.round(diff.gold*goldMult);
     if(rect) setXpFloats(prev=>[...prev,{id:genId(),x:rect.x-20,y:rect.y,xp:xpGain,gold:goldGain}]);
     setTimeout(()=>setXpFloats(prev=>prev.slice(1)),1400);
-    let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false;
+    let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false,levelsGained=0;
     const oldRank=getRank(state.level);
-    while(newXp>=getXpForLevel(newLevel)&&newLevel<100){newXp-=getXpForLevel(newLevel);newLevel++;didLevelUp=true;}
+    while(newXp>=getXpForLevel(newLevel)&&newLevel<100){
+      newXp-=getXpForLevel(newLevel);
+      newLevel++;
+      levelsGained++;
+      didLevelUp=true;
+    }
+    const earnedPoints = levelsGained * 5;
     // Job XP calculation
     let next = awardJobXp({...state, xp:newXp, level:newLevel, gold:state.gold+goldGain,totalGoldEarned:(state.totalGoldEarned||0)+goldGain}, "quest_complete", {
       category: quest.category,
@@ -2714,7 +2826,8 @@ export default function App({ initialHunterName }) {
     ];
 
     next={...next,
-      stats:{...state.stats,[quest.category]:(state.stats[quest.category]||0)+Math.ceil(xpGain/20)},
+      stats:{...state.stats,[quest.category]:(state.stats[quest.category]||0)+Math.ceil(xpGain/40)}, // Reduced auto-increase
+      statPoints: (state.statPoints || 0) + earnedPoints,
       quests:updatedQuests,completedQuests:[...(state.completedQuests||[]),{...quest,completedAt:today}],
       streak:newStreak,lastActiveDate:today,shadowArmy:newShadowArmy,
       totalXpEarned:(state.totalXpEarned||0)+xpGain,
@@ -2757,7 +2870,17 @@ export default function App({ initialHunterName }) {
     }
     next=processAchievements(next);
     persist(next);
-    if(didLevelUp){setPrevRank(oldRank);setLevelUp(newLevel);}
+    if(didLevelUp){
+      setPrevRank(oldRank);
+      setLevelUp(newLevel);
+      triggerSystemMessage("LEVEL UP BESTÄTIGT", [
+        `Glückwunsch, Hunter ${state.hunterName}.`,
+        `Sie haben Level ${newLevel} erreicht.`,
+        "Ihre physischen und mentalen Kapazitäten wurden erweitert.",
+        "5 Stat-Punkte wurden Ihrem Konto gutgeschrieben.",
+        "Verteilen Sie diese weise im Statistik-Menü."
+      ]);
+    }
     else if(!ariseData&&quest.type!=="hidden"&&quest.type!=="chained") notify(`+${xpGain} XP · +${goldGain} Gold`,"success");
     if(ariseData&&!newNameds.length) setTimeout(()=>setAriseTarget(ariseData),500);
   },[state,persist,processAchievements,computeXpGain,notify]);
@@ -2784,20 +2907,35 @@ export default function App({ initialHunterName }) {
     const diff=DIFFICULTIES.find(d=>d.key===eq.difficulty)||DIFFICULTIES[1];
     const xpGain=Math.round(diff.xp*2.5);
     const goldGain=Math.round(diff.gold*2.5);
-    let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false;
+    let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false,levelsGained=0;
     const oldRank=getRank(state.level);
     const jobBonuses=getJobBonuses(state);
-    while(newXp>=getXpForLevel(newLevel)&&newLevel<100){newXp-=getXpForLevel(newLevel);newLevel++;didLevelUp=true;}
+    while(newXp>=getXpForLevel(newLevel)&&newLevel<100){
+      newXp-=getXpForLevel(newLevel);
+      newLevel++;
+      levelsGained++;
+      didLevelUp=true;
+    }
+    const earnedPoints = levelsGained * 5;
     let next={...state,xp:newXp,level:newLevel,gold:state.gold+goldGain,
       totalGoldEarned:(state.totalGoldEarned||0)+goldGain,
-      stats:{...state.stats,[eq.category]:(state.stats[eq.category]||0)+3},
+      statPoints:(state.statPoints||0)+earnedPoints,
+      stats:{...state.stats,[eq.category]:(state.stats[eq.category]||0)+2},
       emergencyDone:true,
       totalXpEarned:(state.totalXpEarned||0)+xpGain,
       totalQuestsCompleted:(state.totalQuestsCompleted||0)+1};
     next=processAchievements(next);
     persist(next);
     notify(`🚨 NOTFALL-QUEST ERFÜLLT! +${xpGain} XP · +${goldGain} Gold`,"named");
-    if(didLevelUp){setPrevRank(oldRank);setLevelUp(newLevel);}
+    if(didLevelUp){
+      setPrevRank(oldRank);
+      setLevelUp(newLevel);
+      triggerSystemMessage("LEVEL UP BESTÄTIGT", [
+        "Notfallmission erfolgreich abgeschlossen.",
+        `Sie haben Level ${newLevel} erreicht.`,
+        "5 Stat-Punkte wurden Ihrem Konto gutgeschrieben."
+      ]);
+    }
   },[state,persist,processAchievements,notify]);
 
   const addChainedQuest=useCallback((title,category,difficulty)=>{
@@ -2809,9 +2947,15 @@ export default function App({ initialHunterName }) {
   },[state,persist,notify]);
 
   const finishDungeon=useCallback((dungeon,result)=>{
-    let newXp=state.xp+result.xp,newLevel=state.level,didLevelUp=false;
+    let newXp=state.xp+result.xp,newLevel=state.level,didLevelUp=false,levelsGained=0;
     const oldRank=getRank(state.level);
-    while(newXp>=getXpForLevel(newLevel)&&newLevel<100){newXp-=getXpForLevel(newLevel);newLevel++;didLevelUp=true;}
+    while(newXp>=getXpForLevel(newLevel)&&newLevel<100){
+      newXp-=getXpForLevel(newLevel);
+      newLevel++;
+      levelsGained++;
+      didLevelUp=true;
+    }
+    const earnedPoints = levelsGained * 5;
     let newInventory=[...(state.equipment?.inventory||[])];
     if(result.drop) newInventory.push(result.drop);
     
@@ -2847,7 +2991,8 @@ export default function App({ initialHunterName }) {
 
     next = {
       ...next,
-      xp: next.xp + result.xp,
+      xp: next.xp,
+      statPoints: (state.statPoints || 0) + earnedPoints,
       dungeons:state.dungeons.map(d=>d.instanceId===dungeon.instanceId?{...d,cleared:true}:d),
       dungeonHistory:[...(state.dungeonHistory||[]),{dungeonId:dungeon.id,dungeonName:dungeon.name,dungeonRank:dungeon.rank,won:result.won,xp:result.xp,gold:totalGold,floorsCleared:result.floorsCleared||dungeon.floors,date:getToday()}],
       totalXpEarned:(state.totalXpEarned||0)+result.xp,
@@ -2873,7 +3018,16 @@ export default function App({ initialHunterName }) {
     }
     next=processAchievements(next);
     persist(next); setActiveDungeon(null);
-    if(didLevelUp){setPrevRank(oldRank);setLevelUp(newLevel);}
+    if(didLevelUp){
+      setPrevRank(oldRank);
+      setLevelUp(newLevel);
+      triggerSystemMessage("LEVEL UP BESTÄTIGT", [
+        `Dungeon erfolgreich abgeschlossen.`,
+        `Sie haben Level ${newLevel} reached.`,
+        "5 Stat-Punkte wurden Ihrem Konto gutgeschrieben.",
+        "Verteilen Sie diese im Statistik-Menü."
+      ]);
+    }
     else if (result.won) notify(`${dungeon.name} bezwungen! +${result.xp} XP · ${result.floorsCleared||"?"}/${dungeon.floors} Floors`, "dungeon");
     else notify(`Niederlage in ${dungeon.name}.`, "defeat");
   },[state,persist,processAchievements,notify]);
@@ -2997,6 +3151,24 @@ export default function App({ initialHunterName }) {
     notify(`${ability.name} AKTIVIERT!`, "levelup");
   }, [state, persist, notify]);
 
+  const increaseStat = useCallback((statKey) => {
+    if (!state || state.statPoints <= 0) return;
+    const next = {
+      ...state,
+      statPoints: state.statPoints - 1,
+      stats: {
+        ...state.stats,
+        [statKey]: (state.stats[statKey] || 0) + 1
+      }
+    };
+    persist(next);
+    notify(`${CATEGORIES.find(c => c.key === statKey)?.label} erhöht!`, "success");
+  }, [state, persist, notify]);
+
+  const triggerSystemMessage = useCallback((title, lines, onComplete) => {
+    setSystemMessage({ title, lines, onComplete });
+  }, []);
+
   const finishSetup=name=>{
     const s={...DEFAULT_STATE,hunterName:name||"Hunter",lastActiveDate:getToday(),dungeons:generateDungeons("E"),lastDungeonRefresh:getToday(),achievements:{unlocked:[],notified:[]},skills:{unlocked:[]},equipment:{slots:{weapon:null,armor:null,ring1:null,ring2:null},inventory:[]},penaltyZone:{active:false,redemptionLeft:0,questsCompletedInPenalty:0},todayModifier:getDailyModifier(),emergencyQuest:generateEmergencyQuest(1),emergencyDone:false,emergencyFailed:false,hiddenQuests:{discovered:[],completed:[]},
       jobs: {
@@ -3056,6 +3228,7 @@ export default function App({ initialHunterName }) {
       {state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = {...state}; delete next._abilityActivated; persist(next); }} />}
       {activeDungeon&&<DungeonBattle dungeon={activeDungeon} playerStats={state.stats} theme={theme} onResult={r=>finishDungeon(activeDungeon,r)} onClose={()=>setActiveDungeon(null)} skillBonuses={getSkillBonuses(null,state.stats)} modifier={modifier} formationBonus={formationBonus} state={state} persist={persist} notify={notify}/>}
       {selectedShadow&&<ShadowDetailModal shadow={selectedShadow} theme={theme} gold={state.gold} onClose={()=>setSelectedShadow(null)} onDeploy={deployShadow} onUndeploy={undeployShadow} onEvolve={evolveShadow}/>}
+      {systemMessage && <SystemCLI message={systemMessage} onClose={() => setSystemMessage(null)} />}
 
       {/* HIDDEN QUEST DISCOVERY MODAL */}
       {showHiddenQuestModal&&(
@@ -3245,7 +3418,12 @@ export default function App({ initialHunterName }) {
         {/* ═══ STATS ═══ */}
         {view==="stats"&&(
           <div style={{animation:"fadeIn 0.35s ease"}}>
-            <div style={{background:theme.card,border:`1px solid ${theme.primary}18`,borderRadius:18,padding:"20px",marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",backdropFilter:"blur(12px)"}}>
+            <div style={{background:theme.card,border:`1px solid ${theme.primary}18`,borderRadius:18,padding:"20px",marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",backdropFilter:"blur(12px)",position:"relative"}}>
+              {state.statPoints > 0 && (
+                <div style={{position:"absolute", top:12, right:12, background:"#f59e0b22", border:"1px solid #f59e0b44", padding:"4px 10px", borderRadius:20, fontSize:10, color:"#f59e0b", fontFamily:"'JetBrains Mono',monospace", fontWeight:800, animation:"pulse 1.5s infinite"}}>
+                  {state.statPoints} PUNKTE VERFÜGBAR
+                </div>
+              )}
               <StatRadar stats={state.stats} theme={theme} size={200}/>
               <div style={{display:"flex",gap:0,flexWrap:"wrap",justifyContent:"center",marginTop:4,width:"100%",background:"rgba(0,0,0,0.2)",borderRadius:12,overflow:"hidden"}}>
                 {[{label:"TOTAL XP",value:(state.totalXpEarned||0).toLocaleString(),color:theme.accent},{label:"QUESTS",value:state.totalQuestsCompleted||0,color:theme.accent},{label:"STREAK",value:`${state.streak}d`,color:"#f59e0b"},{label:"PWR LVL",value:powerLevel,color:"#e879f9"},{label:"CLEARED",value:(state.dungeonHistory||[]).filter(d=>d.won).length,color:"#22d3ee"}].map((s,i)=>(
@@ -3266,9 +3444,14 @@ export default function App({ initialHunterName }) {
                       <div style={{fontSize:10,color:"#475569",fontFamily:"'JetBrains Mono',monospace"}}>{cat.full}</div>
                     </div>
                   </div>
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:28,fontWeight:900,color:cat.color,fontFamily:"'Cinzel',serif"}}>{val}</div>
-                    {equipBonuses[cat.key+"Bonus"]>0&&<div style={{fontSize:9,color:"#f59e0b",fontFamily:"'JetBrains Mono',monospace"}}>({base}+{equipBonuses[cat.key+"Bonus"]})</div>}
+                  <div style={{display:"flex", alignItems:"center", gap:12}}>
+                    {state.statPoints > 0 && (
+                      <button onClick={() => increaseStat(cat.key)} style={{width:26, height:26, borderRadius:6, background:cat.color+"22", border:`1px solid ${cat.color}44`, color:cat.color, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:16, cursor:"pointer", transition:"all 0.2s"}}>+</button>
+                    )}
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:28,fontWeight:900,color:cat.color,fontFamily:"'Cinzel',serif"}}>{val}</div>
+                      {equipBonuses[cat.key+"Bonus"]>0&&<div style={{fontSize:9,color:"#f59e0b",fontFamily:"'JetBrains Mono',monospace"}}>({base}+{equipBonuses[cat.key+"Bonus"]})</div>}
+                    </div>
                   </div>
                 </div>
                 <div style={{height:5,background:"#0f0f1e",borderRadius:3,overflow:"hidden"}}>
@@ -3422,12 +3605,15 @@ export default function App({ initialHunterName }) {
                 let newXp = (prev.xp || 0) + xpGain;
                 let newLevel = prev.level;
                 let newGold = (prev.gold || 0) + goldGain;
+                let levelsGained = 0;
 
                 // Level-Up Logik
                 while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
                   newXp -= getXpForLevel(newLevel);
                   newLevel++;
+                  levelsGained++;
                 }
+                const earnedPoints = levelsGained * 5;
 
                 // Titel vergeben falls vorhanden
                 let newTitle = prev.selectedTitle;
@@ -3442,6 +3628,7 @@ export default function App({ initialHunterName }) {
                   xp: newXp,
                   level: newLevel,
                   gold: newGold,
+                  statPoints: (prev.statPoints || 0) + earnedPoints,
                   totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
                   selectedTitle: newTitle,
                   story: {
@@ -3646,61 +3833,72 @@ export default function App({ initialHunterName }) {
 
       {/* QUEST CREATE MODAL */}
       {showCreate&&(
-        <div onClick={()=>setShowCreate(false)} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(2,2,8,0.9)",backdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",animation:"fadeIn 0.2s"}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,margin:"0 auto",background:`linear-gradient(180deg,${theme.card},rgba(6,6,16,0.99))`,border:`1px solid ${theme.primary}22`,borderRadius:"20px 20px 0 0",padding:"24px 20px 32px",animation:"slideUp 0.3s ease",backdropFilter:"blur(20px)"}}>
-            <div style={{width:36,height:3,background:"#1e2940",borderRadius:2,margin:"0 auto 20px"}}/>
-            <div style={{fontSize:10,letterSpacing:3,color:"#64748b",fontFamily:"'JetBrains Mono',monospace",marginBottom:16}}>NEUE QUEST</div>
+        <div onClick={()=>setShowCreate(false)} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(2,2,10,0.85)",backdropFilter:"blur(12px)",display:"flex",alignItems:"flex-end",animation:"fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,margin:"0 auto",background:`linear-gradient(180deg,${theme.card},rgba(6,6,16,0.99))` ,border:`1px solid ${theme.primary}33`,borderTop:`1px solid ${theme.primary}88`,borderRadius:"24px 24px 0 0",padding:"28px 24px 36px",animation:"slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",boxShadow:`0 -10px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1), 0 -2px 16px ${theme.glow}`}}>
+            <div style={{width:48,height:4,background:`linear-gradient(90deg,transparent,${theme.primary}88,transparent)`,borderRadius:2,margin:"0 auto 24px",boxShadow:`0 0 8px ${theme.primary}44`}}/>
+            <div style={{fontSize:11,letterSpacing:4,color:theme.accent,fontFamily:"'JetBrains Mono',monospace",marginBottom:16,textShadow:`0 0 12px ${theme.glow}`}}>SYSTEM: NEUE QUEST</div>
             <input value={qTitle} onChange={e=>setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..." autoFocus
-              style={{width:"100%",padding:"14px 16px",borderRadius:12,fontSize:14,background:"rgba(8,8,20,0.8)",border:`1px solid ${theme.primary}33`,color:"#e2e8f0",outline:"none",marginBottom:14,fontFamily:"'Outfit',sans-serif",letterSpacing:0.5}}
+              style={{width:"100%",padding:"16px 20px",borderRadius:14,fontSize:15,background:"rgba(4,4,12,0.9)",border:`1px solid ${theme.primary}44`,color:"#fff",outline:"none",marginBottom:18,fontFamily:"'Outfit',sans-serif",letterSpacing:0.5,transition:"all 0.3s",boxShadow:`inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4)`}}
+              onFocus={e => { e.target.style.borderColor=theme.primary; e.target.style.boxShadow=`inset 0 2px 10px rgba(0,0,0,0.5), 0 0 20px ${theme.glow}, 0 0 0 1px ${theme.primary}`; }}
+              onBlur={e => { e.target.style.borderColor=`${theme.primary}44`; e.target.style.boxShadow=`inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4)`; }}
               onKeyDown={e=>e.key==="Enter"&&qTitle.trim()&&createQuest()}/>
 
             {/* Quest Type Selection */}
-            <label style={{fontSize:9,color:"#475569",letterSpacing:2,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:8}}>TYP</label>
-            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:14}}>
+            <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:10}}>QUEST TYP</label>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
               {[
-                {key:"side",label:"📋 Side",color:"#a78bfa",desc:"Keine Zeitbegrenzung"},
+                {key:"side",label:"📋 Side",color:"#a78bfa",desc:"Keine limit"},
                 {key:"daily",label:"📅 Daily",color:"#22d3ee",desc:"Reset täglich"},
                 {key:"weekly",label:"📆 Weekly",color:"#8b5cf6",desc:"2x XP & Gold"},
-                {key:"chained",label:"⛓️ Kette",color:"#f59e0b",desc:"3er Kette +25%/Schritt"},
+                {key:"chained",label:"⛓️ Kette",color:"#f59e0b",desc:"3er Kette +25%"},
               ].map(t=>{
                 const active=qType===t.key;
                 return(
                   <button key={t.key} onClick={()=>setQType(t.key)} style={{
-                    padding:"7px 10px",borderRadius:10,fontSize:11,fontWeight:600,
-                    background:active?t.color+"22":"transparent",
-                    color:active?t.color:"#475569",
-                    border:`1px solid ${active?t.color+"55":theme.primary+"15"}`,
-                    transition:"all 0.2s",fontFamily:"'JetBrains Mono',monospace",
-                    display:"flex",flexDirection:"column",alignItems:"center",gap:2,
-                  }}>
+                    padding:"10px 14px",borderRadius:12,fontSize:12,fontWeight:700,flex:1,
+                    background:active?`linear-gradient(135deg,${t.color}22,${t.color}11)`:"rgba(15,15,30,0.5)",
+                    color:active?t.color:"#64748b",
+                    border:`1px solid ${active?t.color+"66":"#1e2940"}`,
+                    transition:"all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",fontFamily:"'JetBrains Mono',monospace",
+                    display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+                    boxShadow:active?`0 4px 16px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.05)`:"none",
+                    transform:active?"translateY(-2px)":"none"
+                  }}
+                  onMouseEnter={e=>{if(!active){e.currentTarget.style.borderColor=t.color+"33";e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.color=t.color;}}}
+                  onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor="#1e2940";e.currentTarget.style.transform="none";e.currentTarget.style.color="#64748b";}}}
+                  >
                     <span>{t.label}</span>
-                    {active&&<span style={{fontSize:8,opacity:0.7}}>{t.desc}</span>}
+                    {active&&<span style={{fontSize:9,opacity:0.8,fontWeight:500}}>{t.desc}</span>}
                   </button>
                 );
               })}
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
               <div>
-                <label style={{fontSize:9,color:"#475569",letterSpacing:2,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:6}}>SCHWIERIGKEIT</label>
-                <div style={{display:"flex",gap:4}}>
+                <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:8}}>SCHWIERIG</label>
+                <div style={{display:"flex",gap:6}}>
                   {DIFFICULTIES.map(d=>(
-                    <button key={d.key} onClick={()=>setQDiff(d.key)} title={`${d.label} (${d.xp} XP)`} style={{flex:1,padding:"9px 2px",borderRadius:10,fontSize:12,fontWeight:700,background:qDiff===d.key?d.color+"22":"transparent",color:qDiff===d.key?d.color:"#475569",border:`1px solid ${qDiff===d.key?d.color+"55":theme.primary+"15"}`,transition:"all 0.2s"}}>{d.icon}</button>
+                    <button key={d.key} onClick={()=>setQDiff(d.key)} title={`${d.label} (${d.xp} XP)`} style={{flex:1,padding:"12px 2px",borderRadius:12,fontSize:14,background:qDiff===d.key?`linear-gradient(135deg,${d.color}22,${d.color}11)`:"rgba(15,15,30,0.5)",color:qDiff===d.key?d.color:"#475569",border:`1px solid ${qDiff===d.key?d.color+"66":"#1e2940"}`,transition:"all 0.3s",boxShadow:qDiff===d.key?`0 4px 12px ${d.color}33`:"none",transform:qDiff===d.key?"translateY(-2px)":"none"}}
+                    onMouseEnter={e=>{if(qDiff!==d.key)e.currentTarget.style.borderColor=d.color+"44";}}
+                    onMouseLeave={e=>{if(qDiff!==d.key)e.currentTarget.style.borderColor="#1e2940";}}>{d.icon}</button>
                   ))}
                 </div>
               </div>
               <div>
-                <label style={{fontSize:9,color:"#475569",letterSpacing:2,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:6}}>STAT</label>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:3}}>
+                <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:8}}>STATS</label>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
                   {CATEGORIES.map(c=>(
-                    <button key={c.key} onClick={()=>setQCat(c.key)} style={{padding:"6px 2px",borderRadius:8,fontSize:10,background:qCat===c.key?c.color+"18":"transparent",color:qCat===c.key?c.color:"#64748b",border:`1px solid ${qCat===c.key?c.color+"44":theme.primary+"15"}`,display:"flex",alignItems:"center",justifyContent:"center",gap:2,fontWeight:600,transition:"all 0.2s"}}>{c.icon}</button>
+                    <button key={c.key} onClick={()=>setQCat(c.key)} style={{padding:"8px 2px",borderRadius:10,fontSize:12,background:qCat===c.key?`linear-gradient(135deg,${c.color}22,${c.color}11)`:"rgba(15,15,30,0.5)",color:qCat===c.key?c.color:"#64748b",border:`1px solid ${qCat===c.key?c.color+"66":"#1e2940"}`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,fontWeight:600,transition:"all 0.3s",boxShadow:qCat===c.key?`0 4px 12px ${c.color}33`:"none",transform:qCat===c.key?"translateY(-2px)":"none"}}
+                    onMouseEnter={e=>{if(qCat!==c.key)e.currentTarget.style.borderColor=c.color+"44";}}
+                    onMouseLeave={e=>{if(qCat!==c.key)e.currentTarget.style.borderColor="#1e2940";}}>{c.icon}</button>
                   ))}
                 </div>
               </div>
             </div>
 
             {qTitle.trim()&&(
-              <div style={{background:theme.surface,borderRadius:10,padding:"10px 14px",marginBottom:14,border:`1px solid ${theme.primary}11`,fontSize:11,color:"#64748b",fontFamily:"'JetBrains Mono',monospace",display:"flex",flexWrap:"wrap",gap:8,alignItems:"center"}}>
+              <div style={{background:`linear-gradient(135deg,${theme.surface},rgba(10,10,24,0.9))` ,borderRadius:14,padding:"14px 16px",marginBottom:20,border:`1px solid ${theme.primary}22`,borderLeft:`3px solid ${theme.accent}`,fontSize:12,color:"#94a3b8",fontFamily:"'JetBrains Mono',monospace",display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",animation:"scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",boxShadow:`0 4px 16px rgba(0,0,0,0.4)`}}>
                 {(()=>{
                   const typeCfg=QUEST_TYPES_CONFIG[qType]||QUEST_TYPES_CONFIG.side;
                   const diff=DIFFICULTIES.find(d=>d.key===qDiff);
@@ -3708,16 +3906,16 @@ export default function App({ initialHunterName }) {
                   const baseXp=Math.round(diff.xp*(typeCfg.xpMult||1));
                   const baseGold=Math.round(diff.gold*(typeCfg.goldMult||1));
                   return(<>
-                    <span style={{color:typeCfg.color}}>{typeCfg.icon} {typeCfg.label}</span>
-                    <span style={{color:"#1e293b"}}>·</span>
-                    <span style={{color:cat.color}}>{cat.icon} {cat.stat}</span>
-                    <span style={{color:"#1e293b"}}>·</span>
-                    <span style={{color:theme.accent}}>+{baseXp} XP</span>
-                    <span style={{color:"#1e293b"}}>·</span>
-                    <span style={{color:"#fbbf24"}}>+{baseGold} G</span>
-                    {qType==="chained"&&<span style={{color:"#f59e0b"}}>· ⛓️ 3 Schritte</span>}
-                    {qType==="weekly"&&<span style={{color:"#8b5cf6"}}>· 📆 7 Tage</span>}
-                    {qDiff==="boss"&&<span style={{color:"#7c3aed"}}>· 🌑 Schatten beschwören</span>}
+                    <span style={{color:typeCfg.color,fontWeight:700}}>{typeCfg.icon} {typeCfg.label.toUpperCase()}</span>
+                    <span style={{color:"#334155"}}>|</span>
+                    <span style={{color:cat.color,fontWeight:700}}>{cat.icon} {cat.stat}</span>
+                    <span style={{color:"#334155"}}>|</span>
+                    <span style={{color:theme.accent,fontWeight:800,textShadow:`0 0 8px ${theme.glow}`}}>+{baseXp} XP</span>
+                    <span style={{color:"#334155"}}>|</span>
+                    <span style={{color:"#fbbf24",fontWeight:800}}>+{baseGold} G</span>
+                    {qType==="chained"&&<span style={{color:"#f59e0b",fontWeight:700}}>| ⛓️ 3 SCHRITTE</span>}
+                    {qType==="weekly"&&<span style={{color:"#8b5cf6",fontWeight:700}}>| 📆 7 TAGE</span>}
+                    {qDiff==="boss"&&<span style={{color:"#ef4444",fontWeight:700,animation:"pulse 2s infinite",display:"block",width:"100%",marginTop:4}}>⚠ 🌑 SCHATTEN BESCHWÖRUNGSCHANCE</span>}
                   </>);
                 })()}
               </div>
@@ -3726,7 +3924,10 @@ export default function App({ initialHunterName }) {
               if(qType==="chained") addChainedQuest(qTitle,qCat,qDiff);
               else createQuest();
               setQTitle(""); setShowCreate(false);
-            }} disabled={!qTitle.trim()} style={{width:"100%",padding:14,borderRadius:14,fontSize:13,fontWeight:700,background:qTitle.trim()?`linear-gradient(135deg,${theme.primary},${theme.secondary})`:"#0f0f1e",color:qTitle.trim()?"#fff":"#334155",letterSpacing:2,fontFamily:"'Cinzel',serif",boxShadow:qTitle.trim()?`0 4px 24px ${theme.glow}`:"none",transition:"all 0.3s"}}>⚔️ QUEST ANNEHMEN</button>
+            }} disabled={!qTitle.trim()} style={{width:"100%",padding:16,borderRadius:16,fontSize:14,fontWeight:900,background:qTitle.trim()?`linear-gradient(135deg,${theme.primary},${theme.secondary})`:"#0f0f1e",color:qTitle.trim()?"#fff":"#334155",letterSpacing:3,fontFamily:"'Cinzel',serif",boxShadow:qTitle.trim()?`0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)`:"none",transition:"all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",cursor:qTitle.trim()?"pointer":"not-allowed",border:qTitle.trim()?"none":"1px solid #1e2940"}}
+            onMouseEnter={e=>{if(qTitle.trim()){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.filter="brightness(1.1)";}}}
+            onMouseLeave={e=>{if(qTitle.trim()){e.currentTarget.style.transform="none";e.currentTarget.style.filter="none";}}}
+            >{qTitle.trim()?"✦ QUEST ANNEHMEN ✦":"QUEST DEFINIEREN"}</button>
           </div>
         </div>
       )}
