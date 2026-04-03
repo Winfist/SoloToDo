@@ -540,20 +540,20 @@ const RARITY_LABELS = { common:"Common", uncommon:"Uncommon", rare:"Rare", epic:
 
 // ─── DUNGEONS ─────────────────────────────────────────────────
 const DUNGEON_TEMPLATES = [
-  { id:"goblin_lair",     name:"Goblin Lair",       desc:"Verseuchte Höhle voller Goblins",       rank:"E", requirements:{str:5},               primaryStat:"str", xp:200,  gold:80,   icon:"👺", floors:2 },
-  { id:"cursed_forest",   name:"Cursed Forest",     desc:"Magische Fallen im dunklen Wald",        rank:"E", requirements:{int:5},               primaryStat:"int", xp:180,  gold:70,   icon:"🌲", floors:2 },
-  { id:"dark_cave",       name:"Dark Cave",         desc:"Untote in verlassenen Minen",            rank:"E", requirements:{vit:5},               primaryStat:"vit", xp:190,  gold:75,   icon:"🦇", floors:2 },
-  { id:"rat_den",         name:"Rat King's Den",    desc:"Riesige Ratten und ihr König",           rank:"E", requirements:{agi:5},               primaryStat:"agi", xp:170,  gold:65,   icon:"🐀", floors:2 },
-  { id:"library_ruin",    name:"Library Ruin",      desc:"Ruinen einer alten Bibliothek",          rank:"D", requirements:{int:15,agi:8},        primaryStat:"int", xp:400,  gold:150,  icon:"📚", floors:3 },
-  { id:"iron_fortress",   name:"Iron Fortress",     desc:"Stahlharte Festung mit Golem-Wächtern",  rank:"D", requirements:{str:12,vit:10},       primaryStat:"str", xp:420,  gold:160,  icon:"⚙️", floors:3 },
-  { id:"shadow_cave",     name:"Shadow Cave",       desc:"Schattenwesen lauern im Dunkeln",        rank:"D", requirements:{agi:12,int:10},       primaryStat:"agi", xp:380,  gold:140,  icon:"🌑", floors:3 },
-  { id:"ice_palace",      name:"Ice Palace",        desc:"Eisiger Palast des Winterkönigs",        rank:"C", requirements:{vit:25,str:20},       primaryStat:"vit", xp:800,  gold:300,  icon:"❄️", floors:4 },
-  { id:"thunder_gate",    name:"Thunder Gate",      desc:"Portal durchzogen von Blitzen",          rank:"C", requirements:{agi:25,int:15},       primaryStat:"agi", xp:850,  gold:320,  icon:"⚡", floors:4 },
-  { id:"blood_altar",     name:"Blood Altar",       desc:"Verfluchter Altar des Dämonenfürsten",   rank:"C", requirements:{str:30,cha:15},       primaryStat:"str", xp:900,  gold:350,  icon:"🩸", floors:4 },
-  { id:"dragon_nest",     name:"Dragon Nest",       desc:"Nest des uralten Drachen Verthaxis",     rank:"B", requirements:{str:40,vit:35,int:25},primaryStat:"str", xp:1500, gold:600,  icon:"🐉", floors:5 },
-  { id:"void_rift",       name:"Void Rift",         desc:"Riss in der Realität",                   rank:"B", requirements:{int:40,agi:35},       primaryStat:"int", xp:1600, gold:650,  icon:"🌀", floors:5 },
-  { id:"shadow_castle",   name:"Shadow Castle",     desc:"Festung des Schattenkönigs",             rank:"A", requirements:{str:60,int:55,vit:50,agi:45},primaryStat:"str", xp:3000, gold:1200, icon:"🏰", floors:7 },
-  { id:"monarchs_domain", name:"Monarch's Domain",  desc:"Reich eines ursprünglichen Monarchen",   rank:"S", requirements:{str:90,int:85,vit:80,agi:75,cha:70},primaryStat:"str", xp:6000, gold:2500, icon:"👑", floors:10 },
+  { id:"goblin_lair",     name:"Goblin Lair",       desc:"Verseuchte Höhle voller Goblins",       rank:"E", requirements:{str:5},               primaryStat:"str", xp:200,  gold:150,  icon:"👺", floors:2 },
+  { id:"cursed_forest",   name:"Cursed Forest",     desc:"Magische Fallen im dunklen Wald",        rank:"E", requirements:{int:5},               primaryStat:"int", xp:180,  gold:140,  icon:"🌲", floors:2 },
+  { id:"dark_cave",       name:"Dark Cave",         desc:"Untote in verlassenen Minen",            rank:"E", requirements:{vit:5},               primaryStat:"vit", xp:190,  gold:145,  icon:"🦇", floors:2 },
+  { id:"rat_den",         name:"Rat King's Den",    desc:"Riesige Ratten und ihr König",           rank:"E", requirements:{agi:5},               primaryStat:"agi", xp:170,  gold:135,  icon:"🐀", floors:2 },
+  { id:"library_ruin",    name:"Library Ruin",      desc:"Ruinen einer alten Bibliothek",          rank:"D", requirements:{int:15,agi:8},        primaryStat:"int", xp:400,  gold:400,  icon:"📚", floors:3 },
+  { id:"iron_fortress",   name:"Iron Fortress",     desc:"Stahlharte Festung mit Golem-Wächtern",  rank:"D", requirements:{str:12,vit:10},       primaryStat:"str", xp:420,  gold:450,  icon:"⚙️", floors:3 },
+  { id:"shadow_cave",     name:"Shadow Cave",       desc:"Schattenwesen lauern im Dunkeln",        rank:"D", requirements:{agi:12,int:10},       primaryStat:"agi", xp:380,  gold:350,  icon:"🌑", floors:3 },
+  { id:"ice_palace",      name:"Ice Palace",        desc:"Eisiger Palast des Winterkönigs",        rank:"C", requirements:{vit:25,str:20},       primaryStat:"vit", xp:800,  gold:1000, icon:"❄️", floors:4 },
+  { id:"thunder_gate",    name:"Thunder Gate",      desc:"Portal durchzogen von Blitzen",          rank:"C", requirements:{agi:25,int:15},       primaryStat:"agi", xp:850,  gold:1200, icon:"⚡", floors:4 },
+  { id:"blood_altar",     name:"Blood Altar",       desc:"Verfluchter Altar des Dämonenfürsten",   rank:"C", requirements:{str:30,cha:15},       primaryStat:"str", xp:900,  gold:1500, icon:"🩸", floors:4 },
+  { id:"dragon_nest",     name:"Dragon Nest",       desc:"Nest des uralten Drachen Verthaxis",     rank:"B", requirements:{str:40,vit:35,int:25},primaryStat:"str", xp:1500, gold:4000, icon:"🐉", floors:5 },
+  { id:"void_rift",       name:"Void Rift",         desc:"Riss in der Realität",                   rank:"B", requirements:{int:40,agi:35},       primaryStat:"int", xp:1600, gold:4500, icon:"🌀", floors:5 },
+  { id:"shadow_castle",   name:"Shadow Castle",     desc:"Festung des Schattenkönigs",             rank:"A", requirements:{str:60,int:55,vit:50,agi:45},primaryStat:"str", xp:3000, gold:10000, icon:"🏰", floors:7 },
+  { id:"monarchs_domain", name:"Monarch's Domain",  desc:"Reich eines ursprünglichen Monarchen",   rank:"S", requirements:{str:90,int:85,vit:80,agi:75,cha:70},primaryStat:"str", xp:6000, gold:25000, icon:"👑", floors:10 },
 ];
 
 const SHOP_ITEMS = [
