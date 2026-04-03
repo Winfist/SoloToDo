@@ -39,6 +39,77 @@ const STRATEGIES = [
   { key:"agi", label:"Swift",      desc:"Schnell, lautlos, unsichtbar",   icon:"⚡", color:"#f59e0b" },
 ];
 
+// ─── QUEST TEMPLATES LIBRARY ──────────────────────────────────
+const QUEST_TEMPLATES = [
+  // STR
+  {t:"20 Liegestütze",c:"str",d:"easy",tp:"daily"},{t:"50 Liegestütze",c:"str",d:"normal",tp:"daily"},
+  {t:"100 Liegestütze",c:"str",d:"hard",tp:"side"},{t:"30 Kniebeugen",c:"str",d:"easy",tp:"daily"},
+  {t:"100 Kniebeugen",c:"str",d:"normal",tp:"daily"},{t:"Plank 60 Sekunden halten",c:"str",d:"easy",tp:"daily"},
+  {t:"Plank 3 Minuten halten",c:"str",d:"hard",tp:"side"},{t:"10-Minuten HIIT Training",c:"str",d:"normal",tp:"daily"},
+  {t:"30 Minuten Joggen",c:"str",d:"normal",tp:"daily"},{t:"5km Laufen",c:"str",d:"hard",tp:"side"},
+  {t:"10km Laufen",c:"str",d:"boss",tp:"weekly"},{t:"Klimmzüge – 3 Sätze",c:"str",d:"normal",tp:"daily"},
+  {t:"Gym Session 1 Stunde",c:"str",d:"hard",tp:"side"},{t:"50 Situps",c:"str",d:"easy",tp:"daily"},
+  {t:"20 Burpees",c:"str",d:"normal",tp:"daily"},{t:"Fahrrad fahren 30 Min",c:"str",d:"normal",tp:"daily"},
+  {t:"Schwimmen 500m",c:"str",d:"hard",tp:"side"},{t:"Seilspringen 5 Minuten",c:"str",d:"normal",tp:"daily"},
+  {t:"Morgen-Stretching 10 Min",c:"str",d:"easy",tp:"daily"},{t:"Yoga-Session 20 Min",c:"str",d:"easy",tp:"daily"},
+  {t:"8000 Schritte gehen",c:"str",d:"normal",tp:"daily"},{t:"10.000 Schritte Challenge",c:"str",d:"boss",tp:"weekly"},
+  {t:"Sprint-Intervalle 10x30s",c:"str",d:"hard",tp:"side"},{t:"Treppensteigen 10 Etagen",c:"str",d:"normal",tp:"daily"},
+  {t:"Dips 30 Stück",c:"str",d:"normal",tp:"daily"},{t:"Wandern 2 Stunden",c:"str",d:"hard",tp:"weekly"},
+  // INT
+  {t:"30 Minuten lesen",c:"int",d:"easy",tp:"daily"},{t:"1 Stunde lesen",c:"int",d:"normal",tp:"daily"},
+  {t:"Buchkapitel lesen",c:"int",d:"easy",tp:"daily"},{t:"Buch komplett auslesen",c:"int",d:"boss",tp:"weekly"},
+  {t:"Neue Sprache lernen 30 Min",c:"int",d:"normal",tp:"daily"},{t:"20 Vokabeln lernen",c:"int",d:"easy",tp:"daily"},
+  {t:"Online-Kurs Einheit",c:"int",d:"normal",tp:"daily"},{t:"Lehrreichen Podcast hören",c:"int",d:"easy",tp:"daily"},
+  {t:"Dokumentation schauen",c:"int",d:"easy",tp:"daily"},{t:"Fachtext lesen",c:"int",d:"easy",tp:"daily"},
+  {t:"Notizen zusammenfassen",c:"int",d:"easy",tp:"daily"},{t:"Neues Thema 1h recherchieren",c:"int",d:"normal",tp:"daily"},
+  {t:"20 Flashcards erstellen",c:"int",d:"normal",tp:"side"},{t:"Text auswendig lernen",c:"int",d:"hard",tp:"side"},
+  {t:"Programmieren 1 Stunde",c:"int",d:"normal",tp:"daily"},{t:"Mathe-Rätsel lösen",c:"int",d:"normal",tp:"daily"},
+  {t:"500 Wörter schreiben",c:"int",d:"normal",tp:"daily"},{t:"Mind-Map erstellen",c:"int",d:"easy",tp:"daily"},
+  {t:"Philosophischen Text lesen",c:"int",d:"hard",tp:"side"},{t:"Wissenschaftliche Studie lesen",c:"int",d:"hard",tp:"side"},
+  {t:"Tagesrückblick journalen",c:"int",d:"easy",tp:"daily"},{t:"Kreatives Schreiben 1h",c:"int",d:"normal",tp:"daily"},
+  {t:"5 Fakten über neues Thema lernen",c:"int",d:"easy",tp:"daily"},{t:"Essay schreiben",c:"int",d:"hard",tp:"side"},
+  {t:"Sprachkurs-Modul abschließen",c:"int",d:"hard",tp:"weekly"},{t:"TED-Talk ansehen und notieren",c:"int",d:"normal",tp:"daily"},
+  // VIT
+  {t:"8 Gläser Wasser trinken",c:"vit",d:"easy",tp:"daily"},{t:"Früh schlafen gehen",c:"vit",d:"easy",tp:"daily"},
+  {t:"8 Stunden schlafen",c:"vit",d:"normal",tp:"daily"},{t:"Kein Bildschirm 1h vor Schlaf",c:"vit",d:"normal",tp:"daily"},
+  {t:"Gesunde Mahlzeit kochen",c:"vit",d:"normal",tp:"daily"},{t:"Kein Junkfood heute",c:"vit",d:"normal",tp:"daily"},
+  {t:"10 Minuten meditieren",c:"vit",d:"easy",tp:"daily"},{t:"Tiefenentspannung 20 Min",c:"vit",d:"easy",tp:"daily"},
+  {t:"Kalt duschen",c:"vit",d:"normal",tp:"daily"},{t:"30 Minuten frische Luft",c:"vit",d:"easy",tp:"daily"},
+  {t:"Handy-freie Stunde",c:"vit",d:"normal",tp:"daily"},{t:"Kein Zucker heute",c:"vit",d:"hard",tp:"side"},
+  {t:"Kein Alkohol diese Woche",c:"vit",d:"boss",tp:"weekly"},{t:"Vitamine einnehmen",c:"vit",d:"easy",tp:"daily"},
+  {t:"5 Portionen Obst & Gemüse",c:"vit",d:"normal",tp:"daily"},{t:"Intermittent Fasting 16h",c:"vit",d:"hard",tp:"side"},
+  {t:"Natur-Wanderung 1h",c:"vit",d:"normal",tp:"side"},{t:"Sauna oder Bad entspannen",c:"vit",d:"easy",tp:"side"},
+  {t:"Box Breathing 5 Minuten",c:"vit",d:"easy",tp:"daily"},{t:"Bildschirmzeit unter 2h",c:"vit",d:"hard",tp:"daily"},
+  {t:"Frühstück nicht überspringen",c:"vit",d:"easy",tp:"daily"},{t:"Schlafzeit regulieren",c:"vit",d:"normal",tp:"weekly"},
+  {t:"Abends spazieren gehen",c:"vit",d:"easy",tp:"daily"},{t:"Digitaler Detox halber Tag",c:"vit",d:"boss",tp:"weekly"},
+  // AGI
+  {t:"To-Do Liste erstellen",c:"agi",d:"easy",tp:"daily"},{t:"Aufgeschobene Aufgabe erledigen",c:"agi",d:"normal",tp:"daily"},
+  {t:"Schreibtisch aufräumen",c:"agi",d:"easy",tp:"daily"},{t:"E-Mails beantworten",c:"agi",d:"easy",tp:"daily"},
+  {t:"25-Min Pomodoro",c:"agi",d:"easy",tp:"daily"},{t:"4 Pomodoros am Stück",c:"agi",d:"hard",tp:"side"},
+  {t:"Wochenziel setzen",c:"agi",d:"easy",tp:"weekly"},{t:"Zimmer aufräumen",c:"agi",d:"normal",tp:"daily"},
+  {t:"Wohnung putzen",c:"agi",d:"hard",tp:"weekly"},{t:"Projekt-Plan schreiben",c:"agi",d:"normal",tp:"side"},
+  {t:"Digitale Dateien sortieren",c:"agi",d:"easy",tp:"daily"},{t:"Rucksack ausmisten",c:"agi",d:"easy",tp:"daily"},
+  {t:"Budget überprüfen",c:"agi",d:"normal",tp:"weekly"},{t:"Einkaufen gehen",c:"agi",d:"easy",tp:"daily"},
+  {t:"Wichtige Telefonate erledigen",c:"agi",d:"normal",tp:"daily"},{t:"Vor 7 Uhr aufstehen",c:"agi",d:"hard",tp:"daily"},
+  {t:"Deep Work Session 2h",c:"agi",d:"boss",tp:"weekly"},{t:"Inbox Zero erreichen",c:"agi",d:"hard",tp:"side"},
+  {t:"Kleiderschrank sortieren",c:"agi",d:"normal",tp:"side"},{t:"Wunschliste schreiben",c:"agi",d:"easy",tp:"side"},
+  {t:"Routine für morgen planen",c:"agi",d:"easy",tp:"daily"},{t:"Prokrastinierte Aufgabe JETZT",c:"agi",d:"boss",tp:"daily"},
+  {t:"Wichtigstes Ziel priorisieren",c:"agi",d:"normal",tp:"daily"},{t:"Arbeitsplatz optimieren",c:"agi",d:"normal",tp:"side"},
+  // CHA
+  {t:"Freund anschreiben",c:"cha",d:"easy",tp:"daily"},{t:"Familie anrufen",c:"cha",d:"easy",tp:"daily"},
+  {t:"Jemanden zum Essen einladen",c:"cha",d:"normal",tp:"side"},{t:"Neuen Kontakt knüpfen",c:"cha",d:"normal",tp:"side"},
+  {t:"Jemandem ein Kompliment machen",c:"cha",d:"easy",tp:"daily"},{t:"Jemanden um Hilfe bitten",c:"cha",d:"normal",tp:"daily"},
+  {t:"Jemanden aktiv unterstützen",c:"cha",d:"easy",tp:"daily"},{t:"Social Media Pause 1 Tag",c:"cha",d:"hard",tp:"daily"},
+  {t:"Öffentlich reden",c:"cha",d:"boss",tp:"weekly"},{t:"Ehrenamtliche Stunde",c:"cha",d:"normal",tp:"weekly"},
+  {t:"3x aufrichtig Danke sagen",c:"cha",d:"easy",tp:"daily"},{t:"Konflikt aktiv lösen",c:"cha",d:"hard",tp:"side"},
+  {t:"Konstruktives Feedback geben",c:"cha",d:"normal",tp:"daily"},{t:"Netzwerk-Event besuchen",c:"cha",d:"hard",tp:"weekly"},
+  {t:"Handgeschriebenen Brief schreiben",c:"cha",d:"normal",tp:"side"},{t:"Mit Fremdem Gespräch führen",c:"cha",d:"normal",tp:"daily"},
+  {t:"Positives teilen",c:"cha",d:"easy",tp:"daily"},{t:"Experten um Rat fragen",c:"cha",d:"hard",tp:"side"},
+  {t:"Zusammen Sport machen",c:"cha",d:"normal",tp:"side"},{t:"Jemanden überraschen",c:"cha",d:"normal",tp:"side"},
+  {t:"Alten Freund wiederfinden",c:"cha",d:"hard",tp:"weekly"},{t:"Gruppenaktivität organisieren",c:"cha",d:"boss",tp:"weekly"},
+  {t:"Selbst-Gespräch / Affirmation",c:"cha",d:"easy",tp:"daily"},{t:"Postkarte schicken",c:"cha",d:"easy",tp:"side"},
+];
+
 // ─── SHADOW ARMY DATA ─────────────────────────────────────────
 const SHADOW_CLASSES = {
   soldier: {
@@ -1138,6 +1209,12 @@ async function saveState(s) {
       // We don't want to save temporary UI state like _abilityActivated
       const { _abilityActivated, _jobLevelUp, ...persistenceState } = s;
       const cleanState = JSON.parse(JSON.stringify(persistenceState));
+      
+      if (user.email) cleanState.email = user.email;
+      if (user.displayName || cleanState.hunterName) {
+        cleanState.displayName = user.displayName || cleanState.hunterName;
+      }
+      
       await setDoc(docRef, cleanState, { merge: true });
     }
   } catch(e) { 
@@ -2717,7 +2794,10 @@ export default function App({ initialHunterName, onLogout }) {
   const [qDiff,setQDiff]=useState("normal");
   const [qCat,setQCat]=useState("agi");
   const [qType,setQType]=useState("side");
-  const [showHiddenQuestModal,setShowHiddenQuestModal]=useState(null); // hq object
+  const [showHiddenQuestModal,setShowHiddenQuestModal]=useState(null);
+  const [showTemplates,setShowTemplates]=useState(false);
+  const [templateFilter,setTemplateFilter]=useState("all");
+  const [randomizing,setRandomizing]=useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem("soloMusicPlaying") !== "false");
 
   const notify=useCallback((msg,type="info")=>setNotifications(prev=>[...prev,{id:genId(),msg,type}]),[]);
@@ -4093,18 +4173,41 @@ export default function App({ initialHunterName, onLogout }) {
 
       {/* QUEST CREATE MODAL */}
       {showCreate&&(
-        <div onClick={()=>setShowCreate(false)} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(2,2,10,0.9)",backdropFilter:"blur(16px)",display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)",padding:"16px 12px"}}>
+        <div onClick={()=>{setShowCreate(false);setShowTemplates(false);}} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(2,2,10,0.9)",backdropFilter:"blur(16px)",display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)",padding:"16px 12px"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,maxHeight:"92vh",background:`linear-gradient(180deg,${theme.card},rgba(6,6,16,0.99))`,border:`1px solid ${theme.primary}44`,borderTop:`2px solid ${theme.primary}`,borderRadius:24,display:"flex",flexDirection:"column",animation:"slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",boxShadow:`0 24px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 40px ${theme.glow}`}}>
             {/* Header */}
-            <div style={{padding:"20px 24px 16px",flexShrink:0}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <div style={{padding:"20px 24px 0",flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
                 <div>
                   <div style={{fontSize:10,letterSpacing:4,color:theme.primary,fontFamily:"'JetBrains Mono',monospace",marginBottom:4,textShadow:`0 0 12px ${theme.glow}`}}>SYSTEM: NEUE QUEST</div>
                   <div style={{fontSize:18,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif",letterSpacing:2}}>Quest erstellen</div>
                 </div>
-                <button onClick={()=>setShowCreate(false)} style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"#64748b",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",cursor:"pointer"}}
-                  onMouseEnter={e=>{e.currentTarget.style.background="rgba(239,68,68,0.15)";e.currentTarget.style.color="#ef4444";e.currentTarget.style.borderColor="#ef444444";}}
-                  onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color="#64748b";e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";}}>&#x2715;</button>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                  {/* RANDOMIZER BUTTON */}
+                  <button
+                    title="Zufällige Quest-Idee"
+                    onClick={()=>{
+                      const pool = QUEST_TEMPLATES;
+                      const pick = pool[Math.floor(Math.random()*pool.length)];
+                      setRandomizing(true);
+                      setQTitle(pick.t); setQCat(pick.c); setQDiff(pick.d); setQType(pick.tp);
+                      setShowTemplates(false);
+                      setTimeout(()=>setRandomizing(false),600);
+                    }}
+                    style={{width:38,height:38,borderRadius:12,background:randomizing?"rgba(245,158,11,0.25)":"rgba(245,158,11,0.1)",border:`1px solid ${randomizing?"#f59e0b88":"#f59e0b33"}`,color:"#f59e0b",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.3s",cursor:"pointer",animation:randomizing?"spin 0.5s ease":"none"}}
+                    onMouseEnter={e=>{e.currentTarget.style.background="rgba(245,158,11,0.2)";e.currentTarget.style.borderColor="#f59e0b66";}}
+                    onMouseLeave={e=>{if(!randomizing){e.currentTarget.style.background="rgba(245,158,11,0.1)";e.currentTarget.style.borderColor="#f59e0b33";}}}
+                  >🎲</button>
+                  <button onClick={()=>{setShowCreate(false);setShowTemplates(false);}} style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"#64748b",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",cursor:"pointer"}}
+                    onMouseEnter={e=>{e.currentTarget.style.background="rgba(239,68,68,0.15)";e.currentTarget.style.color="#ef4444";e.currentTarget.style.borderColor="#ef444444";}}
+                    onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color="#64748b";e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";}}>&#x2715;</button>
+                </div>
+              </div>
+              {/* Mode tabs */}
+              <div style={{display:"flex",gap:4,marginBottom:14}}>
+                {[{key:false,label:"✏️ Erstellen"},{key:true,label:"💡 Ideen-Bibliothek"}].map(tab=>(
+                  <button key={String(tab.key)} onClick={()=>setShowTemplates(tab.key)} style={{flex:1,padding:"8px",borderRadius:10,fontSize:11,fontWeight:700,background:showTemplates===tab.key?theme.primary+"22":"transparent",color:showTemplates===tab.key?theme.accent:"#475569",border:`1px solid ${showTemplates===tab.key?theme.primary+"55":"#1e2940"}`,fontFamily:"'JetBrains Mono',monospace",letterSpacing:0.5,transition:"all 0.25s",cursor:"pointer"}}>{tab.label}</button>
+                ))}
               </div>
               <div style={{height:1,background:`linear-gradient(90deg,transparent,${theme.primary}55,transparent)`}}/>
             </div>
@@ -4112,11 +4215,60 @@ export default function App({ initialHunterName, onLogout }) {
             {/* Scrollable Content */}
             <div style={{overflowY:"auto",padding:"0 24px",flex:1}}>
 
+              {/* ══ IDEEN-BIBLIOTHEK ══ */}
+              {showTemplates&&(
+                <div style={{paddingTop:16,paddingBottom:8}}>
+                  {/* Randomizer big button */}
+                  <button
+                    onClick={()=>{
+                      const pool=QUEST_TEMPLATES;
+                      const pick=pool[Math.floor(Math.random()*pool.length)];
+                      setRandomizing(true);
+                      setQTitle(pick.t);setQCat(pick.c);setQDiff(pick.d);setQType(pick.tp);
+                      setShowTemplates(false);
+                      setTimeout(()=>setRandomizing(false),600);
+                    }}
+                    style={{width:"100%",padding:"14px",borderRadius:16,fontSize:13,fontWeight:900,background:"linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))",color:"#f59e0b",border:"1px solid #f59e0b44",fontFamily:"'Cinzel',serif",letterSpacing:2,marginBottom:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"all 0.3s",boxShadow:"0 4px 20px rgba(245,158,11,0.15)"}}
+                    onMouseEnter={e=>{e.currentTarget.style.background="linear-gradient(135deg,rgba(245,158,11,0.3),rgba(245,158,11,0.12))";e.currentTarget.style.transform="translateY(-1px)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.background="linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))";e.currentTarget.style.transform="none";}}
+                  ><span style={{fontSize:22}}>🎲</span> ZUFÄLLIGE QUEST WÜRFELN</button>
+
+                  {/* Category filter */}
+                  <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
+                    {[{key:"all",label:"Alle",color:theme.accent},...CATEGORIES.map(c=>({key:c.key,label:`${c.icon} ${c.stat}`,color:c.color}))].map(f=>(
+                      <button key={f.key} onClick={()=>setTemplateFilter(f.key)} style={{padding:"5px 12px",borderRadius:8,fontSize:10,fontWeight:700,flexShrink:0,background:templateFilter===f.key?f.color+"22":"transparent",color:templateFilter===f.key?f.color:"#475569",border:`1px solid ${templateFilter===f.key?f.color+"55":"#1e2940"}`,fontFamily:"'JetBrains Mono',monospace",transition:"all 0.2s",cursor:"pointer"}}>{f.label}</button>
+                    ))}
+                  </div>
+
+                  {/* Template grid */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,paddingBottom:16}}>
+                    {QUEST_TEMPLATES.filter(tmpl=>templateFilter==="all"||tmpl.c===templateFilter).map((tmpl,i)=>{
+                      const cat=CATEGORIES.find(c=>c.key===tmpl.c)||CATEGORIES[0];
+                      const diff=DIFFICULTIES.find(d=>d.key===tmpl.d)||DIFFICULTIES[1];
+                      return(
+                        <button key={i} onClick={()=>{setQTitle(tmpl.t);setQCat(tmpl.c);setQDiff(tmpl.d);setQType(tmpl.tp);setShowTemplates(false);}} style={{padding:"10px 12px",borderRadius:12,background:"rgba(10,10,24,0.8)",border:`1px solid ${cat.color}22`,textAlign:"left",cursor:"pointer",transition:"all 0.2s",display:"flex",flexDirection:"column",gap:5}}
+                          onMouseEnter={e=>{e.currentTarget.style.borderColor=cat.color+"55";e.currentTarget.style.background=cat.color+"0d";e.currentTarget.style.transform="translateY(-1px)";}}
+                          onMouseLeave={e=>{e.currentTarget.style.borderColor=cat.color+"22";e.currentTarget.style.background="rgba(10,10,24,0.8)";e.currentTarget.style.transform="none";}}>
+                          <div style={{fontSize:12,fontWeight:700,color:"#e2e8f0",lineHeight:1.3}}>{tmpl.t}</div>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                            <span style={{fontSize:8,color:cat.color,padding:"1px 5px",borderRadius:4,background:cat.color+"15",fontFamily:"'JetBrains Mono',monospace"}}>{cat.icon}{cat.stat}</span>
+                            <span style={{fontSize:8,color:diff.color,padding:"1px 5px",borderRadius:4,background:diff.color+"15",fontFamily:"'JetBrains Mono',monospace"}}>{diff.icon}{diff.label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ══ ERSTELLEN-MODUS ══ */}
+              {!showTemplates&&<>
+
               {/* Quest Title */}
               <div style={{marginTop:16,marginBottom:18}}>
                 <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:8}}>QUEST TITEL</label>
                 <input value={qTitle} onChange={e=>setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..." autoFocus
-                  style={{width:"100%",padding:"14px 18px",borderRadius:14,fontSize:15,background:"rgba(4,4,12,0.9)",border:`1px solid ${theme.primary}44`,color:"#fff",outline:"none",fontFamily:"'Outfit',sans-serif",letterSpacing:0.5,transition:"all 0.3s",boxShadow:`inset 0 2px 10px rgba(0,0,0,0.5)`,boxSizing:"border-box"}}
+                  style={{width:"100%",padding:"14px 18px",borderRadius:14,fontSize:15,background:"rgba(4,4,12,0.9)",border:`1px solid ${randomizing?"#f59e0b88":theme.primary+"44"}`,color:"#fff",outline:"none",fontFamily:"'Outfit',sans-serif",letterSpacing:0.5,transition:"all 0.3s",boxShadow:randomizing?`0 0 20px rgba(245,158,11,0.25)`:`inset 0 2px 10px rgba(0,0,0,0.5)`,boxSizing:"border-box"}}
                   onFocus={e=>{e.target.style.borderColor=theme.primary;e.target.style.boxShadow=`inset 0 2px 10px rgba(0,0,0,0.5), 0 0 20px ${theme.glow}, 0 0 0 1px ${theme.primary}`;e.target.style.outline="none";}}
                   onBlur={e=>{e.target.style.borderColor=`${theme.primary}44`;e.target.style.boxShadow=`inset 0 2px 10px rgba(0,0,0,0.5)`;e.target.style.outline="none";}}
                   onKeyDown={e=>e.key==="Enter"&&qTitle.trim()&&createQuest()}/>
@@ -4190,31 +4342,11 @@ export default function App({ initialHunterName, onLogout }) {
               <div style={{marginBottom:18}}>
                 <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:10}}>STATS KATEGORIE</label>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                  {CATEGORIES.map(c=>{
-                    const active=qCat===c.key;
-                    return(
-                      <button key={c.key} onClick={()=>setQCat(c.key)} style={{
-                        padding:"11px 6px",borderRadius:14,fontSize:12,
-                        background:active?`linear-gradient(135deg,${c.color}22,${c.color}0d)`:"rgba(12,12,26,0.6)",
-                        color:active?c.color:"#475569",
-                        border:`1px solid ${active?c.color+"55":"#1e2940"}`,
-                        transition:"all 0.25s",display:"flex",flexDirection:"column",alignItems:"center",gap:4,
-                        boxShadow:active?`0 4px 12px ${c.color}33, inset 0 1px 0 rgba(255,255,255,0.05)`:"none",
-                        cursor:"pointer"
-                      }}
-                      onMouseEnter={e=>{if(!active){e.currentTarget.style.borderColor=c.color+"44";e.currentTarget.style.color=c.color+"cc";}}}
-                      onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor="#1e2940";e.currentTarget.style.color="#475569";}}}
-                      >
-                        <span style={{fontSize:18,lineHeight:1}}>{c.icon}</span>
-                        <span style={{fontSize:10,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",letterSpacing:0.5}}>{c.stat}</span>
-                        <span style={{fontSize:9,opacity:active?0.8:0.4,fontFamily:"'Outfit',sans-serif",textAlign:"center",lineHeight:1.2}}>{c.label}</span>
-                      </button>
-                    );
-                  })}
+                  {CATEGORIES.map(c=>{const active=qCat===c.key;return(<button key={c.key} onClick={()=>setQCat(c.key)} style={{padding:"11px 6px",borderRadius:14,fontSize:12,background:active?`linear-gradient(135deg,${c.color}22,${c.color}0d)`:"rgba(12,12,26,0.6)",color:active?c.color:"#475569",border:`1px solid ${active?c.color+"55":"#1e2940"}`,transition:"all 0.25s",display:"flex",flexDirection:"column",alignItems:"center",gap:4,boxShadow:active?`0 4px 12px ${c.color}33, inset 0 1px 0 rgba(255,255,255,0.05)`:"none",cursor:"pointer"}} onMouseEnter={e=>{if(!active){e.currentTarget.style.borderColor=c.color+"44";e.currentTarget.style.color=c.color+"cc";}}} onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor="#1e2940";e.currentTarget.style.color="#475569";}}}>  <span style={{fontSize:18,lineHeight:1}}>{c.icon}</span><span style={{fontSize:10,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",letterSpacing:0.5}}>{c.stat}</span><span style={{fontSize:9,opacity:active?0.8:0.4,fontFamily:"'Outfit',sans-serif",textAlign:"center",lineHeight:1.2}}>{c.label}</span></button>);})}
                 </div>
               </div>
 
-              {/* Reward Preview - always shown */}
+              {/* Reward Preview */}
               {(()=>{
                 const typeCfg=QUEST_TYPES_CONFIG[qType]||QUEST_TYPES_CONFIG.side;
                 const diff=DIFFICULTIES.find(d=>d.key===qDiff);
@@ -4249,23 +4381,24 @@ export default function App({ initialHunterName, onLogout }) {
                 );
               })()}
 
+            </>}
             </div>
 
-            {/* Footer */}
+            {!showTemplates&&(
             <div style={{padding:"14px 24px 20px",flexShrink:0,borderTop:`1px solid ${theme.primary}1a`}}>
               <button onClick={()=>{
                 if(qType==="chained") addChainedQuest(qTitle,qCat,qDiff);
                 else createQuest();
-                setQTitle(""); setShowCreate(false);
-              }} disabled={!qTitle.trim()} style={{width:"100%",padding:"15px",borderRadius:16,fontSize:14,fontWeight:900,background:qTitle.trim()?`linear-gradient(135deg,${theme.primary},${theme.secondary})`:"rgba(15,15,30,0.6)",color:qTitle.trim()?"#fff":"#334155",letterSpacing:3,fontFamily:"'Cinzel',serif",boxShadow:qTitle.trim()?`0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)`:"none",transition:"all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",cursor:qTitle.trim()?"pointer":"not-allowed",border:qTitle.trim()?"none":"1px solid #1e2940"}}
+                setQTitle(""); setShowCreate(false); setShowTemplates(false);
+              }} disabled={!qTitle.trim()} style={{width:"100%",padding:"15px",borderRadius:16,fontSize:14,fontWeight:900,background:qTitle.trim()?`linear-gradient(135deg,${theme.primary},${theme.secondary})`:'rgba(15,15,30,0.6)',color:qTitle.trim()?"#fff":"#334155",letterSpacing:3,fontFamily:"'Cinzel',serif",boxShadow:qTitle.trim()?`0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)`:"none",transition:"all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",cursor:qTitle.trim()?"pointer":"not-allowed",border:qTitle.trim()?"none":"1px solid #1e2940"}}
               onMouseEnter={e=>{if(qTitle.trim()){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.filter="brightness(1.1)";}}}
               onMouseLeave={e=>{if(qTitle.trim()){e.currentTarget.style.transform="none";e.currentTarget.style.filter="none";}}}
-              >{qTitle.trim()?"\u2746 QUEST ANNEHMEN \u2746":"Quest-Titel eingeben..."}</button>
+              >{qTitle.trim()?"✦ QUEST ANNEHMEN ✦":"Quest-Titel eingeben..."}</button>
             </div>
+            )}
 
           </div>
         </div>
-      )}
       )}
     </div>
   );
