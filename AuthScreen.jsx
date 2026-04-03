@@ -7,7 +7,8 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   signInWithPopup,
-  GoogleAuthProvider
+  GoogleAuthProvider,
+  OAuthProvider
 } from "firebase/auth";
 
 // ─── AUTH CSS ─────────────────────────────────────────────────
@@ -346,12 +347,13 @@ export default function AuthScreen({ onAuthSuccess }) {
       }
     } catch (err) {
       console.error(err);
-      let msg = "Ein Fehler ist aufgetreten";
+      let msg = "Ein Fehler ist aufgetreten: " + (err.message || "");
       if (err.code === "auth/user-not-found") msg = "Benutzer nicht gefunden";
       else if (err.code === "auth/wrong-password") msg = "Falsches Passwort";
       else if (err.code === "auth/email-already-in-use") msg = "E-Mail wird bereits verwendet";
       else if (err.code === "auth/weak-password") msg = "Passwort ist zu schwach";
       else if (err.code === "auth/invalid-credential") msg = "Ungültige Anmeldedaten";
+      else if (err.code === "auth/operation-not-allowed") msg = "Anmeldemethode in Firebase nicht aktiviert.";
       setErrors({ server: msg });
     } finally {
       setLoading(false);
@@ -360,6 +362,7 @@ export default function AuthScreen({ onAuthSuccess }) {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setErrors({});
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -367,7 +370,29 @@ export default function AuthScreen({ onAuthSuccess }) {
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
-      setErrors({ server: "Google Login fehlgeschlagen" });
+      let msg = "Google Login fehlgeschlagen: " + (err.message || "");
+      if (err.code === "auth/operation-not-allowed") msg = "Google Login ist in Firebase nicht aktiviert.";
+      else if (err.code === "auth/popup-closed-by-user") msg = "Popup wurde geschlossen.";
+      setErrors({ server: msg });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setLoading(true);
+    setErrors({});
+    try {
+      const provider = new OAuthProvider('apple.com');
+      const result = await signInWithPopup(auth, provider);
+      setHunterName(result.user.displayName || "Hunter");
+      setShowSuccess(true);
+    } catch (err) {
+      console.error(err);
+      let msg = "Apple Login fehlgeschlagen: " + (err.message || "");
+      if (err.code === "auth/operation-not-allowed") msg = "Apple Login ist in Firebase nicht aktiviert.";
+      else if (err.code === "auth/popup-closed-by-user") msg = "Popup wurde geschlossen.";
+      setErrors({ server: msg });
     } finally {
       setLoading(false);
     }
@@ -486,7 +511,7 @@ export default function AuthScreen({ onAuthSuccess }) {
               </div>
               <div style={{ display:"flex", gap:12 }}>
                 <SocialButton icon="🔷" label="Google" onClick={handleGoogleLogin} delay={0.35} />
-                <SocialButton icon="🍎" label="Apple" onClick={() => console.log("Apple login - not active")} delay={0.4} />
+                <SocialButton icon="🍎" label="Apple" onClick={handleAppleLogin} delay={0.4} />
               </div>
             </>
           )}
