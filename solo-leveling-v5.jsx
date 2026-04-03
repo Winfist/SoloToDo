@@ -2661,7 +2661,7 @@ function SystemCLI({ message, onClose }) {
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────
-export default function App({ initialHunterName }) {
+export default function App({ initialHunterName, onLogout }) {
   const [state,setState]=useState(null);
   const [loading,setLoading]=useState(true);
   const [view,setView]=useState("dashboard");
@@ -3466,6 +3466,28 @@ export default function App({ initialHunterName }) {
               {isMusicPlaying ? "🔊" : "🔈"}
             </button>
           </div>
+          <button onClick={onLogout} style={{ 
+            position: 'absolute', 
+            top: 52, 
+            right: 16, 
+            zIndex: 9999, 
+            background: 'rgba(239,68,68,0.08)', 
+            border: '1px solid #ef444433', 
+            color: '#ef4444', 
+            fontSize: '8px', 
+            padding: '4px 8px', 
+            borderRadius: '4px', 
+            fontFamily: 'monospace', 
+            cursor: 'pointer', 
+            backdropFilter: "blur(4px)",
+            letterSpacing: "1px",
+            transition: "all 0.3s"
+          }}
+          onMouseEnter={(e) => { e.target.style.background = 'rgba(239,68,68,0.2)'; e.target.style.borderColor = '#ef4444'; }}
+          onMouseLeave={(e) => { e.target.style.background = 'rgba(239,68,68,0.08)'; e.target.style.borderColor = '#ef444433'; }}
+          >
+            EXIT SYSTEM
+          </button>
         </div>
       </header>
 
