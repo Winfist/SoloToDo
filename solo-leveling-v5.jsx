@@ -1160,7 +1160,36 @@ function ParticleField({ theme }) {
   return <canvas ref={ref} style={{position:"fixed",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0,opacity:0.7}}/>;
 }
 
+
+// ─── MUSIC PLAYER ─────────────────────────────────────────────
+function MusicPlayer({ play, volume = 0.3 }) {
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+      if (play) {
+        audioRef.current.play().catch(err => {
+          console.warn("Autoplay blocked or audio error:", err);
+        });
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [play, volume]);
+
+  return (
+    <audio
+      ref={audioRef}
+      src="/Solo Grind.mp3"
+      loop
+      style={{ display: "none" }}
+    />
+  );
+}
+
 // ─── SYSTEM NOTIFICATION ──────────────────────────────────────
+
 function SystemNotification({ message, type="info", onDone }) {
   const [exiting,setExiting]=useState(false);
   useEffect(()=>{const t1=setTimeout(()=>setExiting(true),2400);const t2=setTimeout(onDone,2800);return()=>{clearTimeout(t1);clearTimeout(t2);};},[onDone]);
@@ -2511,6 +2540,7 @@ export default function App({ initialHunterName }) {
   const [qCat,setQCat]=useState("agi");
   const [qType,setQType]=useState("side");
   const [showHiddenQuestModal,setShowHiddenQuestModal]=useState(null); // hq object
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
   useEffect(()=>{
     loadState().then(s=>{
@@ -3015,6 +3045,7 @@ export default function App({ initialHunterName }) {
       <div style={{position:"fixed",top:0,left:"50%",transform:"translateX(-50%)",width:"120%",height:"50%",background:`radial-gradient(ellipse at 50% 0%,${theme.primary}12,transparent 70%)`,pointerEvents:"none",zIndex:0}}/>
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"120%",height:"40%",background:`radial-gradient(ellipse at 50% 100%,${theme.secondary}0a,transparent 70%)`,pointerEvents:"none",zIndex:0}}/>
       <ParticleField theme={theme}/>
+      <MusicPlayer play={isMusicPlaying} />
       {penaltyActive&&<div style={{position:"fixed",inset:0,zIndex:1,pointerEvents:"none",border:"2px solid #ef444422",animation:"penaltyPulse 2s infinite"}}/>}
       {notifications.map(n=><SystemNotification key={n.id} message={n.msg} type={n.type} onDone={()=>removeNotif(n.id)}/>)}
       {achQueue.slice(0,1).map(a=><AchievementToast key={a.id} achievement={a} onDone={()=>setAchQueue(prev=>prev.slice(1))}/>)}
@@ -3075,6 +3106,20 @@ export default function App({ initialHunterName }) {
               <span style={{animation:state.streak>=3?"pulse 1.5s infinite":"none",fontSize:11}}>🔥</span>
               <span style={{fontWeight:700}}>{state.streak}</span>
             </div>
+            <button 
+              onClick={() => setIsMusicPlaying(!isMusicPlaying)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 32, height: 32, borderRadius: 8,
+                background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
+                border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
+                color: isMusicPlaying ? theme.accent : "#475569",
+                cursor: "pointer", fontSize: 16, transition: "all 0.3s"
+              }}
+              title={isMusicPlaying ? "Musik Stoppen" : "Musik Abspielen"}
+            >
+              {isMusicPlaying ? "🔊" : "🔈"}
+            </button>
           </div>
         </div>
       </header>
