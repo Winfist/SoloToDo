@@ -1,7 +1,10 @@
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { JOBS } from "./data/jobs";
 import { JOB_QUESTS } from "./data/jobQuests";
 import { QUEST_POOL } from "./data/questPool";
 import StoryView, { STORY_ARCS } from "./StoryView.jsx";
+import { db, auth } from "./firebase";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 
 // ─── RANKS ────────────────────────────────────────────────────
 const RANKS = [
@@ -1034,55 +1037,86 @@ function hoursUntilMidnight() {
 // ─── DATA MIGRATION ───────────────────────────────────────────
 function migrateState(oldState) {
   if (!oldState) return null;
-  // V4 → V5: convert old shadows array to shadowArmy
+  
+  // Start with DEFAULT_STATE and merge top-level properties
+  const s = { ...DEFAULT_STATE, ...oldState };
+  
+  // Deep-merge critical nested objects
+  s.stats = { ...DEFAULT_STATE.stats, ...(oldState.stats || {}) };
+  s.shadowArmy = { ...DEFAULT_STATE.shadowArmy, ...(oldState.shadowArmy || {}) };
+  s.jobs = { ...DEFAULT_STATE.jobs, ...(oldState.jobs || {}) };
+  if (oldState.jobs) {
+    s.jobs.levels = { ...DEFAULT_STATE.jobs.levels, ...(oldState.jobs.levels || {}) };
+    s.jobs.xp = { ...DEFAULT_STATE.jobs.xp, ...(oldState.jobs.xp || {}) };
+    s.jobs.activeAbilityCooldowns = { ...DEFAULT_STATE.jobs.activeAbilityCooldowns, ...(oldState.jobs.activeAbilityCooldowns || {}) };
+  }
+  s.equipment = { ...DEFAULT_STATE.equipment, ...(oldState.equipment || {}) };
+  if (oldState.equipment) {
+    s.equipment.slots = { ...DEFAULT_STATE.equipment.slots, ...(oldState.equipment.slots || {}) };
+  }
+  s.achievements = { ...DEFAULT_STATE.achievements, ...(oldState.achievements || {}) };
+  s.hiddenQuests = { ...DEFAULT_STATE.hiddenQuests, ...(oldState.hiddenQuests || {}) };
+  s.story = { ...DEFAULT_STATE.story, ...(oldState.story || {}) };
+
+  // V4 → V5 Legacy: convert shadows to shadowArmy
   if (!oldState.shadowArmy && oldState.shadows) {
-    const newShadows = (oldState.shadows||[]).map(s => ({
-      id: s.id || genId(),
-      name: s.name,
-      originalSource: s.name,
-      sourceDate: s.date || getToday(),
+    const newShadows = (oldState.shadows || []).map(sh => ({
+      id: sh.id || genId(),
+      name: sh.name,
+      originalSource: sh.name,
+      sourceDate: sh.date || getToday(),
       class: "soldier", tier: 1, isNamed: false,
       level: 1, xp: 0, xpToNext: calcShadowXpToNext(1),
-      stats: { power:10, speed:10, loyalty:10, presence:5 },
+      stats: { power: 10, speed: 10, loyalty: 10, presence: 5 },
       abilities: [], isDeployed: false, deploymentSlot: null,
       evolutionStage: 1, glowColor: "#64748b",
       summonsCount: 1, dungeonsCleared: 0, totalXpGenerated: 0,
     }));
-    oldState.shadowArmy = { shadows: newShadows, capacity: 20, formations: { vanguard:[], core:[], rearguard:[] }, totalShadowXp: 0 };
-    delete oldState.shadows;
+    s.shadowArmy = { shadows: newShadows, capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 };
   }
-  if (!oldState.shadowArmy) {
-    oldState.shadowArmy = { shadows:[], capacity:20, formations:{ vanguard:[], core:[], rearguard:[] }, totalShadowXp:0 };
-  }
-  if (!oldState.jobs) {
-    oldState.jobs = {
-      current: null,
-      levels: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
-      xp: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
-      activeAbilityCooldowns: {}
-    };
-  }
-  if (!oldState.story) {
-    oldState.story = {
-      completedChapters: [],
-      completedArcs: [],
-      totalStoryXp: 0,
-    };
-  }
-  return oldState;
+  
+  return s;
 }
 
 // ─── STORAGE ──────────────────────────────────────────────────
 async function loadState() {
   try {
-    // Try v5 first, then v4
+    // 1. Try Firestore if logged in
+    const user = auth.currentUser;
+    if (user) {
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        console.log("System: Cloud-Daten geladen.");
+        return migrateState(docSnap.data());
+      }
+    }
+    // 2. Fallback to LocalStorage
     let r = await window.storage.get("sl-todo-v5");
     if (!r) r = await window.storage.get("sl-todo-v4");
     return r ? migrateState(JSON.parse(r.value)) : null;
-  } catch { return null; }
+  } catch (e) { 
+    console.error("System: Ladefehler:", e);
+    return null; 
+  }
 }
+
 async function saveState(s) {
-  try { await window.storage.set("sl-todo-v5", JSON.stringify(s)); } catch(e) { console.error(e); }
+  try {
+    // 1. Save to LocalStorage (Always)
+    await window.storage.set("sl-todo-v5", JSON.stringify(s));
+    
+    // 2. Save to Cloud if logged in
+    const user = auth.currentUser;
+    if (user && s) {
+      const docRef = doc(db, "users", user.uid);
+      // We don't want to save temporary UI state like _abilityActivated
+      const { _abilityActivated, _jobLevelUp, ...persistenceState } = s;
+      await setDoc(docRef, persistenceState, { merge: true });
+    }
+  } catch(e) { 
+    console.error("System: Speicherfehler:", e); 
+  }
 }
 
 // ─── CSS ──────────────────────────────────────────────────────
@@ -2623,98 +2657,144 @@ export default function App({ initialHunterName }) {
   const [showHiddenQuestModal,setShowHiddenQuestModal]=useState(null); // hq object
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
+  const notify=useCallback((msg,type="info")=>setNotifications(prev=>[...prev,{id:genId(),msg,type}]),[]);
+  const persist=useCallback(s=>{
+    setState(s);
+    saveState(s);
+  },[]);
+
+  // Real-time Cloud Sync
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    console.log("System: Cloud-Synchronisierung aktiviert für", user.uid);
+    const docRef = doc(db, "users", user.uid);
+    
+    // Listen for remote changes (e.g., from other devices)
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const cloudData = migrateState(docSnap.data());
+        
+        // Only update local state if cloud data has more XP or different level
+        setState(prev => {
+          if (!prev) return cloudData;
+          
+          const isNewer = (cloudData.totalXpEarned || 0) > (prev.totalXpEarned || 0) || 
+                          (cloudData.level || 0) > (prev.level || 0);
+          
+          if (isNewer) {
+            console.log("System: Cloud-Daten synchronisiert.");
+            notify("Online-Daten synchronisiert!", "success");
+            return cloudData;
+          }
+          return prev;
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [notify]); 
+  const triggerSystemMessage = useCallback((title, lines, onComplete) => {
+    setSystemMessage({ title, lines, onComplete });
+  }, []);
+
   useEffect(()=>{
+    console.log("System Initialisierung gestartet...");
     loadState().then(s=>{
-      if(s){
-        const today=getToday();
-        if(s.lastActiveDate&&s.lastActiveDate!==today){
-          const diff=Math.floor((new Date(today)-new Date(s.lastActiveDate))/86400000);
-          if(diff>1){
-            s.streak=0;
-            const hadDailies=s.quests?.some(q=>q.type==="daily"&&!q.completed);
-            if(diff>=2&&hadDailies&&!s.penaltyZone?.active){
-              s.penaltyZone={active:true,redemptionLeft:3,questsCompletedInPenalty:0};
+      try {
+        if(s){
+          const today=getToday();
+          if(s.lastActiveDate&&s.lastActiveDate!==today){
+            const diff=Math.floor((new Date(today)-new Date(s.lastActiveDate))/86400000);
+            if(diff>1){
+              s.streak=0;
+              const hadDailies=s.quests?.some(q=>q.type==="daily"&&!q.completed);
+              if(diff>=2&&hadDailies&&!s.penaltyZone?.active){
+                s.penaltyZone={active:true,redemptionLeft:3,questsCompletedInPenalty:0};
+              }
+            }
+            // Reset existing dailies and add new system quests
+            s.quests=s.quests?.map(q=>q.type==="daily"&&!q.isSystem?{...q,completed:false}:q)||[];
+            // Filter out old system quests and add new ones
+            s.quests = (s.quests || []).filter(q => !q.isSystem);
+            const newSysQuests = generateDailySystemQuests(3);
+            s.quests = [...s.quests, ...newSysQuests];
+            
+            // Reset emergency quest daily
+            s.emergencyQuest=null;
+            s.emergencyDone=false;
+            s.emergencyFailed=false;
+            // Reset weekly quests on Monday
+            const dayOfWeek=new Date().getDay();
+            if(dayOfWeek===1){
+              s.quests=(s.quests || []).filter(q=>q.type!=="weekly");
+              s.weeklyQuestReset=today;
             }
           }
-          // Reset existing dailies and add new system quests
-          s.quests=s.quests?.map(q=>q.type==="daily"&&!q.isSystem?{...q,completed:false}:q)||[];
-          // Filter out old system quests and add new ones
-          s.quests = s.quests.filter(q => !q.isSystem);
-          const newSysQuests = generateDailySystemQuests(3);
-          s.quests = [...s.quests, ...newSysQuests];
-          
-          // Reset emergency quest daily
-          s.emergencyQuest=null;
-          s.emergencyDone=false;
-          s.emergencyFailed=false;
-          // Reset weekly quests on Monday
-          const dayOfWeek=new Date().getDay();
-          if(dayOfWeek===1){
-            s.quests=s.quests?.filter(q=>q.type!=="weekly")||[];
-            s.weeklyQuestReset=today;
+          s.lastActiveDate=today;
+          // Generate emergency quest for today if missing
+          if(!s.emergencyQuest||!s.emergencyQuest.id.endsWith(today)){
+            s.emergencyQuest=generateEmergencyQuest(s.level||1);
+            s.emergencyDone=false;
+            s.emergencyFailed=false;
+            // Trigger System Message for Emergency Quest
+            setTimeout(() => {
+              triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
+                "ACHTUNG: Eine temporale Anomalie wurde registriert.",
+                `Mission: ${s.emergencyQuest.title}`,
+                "Die Belohnungen für diese Aufgabe wurden verdoppelt.",
+                "Versagen wird nicht toleriert."
+              ]);
+            }, 2500);
           }
-        }
-        s.lastActiveDate=today;
-        // Generate emergency quest for today if missing
-        if(!s.emergencyQuest||!s.emergencyQuest.id.endsWith(today)){
-          s.emergencyQuest=generateEmergencyQuest(s.level||1);
-          s.emergencyDone=false;
-          s.emergencyFailed=false;
-          // Trigger System Message for Emergency Quest
-          setTimeout(() => {
-            triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
-              "ACHTUNG: Eine temporale Anomalie wurde registriert.",
-              `Mission: ${s.emergencyQuest.title}`,
-              "Die Belohnungen für diese Aufgabe wurden verdoppelt.",
-              "Versagen wird nicht toleriert."
-            ]);
-          }, 2500);
-        }
-        if(!s.hiddenQuests) s.hiddenQuests={discovered:[],completed:[]};
-        if(!s.lastDungeonRefresh||s.lastDungeonRefresh!==today){
-          s.dungeons=generateDungeons(getRank(s.level).name);
-          s.lastDungeonRefresh=today;
-          s.todayModifier=getDailyModifier();
+          if(!s.hiddenQuests) s.hiddenQuests={discovered:[],completed:[]};
+          if(!s.lastDungeonRefresh||s.lastDungeonRefresh!==today){
+            s.dungeons=generateDungeons(getRank(s.level || 1).name);
+            s.lastDungeonRefresh=today;
+            s.todayModifier=getDailyModifier();
+            
+            // Trigger System Message for new day
+            setTimeout(() => {
+              triggerSystemMessage("SYSTEM REKALIBRIERUNG", [
+                `Willkommen zurück, Hunter ${s.hunterName || "Unbekannt"}.`,
+                "Ein neuer Tag ist angebrochen. Das System hat neue Aufgaben für Sie vorbereitet.",
+                "3 Tägliche Quests wurden Ihrem Logbuch hinzugefügt.",
+                "Die Dungeons wurden zurückgesetzt. Viel Erfolg beim Grind."
+              ]);
+            }, 1000);
+          }
+
+          // --- STATS INITIALIZATION FOR OLD USERS ---
+          if (s.statPoints === undefined) s.statPoints = 0;
+
+          // --- AUTH INTEGRATION ---
+          if(!s.hunterName && initialHunterName) {
+            s.hunterName = initialHunterName;
+          }
           
-          // Trigger System Message for new day
-          setTimeout(() => {
-            triggerSystemMessage("SYSTEM REKALIBRIERUNG", [
-              `Willkommen zurück, Hunter ${s.hunterName}.`,
-              "Ein neuer Tag ist angebrochen. Das System hat neue Aufgaben für Sie vorbereitet.",
-              "3 Tägliche Quests wurden Ihrem Logbuch hinzugefügt.",
-              "Die Dungeons wurden zurückgesetzt. Viel Erfolg beim Grind."
-            ]);
-          }, 1000);
-        }
-
-        // --- AUTH INTEGRATION ---
-        if(!s.hunterName && initialHunterName) {
-          s.hunterName = initialHunterName;
-        }
-        
-        setState(s);
-        if(!s.hunterName) setShowSetup(true);
-      } else {
-        const startState = { ...DEFAULT_STATE };
-        if(initialHunterName) {
-          startState.hunterName = initialHunterName;
-          setShowSetup(false);
+          setState(s);
+          if(!s.hunterName) setShowSetup(true);
         } else {
-          setShowSetup(true);
+          const startState = { ...DEFAULT_STATE };
+          if(initialHunterName) {
+            startState.hunterName = initialHunterName;
+            setShowSetup(false);
+          } else {
+            setShowSetup(true);
+          }
+          setState(startState);
         }
-        setState(startState);
+      } catch (err) {
+        console.error("Fehler bei der System-Initialisierung:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
-  },[initialHunterName]);
+  },[initialHunterName, triggerSystemMessage]);
 
-  const persist=useCallback(s=>{setState(s);saveState(s);},[]);
-
-  const theme=useMemo(()=>THEMES[state?.selectedTheme||"default"],[state?.selectedTheme]);
-  const modifier=state?.todayModifier||getDailyModifier();
 
   const removeNotif=useCallback(id=>setNotifications(prev=>prev.filter(n=>n.id!==id)),[]);
-  const notify=useCallback((msg,type="info")=>setNotifications(prev=>[...prev,{id:genId(),msg,type}]),[]);
 
   const processAchievements=useCallback(nextState=>{
     const newAchs=checkAchievements(nextState);
@@ -3165,12 +3245,24 @@ export default function App({ initialHunterName }) {
     notify(`${CATEGORIES.find(c => c.key === statKey)?.label} erhöht!`, "success");
   }, [state, persist, notify]);
 
-  const triggerSystemMessage = useCallback((title, lines, onComplete) => {
-    setSystemMessage({ title, lines, onComplete });
-  }, []);
+
 
   const finishSetup=name=>{
-    const s={...DEFAULT_STATE,hunterName:name||"Hunter",lastActiveDate:getToday(),dungeons:generateDungeons("E"),lastDungeonRefresh:getToday(),achievements:{unlocked:[],notified:[]},skills:{unlocked:[]},equipment:{slots:{weapon:null,armor:null,ring1:null,ring2:null},inventory:[]},penaltyZone:{active:false,redemptionLeft:0,questsCompletedInPenalty:0},todayModifier:getDailyModifier(),emergencyQuest:generateEmergencyQuest(1),emergencyDone:false,emergencyFailed:false,hiddenQuests:{discovered:[],completed:[]},
+    const s={...DEFAULT_STATE,
+      hunterName:name||"Hunter",
+      lastActiveDate:getToday(),
+      quests: generateDailySystemQuests(3),
+      dungeons:generateDungeons("E"),
+      lastDungeonRefresh:getToday(),
+      achievements:{unlocked:[],notified:[]},
+      skills:{unlocked:[]},
+      equipment:{slots:{weapon:null,armor:null,ring1:null,ring2:null},inventory:[]},
+      penaltyZone:{active:false,redemptionLeft:0,questsCompletedInPenalty:0},
+      todayModifier:getDailyModifier(),
+      emergencyQuest:generateEmergencyQuest(1),
+      emergencyDone:false,
+      emergencyFailed:false,
+      hiddenQuests:{discovered:[],completed:[]},
       jobs: {
         current: null,
         levels: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
@@ -3180,16 +3272,19 @@ export default function App({ initialHunterName }) {
     persist(s); setShowSetup(false);
   };
 
+  const theme=useMemo(()=>THEMES[state?.selectedTheme||"default"],[state?.selectedTheme]);
+  const modifier=state?.todayModifier||getDailyModifier();
+
   if(loading) return <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#080810"}}><div style={{textAlign:"center"}}><div style={{fontSize:40,animation:"float 2s ease-in-out infinite"}}>⚔️</div><div style={{marginTop:12,fontSize:12,letterSpacing:4,color:"#4f6ef7",fontFamily:"'JetBrains Mono',monospace"}}>LOADING</div></div></div>;
   if(showSetup) return <SetupScreen onFinish={finishSetup} theme={theme}/>;
 
-  const rank=getRank(state.level);
-  const xpNeeded=getXpForLevel(state.level);
-  const xpPercent=Math.min((state.xp/xpNeeded)*100,100);
-  const streakBonus=Math.min(state.streak,5)*10;
+  const rank=getRank(state?.level || 1);
+  const xpNeeded=getXpForLevel(state?.level || 1);
+  const xpPercent=Math.min(((state?.xp || 0)/xpNeeded)*100,100);
+  const streakBonus=Math.min(state?.streak || 0,5)*10;
   const shopUnlocked=getRankIndex(rank.name)>=getRankIndex("D");
-  const activeDungeons=(state.dungeons||[]).filter(d=>!d.cleared&&new Date(d.expiresAt)>new Date());
-  const filteredQuests=(state.quests||[]).filter(q=>{
+  const activeDungeons=(state?.dungeons||[]).filter(d=>!d.cleared&&new Date(d.expiresAt)>new Date());
+  const filteredQuests=(state?.quests||[]).filter(q=>{
     if(q.completed) return false;
     if(questFilter==="daily") return q.type==="daily";
     if(questFilter==="side") return q.type==="side";
@@ -3198,13 +3293,13 @@ export default function App({ initialHunterName }) {
     if(questFilter==="hidden") return q.type==="hidden";
     return true; // "all"
   });
-  const hiddenQuestCount=(state.quests||[]).filter(q=>q.type==="hidden"&&!q.completed).length;
-  const equipBonuses=getEquipBonuses(state.equipment);
-  const unlockedSkills=checkSkillUnlocks(state.stats);
-  const powerLevel=calcPowerLevel(state.stats,state.level);
-  const achUnlocked=state.achievements?.unlocked||[];
-  const penaltyActive=state.penaltyZone?.active;
-  const shadowArmy=state.shadowArmy||{shadows:[],capacity:20};
+  const hiddenQuestCount=(state?.quests||[]).filter(q=>q.type==="hidden"&&!q.completed).length;
+  const equipBonuses=getEquipBonuses(state?.equipment);
+  const unlockedSkills=checkSkillUnlocks(state?.stats || {});
+  const powerLevel=calcPowerLevel(state?.stats || {},state?.level || 1);
+  const achUnlocked=state?.achievements?.unlocked||[];
+  const penaltyActive=state?.penaltyZone?.active;
+  const shadowArmy=state?.shadowArmy||{shadows:[],capacity:20};
   const jobBonuses=getJobBonuses(state);
   const formationBonus=calcFormationBonus(shadowArmy, jobBonuses.allShadowsActive);
   const namedShadows=shadowArmy.shadows.filter(s=>s.isNamed);
