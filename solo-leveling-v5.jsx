@@ -1040,6 +1040,8 @@ function migrateState(oldState) {
   
   // Start with DEFAULT_STATE and merge top-level properties
   const s = { ...DEFAULT_STATE, ...oldState };
+  s.level = Math.max(1, s.level || 1);
+  s.xp = s.xp || 0;
   
   // Deep-merge critical nested objects
   s.stats = { ...DEFAULT_STATE.stats, ...(oldState.stats || {}) };
@@ -1094,7 +1096,14 @@ async function loadState() {
     // 2. Fallback to LocalStorage
     let r = await window.storage.get("sl-todo-v5");
     if (!r) r = await window.storage.get("sl-todo-v4");
-    return r ? migrateState(JSON.parse(r.value)) : null;
+    if (r) {
+      const s = migrateState(JSON.parse(r.value));
+      if (s && user) {
+        saveState(s);
+      }
+      return s;
+    }
+    return null;
   } catch (e) { 
     console.error("System: Ladefehler:", e);
     return null; 
@@ -1112,7 +1121,8 @@ async function saveState(s) {
       const docRef = doc(db, "users", user.uid);
       // We don't want to save temporary UI state like _abilityActivated
       const { _abilityActivated, _jobLevelUp, ...persistenceState } = s;
-      await setDoc(docRef, persistenceState, { merge: true });
+      const cleanState = JSON.parse(JSON.stringify(persistenceState));
+      await setDoc(docRef, cleanState, { merge: true });
     }
   } catch(e) { 
     console.error("System: Speicherfehler:", e); 
@@ -2784,6 +2794,7 @@ export default function App({ initialHunterName }) {
             setShowSetup(true);
           }
           setState(startState);
+          setTimeout(() => saveState(startState), 500);
         }
       } catch (err) {
         console.error("Fehler bei der System-Initialisierung:", err);
