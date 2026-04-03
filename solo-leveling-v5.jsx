@@ -1402,6 +1402,15 @@ function AriseCinematic({ shadow, onClose }) {
         </div>
       )}
       <div style={{position:"absolute",bottom:40,fontSize:10,color:"#334155",fontFamily:"'JetBrains Mono',monospace",letterSpacing:3}}>TAP TO SKIP</div>
+      {/* Version Marker */}
+      <div style={{
+        marginTop: "auto", padding: "10px 0", textAlign: "center",
+        borderTop: "1px solid rgba(255,255,255,0.03)",
+        fontSize: "10px", color: "rgba(255,255,255,0.15)",
+        fontFamily: "'JetBrains Mono', monospace", letterSpacing: 3
+      }}>
+        ARISE SYSTEM v1.3.6 (FORCED UPDATE)
+      </div>
     </div>
   );
 }
@@ -4084,103 +4093,179 @@ export default function App({ initialHunterName, onLogout }) {
 
       {/* QUEST CREATE MODAL */}
       {showCreate&&(
-        <div onClick={()=>setShowCreate(false)} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(2,2,10,0.85)",backdropFilter:"blur(12px)",display:"flex",alignItems:"flex-end",animation:"fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)"}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,margin:"0 auto",background:`linear-gradient(180deg,${theme.card},rgba(6,6,16,0.99))` ,border:`1px solid ${theme.primary}33`,borderTop:`1px solid ${theme.primary}88`,borderRadius:"24px 24px 0 0",padding:"28px 24px 36px",animation:"slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",boxShadow:`0 -10px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1), 0 -2px 16px ${theme.glow}`}}>
-            <div style={{width:48,height:4,background:`linear-gradient(90deg,transparent,${theme.primary}88,transparent)`,borderRadius:2,margin:"0 auto 24px",boxShadow:`0 0 8px ${theme.primary}44`}}/>
-            <div style={{fontSize:11,letterSpacing:4,color:theme.accent,fontFamily:"'JetBrains Mono',monospace",marginBottom:16,textShadow:`0 0 12px ${theme.glow}`}}>SYSTEM: NEUE QUEST</div>
-            <input value={qTitle} onChange={e=>setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..." autoFocus
-              style={{width:"100%",padding:"16px 20px",borderRadius:14,fontSize:15,background:"rgba(4,4,12,0.9)",border:`1px solid ${theme.primary}44`,color:"#fff",outline:"none",marginBottom:18,fontFamily:"'Outfit',sans-serif",letterSpacing:0.5,transition:"all 0.3s",boxShadow:`inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4)`}}
-              onFocus={e => { e.target.style.borderColor=theme.primary; e.target.style.boxShadow=`inset 0 2px 10px rgba(0,0,0,0.5), 0 0 20px ${theme.glow}, 0 0 0 1px ${theme.primary}`; }}
-              onBlur={e => { e.target.style.borderColor=`${theme.primary}44`; e.target.style.boxShadow=`inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4)`; }}
-              onKeyDown={e=>e.key==="Enter"&&qTitle.trim()&&createQuest()}/>
+        <div onClick={()=>setShowCreate(false)} style={{position:"fixed",inset:0,zIndex:400,background:"rgba(2,2,10,0.9)",backdropFilter:"blur(16px)",display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)",padding:"16px 12px"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,maxHeight:"92vh",background:`linear-gradient(180deg,${theme.card},rgba(6,6,16,0.99))`,border:`1px solid ${theme.primary}44`,borderTop:`2px solid ${theme.primary}`,borderRadius:24,display:"flex",flexDirection:"column",animation:"slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",boxShadow:`0 24px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 40px ${theme.glow}`}}>
+            {/* Header */}
+            <div style={{padding:"20px 24px 16px",flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+                <div>
+                  <div style={{fontSize:10,letterSpacing:4,color:theme.primary,fontFamily:"'JetBrains Mono',monospace",marginBottom:4,textShadow:`0 0 12px ${theme.glow}`}}>SYSTEM: NEUE QUEST</div>
+                  <div style={{fontSize:18,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif",letterSpacing:2}}>Quest erstellen</div>
+                </div>
+                <button onClick={()=>setShowCreate(false)} style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"#64748b",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",cursor:"pointer"}}
+                  onMouseEnter={e=>{e.currentTarget.style.background="rgba(239,68,68,0.15)";e.currentTarget.style.color="#ef4444";e.currentTarget.style.borderColor="#ef444444";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color="#64748b";e.currentTarget.style.borderColor="rgba(255,255,255,0.1)";}}>&#x2715;</button>
+              </div>
+              <div style={{height:1,background:`linear-gradient(90deg,transparent,${theme.primary}55,transparent)`}}/>
+            </div>
 
-            {/* Quest Type Selection */}
-            <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:10}}>QUEST TYP</label>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
-              {[
-                {key:"side",label:"📋 Side",color:"#a78bfa",desc:"Keine limit"},
-                {key:"daily",label:"📅 Daily",color:"#22d3ee",desc:"Reset täglich"},
-                {key:"weekly",label:"📆 Weekly",color:"#8b5cf6",desc:"2x XP & Gold"},
-                {key:"chained",label:"⛓️ Kette",color:"#f59e0b",desc:"3er Kette +25%"},
-              ].map(t=>{
-                const active=qType===t.key;
+            {/* Scrollable Content */}
+            <div style={{overflowY:"auto",padding:"0 24px",flex:1}}>
+
+              {/* Quest Title */}
+              <div style={{marginTop:16,marginBottom:18}}>
+                <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:8}}>QUEST TITEL</label>
+                <input value={qTitle} onChange={e=>setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..." autoFocus
+                  style={{width:"100%",padding:"14px 18px",borderRadius:14,fontSize:15,background:"rgba(4,4,12,0.9)",border:`1px solid ${theme.primary}44`,color:"#fff",outline:"none",fontFamily:"'Outfit',sans-serif",letterSpacing:0.5,transition:"all 0.3s",boxShadow:`inset 0 2px 10px rgba(0,0,0,0.5)`,boxSizing:"border-box"}}
+                  onFocus={e=>{e.target.style.borderColor=theme.primary;e.target.style.boxShadow=`inset 0 2px 10px rgba(0,0,0,0.5), 0 0 20px ${theme.glow}, 0 0 0 1px ${theme.primary}`;e.target.style.outline="none";}}
+                  onBlur={e=>{e.target.style.borderColor=`${theme.primary}44`;e.target.style.boxShadow=`inset 0 2px 10px rgba(0,0,0,0.5)`;e.target.style.outline="none";}}
+                  onKeyDown={e=>e.key==="Enter"&&qTitle.trim()&&createQuest()}/>
+              </div>
+
+              {/* Quest Type */}
+              <div style={{marginBottom:18}}>
+                <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:10}}>QUEST TYP</label>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {[
+                    {key:"side",   icon:"📋",label:"Side Quest",   color:"#a78bfa",desc:"Kein Zeitlimit"},
+                    {key:"daily",  icon:"📅",label:"Daily Quest",  color:"#22d3ee",desc:"Täglich zurückgesetzt"},
+                    {key:"weekly", icon:"📆",label:"Weekly Quest", color:"#8b5cf6",desc:"2× XP & Gold"},
+                    {key:"chained",icon:"⛓️",label:"Chained Quest",color:"#f59e0b",desc:"3 Schritte · +25% je"},
+                  ].map(t=>{
+                    const active=qType===t.key;
+                    return(
+                      <button key={t.key} onClick={()=>setQType(t.key)} style={{
+                        padding:"11px 12px",borderRadius:14,fontSize:12,fontWeight:700,
+                        background:active?`linear-gradient(135deg,${t.color}22,${t.color}0d)`:"rgba(12,12,26,0.6)",
+                        color:active?t.color:"#475569",
+                        border:`1px solid ${active?t.color+"55":"#1e2940"}`,
+                        transition:"all 0.25s",fontFamily:"'Outfit',sans-serif",
+                        display:"flex",flexDirection:"column",alignItems:"flex-start",gap:3,
+                        boxShadow:active?`0 4px 16px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.05)`:"none",
+                        cursor:"pointer",textAlign:"left"
+                      }}
+                      onMouseEnter={e=>{if(!active){e.currentTarget.style.borderColor=t.color+"33";e.currentTarget.style.color=t.color+"cc";}}}
+                      onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor="#1e2940";e.currentTarget.style.color="#475569";}}}
+                      >
+                        <span style={{fontSize:13}}>{t.icon} {t.label}</span>
+                        <span style={{fontSize:9,opacity:active?0.8:0.45,fontWeight:400,fontFamily:"'JetBrains Mono',monospace"}}>{t.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Difficulty */}
+              <div style={{marginBottom:18}}>
+                <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:10}}>SCHWIERIGKEIT</label>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
+                  {DIFFICULTIES.map(d=>{
+                    const active=qDiff===d.key;
+                    const typeCfg=QUEST_TYPES_CONFIG[qType]||QUEST_TYPES_CONFIG.side;
+                    const xpVal=Math.round(d.xp*(typeCfg.xpMult||1));
+                    return(
+                      <button key={d.key} onClick={()=>setQDiff(d.key)} style={{
+                        padding:"12px 4px",borderRadius:14,fontSize:13,
+                        background:active?`linear-gradient(135deg,${d.color}22,${d.color}0d)`:"rgba(12,12,26,0.6)",
+                        color:active?d.color:"#475569",
+                        border:`1px solid ${active?d.color+"55":"#1e2940"}`,
+                        transition:"all 0.25s",display:"flex",flexDirection:"column",alignItems:"center",gap:3,
+                        boxShadow:active?`0 4px 12px ${d.color}33, inset 0 1px 0 rgba(255,255,255,0.05)`:"none",
+                        cursor:"pointer"
+                      }}
+                      onMouseEnter={e=>{if(!active){e.currentTarget.style.borderColor=d.color+"44";e.currentTarget.style.color=d.color+"cc";}}}
+                      onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor="#1e2940";e.currentTarget.style.color="#475569";}}}
+                      >
+                        <span style={{fontSize:18,lineHeight:1}}>{d.icon}</span>
+                        <span style={{fontSize:10,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",letterSpacing:0.5}}>{d.label.toUpperCase()}</span>
+                        <span style={{fontSize:9,opacity:0.75,fontFamily:"'JetBrains Mono',monospace"}}>+{xpVal} XP</span>
+                        <span style={{fontSize:8,opacity:0.5,fontFamily:"'JetBrains Mono',monospace"}}>{d.waitHours}h Timer</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Category */}
+              <div style={{marginBottom:18}}>
+                <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:10}}>STATS KATEGORIE</label>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                  {CATEGORIES.map(c=>{
+                    const active=qCat===c.key;
+                    return(
+                      <button key={c.key} onClick={()=>setQCat(c.key)} style={{
+                        padding:"11px 6px",borderRadius:14,fontSize:12,
+                        background:active?`linear-gradient(135deg,${c.color}22,${c.color}0d)`:"rgba(12,12,26,0.6)",
+                        color:active?c.color:"#475569",
+                        border:`1px solid ${active?c.color+"55":"#1e2940"}`,
+                        transition:"all 0.25s",display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+                        boxShadow:active?`0 4px 12px ${c.color}33, inset 0 1px 0 rgba(255,255,255,0.05)`:"none",
+                        cursor:"pointer"
+                      }}
+                      onMouseEnter={e=>{if(!active){e.currentTarget.style.borderColor=c.color+"44";e.currentTarget.style.color=c.color+"cc";}}}
+                      onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor="#1e2940";e.currentTarget.style.color="#475569";}}}
+                      >
+                        <span style={{fontSize:18,lineHeight:1}}>{c.icon}</span>
+                        <span style={{fontSize:10,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",letterSpacing:0.5}}>{c.stat}</span>
+                        <span style={{fontSize:9,opacity:active?0.8:0.4,fontFamily:"'Outfit',sans-serif",textAlign:"center",lineHeight:1.2}}>{c.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Reward Preview - always shown */}
+              {(()=>{
+                const typeCfg=QUEST_TYPES_CONFIG[qType]||QUEST_TYPES_CONFIG.side;
+                const diff=DIFFICULTIES.find(d=>d.key===qDiff);
+                const cat=CATEGORIES.find(c=>c.key===qCat);
+                const baseXp=Math.round(diff.xp*(typeCfg.xpMult||1));
+                const baseGold=Math.round(diff.gold*(typeCfg.goldMult||1));
                 return(
-                  <button key={t.key} onClick={()=>setQType(t.key)} style={{
-                    padding:"10px 14px",borderRadius:12,fontSize:12,fontWeight:700,flex:1,
-                    background:active?`linear-gradient(135deg,${t.color}22,${t.color}11)`:"rgba(15,15,30,0.5)",
-                    color:active?t.color:"#64748b",
-                    border:`1px solid ${active?t.color+"66":"#1e2940"}`,
-                    transition:"all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",fontFamily:"'JetBrains Mono',monospace",
-                    display:"flex",flexDirection:"column",alignItems:"center",gap:4,
-                    boxShadow:active?`0 4px 16px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.05)`:"none",
-                    transform:active?"translateY(-2px)":"none"
-                  }}
-                  onMouseEnter={e=>{if(!active){e.currentTarget.style.borderColor=t.color+"33";e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.color=t.color;}}}
-                  onMouseLeave={e=>{if(!active){e.currentTarget.style.borderColor="#1e2940";e.currentTarget.style.transform="none";e.currentTarget.style.color="#64748b";}}}
-                  >
-                    <span>{t.label}</span>
-                    {active&&<span style={{fontSize:9,opacity:0.8,fontWeight:500}}>{t.desc}</span>}
-                  </button>
+                  <div style={{background:"rgba(8,8,20,0.95)",borderRadius:16,padding:"14px 16px",marginBottom:16,border:`1px solid ${theme.primary}1a`,borderLeft:`3px solid ${diff.color}`,boxShadow:`inset 0 1px 0 rgba(255,255,255,0.03)`}}>
+                    <div style={{fontSize:9,letterSpacing:3,color:"#334155",fontFamily:"'JetBrains Mono',monospace",marginBottom:10}}>VORSCHAU BELOHNUNG</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr auto 1fr",gap:0,alignItems:"center"}}>
+                      <div style={{textAlign:"center"}}>
+                        <div style={{fontSize:9,color:"#334155",fontFamily:"'JetBrains Mono',monospace",marginBottom:3}}>SCHWIERIG</div>
+                        <div style={{fontSize:12,color:diff.color,fontWeight:800,fontFamily:"'JetBrains Mono',monospace"}}>{diff.icon} {diff.label}</div>
+                      </div>
+                      <div style={{width:1,height:28,background:"#1e2940",margin:"0 8px"}}/>
+                      <div style={{textAlign:"center"}}>
+                        <div style={{fontSize:9,color:"#334155",fontFamily:"'JetBrains Mono',monospace",marginBottom:3}}>BELOHNUNG</div>
+                        <div style={{fontSize:12,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",display:"flex",gap:6,justifyContent:"center"}}>
+                          <span style={{color:"#67e8f9"}}>+{baseXp} XP</span>
+                          <span style={{color:"#fbbf24"}}>+{baseGold}G</span>
+                        </div>
+                      </div>
+                      <div style={{width:1,height:28,background:"#1e2940",margin:"0 8px"}}/>
+                      <div style={{textAlign:"center"}}>
+                        <div style={{fontSize:9,color:"#334155",fontFamily:"'JetBrains Mono',monospace",marginBottom:3}}>KATEGORIE</div>
+                        <div style={{fontSize:12,color:cat.color,fontWeight:800,fontFamily:"'JetBrains Mono',monospace"}}>{cat.icon} {cat.stat}</div>
+                      </div>
+                    </div>
+                    {qDiff==="boss"&&<div style={{marginTop:10,padding:"5px 10px",background:"rgba(239,68,68,0.08)",borderRadius:8,border:"1px solid #ef444433",fontSize:10,color:"#ef4444",fontFamily:"'JetBrains Mono',monospace",textAlign:"center",animation:"pulse 2s infinite"}}>⚠ 🌑 SCHATTEN BESCHWÖRUNGSCHANCE</div>}
+                    {qType==="chained"&&<div style={{marginTop:6,padding:"5px 10px",background:"rgba(245,158,11,0.06)",borderRadius:8,border:"1px solid #f59e0b22",fontSize:10,color:"#f59e0b",fontFamily:"'JetBrains Mono',monospace",textAlign:"center"}}>⛓️ 3-Schritte Kette · +25% XP pro Schritt</div>}
+                  </div>
                 );
-              })}
+              })()}
+
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
-              <div>
-                <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:8}}>SCHWIERIG</label>
-                <div style={{display:"flex",gap:6}}>
-                  {DIFFICULTIES.map(d=>(
-                    <button key={d.key} onClick={()=>setQDiff(d.key)} title={`${d.label} (${d.xp} XP)`} style={{flex:1,padding:"12px 2px",borderRadius:12,fontSize:14,background:qDiff===d.key?`linear-gradient(135deg,${d.color}22,${d.color}11)`:"rgba(15,15,30,0.5)",color:qDiff===d.key?d.color:"#475569",border:`1px solid ${qDiff===d.key?d.color+"66":"#1e2940"}`,transition:"all 0.3s",boxShadow:qDiff===d.key?`0 4px 12px ${d.color}33`:"none",transform:qDiff===d.key?"translateY(-2px)":"none"}}
-                    onMouseEnter={e=>{if(qDiff!==d.key)e.currentTarget.style.borderColor=d.color+"44";}}
-                    onMouseLeave={e=>{if(qDiff!==d.key)e.currentTarget.style.borderColor="#1e2940";}}>{d.icon}</button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",display:"block",marginBottom:8}}>STATS</label>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
-                  {CATEGORIES.map(c=>(
-                    <button key={c.key} onClick={()=>setQCat(c.key)} style={{padding:"8px 2px",borderRadius:10,fontSize:12,background:qCat===c.key?`linear-gradient(135deg,${c.color}22,${c.color}11)`:"rgba(15,15,30,0.5)",color:qCat===c.key?c.color:"#64748b",border:`1px solid ${qCat===c.key?c.color+"66":"#1e2940"}`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,fontWeight:600,transition:"all 0.3s",boxShadow:qCat===c.key?`0 4px 12px ${c.color}33`:"none",transform:qCat===c.key?"translateY(-2px)":"none"}}
-                    onMouseEnter={e=>{if(qCat!==c.key)e.currentTarget.style.borderColor=c.color+"44";}}
-                    onMouseLeave={e=>{if(qCat!==c.key)e.currentTarget.style.borderColor="#1e2940";}}>{c.icon}</button>
-                  ))}
-                </div>
-              </div>
+            {/* Footer */}
+            <div style={{padding:"14px 24px 20px",flexShrink:0,borderTop:`1px solid ${theme.primary}1a`}}>
+              <button onClick={()=>{
+                if(qType==="chained") addChainedQuest(qTitle,qCat,qDiff);
+                else createQuest();
+                setQTitle(""); setShowCreate(false);
+              }} disabled={!qTitle.trim()} style={{width:"100%",padding:"15px",borderRadius:16,fontSize:14,fontWeight:900,background:qTitle.trim()?`linear-gradient(135deg,${theme.primary},${theme.secondary})`:"rgba(15,15,30,0.6)",color:qTitle.trim()?"#fff":"#334155",letterSpacing:3,fontFamily:"'Cinzel',serif",boxShadow:qTitle.trim()?`0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)`:"none",transition:"all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",cursor:qTitle.trim()?"pointer":"not-allowed",border:qTitle.trim()?"none":"1px solid #1e2940"}}
+              onMouseEnter={e=>{if(qTitle.trim()){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.filter="brightness(1.1)";}}}
+              onMouseLeave={e=>{if(qTitle.trim()){e.currentTarget.style.transform="none";e.currentTarget.style.filter="none";}}}
+              >{qTitle.trim()?"\u2746 QUEST ANNEHMEN \u2746":"Quest-Titel eingeben..."}</button>
             </div>
 
-            {qTitle.trim()&&(
-              <div style={{background:`linear-gradient(135deg,${theme.surface},rgba(10,10,24,0.9))` ,borderRadius:14,padding:"14px 16px",marginBottom:20,border:`1px solid ${theme.primary}22`,borderLeft:`3px solid ${theme.accent}`,fontSize:12,color:"#94a3b8",fontFamily:"'JetBrains Mono',monospace",display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",animation:"scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",boxShadow:`0 4px 16px rgba(0,0,0,0.4)`}}>
-                {(()=>{
-                  const typeCfg=QUEST_TYPES_CONFIG[qType]||QUEST_TYPES_CONFIG.side;
-                  const diff=DIFFICULTIES.find(d=>d.key===qDiff);
-                  const cat=CATEGORIES.find(c=>c.key===qCat);
-                  const baseXp=Math.round(diff.xp*(typeCfg.xpMult||1));
-                  const baseGold=Math.round(diff.gold*(typeCfg.goldMult||1));
-                  return(<>
-                    <span style={{color:typeCfg.color,fontWeight:700}}>{typeCfg.icon} {typeCfg.label.toUpperCase()}</span>
-                    <span style={{color:"#334155"}}>|</span>
-                    <span style={{color:cat.color,fontWeight:700}}>{cat.icon} {cat.stat}</span>
-                    <span style={{color:"#334155"}}>|</span>
-                    <span style={{color:theme.accent,fontWeight:800,textShadow:`0 0 8px ${theme.glow}`}}>+{baseXp} XP</span>
-                    <span style={{color:"#334155"}}>|</span>
-                    <span style={{color:"#fbbf24",fontWeight:800}}>+{baseGold} G</span>
-                    {qType==="chained"&&<span style={{color:"#f59e0b",fontWeight:700}}>| ⛓️ 3 SCHRITTE</span>}
-                    {qType==="weekly"&&<span style={{color:"#8b5cf6",fontWeight:700}}>| 📆 7 TAGE</span>}
-                    {qDiff==="boss"&&<span style={{color:"#ef4444",fontWeight:700,animation:"pulse 2s infinite",display:"block",width:"100%",marginTop:4}}>⚠ 🌑 SCHATTEN BESCHWÖRUNGSCHANCE</span>}
-                  </>);
-                })()}
-              </div>
-            )}
-            <button onClick={()=>{
-              if(qType==="chained") addChainedQuest(qTitle,qCat,qDiff);
-              else createQuest();
-              setQTitle(""); setShowCreate(false);
-            }} disabled={!qTitle.trim()} style={{width:"100%",padding:16,borderRadius:16,fontSize:14,fontWeight:900,background:qTitle.trim()?`linear-gradient(135deg,${theme.primary},${theme.secondary})`:"#0f0f1e",color:qTitle.trim()?"#fff":"#334155",letterSpacing:3,fontFamily:"'Cinzel',serif",boxShadow:qTitle.trim()?`0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)`:"none",transition:"all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",cursor:qTitle.trim()?"pointer":"not-allowed",border:qTitle.trim()?"none":"1px solid #1e2940"}}
-            onMouseEnter={e=>{if(qTitle.trim()){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.filter="brightness(1.1)";}}}
-            onMouseLeave={e=>{if(qTitle.trim()){e.currentTarget.style.transform="none";e.currentTarget.style.filter="none";}}}
-            >{qTitle.trim()?"✦ QUEST ANNEHMEN ✦":"QUEST DEFINIEREN"}</button>
           </div>
         </div>
+      )}
       )}
     </div>
   );
@@ -4211,3 +4296,4 @@ function SetupScreen({ onFinish, theme }) {
     </div>
   );
 }
+ 

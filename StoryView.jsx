@@ -16,9 +16,9 @@ export const STORY_ARCS = [
     chapters: [
       { id: "ch1", title: "First Awakening", description: "Das System erwacht", unlockLevel: 1, type: "tutorial", rewards: { xp: 25, gold: 10, unlock: "daily_quest_system" }, icon: "✨" },
       { id: "ch2", title: "The Double Dungeon", description: "Dein erstes Gate erwartet dich", unlockLevel: 5, type: "dungeon_intro", rewards: { xp: 50, gold: 25 }, icon: "🌀" },
-      { id: "ch3", title: "System Initialization", description: "Das System offenbart sein wahres Gesicht", unlockLevel: 10, type: "revelation", rewards: { xp: 75, gold: 40 }, icon: "💻" },
+      { id: "ch3", title: "System Initialization", description: "Das System offenbart sein wahres Gesicht", unlockLevel: 10, type: "revelation", rewards: { xp: 75, gold: 60 }, icon: "💻" },
     ],
-    arcBoss: { name: "Statue of God", rank: "E", rewards: { xp: 125, gold: 50, title: "Survivor" }, icon: "🗿" },
+    arcBoss: { name: "Statue of God", rank: "E", rewards: { xp: 125, gold: 150, title: "Survivor" }, icon: "🗿" },
   },
   {
     id: "arc2",
@@ -30,8 +30,8 @@ export const STORY_ARCS = [
     icon: "⚔️",
     chapters: [
       { id: "ch4", title: "A New Beginning", description: "Erste echte Solo-Dungeons", unlockLevel: 11, type: "exploration", rewards: { xp: 80, gold: 60 }, icon: "🌄" },
-      { id: "ch5", title: "The Secret of Levels", description: "Die wahre Natur des Systems", unlockLevel: 15, type: "lore", rewards: { xp: 100, gold: 80 }, icon: "📜" },
-      { id: "ch6", title: "Shadows of the Past", description: "Erste Shadow-Begegnung", unlockLevel: 20, type: "shadow_intro", rewards: { xp: 125, gold: 100 }, icon: "🌑" },
+      { id: "ch5", title: "The Secret of Levels", description: "Die wahre Natur des Systems", unlockLevel: 15, type: "lore", rewards: { xp: 100, gold: 100 }, icon: "📜" },
+      { id: "ch6", title: "Shadows of the Past", description: "Erste Shadow-Begegnung", unlockLevel: 20, type: "shadow_intro", rewards: { xp: 125, gold: 125 }, icon: "🌑" },
     ],
     arcBoss: { name: "Cerberus", rank: "C", rewards: { xp: 250, gold: 150, unlock: "shadow_extraction_ability" }, icon: "🐕" },
   },

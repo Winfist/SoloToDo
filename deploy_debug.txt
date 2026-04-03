@@ -1,0 +1,126 @@
+﻿[2026-04-03T17:22:55.247Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2026-04-03T17:22:55.252Z] > authorizing via signed-in user (jwuckert2@gmail.com)
+[2026-04-03T17:22:55.253Z] [iam] checking project solo-todo for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[2026-04-03T17:22:55.255Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:22:55.255Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:22:55.257Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/solo-todo:testIamPermissions [none]
+[2026-04-03T17:22:55.257Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/solo-todo:testIamPermissions  x-goog-user-project=solo-todo
+[2026-04-03T17:22:55.257Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/solo-todo:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[2026-04-03T17:22:56.072Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/solo-todo:testIamPermissions 200
+[2026-04-03T17:22:56.073Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/solo-todo:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[2026-04-03T17:22:56.073Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:22:56.073Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:22:56.074Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/solo-todo [none]
+[2026-04-03T17:22:56.379Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/solo-todo 200
+[2026-04-03T17:22:56.379Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/solo-todo {"projectId":"solo-todo","projectNumber":"528898647146","displayName":"SoloToDo","name":"projects/solo-todo","resources":{"hostingSite":"solo-todo"},"state":"ACTIVE","etag":"1_78f9b0b1-9b33-43c9-8202-ef4d5ca8805d"}
+
+=== Deploying to 'solo-todo'...
+
+i  deploying hosting 
+Running command: npm run build
+
+> solo-todo@0.0.0 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 55 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                [39m[1m[2m  0.66 kB[22m[1m[22m[2m Ôöé gzip:   0.46 kB[22m
+[2mdist/[22m[36massets/index-Ca-ACI_l.js  [39m[1m[33m894.69 kB[39m[22m[2m Ôöé gzip: 230.05 kB[22m
+[32mÔ£ô built in 6.99s[39m
++  hosting: Finished running predeploy script. 
+[2026-04-03T17:23:05.301Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:05.301Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:05.302Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/versions [none]
+[2026-04-03T17:23:05.302Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[2026-04-03T17:23:07.224Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/versions 200
+[2026-04-03T17:23:07.224Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/versions {"name":"projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+i  hosting[solo-todo]: beginning deploy... 
+i  hosting[solo-todo]: found 3 files in dist 
+[2026-04-03T17:23:07.240Z] [hosting] uploading with 200 concurrency
+[2026-04-03T17:23:07.287Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:07.287Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:07.289Z] [hosting] hash cache [ZGlzdA] stored for 3 files
+[2026-04-03T17:23:07.289Z] [hosting][hash queue][FINAL] {"max":41,"min":3,"avg":16,"active":0,"complete":3,"success":3,"errored":0,"retried":0,"total":3,"elapsed":46}
+[2026-04-03T17:23:07.290Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff:populateFiles [none]
+[2026-04-03T17:23:07.290Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff:populateFiles {"files":{"/Solo Grind.mp3":"a6d5b8e47a7a69a6c08fd9a69400edcdcfce28f0c3ce5f4509ecac9879dc54b6","/index.html":"9083d52d3d0c57c29a379ce2e0410b4dee31c3ac09c17b23b8babe5b7df57c78","/assets/index-Ca-ACI_l.js":"5c0968ac8ee46f38be453f4987ebcb14c4d2572737330cde9eb41dfd073896f8"}}
+[2026-04-03T17:23:08.357Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff:populateFiles 200
+[2026-04-03T17:23:08.357Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff:populateFiles {"uploadRequiredHashes":["5c0968ac8ee46f38be453f4987ebcb14c4d2572737330cde9eb41dfd073896f8","9083d52d3d0c57c29a379ce2e0410b4dee31c3ac09c17b23b8babe5b7df57c78"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files"}
+[2026-04-03T17:23:08.358Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:08.358Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:08.358Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:08.358Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:08.359Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files/5c0968ac8ee46f38be453f4987ebcb14c4d2572737330cde9eb41dfd073896f8 [none]
+[2026-04-03T17:23:08.359Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files/5c0968ac8ee46f38be453f4987ebcb14c4d2572737330cde9eb41dfd073896f8 [stream]
+[2026-04-03T17:23:08.360Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files/9083d52d3d0c57c29a379ce2e0410b4dee31c3ac09c17b23b8babe5b7df57c78 [none]
+[2026-04-03T17:23:08.360Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files/9083d52d3d0c57c29a379ce2e0410b4dee31c3ac09c17b23b8babe5b7df57c78 [stream]
+[2026-04-03T17:23:08.362Z] [hosting][populate queue][FINAL] {"max":1072,"min":1072,"avg":1072,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":1075}
+[2026-04-03T17:23:08.362Z] [hosting] uploads queued: 2
+i  hosting: uploading new files [0/2] (0%) 
+[2026-04-03T17:23:09.342Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files/9083d52d3d0c57c29a379ce2e0410b4dee31c3ac09c17b23b8babe5b7df57c78 200
+[2026-04-03T17:23:09.342Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files/9083d52d3d0c57c29a379ce2e0410b4dee31c3ac09c17b23b8babe5b7df57c78 [stream]
+[2026-04-03T17:23:09.405Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files/5c0968ac8ee46f38be453f4987ebcb14c4d2572737330cde9eb41dfd073896f8 200
+[2026-04-03T17:23:09.405Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/solo-todo/versions/b159b738d75c34ff/files/5c0968ac8ee46f38be453f4987ebcb14c4d2572737330cde9eb41dfd073896f8 [stream]
+[2026-04-03T17:23:09.405Z] [hosting][upload queue][FINAL] {"max":1048,"min":984,"avg":1016,"active":0,"complete":2,"success":2,"errored":0,"retried":0,"total":2,"elapsed":1048}
+i  hosting: upload complete 
++  hosting[solo-todo]: file upload complete 
+[2026-04-03T17:23:09.406Z] [hosting] deploy completed after 2179ms
+[2026-04-03T17:23:09.406Z] [
+  {
+    "config": {
+      "predeploy": [
+        "npm run build"
+      ],
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/index.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ],
+      "site": "solo-todo"
+    },
+    "version": "projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff"
+  }
+]
+i  hosting[solo-todo]: finalizing version... 
+[2026-04-03T17:23:09.408Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:09.408Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:09.409Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/versions/b159b738d75c34ff updateMask=status%2Cconfig
+[2026-04-03T17:23:09.409Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/versions/b159b738d75c34ff {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}],"headers":[{"glob":"/index.html","headers":{"Cache-Control":"no-cache, no-store, must-revalidate"}}]}}
+[2026-04-03T17:23:10.995Z] <<< [apiv2][status] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/versions/b159b738d75c34ff 200
+[2026-04-03T17:23:10.995Z] <<< [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/versions/b159b738d75c34ff {"name":"projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff","status":"FINALIZED","config":{"headers":[{"headers":{"Cache-Control":"no-cache, no-store, must-revalidate"},"glob":"/index.html"}],"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-04-03T17:23:05.924170Z","createUser":{"email":"jwuckert2@gmail.com"},"finalizeTime":"2026-04-03T17:23:10.805160Z","finalizeUser":{"email":"jwuckert2@gmail.com"}}
+[2026-04-03T17:23:10.995Z] [hosting] finalized version for solo-todo:[object Object]
++  hosting[solo-todo]: version finalized 
+i  hosting[solo-todo]: releasing new version... 
+[2026-04-03T17:23:10.995Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:10.995Z] Checked if tokens are valid: true, expires at: 1775240303270
+[2026-04-03T17:23:10.996Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/channels/live/releases versionName=projects%2F528898647146%2Fsites%2Fsolo-todo%2Fversions%2Fb159b738d75c34ff
+[2026-04-03T17:23:10.996Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/channels/live/releases {}
+[2026-04-03T17:23:12.314Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/channels/live/releases 200
+[2026-04-03T17:23:12.315Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/solo-todo/channels/live/releases {"name":"projects/528898647146/sites/solo-todo/channels/live/releases/1775236991202000","version":{"name":"projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff","status":"FINALIZED","config":{"headers":[{"headers":{"Cache-Control":"no-cache, no-store, must-revalidate"},"glob":"/index.html"}],"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-04-03T17:23:05.924170Z","createUser":{"email":"jwuckert2@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLMCprccfN2lhPCqt9MsdLeSEz10kmkbVWvlXVPVer2Ww8VWow2"},"finalizeTime":"2026-04-03T17:23:10.805160Z","finalizeUser":{"email":"jwuckert2@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLMCprccfN2lhPCqt9MsdLeSEz10kmkbVWvlXVPVer2Ww8VWow2"}},"type":"DEPLOY","releaseTime":"2026-04-03T17:23:11.202Z","releaseUser":{"email":"jwuckert2@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLMCprccfN2lhPCqt9MsdLeSEz10kmkbVWvlXVPVer2Ww8VWow2"}}
+[2026-04-03T17:23:12.315Z] [hosting] release: {"name":"projects/528898647146/sites/solo-todo/channels/live/releases/1775236991202000","version":{"name":"projects/528898647146/sites/solo-todo/versions/b159b738d75c34ff","status":"FINALIZED","config":{"headers":[{"headers":{"Cache-Control":"no-cache, no-store, must-revalidate"},"glob":"/index.html"}],"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-04-03T17:23:05.924170Z","createUser":{"email":"jwuckert2@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLMCprccfN2lhPCqt9MsdLeSEz10kmkbVWvlXVPVer2Ww8VWow2"},"finalizeTime":"2026-04-03T17:23:10.805160Z","finalizeUser":{"email":"jwuckert2@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLMCprccfN2lhPCqt9MsdLeSEz10kmkbVWvlXVPVer2Ww8VWow2"}},"type":"DEPLOY","releaseTime":"2026-04-03T17:23:11.202Z","releaseUser":{"email":"jwuckert2@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLMCprccfN2lhPCqt9MsdLeSEz10kmkbVWvlXVPVer2Ww8VWow2"}}
++  hosting[solo-todo]: release complete 
+
++  Deploy complete! 
+
+Project Console: https://console.firebase.google.com/project/solo-todo/overview
+Hosting URL: https://solo-todo.web.app
