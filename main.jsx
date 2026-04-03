@@ -89,11 +89,11 @@ function Root() {
     <div style={{ position: 'relative' }}>
       <App initialHunterName={hunterName} />
       {/* Optional: Logout helper for testing */}
-      {/* Logout helper moved to top-left to avoid covering the navigation bar on mobile */}
+      {/* Logout helper moved to top-right below the music button to avoid covering the name */}
       <button onClick={handleLogout} style={{ 
         position: 'fixed', 
-        top: 15, 
-        left: 15, 
+        top: 56, 
+        right: 16, 
         zIndex: 9999, 
         background: 'rgba(239,68,68,0.08)', 
         border: '1px solid #ef444433', 
