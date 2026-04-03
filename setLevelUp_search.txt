@@ -1,0 +1,40 @@
+1003:     _jobLevelUp: leveledUp ? { job: currentJob, newLevel } : null
+1210:       const { _abilityActivated, _jobLevelUp, ...persistenceState } = s;
+1246: @keyframes levelUpBg{0%{opacity:0}15%{opacity:1}85%{opacity:1}100%{opacity:0}}
+1247: @keyframes levelUpText{0%{transform:scale(0.3) translateY(40px);opacity:0}30%{transform:scale(1.1) translateY(0);opacity:1}50%{transform:scale(1)}100%{transform:scale(1);opacity:1}}
+1248: @keyframes levelUpRays{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+1249: @keyframes levelUpRank{0%,40%{transform:translateY(20px);opacity:0}70%,100%{transform:translateY(0);opacity:1}}
+1391: // ─── LEVEL UP ─────────────────────────────────────────────────
+1392: function LevelUpCinematic({ level, rank, oldRank, onClose }) {
+1396:     <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",animation:"levelUpBg 4s ease forwards",background:"rgba(0,0,0,0.93)"}}>
+1397:       <div style={{position:"absolute",width:500,height:500,background:`conic-gradient(from 0deg,transparent,${rank.color}08,transparent,${rank.color}05,transparent)`,animation:"levelUpRays 8s linear infinite",borderRadius:"50%"}}/>
+1400:         <div style={{fontSize:11,letterSpacing:6,color:rank.color,fontFamily:"'JetBrains Mono',monospace",animation:"levelUpText 1.2s ease-out forwards",marginBottom:12,opacity:0}}>{isRankUp?"RANK UP":"LEVEL UP"}</div>
+1401:         <div style={{fontSize:96,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif",textShadow:`0 0 60px ${rank.color},0 0 120px ${rank.color}66`,animation:"levelUpText 1s ease-out 0.15s forwards",opacity:0,lineHeight:1}}>{level}</div>
+1402:         <div style={{fontSize:18,color:rank.color,fontFamily:"'Cinzel',serif",letterSpacing:4,animation:"levelUpRank 1.8s ease-out forwards",opacity:0,marginTop:12,textShadow:`0 0 20px ${rank.glow}`}}>{rank.label}</div>
+1403:         {isRankUp&&<div style={{marginTop:20,padding:"8px 24px",borderRadius:20,background:`linear-gradient(135deg,${rank.color}22,${rank.color}11)`,border:`1px solid ${rank.color}44`,fontSize:12,color:rank.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,animation:"levelUpRank 2s ease-out forwards",opacity:0}}>★ NEW RANK ACHIEVED ★</div>}
+2664: function JobLevelUpCinematic({ job, newLevel, onClose }) {
+2670:         <div style={{ fontSize: 12, letterSpacing: 8, color: job.color, fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, animation: "pulse 2s infinite" }}>JOB LEVEL UP</div>
+2781:   const [levelUp,setLevelUp]=useState(null);
+3052:     let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false,levelsGained=0;
+3058:       didLevelUp=true;
+3067:     if (next._jobLevelUp) {
+3068:       notify(`JOB LEVEL UP: ${JOBS[next._jobLevelUp.job].name} ist nun Level ${next._jobLevelUp.newLevel}!`, "levelup");
+3069:       delete next._jobLevelUp;
+3156:     if(didLevelUp){
+3158:       setLevelUp(newLevel);
+3159:       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
+3202:     let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false,levelsGained=0;
+3209:       didLevelUp=true;
+3222:     if(didLevelUp){
+3224:       setLevelUp(newLevel);
+3225:       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
+3242:     let newXp=state.xp+result.xp,newLevel=state.level,didLevelUp=false,levelsGained=0;
+3248:       didLevelUp=true;
+3270:     if (next._jobLevelUp) {
+3271:         notify(`JOB LEVEL UP: ${JOBS[next._jobLevelUp.job].name} Lv.${next._jobLevelUp.newLevel}!`, "levelup");
+3272:         delete next._jobLevelUp;
+3313:     if(didLevelUp){
+3315:       setLevelUp(newLevel);
+3316:       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
+3535:       {levelUp&&<LevelUpCinematic level={levelUp} rank={getRank(levelUp)} oldRank={prevRank} onClose={()=>setLevelUp(null)}/>}
+3537:       {state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = {...state}; delete next._jobLevelUp; persist(next); }} />}

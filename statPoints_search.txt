@@ -1,0 +1,18 @@
+653:   statPoints:0,
+2915:           if (s.statPoints === undefined) s.statPoints = 0;
+3060:     const earnedPoints = levelsGained * 3;
+3113:       statPoints: (state.statPoints || 0) + earnedPoints,
+3163:         `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`,
+3211:     const earnedPoints = levelsGained * 3;
+3214:       statPoints:(state.statPoints||0)+earnedPoints,
+3228:         `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`
+3250:     const earnedPoints = levelsGained * 3;
+3287:       statPoints: (state.statPoints || 0) + earnedPoints,
+3319:         `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`,
+3450:     if (!state || state.statPoints <= 0) return;
+3453:       statPoints: state.statPoints - 1,
+3759:               {state.statPoints > 0 && (
+3761:                   {state.statPoints} PUNKTE VERFÜGBAR
+3785:                     {state.statPoints > 0 && (
+3954:                 const earnedPoints = levelsGained * 3;
+3969:                   statPoints: (prev.statPoints || 0) + earnedPoints,

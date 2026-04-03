@@ -1389,7 +1389,9 @@ function XpFloat({ x, y, xp, gold }) {
 }
 
 // ─── LEVEL UP ─────────────────────────────────────────────────
-function LevelUpCinematic({ level, rank, oldRank, onClose }) {
+function LevelUpCinematic({ levelData, rank, oldRank, onClose }) {
+  const level = levelData?.level || levelData;
+  const earnedPoints = levelData?.earnedPoints || 0;
   const isRankUp = oldRank && oldRank.name !== rank.name;
   useEffect(()=>{const t=setTimeout(onClose,4000);return()=>clearTimeout(t);},[onClose]);
   return (
@@ -1400,6 +1402,7 @@ function LevelUpCinematic({ level, rank, oldRank, onClose }) {
         <div style={{fontSize:11,letterSpacing:6,color:rank.color,fontFamily:"'JetBrains Mono',monospace",animation:"levelUpText 1.2s ease-out forwards",marginBottom:12,opacity:0}}>{isRankUp?"RANK UP":"LEVEL UP"}</div>
         <div style={{fontSize:96,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif",textShadow:`0 0 60px ${rank.color},0 0 120px ${rank.color}66`,animation:"levelUpText 1s ease-out 0.15s forwards",opacity:0,lineHeight:1}}>{level}</div>
         <div style={{fontSize:18,color:rank.color,fontFamily:"'Cinzel',serif",letterSpacing:4,animation:"levelUpRank 1.8s ease-out forwards",opacity:0,marginTop:12,textShadow:`0 0 20px ${rank.glow}`}}>{rank.label}</div>
+        {earnedPoints > 0 && <div style={{fontSize:15,color:"#fff",fontFamily:"'JetBrains Mono',monospace",marginTop:18,animation:"levelUpRank 2s ease-out forwards",opacity:0}}>+ {earnedPoints} Stat-Punkte</div>}
         {isRankUp&&<div style={{marginTop:20,padding:"8px 24px",borderRadius:20,background:`linear-gradient(135deg,${rank.color}22,${rank.color}11)`,border:`1px solid ${rank.color}44`,fontSize:12,color:rank.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,animation:"levelUpRank 2s ease-out forwards",opacity:0}}>★ NEW RANK ACHIEVED ★</div>}
       </div>
     </div>
@@ -3155,7 +3158,7 @@ export default function App({ initialHunterName, onLogout }) {
     persist(next);
     if(didLevelUp){
       setPrevRank(oldRank);
-      setLevelUp(newLevel);
+      setLevelUp({ level: newLevel, earnedPoints });
       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
         `Glückwunsch, Hunter ${state.hunterName}.`,
         `Sie haben Level ${newLevel} erreicht.`,
@@ -3221,7 +3224,7 @@ export default function App({ initialHunterName, onLogout }) {
     notify(`🚨 NOTFALL-QUEST ERFÜLLT! +${xpGain} XP · +${goldGain} Gold`,"named");
     if(didLevelUp){
       setPrevRank(oldRank);
-      setLevelUp(newLevel);
+      setLevelUp({ level: newLevel, earnedPoints });
       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
         "Notfallmission erfolgreich abgeschlossen.",
         `Sie haben Level ${newLevel} erreicht.`,
@@ -3262,7 +3265,7 @@ export default function App({ initialHunterName, onLogout }) {
     const totalGold=result.gold+(result.goldBonus?Math.round(result.goldBonus*(state.todayModifier?.goldMult||1)):0);
 
     // Job XP calculation for dungeons
-    let next = awardJobXp({...state, gold: state.gold + totalGold, totalGoldEarned: (state.totalGoldEarned || 0) + totalGold}, "dungeon_complete", {
+    let next = awardJobXp({...state, xp: newXp, level: newLevel, gold: state.gold + totalGold, totalGoldEarned: (state.totalGoldEarned || 0) + totalGold}, "dungeon_complete", {
         strategy: result.strategy,
         dungeonRank: dungeon.rank
     });
@@ -3283,7 +3286,6 @@ export default function App({ initialHunterName, onLogout }) {
 
     next = {
       ...next,
-      xp: next.xp,
       statPoints: (state.statPoints || 0) + earnedPoints,
       dungeons:state.dungeons.map(d=>d.instanceId===dungeon.instanceId?{...d,cleared:true}:d),
       dungeonHistory:[...(state.dungeonHistory||[]),{dungeonId:dungeon.id,dungeonName:dungeon.name,dungeonRank:dungeon.rank,won:result.won,xp:result.xp,gold:totalGold,floorsCleared:result.floorsCleared||dungeon.floors,date:getToday()}],
@@ -3312,7 +3314,7 @@ export default function App({ initialHunterName, onLogout }) {
     persist(next); setActiveDungeon(null);
     if(didLevelUp){
       setPrevRank(oldRank);
-      setLevelUp(newLevel);
+      setLevelUp({ level: newLevel, earnedPoints });
       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
         `Dungeon erfolgreich abgeschlossen.`,
         `Sie haben Level ${newLevel} reached.`,
@@ -3532,7 +3534,7 @@ export default function App({ initialHunterName, onLogout }) {
       {notifications.map(n=><SystemNotification key={n.id} message={n.msg} type={n.type} onDone={()=>removeNotif(n.id)}/>)}
       {achQueue.slice(0,1).map(a=><AchievementToast key={a.id} achievement={a} onDone={()=>setAchQueue(prev=>prev.slice(1))}/>)}
       {xpFloats.map(f=><XpFloat key={f.id} x={f.x} y={f.y} xp={f.xp} gold={f.gold}/>)}
-      {levelUp&&<LevelUpCinematic level={levelUp} rank={getRank(levelUp)} oldRank={prevRank} onClose={()=>setLevelUp(null)}/>}
+      {levelUp&&<LevelUpCinematic levelData={levelUp} rank={getRank(levelUp.level || levelUp)} oldRank={prevRank} onClose={()=>setLevelUp(null)}/>}
       {ariseTarget&&<AriseCinematic shadow={ariseTarget} onClose={()=>setAriseTarget(null)}/>}
       {state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = {...state}; delete next._jobLevelUp; persist(next); }} />}
       {state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = {...state}; delete next._abilityActivated; persist(next); }} />}

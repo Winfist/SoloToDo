@@ -1,0 +1,425 @@
+11:   { name:"E",   label:"E-Rank Hunter",   minLv:1,  maxLv:10,  xpPerLv:100,  color:"#6b7280", glow:"rgba(107,114,128,0.4)" },
+12:   { name:"D",   label:"D-Rank Hunter",   minLv:11, maxLv:20,  xpPerLv:250,  color:"#22d3ee", glow:"rgba(34,211,238,0.4)"  },
+13:   { name:"C",   label:"C-Rank Hunter",   minLv:21, maxLv:35,  xpPerLv:500,  color:"#34d399", glow:"rgba(52,211,153,0.4)"  },
+14:   { name:"B",   label:"B-Rank Hunter",   minLv:36, maxLv:50,  xpPerLv:900,  color:"#a78bfa", glow:"rgba(167,139,250,0.4)" },
+15:   { name:"A",   label:"A-Rank Hunter",   minLv:51, maxLv:70,  xpPerLv:1500, color:"#f59e0b", glow:"rgba(245,158,11,0.4)"  },
+16:   { name:"S",   label:"S-Rank Hunter",   minLv:71, maxLv:90,  xpPerLv:3000, color:"#ef4444", glow:"rgba(239,68,68,0.4)"   },
+17:   { name:"SSS", label:"National Level",  minLv:91, maxLv:100, xpPerLv:6000, color:"#e879f9", glow:"rgba(232,121,249,0.4)" },
+21:   { key:"easy",   label:"Easy",   xp:5,   gold:10,  color:"#6b7280", icon:"◇", waitHours:1 },
+22:   { key:"normal", label:"Normal", xp:15,  gold:25,  color:"#22d3ee", icon:"◆", waitHours:2 },
+23:   { key:"hard",   label:"Hard",   xp:40,  gold:60,  color:"#a78bfa", icon:"★", waitHours:4 },
+24:   { key:"boss",   label:"Boss",   xp:100, gold:150, color:"#ef4444", icon:"♛", waitHours:8 },
+107:   {t:"Positives teilen",c:"cha",d:"easy",tp:"daily"},{t:"Experten um Rat fragen",c:"cha",d:"hard",tp:"side"},
+118:     passiveEffect:"+2% XP von allen Quests",
+130:     passiveEffect:"+3% XP von INT-Quests",
+166:     unlockCondition:{ type:"dungeon_rank", dungeonRank:"A", desc:"A-Rank Dungeon besiegen" },
+182:     unlockCondition:{ type:"dungeon_rank", dungeonRank:"S", desc:"S-Rank Dungeon besiegen" },
+200:   rearguard: { name:"Rearguard", maxSlots:2, bonus:"+20% XP & Gold",            icon:"🎯", preferredClasses:["mage","healer","assassin"], color:"#22c55e" },
+221: function calcShadowXpToNext(level) {
+240:     xp: 0,
+241:     xpToNext: calcShadowXpToNext(1),
+254:     dungeonsCleared: 0,
+255:     totalXpGenerated: 0,
+260:   if (!shadowArmy) return { dungeonBonus:0, xpBonus:0, goldBonus:0 };
+262:   let dungeonBonus = 0, xpBonus = 0, goldBonus = 0;
+266:   if (vCount >= 2) dungeonBonus += 15;
+267:   if (cCount >= 3) dungeonBonus += 10;
+268:   if (rCount >= 1) { xpBonus += 20; goldBonus += 20; }
+271:   named.forEach(s=>{ dungeonBonus += 10; xpBonus += 5; });
+274:   if (hasCommander) { dungeonBonus += 5; xpBonus += 5; goldBonus += 5; }
+275:   return { dungeonBonus, xpBonus: xpBonus/100, goldBonus: goldBonus/100 };
+286:     const { type, dungeonRank, stat, value } = ns.unlockCondition;
+288:     if (type==="dungeon_rank") {
+289:       unlocked = (state.dungeonHistory||[]).some(d=>d.won&&d.dungeonRank===dungeonRank);
+302:   { id:"first_quest",    name:"Erste Schritte",       icon:"⚔️",  desc:"Schließe deine erste Quest ab",        cat:"quests",   check: s => (s.totalQuestsCompleted||0) >= 1,    reward:{ xp:50,   gold:20  } },
+303:   { id:"quests_10",      name:"Fleißiger Hunter",      icon:"📋",  desc:"Schließe 10 Quests ab",                cat:"quests",   check: s => (s.totalQuestsCompleted||0) >= 10,   reward:{ xp:100,  gold:50  } },
+304:   { id:"quests_50",      name:"Quest Meister",         icon:"🏆",  desc:"Schließe 50 Quests ab",                cat:"quests",   check: s => (s.totalQuestsCompleted||0) >= 50,   reward:{ xp:500,  gold:200 } },
+305:   { id:"quests_100",     name:"Legendärer Hunter",     icon:"👑",  desc:"Schließe 100 Quests ab",               cat:"quests",   check: s => (s.totalQuestsCompleted||0) >= 100,  reward:{ xp:1000, gold:500, title:"Legendary Hunter" } },
+306:   { id:"boss_first",     name:"Besieger",              icon:"💀",  desc:"Schließe deine erste Boss-Quest ab",   cat:"quests",   check: s => (s.shadowArmy?.shadows||[]).length >= 1, reward:{ xp:200, gold:100 } },
+307:   { id:"boss_5",         name:"Schattenherr",          icon:"🌑",  desc:"Beschwöre 5 Schatten",                 cat:"shadows",  check: s => (s.shadowArmy?.shadows||[]).length >= 5, reward:{ xp:400, gold:200 } },
+308:   { id:"boss_15",        name:"Schattenmonarch",       icon:"☠️",  desc:"Beschwöre 15 Schatten",                cat:"shadows",  check: s => (s.shadowArmy?.shadows||[]).length >= 15, reward:{ xp:1500, gold:600, title:"Shadow Monarch" } },
+309:   { id:"shadow_named",   name:"Erste Berufung",        icon:"🩸",  desc:"Erwecke einen Named Shadow",           cat:"shadows",  check: s => (s.shadowArmy?.shadows||[]).some(sh=>sh.isNamed), reward:{ xp:800, gold:400, title:"Shadow Sovereign" } },
+310:   { id:"shadow_tier3",   name:"Elite Armee",           icon:"💜",  desc:"Habe einen Tier-3 Shadow",             cat:"shadows",  check: s => (s.shadowArmy?.shadows||[]).some(sh=>sh.tier>=3), reward:{ xp:600, gold:300 } },
+311:   { id:"formation_full", name:"Volles Kommando",       icon:"🎖️",  desc:"Fülle alle Formation-Slots",          cat:"shadows",  check: s => {const a=s.shadowArmy;if(!a)return false;const d=a.shadows.filter(sh=>sh.isDeployed);return d.filter(sh=>sh.deploymentSlot==="vanguard").length>=3&&d.filter(sh=>sh.deploymentSlot==="core").length>=5;}, reward:{ xp:1000, gold:500 } },
+312:   { id:"streak_3",       name:"Beständigkeit",         icon:"🔥",  desc:"Erreiche einen 3-Tage Streak",         cat:"streaks",  check: s => (s.streak||0) >= 3,                  reward:{ xp:100,  gold:50  } },
+313:   { id:"streak_7",       name:"Unaufhaltsam",          icon:"⚡",  desc:"Erreiche einen 7-Tage Streak",         cat:"streaks",  check: s => (s.streak||0) >= 7,                  reward:{ xp:300,  gold:150, title:"Unstoppable" } },
+314:   { id:"streak_30",      name:"Eiserne Disziplin",     icon:"💎",  desc:"Erreiche einen 30-Tage Streak",        cat:"streaks",  check: s => (s.streak||0) >= 30,                 reward:{ xp:2000, gold:1000, title:"Iron Discipline" } },
+315:   { id:"level_10",       name:"Erweckung",             icon:"✨",  desc:"Erreiche Level 10",                    cat:"progress", check: s => s.level >= 10,                        reward:{ xp:100,  gold:50  } },
+316:   { id:"rank_d",         name:"D-Rang Aufstieg",       icon:"🌀",  desc:"Erreiche D-Rang (Level 11)",           cat:"progress", check: s => s.level >= 11,                        reward:{ xp:300,  gold:150 } },
+317:   { id:"rank_c",         name:"C-Rang Aufstieg",       icon:"💚",  desc:"Erreiche C-Rang (Level 21)",           cat:"progress", check: s => s.level >= 21,                        reward:{ xp:600,  gold:300 } },
+318:   { id:"rank_b",         name:"B-Rang Aufstieg",       icon:"💜",  desc:"Erreiche B-Rang (Level 36)",           cat:"progress", check: s => s.level >= 36,                        reward:{ xp:1200, gold:600 } },
+319:   { id:"rank_a",         name:"A-Rang Aufstieg",       icon:"🧡",  desc:"Erreiche A-Rang (Level 51)",           cat:"progress", check: s => s.level >= 51,                        reward:{ xp:2500, gold:1000, title:"A-Rank Hunter" } },
+320:   { id:"rank_s",         name:"S-Rang Aufstieg",       icon:"❤️",  desc:"Erreiche S-Rang (Level 71)",           cat:"progress", check: s => s.level >= 71,                        reward:{ xp:5000, gold:2000, title:"S-Rank Hunter" } },
+321:   { id:"dungeon_first",  name:"Gate Öffner",           icon:"🌀",  desc:"Bezwinge deinen ersten Dungeon",       cat:"dungeons", check: s => (s.dungeonHistory||[]).filter(d=>d.won).length >= 1, reward:{ xp:200, gold:100 } },
+322:   { id:"dungeon_10",     name:"Dungeon Meister",       icon:"🏯",  desc:"Bezwinge 10 Dungeons",                 cat:"dungeons", check: s => (s.dungeonHistory||[]).filter(d=>d.won).length >= 10, reward:{ xp:800, gold:400 } },
+323:   { id:"dungeon_25",     name:"Gate Legende",          icon:"⚡",  desc:"Bezwinge 25 Dungeons",                 cat:"dungeons", check: s => (s.dungeonHistory||[]).filter(d=>d.won).length >= 25, reward:{ xp:2000, gold:800, title:"Gate Legend" } },
+324:   { id:"str_20",         name:"Krieger",               icon:"💪",  desc:"Erreiche STR 20",                      cat:"stats",    check: s => (s.stats?.str||0) >= 20,              reward:{ xp:150,  gold:75  } },
+325:   { id:"int_20",         name:"Gelehrter",             icon:"🧠",  desc:"Erreiche INT 20",                      cat:"stats",    check: s => (s.stats?.int||0) >= 20,              reward:{ xp:150,  gold:75  } },
+326:   { id:"vit_20",         name:"Eiserner Körper",       icon:"🛡️",  desc:"Erreiche VIT 20",                      cat:"stats",    check: s => (s.stats?.vit||0) >= 20,              reward:{ xp:150,  gold:75  } },
+327:   { id:"agi_20",         name:"Blitzschnell",          icon:"💨",  desc:"Erreiche AGI 20",                      cat:"stats",    check: s => (s.stats?.agi||0) >= 20,              reward:{ xp:150,  gold:75  } },
+328:   { id:"all_stats_10",   name:"Ausgewogener Hunter",   icon:"⭐",  desc:"Alle Stats auf 10",                    cat:"stats",    check: s => Object.values(s.stats||{}).every(v=>v>=10), reward:{ xp:400, gold:200 } },
+329:   { id:"gold_1000",      name:"Goldfieber",            icon:"💰",  desc:"Sammle insgesamt 1000 Gold",           cat:"misc",     check: s => (s.totalGoldEarned||0) >= 1000,       reward:{ xp:200,  gold:0   } },
+330:   { id:"equip_first",    name:"Ausgerüstet",           icon:"🗡️",  desc:"Equipe dein erstes Item",              cat:"misc",     check: s => Object.values(s.equipment?.slots||{}).some(v=>v), reward:{ xp:100, gold:50 } },
+331:   { id: "story_ch1",     name: "Erste Erweckung",      icon: "📖", desc: "Schließe Kapitel 1 ab",               cat: "story",   check: s => (s.story?.completedChapters || []).includes("ch1"), reward: { xp: 100, gold: 50 } },
+332:   { id: "story_arc1",    name: "Der schwächste Hunter", icon: "🗡️", desc: "Schließe Arc 1 komplett ab",        cat: "story",   check: s => ["ch1","ch2","ch3"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 500, gold: 200, title: "Survivor" } },
+333:   { id: "story_arise",   name: "ARISE",               icon: "🌑", desc: "Schließe das ARISE-Kapitel ab",      cat: "story",   check: s => (s.story?.completedChapters || []).includes("ch7"), reward: { xp: 800, gold: 400, title: "Shadow Master" } },
+334:   { id: "story_arc3",    name: "Der Schattenmonarch erwacht", icon: "👑", desc: "Schließe Arc 3 komplett ab",   cat: "story",   check: s => ["ch7","ch8","ch9"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 2000, gold: 1000 } },
+335:   { id: "story_complete", name: "Shadow Monarch",      icon: "☠️", desc: "Schließe die gesamte Story aus",      cat: "story",   check: s => ["ch1","ch2","ch3","ch4","ch5","ch6","ch7","ch8","ch9","ch10","ch11","ch12","ch13","ch14","ch15","ch16","ch17","ch18","ch19","ch20"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 25000, gold: 10000, title: "Shadow Monarch" } },
+340:   { id:"power_strike",  name:"Power Strike",      icon:"⚔️", stat:"str", threshold:10, desc:"+5% XP aus STR-Quests",                 effect:{ type:"xp_bonus_cat",  cat:"str", bonus:0.05 } },
+341:   { id:"berserker",     name:"Berserker Instinct", icon:"🔥", stat:"str", threshold:25, desc:"+15% XP aus Hard & Boss Quests",         effect:{ type:"xp_hard_bonus", bonus:0.15 } },
+342:   { id:"quick_learner", name:"Quick Learner",      icon:"📖", stat:"int", threshold:10, desc:"+5% XP aus INT-Quests",                 effect:{ type:"xp_bonus_cat",  cat:"int", bonus:0.05 } },
+343:   { id:"tactical_mind", name:"Tactical Mind",      icon:"🧠", stat:"int", threshold:25, desc:"+10% Dungeon Erfolgswahrscheinlichkeit", effect:{ type:"dungeon_bonus", bonus:10 } },
+348:   { id:"presence",      name:"Sovereign Presence", icon:"👥", stat:"cha", threshold:10, desc:"+3% XP Bonus global",                   effect:{ type:"xp_global",     bonus:0.03 } },
+349:   { id:"cmd_aura",      name:"Commanding Aura",    icon:"👑", stat:"cha", threshold:25, desc:"Schatten-Boss-Quests +30% XP",          effect:{ type:"shadow_xp",     bonus:0.30 } },
+354:   { id:"blood_moon",  name:"Blood Moon",     icon:"🌙", desc:"+50% XP, +15% Schwierigkeit",  xpMult:1.5, diffMod:15,  color:"#ef4444" },
+356:   { id:"blessing",    name:"Hunter's Bless", icon:"✨", desc:"+10% Erfolg für alle Gates",    successBonus:10,          color:"#f59e0b" },
+357:   { id:"shadow_surge",name:"Shadow Surge",   icon:"🌑", desc:"Boss-Quest XP x2",             shadowXpMult:2.0,         color:"#6366f1" },
+359:   { id:"none",        name:"Stable Gates",   icon:"🌀", desc:"Keine besonderen Bedingungen",                            color:"#64748b" },
+408: // Generate floor plan for a dungeon
+409: function generateFloorPlan(dungeon) {
+410:   const totalFloors = dungeon.floors || 3;
+435: function getFloorLogs(floor, dungeon, strategy, playerStats, isStrong, isWeak) {
+474:   side:      { label:"Side",      color:"#a78bfa", icon:"📋", xpMult:1.0, goldMult:1.0 },
+475:   daily:     { label:"Daily",     color:"#22d3ee", icon:"📅", xpMult:1.2, goldMult:1.2 },
+476:   weekly:    { label:"Weekly",    color:"#8b5cf6", icon:"📆", xpMult:2.0, goldMult:2.0 },
+477:   emergency: { label:"Emergency", color:"#ef4444", icon:"🚨", xpMult:2.5, goldMult:2.5 },
+478:   chained:   { label:"Chained",   color:"#f59e0b", icon:"⛓️", xpMult:1.0, goldMult:1.0 },
+479:   hidden:    { label:"Hidden",    color:"#6366f1", icon:"❓", xpMult:3.0, goldMult:3.0 },
+490:     reward:{ xpMult:3, goldMult:3 },
+499:     reward:{ xpMult:3, goldMult:2 },
+508:     reward:{ xpMult:3, goldMult:3 },
+517:     reward:{ xpMult:4, goldMult:2 },
+526:     reward:{ xpMult:5, goldMult:4 },
+565:   const expires = new Date(); expires.setHours(23,59,59,999);
+570:     timeLimit: expires.toISOString(),
+571:     xpMult: 2.5, goldMult: 2.5,
+593:   { id:"iron_dagger",      slot:"weapon", name:"Iron Dagger",        rarity:"common",    icon:"🗡️",  ranks:["E"],     bonus:{ xpBonus:0.03 },                            desc:"+3% XP" },
+594:   { id:"hunters_blade",    slot:"weapon", name:"Hunter's Blade",     rarity:"uncommon",  icon:"⚔️",  ranks:["D"],     bonus:{ xpBonus:0.06 },                            desc:"+6% XP" },
+595:   { id:"shadow_sword",     slot:"weapon", name:"Shadow Sword",       rarity:"rare",      icon:"🌑",  ranks:["C"],     bonus:{ xpBonus:0.10, goldBonus:0.05 },            desc:"+10% XP, +5% Gold" },
+596:   { id:"void_blade",       slot:"weapon", name:"Void Blade",         rarity:"epic",      icon:"💜",  ranks:["B"],     bonus:{ xpBonus:0.15, strBonus:5 },               desc:"+15% XP, +5 STR" },
+597:   { id:"demon_king_blade", slot:"weapon", name:"Demon King's Blade", rarity:"legendary", icon:"🔱",  ranks:["A","S"], bonus:{ xpBonus:0.25, strBonus:10, goldBonus:0.10 }, desc:"+25% XP, +10 STR, +10% Gold" },
+599:   { id:"hunters_coat",     slot:"armor",  name:"Hunter's Coat",      rarity:"uncommon",  icon:"🥋",  ranks:["D"],     bonus:{ streakShield:1, dungeonBonus:5 },          desc:"+1 Schutz, +5% Dungeon" },
+600:   { id:"shadow_armor",     slot:"armor",  name:"Shadow Armor",       rarity:"rare",      icon:"🛡️",  ranks:["C"],     bonus:{ streakShield:2, dungeonBonus:8 },          desc:"+2 Schutz, +8% Dungeon" },
+601:   { id:"void_plate",       slot:"armor",  name:"Void Plate",         rarity:"epic",      icon:"💠",  ranks:["B"],     bonus:{ streakShield:3, dungeonBonus:12, vitBonus:5 }, desc:"+3 Schutz, +12% Dungeon, +5 VIT" },
+602:   { id:"monarch_robes",    slot:"armor",  name:"Monarch's Robes",    rarity:"legendary", icon:"👑",  ranks:["A","S"], bonus:{ streakShield:5, dungeonBonus:20, vitBonus:10 }, desc:"+5 Schutz, +20% Dungeon, +10 VIT" },
+604:   { id:"mana_ring",        slot:"ring",   name:"Mana Ring",          rarity:"uncommon",  icon:"🔮",  ranks:["C"],     bonus:{ xpBonus:0.05, intBonus:3 },               desc:"+5% XP, +3 INT" },
+605:   { id:"shadow_ring",      slot:"ring",   name:"Shadow Ring",        rarity:"rare",      icon:"🌀",  ranks:["B"],     bonus:{ xpBonus:0.08, goldBonus:0.08, agiBonus:3 }, desc:"+8% XP+Gold, +3 AGI" },
+606:   { id:"monarch_signet",   slot:"ring",   name:"Monarch's Signet",   rarity:"legendary", icon:"💎",  ranks:["S"],     bonus:{ xpBonus:0.15, goldBonus:0.15, chaBonus:10 }, desc:"+15% XP+Gold, +10 CHA" },
+614:   { id:"goblin_lair",     name:"Goblin Lair",       desc:"Verseuchte Höhle voller Goblins",       rank:"E", requirements:{str:5},               primaryStat:"str", xp:200,  gold:150,  icon:"👺", floors:2 },
+615:   { id:"cursed_forest",   name:"Cursed Forest",     desc:"Magische Fallen im dunklen Wald",        rank:"E", requirements:{int:5},               primaryStat:"int", xp:180,  gold:140,  icon:"🌲", floors:2 },
+616:   { id:"dark_cave",       name:"Dark Cave",         desc:"Untote in verlassenen Minen",            rank:"E", requirements:{vit:5},               primaryStat:"vit", xp:190,  gold:145,  icon:"🦇", floors:2 },
+617:   { id:"rat_den",         name:"Rat King's Den",    desc:"Riesige Ratten und ihr König",           rank:"E", requirements:{agi:5},               primaryStat:"agi", xp:170,  gold:135,  icon:"🐀", floors:2 },
+618:   { id:"library_ruin",    name:"Library Ruin",      desc:"Ruinen einer alten Bibliothek",          rank:"D", requirements:{int:15,agi:8},        primaryStat:"int", xp:400,  gold:400,  icon:"📚", floors:3 },
+619:   { id:"iron_fortress",   name:"Iron Fortress",     desc:"Stahlharte Festung mit Golem-Wächtern",  rank:"D", requirements:{str:12,vit:10},       primaryStat:"str", xp:420,  gold:450,  icon:"⚙️", floors:3 },
+620:   { id:"shadow_cave",     name:"Shadow Cave",       desc:"Schattenwesen lauern im Dunkeln",        rank:"D", requirements:{agi:12,int:10},       primaryStat:"agi", xp:380,  gold:350,  icon:"🌑", floors:3 },
+621:   { id:"ice_palace",      name:"Ice Palace",        desc:"Eisiger Palast des Winterkönigs",        rank:"C", requirements:{vit:25,str:20},       primaryStat:"vit", xp:800,  gold:1000, icon:"❄️", floors:4 },
+622:   { id:"thunder_gate",    name:"Thunder Gate",      desc:"Portal durchzogen von Blitzen",          rank:"C", requirements:{agi:25,int:15},       primaryStat:"agi", xp:850,  gold:1200, icon:"⚡", floors:4 },
+623:   { id:"blood_altar",     name:"Blood Altar",       desc:"Verfluchter Altar des Dämonenfürsten",   rank:"C", requirements:{str:30,cha:15},       primaryStat:"str", xp:900,  gold:1500, icon:"🩸", floors:4 },
+624:   { id:"dragon_nest",     name:"Dragon Nest",       desc:"Nest des uralten Drachen Verthaxis",     rank:"B", requirements:{str:40,vit:35,int:25},primaryStat:"str", xp:1500, gold:4000, icon:"🐉", floors:5 },
+625:   { id:"void_rift",       name:"Void Rift",         desc:"Riss in der Realität",                   rank:"B", requirements:{int:40,agi:35},       primaryStat:"int", xp:1600, gold:4500, icon:"🌀", floors:5 },
+626:   { id:"shadow_castle",   name:"Shadow Castle",     desc:"Festung des Schattenkönigs",             rank:"A", requirements:{str:60,int:55,vit:50,agi:45},primaryStat:"str", xp:3000, gold:10000, icon:"🏰", floors:7 },
+627:   { id:"monarchs_domain", name:"Monarch's Domain",  desc:"Reich eines ursprünglichen Monarchen",   rank:"S", requirements:{str:90,int:85,vit:80,agi:75,cha:70},primaryStat:"str", xp:6000, gold:25000, icon:"👑", floors:10 },
+636:   { id:"theme_crimson",        type:"theme", name:"Crimson Gate",     cost:400,  minRank:"D", desc:"Rotes Portal-Theme",   themeKey:"crimson" },
+651:   hunterName:"", level:1, xp:0, gold:0, totalGoldEarned:0,
+653:   statPoints:0,
+656:   shadowArmy:{ shadows:[], capacity:20, formations:{ vanguard:[], core:[], rearguard:[] }, totalShadowXp:0 },
+657:   totalXpEarned:0, totalQuestsCompleted:0,
+659:   dungeons:[], lastDungeonRefresh:null, dungeonHistory:[],
+681:     xp: {
+694:     totalStoryXp: 0,
+699: const JOB_XP_SOURCES = {
+701:   aligned_dungeon: 50,    // Dungeon mit passender Strategie  
+706: const JOB_XP_LEVELS = [
+722:   5: "Expert",
+727: const getXpForLevel = (lv) => getRank(lv).xpPerLv;
+741:   const bonuses = { xpBonus:0, goldBonus:0, dungeonBonus:0, streakShield:0, strBonus:0, intBonus:0, vitBonus:0, agiBonus:0, chaBonus:0 };
+751:   const bonuses = { xpCatBonus:{}, xpHardBonus:0, dungeonBonus:0, streakShield:0, goldBonus:0, stratBonus:{}, xpGlobal:0, shadowXpMult:1 };
+754:     if (e.type==="xp_bonus_cat")  bonuses.xpCatBonus[e.cat] = (bonuses.xpCatBonus[e.cat]||0) + e.bonus;
+755:     if (e.type==="xp_hard_bonus") bonuses.xpHardBonus += e.bonus;
+756:     if (e.type==="dungeon_bonus") bonuses.dungeonBonus += e.bonus;
+760:     if (e.type==="xp_global")     bonuses.xpGlobal += e.bonus;
+761:     if (e.type==="shadow_xp")     bonuses.shadowXpMult = (bonuses.shadowXpMult||1) + e.bonus;
+781:   const expires = new Date(Date.now() + 24*60*60*1000).toISOString();
+782:   return shuffled.slice(0,3).map(d => ({ ...d, instanceId:genId(), cleared:false, expiresAt:expires }));
+799:     xpGlobal: 0,
+801:     dungeonBonus: 0,
+806:     xpCatBonus: {},        // { str: 0.1, int: 0.05 }
+811:     dungeonTimeReduction: 0,
+815:     xpGlobalMultiplier: 1.0,
+819:     dungeonFailureRewards: 0,  // Anteil der Rewards bei Niederlage
+820:     dungeonRetryChance: 0,
+824:     shadowXpBonus: 0,
+848:     if (level >= 3) bonuses.xpCatBonus.str = (bonuses.xpCatBonus.str || 0) + 0.10;
+851:       // Hard & Boss +25% XP - als separater Multiplikator
+852:       bonuses.hardBossXpBonus = 0.25;
+857:       bonuses.xpGlobalMultiplier *= 2.0;
+863:     // Base: +30% XP von INT
+864:     bonuses.xpCatBonus.int = (bonuses.xpCatBonus.int || 0) + 0.30;
+885:     if (level >= 5) bonuses.dungeonFailureRewards = 0.50;
+900:     if (level >= 5) bonuses.dungeonTimeReduction += 0.20;
+908:     // Base: +15% XP global
+909:     bonuses.xpGlobal += 0.15;
+916:     if (level >= 7) bonuses.shadowXpBonus += 0.50;
+918:     // Domain Expansion (24h CD, 1h Dauer)
+919:     if (cooldowns.domain_expansion && now < cooldowns.domain_expansion + 3600000) {
+920:       bonuses.xpGlobal *= 2.0;
+922:       bonuses.dungeonBonus += 20;
+944: function awardJobXp(state, source, context = {}) {
+949:   let xpGain = 0;
+955:         xpGain = JOB_XP_SOURCES.aligned_quest;
+956:         if (context.difficulty === "boss") xpGain += JOB_XP_SOURCES.boss_kill;
+960:     case "dungeon_complete":
+963:         xpGain = JOB_XP_SOURCES.aligned_dungeon;
+968:       xpGain = JOB_XP_SOURCES.job_quest;
+978:         xpGain = JOB_XP_SOURCES.shadow_synergy;
+983:   if (xpGain === 0) return state;
+985:   const newXp = (state.jobs.xp[currentJob] || 0) + xpGain;
+990:   while (newLevel < JOB_XP_LEVELS.length - 1 && newXp >= JOB_XP_LEVELS[newLevel + 1]) {
+1000:       xp: { ...state.jobs.xp, [currentJob]: newXp },
+1051:     case "dungeon_clear":
+1052:       return (state.dungeonHistory || []).filter(d => {
+1055:         if (task.rank && d.dungeonRank !== task.rank) return false;
+1071: function calcSuccessChance(dungeon, stats, stratKey, skillBonuses, modifier, formationBonus, jobBonuses = {}, playerLevel = 1) {
+1073:   const reqs = Object.entries(dungeon.requirements);
+1077:   const primaryReq = dungeon.requirements[dungeon.primaryStat]||10;
+1079:   chance += stratKey === dungeon.primaryStat ? Math.round(ratio*16) : Math.round(ratio*7);
+1080:   chance += skillBonuses.dungeonBonus||0;
+1084:   chance += formationBonus?.dungeonBonus || 0;
+1090:   chance += (jobBonuses.dungeonBonus || 0);
+1098:   const dungeonRankIdx = getRankIndex(dungeon.rank);
+1100:   const rankDiff = playerRankIdx - dungeonRankIdx;
+1112: function getEquipDropForDungeon(dungeonRank) {
+1114:   const pool = EQUIPMENT_POOL.filter(e => e.ranks.includes(dungeonRank));
+1131:   s.xp = s.xp || 0;
+1139:     s.jobs.xp = { ...DEFAULT_STATE.jobs.xp, ...(oldState.jobs.xp || {}) };
+1158:       level: 1, xp: 0, xpToNext: calcShadowXpToNext(1),
+1162:       summonsCount: 1, dungeonsCleared: 0, totalXpGenerated: 0,
+1164:     s.shadowArmy = { shadows: newShadows, capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 };
+1240: @keyframes xpFill{from{width:0}to{width:var(--fill)}}
+1246: @keyframes levelUpBg{0%{opacity:0}15%{opacity:1}85%{opacity:1}100%{opacity:0}}
+1247: @keyframes levelUpText{0%{transform:scale(0.3) translateY(40px);opacity:0}30%{transform:scale(1.1) translateY(0);opacity:1}50%{transform:scale(1)}100%{transform:scale(1);opacity:1}}
+1248: @keyframes levelUpRays{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+1249: @keyframes levelUpRank{0%,40%{transform:translateY(20px);opacity:0}70%,100%{transform:translateY(0);opacity:1}}
+1252: @keyframes ringExpand{0%{transform:scale(0.5);opacity:0.8}100%{transform:scale(3);opacity:0}}
+1257: @keyframes dungeonResultIn{0%{transform:scale(0.7) translateY(30px);opacity:0}60%{transform:scale(1.04);opacity:1}100%{transform:scale(1);opacity:1}}
+1345:   const colors={info:"#4f6ef7",success:"#22c55e",gold:"#f59e0b",xp:"#a78bfa",levelup:"#e879f9",dungeon:"#22d3ee",defeat:"#ef4444",achievement:"#f59e0b",skill:"#22d3ee",penalty:"#ef4444",shadow:"#7c3aed",named:"#f59e0b"};
+1373:             {achievement.reward.xp>0&&<div style={{fontSize:10,color:"#a78bfa",fontFamily:"'JetBrains Mono',monospace",marginTop:3}}>+{achievement.reward.xp} XP · +{achievement.reward.gold} G</div>}
+1381: // ─── XP FLOAT ─────────────────────────────────────────────────
+1382: function XpFloat({ x, y, xp, gold }) {
+1385:       <div style={{fontSize:18,fontWeight:800,color:"#a78bfa",fontFamily:"'Cinzel',serif",textShadow:"0 0 12px rgba(167,139,250,0.6)",whiteSpace:"nowrap"}}>+{xp} XP</div>
+1396:     <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",animation:"levelUpBg 4s ease forwards",background:"rgba(0,0,0,0.93)"}}>
+1397:       <div style={{position:"absolute",width:500,height:500,background:`conic-gradient(from 0deg,transparent,${rank.color}08,transparent,${rank.color}05,transparent)`,animation:"levelUpRays 8s linear infinite",borderRadius:"50%"}}/>
+1398:       <div style={{position:"absolute",width:120,height:120,borderRadius:"50%",border:`2px solid ${rank.color}44`,animation:"ringExpand 1.5s ease-out forwards"}}/>
+1400:         <div style={{fontSize:11,letterSpacing:6,color:rank.color,fontFamily:"'JetBrains Mono',monospace",animation:"levelUpText 1.2s ease-out forwards",marginBottom:12,opacity:0}}>{isRankUp?"RANK UP":"LEVEL UP"}</div>
+1401:         <div style={{fontSize:96,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif",textShadow:`0 0 60px ${rank.color},0 0 120px ${rank.color}66`,animation:"levelUpText 1s ease-out 0.15s forwards",opacity:0,lineHeight:1}}>{level}</div>
+1402:         <div style={{fontSize:18,color:rank.color,fontFamily:"'Cinzel',serif",letterSpacing:4,animation:"levelUpRank 1.8s ease-out forwards",opacity:0,marginTop:12,textShadow:`0 0 20px ${rank.glow}`}}>{rank.label}</div>
+1403:         {isRankUp&&<div style={{marginTop:20,padding:"8px 24px",borderRadius:20,background:`linear-gradient(135deg,${rank.color}22,${rank.color}11)`,border:`1px solid ${rank.color}44`,fontSize:12,color:rank.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,animation:"levelUpRank 2s ease-out forwards",opacity:0}}>★ NEW RANK ACHIEVED ★</div>}
+1499:   const xpPct = Math.min((shadow.xp / shadow.xpToNext) * 100, 100);
+1551:       {/* XP bar */}
+1553:         <div style={{width:`${xpPct}%`,height:"100%",borderRadius:2,background:`linear-gradient(90deg,${cls.color}88,${cls.color})`,transition:"width 0.6s ease"}}/>
+1572:   const xpPct = Math.min((shadow.xp / shadow.xpToNext) * 100, 100);
+1599:         {/* XP */}
+1602:             <span>EXP</span><span>{shadow.xp} / {shadow.xpToNext}</span>
+1605:             <div style={{width:`${xpPct}%`,height:"100%",borderRadius:3,background:`linear-gradient(90deg,${cls.color}88,${cls.color})`,transition:"width 0.8s ease"}}/>
+1709:           {[{label:"Dungeon",val:`+${formationBonus.dungeonBonus}%`,color:"#ef4444",icon:"⚔️"},{label:"XP",val:`+${Math.round(formationBonus.xpBonus*100)}%`,color:"#a78bfa",icon:"✨"},{label:"Gold",val:`+${Math.round(formationBonus.goldBonus*100)}%`,color:"#fbbf24",icon:"💰"}].map(({label,val,color,icon})=>(
+1777: function QuestTimer({ expiresAt, color="#ef4444" }) {
+1780:     const calc=()=>Math.max(0,Math.floor((new Date(expiresAt)-Date.now())/1000));
+1784:   },[expiresAt]);
+1827:   const expired=quest.timeLimit&&new Date(quest.timeLimit)<new Date();
+1831:         background:done?"rgba(34,197,94,0.06)":failed||expired?"rgba(239,68,68,0.06)":"linear-gradient(135deg,rgba(239,68,68,0.12),rgba(220,38,38,0.04))",
+1832:         border:`1px solid ${done?"#22c55e44":failed||expired?"#ef444444":"#ef4444"}`,
+1833:         borderLeft:`3px solid ${done?"#22c55e":failed||expired?"#ef444466":"#ef4444"}`,
+1835:         animation:!done&&!failed&&!expired?"glow 2s infinite":"none",
+1840:         <span style={{fontSize:16,animation:!done&&!failed&&!expired?"pulse 1s infinite":"none"}}>🚨</span>
+1844:             {!done&&!failed&&!expired&&quest.timeLimit&&<QuestTimer expiresAt={quest.timeLimit} color="#ef4444"/>}
+1845:             {(expired||failed)&&!done&&<span style={{fontSize:9,color:"#ef4444",fontFamily:"'JetBrains Mono',monospace"}}>ABGELAUFEN</span>}
+1856:           <span style={{color:"#a78bfa"}}>+{diff.xp*2.5|0} XP</span>
+1860:         {!done&&!failed&&!expired&&(
+1901:   const xpGain=Math.round((diff?.xp||50)*(quest.chainMultiplier||1)*(typeCfg.xpMult||1));
+1944:           {quest.type==="weekly"&&quest.timeLimit&&<QuestTimer expiresAt={quest.timeLimit} color="#8b5cf6"/>}
+1949:           <span style={{color:"#a78bfa"}}>+{xpGain} XP</span>
+1960: function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier }) {
+1962:   const rankData=RANKS.find(r=>r.name===dungeon.rank)||RANKS[0];
+1963:   const reqs=Object.entries(dungeon.requirements);
+1964:   const timeLeft=Math.max(0,new Date(dungeon.expiresAt)-new Date());
+1969:       background:dungeon.cleared?"rgba(6,6,14,0.4)":theme.card,
+1970:       border:`1px solid ${dungeon.cleared?"#1e293b":hover?rankData.color+"66":rankData.color+"25"}`,
+1971:       borderRadius:20,padding:0,position:"relative",overflow:"hidden",opacity:dungeon.cleared?0.4:1,
+1973:       transform:hover&&!dungeon.cleared?"translateY(-4px)":"none",
+1974:       boxShadow:hover&&!dungeon.cleared?`0 12px 40px rgba(0,0,0,0.5),0 0 30px ${rankData.color}18`:"0 4px 20px rgba(0,0,0,0.2)"}}>
+1975:       <div style={{position:"absolute",top:14,right:14,zIndex:2,padding:"4px 12px",borderRadius:8,background:rankData.color+"18",border:`1.5px solid ${rankData.color}44`,fontSize:10,fontWeight:900,color:rankData.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,boxShadow:`0 0 10px ${rankData.color}15`}}>{dungeon.rank}-RANK</div>
+1978:           {!dungeon.cleared&&<>
+1982:           <span style={{fontSize:28,position:"relative",zIndex:1,filter:!dungeon.cleared?`drop-shadow(0 0 8px ${rankData.color}88)`:"none",animation:!dungeon.cleared?"gateFloat 3s ease-in-out infinite":"none"}}>{dungeon.cleared?"✓":dungeon.icon}</span>
+1989:           <div style={{fontSize:16,fontWeight:800,color:dungeon.cleared?"#475569":"#fff",fontFamily:"'Cinzel',serif",letterSpacing:1}}>{dungeon.name}</div>
+1990:           <div style={{fontSize:11,color:"#64748b",marginTop:3,lineHeight:1.4}}>{dungeon.desc}</div>
+1992:             <span style={{fontSize:10,color:"#475569",fontFamily:"'JetBrains Mono',monospace",padding:"2px 7px",borderRadius:5,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>🏛 {dungeon.floors} Floors</span>
+1993:             {!dungeon.cleared&&timeLeft>0&&<span style={{fontSize:10,color:hoursLeft<2?"#ef4444":"#475569",fontFamily:"'JetBrains Mono',monospace",padding:"2px 7px",borderRadius:5,background:hoursLeft<2?"#ef444410":"rgba(255,255,255,0.03)",border:`1px solid ${hoursLeft<2?"#ef444420":"rgba(255,255,255,0.06)"}`}}>⏱ {hoursLeft}h {minsLeft}m</span>}
+2008:             <span style={{fontSize:11,color:"#a78bfa",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>+{modifier?.xpMult?Math.round(dungeon.xp*modifier.xpMult):dungeon.xp}</span>
+2012:             <span style={{fontSize:11,color:"#fbbf24",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>+{modifier?.goldMult?Math.round(dungeon.gold*modifier.goldMult):dungeon.gold}</span>
+2015:         {dungeon.cleared
+2017:           :<button onClick={()=>onEnter(dungeon)} style={{
+2128: function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBonuses, modifier, formationBonus, state, persist, notify }) {
+2137:   const [floorPlan]=useState(()=>generateFloorPlan(dungeon));
+2145:   const rankData=RANKS.find(r=>r.name===dungeon.rank)||RANKS[0];
+2146:   const bossPhaseDefs=BOSS_PHASES[dungeon.rank]||BOSS_PHASES.E;
+2148:   const chance=calcSuccessChance(dungeon,playerStats,strategy.key,skillBonuses,modifier,formationBonus,jobBonuses,state?.level||1);
+2155:     const curChance = calcSuccessChance(dungeon, playerStats, cur.key, skillBonuses, modifier, formationBonus, jobBonuses, state?.level||1);
+2180:     const isStrong=(playerStats[strategy.key]||0)>=(dungeon.requirements[dungeon.primaryStat]||10)*1.4;
+2181:     const isWeak=(playerStats[strategy.key]||0)<(dungeon.requirements[dungeon.primaryStat]||10)*0.6;
+2194:         {text:`▶ FLOOR ${floorNum}/${dungeon.floors} · 🏕️ SAFE ROOM`,type:"success"},
+2209:       const bonus=Math.floor(dungeon.gold*0.2);
+2212:         {text:`▶ FLOOR ${floorNum}/${dungeon.floors} · 💰 SCHATZKAMMER`,type:"gold"},
+2227:       {text:`▶ FLOOR ${floorNum}/${dungeon.floors} · ${ft.icon} ${ft.name.toUpperCase()}`,type:"system"},
+2229:       ...getFloorLogs(fl,dungeon,strategy,playerStats,isStrong,isWeak),
+2233:     if(formationBonus?.dungeonBonus>0&&floorNum===1) logs.splice(2,0,{text:`[SHADOW] +${formationBonus.dungeonBonus}% Formation-Bonus`,type:"shadow"});
+2297:     const xpMult=modifier?.xpMult||1;
+2299:     const bonusXp=Math.floor(completedFloors.length/dungeon.floors*dungeon.xp*0.15);
+2300:     const xpResult=won?Math.round(dungeon.xp*xpMult+bonusXp):Math.round(dungeon.xp*0.08);
+2301:     const goldResult=won?Math.round((dungeon.gold+goldBonus)*goldMult):0;
+2302:     const drop=won?getEquipDropForDungeon(dungeon.rank):null;
+2304:     setResult({won,xp:xpResult,gold:goldResult,drop,floorsCleared:completedFloors.length,totalFloors:dungeon.floors,goldBonus, strategy: strategy.key});
+2328:             <div style={{fontSize:52,marginBottom:10,filter:`drop-shadow(0 0 20px ${rankData.color})`,animation:"gateFloat 2s ease-in-out infinite"}}>{dungeon.icon}</div>
+2329:             <div style={{fontSize:10,letterSpacing:4,color:rankData.color,fontFamily:"'JetBrains Mono',monospace",marginBottom:6}}>{dungeon.rank}-RANK · {dungeon.floors} FLOORS</div>
+2330:             <div style={{fontSize:24,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif"}}>{dungeon.name}</div>
+2332:             {formationBonus?.dungeonBonus>0&&<div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,background:"#7c3aed15",border:"1px solid #7c3aed33",fontSize:11,color:"#a78bfa",fontFamily:"'JetBrains Mono',monospace"}}>🌑 Shadow Army +{formationBonus.dungeonBonus}%</div>}
+2394:             <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:52,filter:`drop-shadow(0 0 18px ${rankData.color})`}}>{dungeon.icon}</div>
+2396:           <div style={{fontSize:10,letterSpacing:6,color:rankData.color,fontFamily:"'JetBrains Mono',monospace",animation:"breathe 0.9s infinite"}}>{dungeon.name}</div>
+2404:             <div style={{fontSize:9,letterSpacing:4,color:rankData.color,fontFamily:"'JetBrains Mono',monospace",marginBottom:4}}>{dungeon.rank}-RANK · {dungeon.name}</div>
+2405:             <div style={{fontSize:11,color:"#475569",fontFamily:"'JetBrains Mono',monospace"}}>FLOOR {currentFloor}/{dungeon.floors}</div>
+2408:           <FloorProgressBar floors={floorPlan} currentFloor={currentFloor} totalFloors={dungeon.floors}/>
+2433:           {phase==="boss"&&<BossPhaseUI rank={dungeon.rank} bossHp={bossHp} bossMaxHp={100} currentPhase={bossPhase} phases={bossPhaseDefs}/>}
+2448:             <div style={{fontSize:9,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}>{floorsCompleted.length}/{dungeon.floors} FLOORS</div>
+2450:               <div style={{height:"100%",background:rankData.color,borderRadius:1,width:`${(floorsCompleted.length/dungeon.floors)*100}%`,transition:"width 0.6s ease"}}/>
+2457:         <div style={{textAlign:"center",padding:"0 24px",width:"100%",maxWidth:420,animation:"dungeonResultIn 0.6s cubic-bezier(0.34,1.56,0.64,1)"}}>
+2465:             <div style={{textAlign:"center"}}><div style={{fontSize:8,color:"#475569",fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,marginBottom:5}}>XP</div><div style={{fontSize:24,fontWeight:900,color:result.won?"#a78bfa":"#334155",fontFamily:"'Cinzel',serif"}}>+{result.xp}</div></div>
+2491: function JobCard({ jobKey, level, xp, currentJob, onSwitch, onActivate, theme, requirementsMet, cooldowns }) {
+2494:   const nextXp = JOB_XP_LEVELS[level + 1] || JOB_XP_LEVELS[level];
+2495:   const progress = Math.min((xp / nextXp) * 100, 100);
+2650:             xp={state.jobs?.xp?.[jobKey] || 0}
+2776: export default function App({ initialHunterName, onLogout }) {
+2781:   const [levelUp,setLevelUp]=useState(null);
+2786:   const [xpFloats,setXpFloats]=useState([]);
+2822:         // Only update local state if cloud data has more XP or different level
+2826:           const isNewer = (cloudData.totalXpEarned || 0) > (prev.totalXpEarned || 0) || 
+2898:             s.dungeons=generateDungeons(getRank(s.level || 1).name);
+2915:           if (s.statPoints === undefined) s.statPoints = 0;
+2960:             xpMult: 1, goldMult: 1, isSystem: true
+2993:     let xpBonus=0,goldBonus=0;
+2994:     newAchs.forEach(a=>{xpBonus+=a.reward.xp||0;goldBonus+=a.reward.gold||0;});
+2996:     return{...nextState,xp:nextState.xp+xpBonus,gold:nextState.gold+goldBonus,totalGoldEarned:(nextState.totalGoldEarned||0)+goldBonus,achievements:{...nextState.achievements,unlocked}};
+2999:   const computeXpGain = useCallback((quest, streakBonus, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses = {}) => {
+3001:     let xp = diff.xp;
+3002:     xp *= (1 + streakBonus / 100);
+3003:     xp *= (1 + (equipBonuses.xpBonus || 0));
+3004:     xp *= (1 + (skillBonuses.xpCatBonus?.[quest.category] || 0));
+3005:     xp *= (1 + (jobBonuses.xpCatBonus?.[quest.category] || 0));
+3006:     if (quest.difficulty === "hard" || quest.difficulty === "boss") xp *= (1 + (skillBonuses.xpHardBonus || 0));
+3007:     xp *= (1 + (skillBonuses.xpGlobal || 0));
+3008:     xp *= (1 + (jobBonuses.xpGlobal || 0));
+3009:     xp *= (1 + (formBonus?.xpBonus || 0));
+3010:     if (penaltyActive) xp *= 0.8;
+3012:     xp *= (jobBonuses.xpGlobalMultiplier || 1.0);
+3015:     xp *= (typeCfg.xpMult || 1);
+3016:     xp *= (quest.chainMultiplier || 1);
+3017:     return Math.round(xp);
+3045:     const xpGain=computeXpGain(quest,streakBonusPct,equipBonuses,skillBonuses,penaltyActive,formBonus,jobBonuses);
+3050:     if(rect) setXpFloats(prev=>[...prev,{id:genId(),x:rect.x-20,y:rect.y,xp:xpGain,gold:goldGain}]);
+3051:     setTimeout(()=>setXpFloats(prev=>prev.slice(1)),1400);
+3052:     let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false,levelsGained=0;
+3054:     while(newXp>=getXpForLevel(newLevel)&&newLevel<100){
+3055:       newXp-=getXpForLevel(newLevel);
+3061:     // Job XP calculation
+3062:     let next = awardJobXp({...state, xp:newXp, level:newLevel, gold:state.gold+goldGain,totalGoldEarned:(state.totalGoldEarned||0)+goldGain}, "quest_complete", {
+3112:       stats:{...state.stats,[quest.category]:(state.stats[quest.category]||0)+Math.ceil(xpGain/40)}, // Reduced auto-increase
+3113:       statPoints: (state.statPoints || 0) + earnedPoints,
+3116:       totalXpEarned:(state.totalXpEarned||0)+xpGain,
+3129:         xpMult:hq.reward.xpMult, goldMult:hq.reward.goldMult,
+3143:           level:1, xp:0, xpToNext:calcShadowXpToNext(1),
+3147:           summonsCount:1, dungeonsCleared:0, totalXpGenerated:0,
+3167:     else if(!ariseData&&quest.type!=="hidden"&&quest.type!=="chained") notify(`+${xpGain} XP · +${goldGain} Gold`,"success");
+3169:   },[state,persist,processAchievements,computeXpGain,notify]);
+3200:     const xpGain=Math.round(diff.xp*2.5);
+3202:     let newXp=state.xp+xpGain,newLevel=state.level,didLevelUp=false,levelsGained=0;
+3205:     while(newXp>=getXpForLevel(newLevel)&&newLevel<100){
+3206:       newXp-=getXpForLevel(newLevel);
+3212:     let next={...state,xp:newXp,level:newLevel,gold:state.gold+goldGain,
+3214:       statPoints:(state.statPoints||0)+earnedPoints,
+3217:       totalXpEarned:(state.totalXpEarned||0)+xpGain,
+3221:     notify(`🚨 NOTFALL-QUEST ERFÜLLT! +${xpGain} XP · +${goldGain} Gold`,"named");
+3241:   const finishDungeon=useCallback((dungeon,result)=>{
+3242:     let newXp=state.xp+result.xp,newLevel=state.level,didLevelUp=false,levelsGained=0;
+3244:     while(newXp>=getXpForLevel(newLevel)&&newLevel<100){
+3245:       newXp-=getXpForLevel(newLevel);
+3256:       let newSXp=s.xp+Math.floor(result.xp*0.1);
+3258:       while(newSXp>=s.xpToNext&&newSLevel<(SHADOW_TIERS[s.tier]?.maxLevel||20)){newSXp-=calcShadowXpToNext(newSLevel);newSLevel++;}
+3259:       return{...s,xp:newSXp,level:newSLevel,xpToNext:calcShadowXpToNext(newSLevel),dungeonsCleared:(s.dungeonsCleared||0)+1};
+3264:     // Job XP calculation for dungeons
+3265:     let next = awardJobXp({...state, gold: state.gold + totalGold, totalGoldEarned: (state.totalGoldEarned || 0) + totalGold}, "dungeon_complete", {
+3267:         dungeonRank: dungeon.rank
+3276:     if (!result.won && getJobBonuses(state).dungeonFailureRewards > 0) {
+3277:       const partialXp = Math.floor(result.xp * getJobBonuses(state).dungeonFailureRewards);
+3278:       const partialGold = Math.floor(result.gold * getJobBonuses(state).dungeonFailureRewards);
+3279:       next.xp += partialXp;
+3281:       notify(`Guardian-Passiv: +${partialXp} XP, +${partialGold} Gold trotz Niederlage`, "success");
+3286:       xp: next.xp,
+3287:       statPoints: (state.statPoints || 0) + earnedPoints,
+3288:       dungeons:state.dungeons.map(d=>d.instanceId===dungeon.instanceId?{...d,cleared:true}:d),
+3289:       dungeonHistory:[...(state.dungeonHistory||[]),{dungeonId:dungeon.id,dungeonName:dungeon.name,dungeonRank:dungeon.rank,won:result.won,xp:result.xp,gold:totalGold,floorsCleared:result.floorsCleared||dungeon.floors,date:getToday()}],
+3290:       totalXpEarned:(state.totalXpEarned||0)+result.xp,
+3294:     // Check named shadow unlocks after dungeon
+3300:           level:1, xp:0, xpToNext:calcShadowXpToNext(1),
+3304:           summonsCount:1, dungeonsCleared:0, totalXpGenerated:0,
+3323:     else if (result.won) notify(`${dungeon.name} bezwungen! +${result.xp} XP · ${result.floorsCleared||"?"}/${dungeon.floors} Floors`, "dungeon");
+3324:     else notify(`Niederlage in ${dungeon.name}.`, "defeat");
+3450:     if (!state || state.statPoints <= 0) return;
+3453:       statPoints: state.statPoints - 1,
+3470:       dungeons:generateDungeons("E"),
+3484:         xp: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
+3497:   const xpNeeded=getXpForLevel(state?.level || 1);
+3498:   const xpPercent=Math.min(((state?.xp || 0)/xpNeeded)*100,100);
+3501:   const activeDungeons=(state?.dungeons||[]).filter(d=>!d.cleared&&new Date(d.expiresAt)>new Date());
+3534:       {xpFloats.map(f=><XpFloat key={f.id} x={f.x} y={f.y} xp={f.xp} gold={f.gold}/>)}
+3535:       {levelUp&&<LevelUpCinematic level={levelUp} rank={getRank(levelUp)} oldRank={prevRank} onClose={()=>setLevelUp(null)}/>}
+3539:       {activeDungeon&&<DungeonBattle dungeon={activeDungeon} playerStats={state.stats} theme={theme} onResult={r=>finishDungeon(activeDungeon,r)} onClose={()=>setActiveDungeon(null)} skillBonuses={getSkillBonuses(null,state.stats)} modifier={modifier} formationBonus={formationBonus} state={state} persist={persist} notify={notify}/>}
+3556:                 <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"#475569",fontFamily:"'JetBrains Mono',monospace"}}>XP MULT</div><div style={{fontSize:22,fontWeight:900,color:"#a78bfa",fontFamily:"'Cinzel',serif"}}>x{showHiddenQuestModal.reward?.xpMult||3}</div></div>
+3569:             <div style={{width:46,height:46,display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(135deg,${rank.color}28,${rank.color}0a)`,border:`2px solid ${rank.color}66`,position:"relative",overflow:"hidden",clipPath:"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",animation:"hexPulse 3s infinite"}}>
+3644:             <div style={{fontSize:10,color:"#ef4444",marginTop:6,fontFamily:"'JetBrains Mono',monospace"}}>-20% XP aus allen Quests</div>
+3669:                   {streakBonus>0&&<div style={{fontSize:10,color:"#f59e0b",marginTop:6,fontFamily:"'JetBrains Mono',monospace",display:"flex",alignItems:"center",gap:4}}>🔥 +{streakBonus}% XP</div>}
+3670:                   {formationBonus.dungeonBonus>0&&<div style={{fontSize:10,color:"#a78bfa",marginTop:3,fontFamily:"'JetBrains Mono',monospace"}}>🌑 +{formationBonus.dungeonBonus}% Dungeon</div>}
+3675:                 <span style={{letterSpacing:2}}>EXP</span><span>{state.xp.toLocaleString()} / {xpNeeded.toLocaleString()}</span>
+3678:                 <div style={{width:`${xpPercent}%`,height:"100%",borderRadius:5,background:`linear-gradient(90deg,${theme.primary},${theme.accent})`,boxShadow:`0 0 16px ${theme.glow},0 2px 8px ${theme.primary}44`,transition:"width 0.8s cubic-bezier(0.4,0,0.2,1)",position:"relative",overflow:"hidden"}}>
+3731:                 <div style={{fontSize:11,color:"#334155"}}>Erstelle eine Quest um XP zu verdienen</div>
+3738:         {view==="dungeon"&&(
+3742:               <div style={{fontSize:12,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}>Reset in {hoursUntilMidnight()}h · {modifier?.id!=="none"?`${modifier?.icon} ${modifier?.name}` : "Stable Gates"}</div>
+3744:             {activeDungeons.length===0&&<div style={{textAlign:"center",padding:"40px 20px",background:theme.card,borderRadius:14,border:`1px dashed ${theme.primary}15`,backdropFilter:"blur(8px)"}}><div style={{fontSize:36,marginBottom:10}}>🌀</div><div style={{fontSize:14,color:"#475569"}}>Keine aktiven Gates</div><div style={{fontSize:11,color:"#334155",marginTop:4}}>Kommen morgen wieder zurück</div></div>}
+3745:             {activeDungeons.map((d,i)=><div key={d.instanceId} style={{marginBottom:10,animation:`slideUp 0.35s ease ${i*0.1}s both`}}><DungeonGate dungeon={d} playerStats={{...state.stats,...Object.fromEntries(CATEGORIES.map(c=>[c.key,(state.stats[c.key]||0)+(equipBonuses[c.key+"Bonus"]||0)]))}} theme={theme} onEnter={setActiveDungeon} modifier={modifier}/></div>)}
+3746:             {(state.dungeons||[]).filter(d=>d.cleared).length>0&&(
+3749:                 {(state.dungeons||[]).filter(d=>d.cleared).map((d,i)=><div key={d.instanceId} style={{marginBottom:8,opacity:0.4}}><DungeonGate dungeon={d} playerStats={state.stats} theme={theme} onEnter={()=>{}} modifier={modifier}/></div>)}
+3759:               {state.statPoints > 0 && (
+3761:                   {state.statPoints} PUNKTE VERFÜGBAR
+3766:                 {[{label:"TOTAL XP",value:(state.totalXpEarned||0).toLocaleString(),color:theme.accent},{label:"QUESTS",value:state.totalQuestsCompleted||0,color:theme.accent},{label:"STREAK",value:`${state.streak}d`,color:"#f59e0b"},{label:"PWR LVL",value:powerLevel,color:"#e879f9"},{label:"CLEARED",value:(state.dungeonHistory||[]).filter(d=>d.won).length,color:"#22d3ee"}].map((s,i)=>(
+3785:                     {state.statPoints > 0 && (
+3833:                   {[{label:"Deployed",value:shadowArmy.shadows.filter(s=>s.isDeployed).length,color:"#22c55e"},{label:"Dungeon",value:`+${formationBonus.dungeonBonus}%`,color:"#ef4444"},{label:"XP Bonus",value:`+${Math.round(formationBonus.xpBonus*100)}%`,color:"#a78bfa"}].map(({label,value,color})=>(
+3936:               // Abuse Protection: Only give XP and Gold if chapter isn't already completed
+3940:                 // XP und Gold vergeben
+3941:                 const xpGain = chapter.rewards?.xp || 0;
+3943:                 let newXp = (prev.xp || 0) + xpGain;
+3949:                 while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
+3950:                   newXp -= getXpForLevel(newLevel);
+3962:                 notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
+3966:                   xp: newXp,
+3969:                   statPoints: (prev.statPoints || 0) + earnedPoints,
+3975:                     totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
+4023:                   {equipBonuses.xpBonus>0&&<div>+{Math.round(equipBonuses.xpBonus*100)}% XP</div>}
+4025:                   {equipBonuses.dungeonBonus>0&&<div>+{equipBonuses.dungeonBonus}% Dungeon Erfolg</div>}
+4068:                 <div style={{fontSize:18,fontWeight:900,color:"#f59e0b",fontFamily:"'Cinzel',serif"}}>{achUnlocked.reduce((sum,id)=>{const a=ACHIEVEMENTS.find(ac=>ac.id===id);return sum+(a?.reward?.xp||0);},0)}</div>
+4074:             {["quests","dungeons","story","streaks","stats","shadows","misc"].map(cat=>{
+4076:               const catLabels={quests:"⚔️ Quests",dungeons:"🌀 Dungeons",story:"📖 Story",streaks:"🔥 Streaks",stats:"📊 Stats",shadows:"🌑 Army",misc:"🎲 Sonstiges"};
+4090:                         {unlocked?<div style={{fontSize:12,color:"#f59e0b"}}>✓</div>:<div style={{textAlign:"right",fontSize:9,color:"#334155",fontFamily:"'JetBrains Mono',monospace"}}><div>+{ach.reward.xp} XP</div><div>{ach.reward.gold>0?`+${ach.reward.gold}G`:""}</div></div>}
+4154:             {key:"dungeon",    icon:"🌀",  label:"Gates",   badge:activeDungeons.length},
+4284:                     {key:"weekly", icon:"📆",label:"Weekly Quest", color:"#8b5cf6",desc:"2× XP & Gold"},
+4317:                     const xpVal=Math.round(d.xp*(typeCfg.xpMult||1));
+4333:                         <span style={{fontSize:9,opacity:0.75,fontFamily:"'JetBrains Mono',monospace"}}>+{xpVal} XP</span>
+4354:                 const baseXp=Math.round(diff.xp*(typeCfg.xpMult||1));
+4368:                           <span style={{color:"#67e8f9"}}>+{baseXp} XP</span>
+4379:                     {qType==="chained"&&<div style={{marginTop:6,padding:"5px 10px",background:"rgba(245,158,11,0.06)",borderRadius:8,border:"1px solid #f59e0b22",fontSize:10,color:"#f59e0b",fontFamily:"'JetBrains Mono',monospace",textAlign:"center"}}>⛓️ 3-Schritte Kette · +25% XP pro Schritt</div>}
