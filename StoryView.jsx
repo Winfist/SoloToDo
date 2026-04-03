@@ -1,6 +1,7 @@
 // ─── PHASE 6: STORY CAMPAIGN ──────────────────────────────────
 // StoryView.jsx - Solo Leveling Story Campaign
 // Einbinden in solo-leveling-v5.jsx als eigener View
+import React, { useState, useEffect } from "react";
 
 // ─── STORY DATA ───────────────────────────────────────────────
 export const STORY_ARCS = [
