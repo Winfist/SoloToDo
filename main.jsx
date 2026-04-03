@@ -89,7 +89,29 @@ function Root() {
     <div style={{ position: 'relative' }}>
       <App initialHunterName={hunterName} />
       {/* Optional: Logout helper for testing */}
-      <button onClick={handleLogout} style={{ position: 'fixed', bottom: 15, left: 15, zIndex: 9999, background: 'rgba(239,68,68,0.1)', border: '1px solid #ef444433', color: '#ef4444', fontSize: '10px', padding: '6px 10px', borderRadius: '6px', fontFamily: 'monospace', cursor: 'pointer', backdropFilter:"blur(4px)" }}>LOGOUT</button>
+      {/* Logout helper moved to top-left to avoid covering the navigation bar on mobile */}
+      <button onClick={handleLogout} style={{ 
+        position: 'fixed', 
+        top: 15, 
+        left: 15, 
+        zIndex: 9999, 
+        background: 'rgba(239,68,68,0.08)', 
+        border: '1px solid #ef444433', 
+        color: '#ef4444', 
+        fontSize: '9px', 
+        padding: '5px 10px', 
+        borderRadius: '5px', 
+        fontFamily: 'monospace', 
+        cursor: 'pointer', 
+        backdropFilter: "blur(4px)",
+        letterSpacing: "1px",
+        transition: "all 0.3s"
+      }}
+      onMouseEnter={(e) => { e.target.style.background = 'rgba(239,68,68,0.2)'; e.target.style.borderColor = '#ef4444'; }}
+      onMouseLeave={(e) => { e.target.style.background = 'rgba(239,68,68,0.08)'; e.target.style.borderColor = '#ef444433'; }}
+      >
+        EXIT SYSTEM
+      </button>
     </div>
   ) : (
     <AuthScreen onAuthSuccess={handleAuthSuccess} />
