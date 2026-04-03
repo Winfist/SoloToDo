@@ -1,0 +1,43 @@
+﻿
+solo-leveling-v5.jsx:653: 
+ statPoints:0,
+solo-leveling-v5.jsx:2918:
+          if 
+(s.statPoints === 
+undefined) s.statPoints = 
+0;
+solo-leveling-v5.jsx:3116:
+      statPoints: 
+(state.statPoints || 0) + 
+earnedPoints,
+solo-leveling-v5.jsx:3217:
+      statPoints:(state.st
+atPoints||0)+earnedPoints,
+solo-leveling-v5.jsx:3289:
+      statPoints: 
+(state.statPoints || 0) + 
+earnedPoints,
+solo-leveling-v5.jsx:3452:
+    if (!state || 
+state.statPoints <= 0) 
+return;
+solo-leveling-v5.jsx:3455:
+      statPoints: 
+state.statPoints - 1,
+solo-leveling-v5.jsx:3761:
+              
+{state.statPoints > 0 && (
+solo-leveling-v5.jsx:3763:
+                  
+{state.statPoints} PUNKTE 
+VERFÜGBAR
+solo-leveling-v5.jsx:3787:
+                    
+{state.statPoints > 0 && (
+solo-leveling-v5.jsx:3971:
+                  
+statPoints: 
+(prev.statPoints || 0) + 
+earnedPoints,
+
+
