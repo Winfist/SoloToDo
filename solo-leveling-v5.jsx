@@ -3057,7 +3057,7 @@ export default function App({ initialHunterName, onLogout }) {
       levelsGained++;
       didLevelUp=true;
     }
-    const earnedPoints = levelsGained * 5;
+    const earnedPoints = levelsGained * 3;
     // Job XP calculation
     let next = awardJobXp({...state, xp:newXp, level:newLevel, gold:state.gold+goldGain,totalGoldEarned:(state.totalGoldEarned||0)+goldGain}, "quest_complete", {
       category: quest.category,
@@ -3160,7 +3160,7 @@ export default function App({ initialHunterName, onLogout }) {
         `Glückwunsch, Hunter ${state.hunterName}.`,
         `Sie haben Level ${newLevel} erreicht.`,
         "Ihre physischen und mentalen Kapazitäten wurden erweitert.",
-        "5 Stat-Punkte wurden Ihrem Konto gutgeschrieben.",
+        `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`,
         "Verteilen Sie diese weise im Statistik-Menü."
       ]);
     }
@@ -3208,7 +3208,7 @@ export default function App({ initialHunterName, onLogout }) {
       levelsGained++;
       didLevelUp=true;
     }
-    const earnedPoints = levelsGained * 5;
+    const earnedPoints = levelsGained * 3;
     let next={...state,xp:newXp,level:newLevel,gold:state.gold+goldGain,
       totalGoldEarned:(state.totalGoldEarned||0)+goldGain,
       statPoints:(state.statPoints||0)+earnedPoints,
@@ -3225,7 +3225,7 @@ export default function App({ initialHunterName, onLogout }) {
       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
         "Notfallmission erfolgreich abgeschlossen.",
         `Sie haben Level ${newLevel} erreicht.`,
-        "5 Stat-Punkte wurden Ihrem Konto gutgeschrieben."
+        `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`
       ]);
     }
   },[state,persist,processAchievements,notify]);
@@ -3247,7 +3247,7 @@ export default function App({ initialHunterName, onLogout }) {
       levelsGained++;
       didLevelUp=true;
     }
-    const earnedPoints = levelsGained * 5;
+    const earnedPoints = levelsGained * 3;
     let newInventory=[...(state.equipment?.inventory||[])];
     if(result.drop) newInventory.push(result.drop);
     
@@ -3316,7 +3316,7 @@ export default function App({ initialHunterName, onLogout }) {
       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
         `Dungeon erfolgreich abgeschlossen.`,
         `Sie haben Level ${newLevel} reached.`,
-        "5 Stat-Punkte wurden Ihrem Konto gutgeschrieben.",
+        `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`,
         "Verteilen Sie diese im Statistik-Menü."
       ]);
     }
@@ -3951,7 +3951,7 @@ export default function App({ initialHunterName, onLogout }) {
                   newLevel++;
                   levelsGained++;
                 }
-                const earnedPoints = levelsGained * 5;
+                const earnedPoints = levelsGained * 3;
 
                 // Titel vergeben falls vorhanden
                 let newTitle = prev.selectedTitle;
