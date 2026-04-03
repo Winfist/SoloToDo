@@ -565,7 +565,7 @@ const SHOP_ITEMS = [
 ];
 
 const THEMES = {
-  default:{ primary:"#4f6ef7", secondary:"#7c3aed", glow:"rgba(79,110,247,0.35)",  accent:"#93b4fd", bg:"#080810", card:"rgba(12,12,24,0.85)",  surface:"rgba(20,20,40,0.6)"  },
+  default:{ primary:"#22d3ee", secondary:"#a855f7", glow:"rgba(34,211,238,0.35)", accent:"#67e8f9", bg:"#06060e", card:"rgba(10,10,22,0.88)", surface:"rgba(16,16,36,0.6)" },
   crimson:{ primary:"#dc2626", secondary:"#991b1b", glow:"rgba(220,38,38,0.35)",   accent:"#fca5a5", bg:"#0a0808", card:"rgba(24,12,12,0.85)",  surface:"rgba(40,20,20,0.6)"  },
   shadow: { primary:"#6366f1", secondary:"#4338ca", glow:"rgba(99,102,241,0.35)",  accent:"#a5b4fc", bg:"#06060f", card:"rgba(10,10,28,0.85)",  surface:"rgba(18,18,42,0.6)"  },
   ice:    { primary:"#06b6d4", secondary:"#0891b2", glow:"rgba(6,182,212,0.35)",   accent:"#a5f3fc", bg:"#060a0f", card:"rgba(10,16,28,0.85)",  surface:"rgba(16,24,42,0.6)"  },
@@ -1751,36 +1751,63 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier }) {
   const minsLeft=Math.floor((timeLeft%3600000)/60000);
   return (
     <div onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} style={{
-      background:dungeon.cleared?"rgba(8,8,16,0.4)":hover?`linear-gradient(135deg,${theme.card},${rankData.color}06)`:theme.card,
-      border:`1px solid ${dungeon.cleared?"#1e293b":hover?rankData.color+"55":rankData.color+"22"}`,
-      borderRadius:16,padding:16,position:"relative",overflow:"hidden",opacity:dungeon.cleared?0.45:1,
-      backdropFilter:"blur(12px)",transition:"all 0.3s",transform:hover&&!dungeon.cleared?"translateY(-2px)":"none"}}>
-      <div style={{position:"absolute",top:12,right:12,padding:"3px 10px",borderRadius:6,background:rankData.color+"18",border:`1px solid ${rankData.color}33`,fontSize:10,fontWeight:800,color:rankData.color,fontFamily:"'JetBrains Mono',monospace"}}>{dungeon.rank}-RANK</div>
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-        <div style={{width:50,height:50,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",background:rankData.color+"12",fontSize:26,flexShrink:0,border:`1px solid ${rankData.color}22`,animation:!dungeon.cleared?"gateFloat 3s ease-in-out infinite":"none"}}>{dungeon.cleared?"✓":dungeon.icon}</div>
-        <div>
-          <div style={{fontSize:15,fontWeight:700,color:dungeon.cleared?"#475569":"#e2e8f0",fontFamily:"'Cinzel',serif",letterSpacing:0.5}}>{dungeon.name}</div>
-          <div style={{fontSize:11,color:"#475569",marginTop:3}}>{dungeon.desc}</div>
-          <div style={{fontSize:10,color:"#334155",marginTop:2,fontFamily:"'JetBrains Mono',monospace"}}>{dungeon.floors} Floors</div>
+      background:dungeon.cleared?"rgba(6,6,14,0.4)":theme.card,
+      border:`1px solid ${dungeon.cleared?"#1e293b":hover?rankData.color+"66":rankData.color+"25"}`,
+      borderRadius:20,padding:0,position:"relative",overflow:"hidden",opacity:dungeon.cleared?0.4:1,
+      backdropFilter:"blur(16px)",transition:"all 0.35s cubic-bezier(0.4,0,0.2,1)",
+      transform:hover&&!dungeon.cleared?"translateY(-4px)":"none",
+      boxShadow:hover&&!dungeon.cleared?`0 12px 40px rgba(0,0,0,0.5),0 0 30px ${rankData.color}18`:"0 4px 20px rgba(0,0,0,0.2)"}}>
+      <div style={{position:"absolute",top:14,right:14,zIndex:2,padding:"4px 12px",borderRadius:8,background:rankData.color+"18",border:`1.5px solid ${rankData.color}44`,fontSize:10,fontWeight:900,color:rankData.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,boxShadow:`0 0 10px ${rankData.color}15`}}>{dungeon.rank}-RANK</div>
+      <div style={{padding:"18px 18px 14px",display:"flex",alignItems:"center",gap:14}}>
+        <div style={{width:58,height:58,borderRadius:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative",background:`radial-gradient(circle,${rankData.color}15,transparent)`,border:`2px solid ${rankData.color}33`}}>
+          {!dungeon.cleared&&<>
+            <div style={{position:"absolute",inset:4,borderRadius:"50%",border:`1.5px solid ${rankData.color}30`,borderTopColor:rankData.color+"88",animation:"portalSwirl 3s linear infinite"}}/>
+            <div style={{position:"absolute",inset:10,borderRadius:"50%",border:`1px solid ${rankData.color}20`,borderBottomColor:rankData.color+"55",animation:"portalSwirl 5s linear infinite reverse"}}/>
+          </>}
+          <span style={{fontSize:28,position:"relative",zIndex:1,filter:!dungeon.cleared?`drop-shadow(0 0 8px ${rankData.color}88)`:"none",animation:!dungeon.cleared?"gateFloat 3s ease-in-out infinite":"none"}}>{dungeon.cleared?"✓":dungeon.icon}</span>
+          <div style={{position:"absolute",top:2,left:2,width:8,height:8,borderTop:`2px solid ${rankData.color}55`,borderLeft:`2px solid ${rankData.color}55`}}/>
+          <div style={{position:"absolute",top:2,right:2,width:8,height:8,borderTop:`2px solid ${rankData.color}55`,borderRight:`2px solid ${rankData.color}55`}}/>
+          <div style={{position:"absolute",bottom:2,left:2,width:8,height:8,borderBottom:`2px solid ${rankData.color}55`,borderLeft:`2px solid ${rankData.color}55`}}/>
+          <div style={{position:"absolute",bottom:2,right:2,width:8,height:8,borderBottom:`2px solid ${rankData.color}55`,borderRight:`2px solid ${rankData.color}55`}}/>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontSize:16,fontWeight:800,color:dungeon.cleared?"#475569":"#fff",fontFamily:"'Cinzel',serif",letterSpacing:1}}>{dungeon.name}</div>
+          <div style={{fontSize:11,color:"#64748b",marginTop:3,lineHeight:1.4}}>{dungeon.desc}</div>
+          <div style={{display:"flex",gap:6,marginTop:5,alignItems:"center"}}>
+            <span style={{fontSize:10,color:"#475569",fontFamily:"'JetBrains Mono',monospace",padding:"2px 7px",borderRadius:5,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>🏛 {dungeon.floors} Floors</span>
+            {!dungeon.cleared&&timeLeft>0&&<span style={{fontSize:10,color:hoursLeft<2?"#ef4444":"#475569",fontFamily:"'JetBrains Mono',monospace",padding:"2px 7px",borderRadius:5,background:hoursLeft<2?"#ef444410":"rgba(255,255,255,0.03)",border:`1px solid ${hoursLeft<2?"#ef444420":"rgba(255,255,255,0.06)"}`}}>⏱ {hoursLeft}h {minsLeft}m</span>}
+          </div>
         </div>
       </div>
-      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+      <div style={{padding:"0 18px",display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
         {reqs.map(([stat,val])=>{const cat=CATEGORIES.find(c=>c.key===stat);const met=(playerStats[stat]||0)>=val;return(
-          <div key={stat} style={{padding:"3px 9px",borderRadius:6,fontSize:10,background:met?cat.color+"15":"#ef444412",color:met?cat.color:"#ef4444",border:`1px solid ${met?cat.color+"33":"#ef444430"}`,fontFamily:"'JetBrains Mono',monospace",fontWeight:600}}>
-            {cat.stat} {val} {met?"✓":`(${playerStats[stat]||0})`}
+          <div key={stat} style={{padding:"4px 10px",borderRadius:8,fontSize:10,background:met?cat.color+"12":"#ef444408",color:met?cat.color:"#ef4444",border:`1px solid ${met?cat.color+"33":"#ef444425"}`,fontFamily:"'JetBrains Mono',monospace",fontWeight:700,display:"flex",alignItems:"center",gap:4}}>
+            <span>{cat.icon}</span> {cat.stat} {val} {met?"✓":`(${playerStats[stat]||0})`}
           </div>
         );})}
       </div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{fontSize:11,fontFamily:"'JetBrains Mono',monospace"}}>
-          <span style={{color:theme.accent}}>+{modifier?.xpMult?Math.round(dungeon.xp*modifier.xpMult):dungeon.xp} XP</span>
-          <span style={{color:"#475569",margin:"0 6px"}}>·</span>
-          <span style={{color:"#fbbf24"}}>+{modifier?.goldMult?Math.round(dungeon.gold*modifier.goldMult):dungeon.gold} G</span>
-          {!dungeon.cleared&&timeLeft>0&&<><span style={{color:"#475569",margin:"0 6px"}}>·</span><span style={{color:hoursLeft<2?"#ef4444":"#475569"}}>⏱ {hoursLeft}h {minsLeft}m</span></>}
+      <div style={{padding:"12px 18px 16px",borderTop:`1px solid ${rankData.color}12`,display:"flex",alignItems:"center",justifyContent:"space-between",background:`linear-gradient(180deg,transparent,${rankData.color}06)`}}>
+        <div style={{display:"flex",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:8,background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.12)"}}>
+            <span style={{fontSize:10}}>💎</span>
+            <span style={{fontSize:11,color:"#a78bfa",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>+{modifier?.xpMult?Math.round(dungeon.xp*modifier.xpMult):dungeon.xp}</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:8,background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.12)"}}>
+            <span style={{fontSize:10}}>🪙</span>
+            <span style={{fontSize:11,color:"#fbbf24",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>+{modifier?.goldMult?Math.round(dungeon.gold*modifier.goldMult):dungeon.gold}</span>
+          </div>
         </div>
         {dungeon.cleared
-          ?<div style={{fontSize:11,color:"#22c55e",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>CLEARED ✓</div>
-          :<button onClick={()=>onEnter(dungeon)} style={{padding:"8px 18px",borderRadius:10,fontSize:11,fontWeight:700,background:`linear-gradient(135deg,${rankData.color}22,${rankData.color}0a)`,color:rankData.color,border:`1px solid ${rankData.color}44`,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,transition:"all 0.2s"}}>ENTER ▶</button>
+          ?<div style={{fontSize:11,color:"#22c55e",fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,fontWeight:700}}>CLEARED ✓</div>
+          :<button onClick={()=>onEnter(dungeon)} style={{
+            padding:"10px 24px",borderRadius:12,fontSize:12,fontWeight:900,
+            background:`linear-gradient(135deg,${rankData.color}30,${rankData.color}15)`,
+            color:rankData.color,border:`1.5px solid ${rankData.color}55`,
+            fontFamily:"'Cinzel',serif",letterSpacing:3,
+            transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+            transform:hover?"scale(1.06)":"scale(1)",
+            boxShadow:hover?`0 0 24px ${rankData.color}33,0 4px 16px rgba(0,0,0,0.3)`:"none",
+          }}>ENTER ▶</button>
         }
       </div>
     </div>
@@ -1883,7 +1910,7 @@ function BossPhaseUI({ rank, bossHp, bossMaxHp, currentPhase, phases }) {
 }
 
 // ─── SPRINT 3: DUNGEON BATTLE ─────────────────────────────────
-function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBonuses, modifier, formationBonus }) {
+function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBonuses, modifier, formationBonus, state, persist, notify }) {
   const [phase,setPhase]=useState("strategy");
   const [strategy,setStrategy]=useState(STRATEGIES[0]);
   const [battleLog,setBattleLog]=useState([]);
@@ -2984,6 +3011,9 @@ export default function App({ initialHunterName }) {
   return (
     <div style={{minHeight:"100vh",background:penaltyActive?`linear-gradient(180deg,${theme.bg},rgba(20,4,4,0.95))`:theme.bg,color:"#e2e8f0",fontFamily:"'Outfit',sans-serif",position:"relative",overflow:"hidden"}}>
       <style>{CSS(theme)}</style>
+      {/* Cosmic ambient glow */}
+      <div style={{position:"fixed",top:0,left:"50%",transform:"translateX(-50%)",width:"120%",height:"50%",background:`radial-gradient(ellipse at 50% 0%,${theme.primary}12,transparent 70%)`,pointerEvents:"none",zIndex:0}}/>
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"120%",height:"40%",background:`radial-gradient(ellipse at 50% 100%,${theme.secondary}0a,transparent 70%)`,pointerEvents:"none",zIndex:0}}/>
       <ParticleField theme={theme}/>
       {penaltyActive&&<div style={{position:"fixed",inset:0,zIndex:1,pointerEvents:"none",border:"2px solid #ef444422",animation:"penaltyPulse 2s infinite"}}/>}
       {notifications.map(n=><SystemNotification key={n.id} message={n.msg} type={n.type} onDone={()=>removeNotif(n.id)}/>)}
@@ -2993,7 +3023,7 @@ export default function App({ initialHunterName }) {
       {ariseTarget&&<AriseCinematic shadow={ariseTarget} onClose={()=>setAriseTarget(null)}/>}
       {state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = {...state}; delete next._jobLevelUp; persist(next); }} />}
       {state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = {...state}; delete next._abilityActivated; persist(next); }} />}
-      {activeDungeon&&<DungeonBattle dungeon={activeDungeon} playerStats={state.stats} theme={theme} onResult={r=>finishDungeon(activeDungeon,r)} onClose={()=>setActiveDungeon(null)} skillBonuses={getSkillBonuses(null,state.stats)} modifier={modifier} formationBonus={formationBonus}/>}
+      {activeDungeon&&<DungeonBattle dungeon={activeDungeon} playerStats={state.stats} theme={theme} onResult={r=>finishDungeon(activeDungeon,r)} onClose={()=>setActiveDungeon(null)} skillBonuses={getSkillBonuses(null,state.stats)} modifier={modifier} formationBonus={formationBonus} state={state} persist={persist} notify={notify}/>}
       {selectedShadow&&<ShadowDetailModal shadow={selectedShadow} theme={theme} gold={state.gold} onClose={()=>setSelectedShadow(null)} onDeploy={deployShadow} onUndeploy={undeployShadow} onEvolve={evolveShadow}/>}
 
       {/* HIDDEN QUEST DISCOVERY MODAL */}
@@ -3019,32 +3049,31 @@ export default function App({ initialHunterName }) {
       )}
 
       {/* HEADER */}
-      <header style={{position:"sticky",top:0,zIndex:50,padding:"10px 16px",background:`linear-gradient(180deg,${theme.bg}ee,${theme.bg}dd)`,borderBottom:`1px solid ${penaltyActive?"#ef444422":theme.primary+"15"}`,backdropFilter:"blur(20px)"}}>
+      <header style={{position:"sticky",top:0,zIndex:50,padding:"12px 16px",background:`linear-gradient(180deg,${theme.bg}f5,${theme.bg}e8)`,borderBottom:`1px solid ${penaltyActive?"#ef444422":theme.primary+"12"}`,backdropFilter:"blur(24px)"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",maxWidth:480,margin:"0 auto"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:42,height:42,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(135deg,${rank.color}22,${rank.color}08)`,border:`1.5px solid ${rank.color}66`,position:"relative",overflow:"hidden",animation:"shadowPulse 3s infinite"}}>
-              <span style={{fontSize:16,fontWeight:900,color:rank.color,fontFamily:"'Cinzel',serif",position:"relative",zIndex:1}}>{rank.name}</span>
-              <div style={{position:"absolute",top:0,left:"-100%",width:"50%",height:"100%",background:`linear-gradient(90deg,transparent,${rank.color}22,transparent)`,animation:"rankShine 3s ease-in-out infinite"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{width:46,height:46,display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(135deg,${rank.color}28,${rank.color}0a)`,border:`2px solid ${rank.color}66`,position:"relative",overflow:"hidden",clipPath:"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",animation:"hexPulse 3s infinite"}}>
+              <span style={{fontSize:17,fontWeight:900,color:rank.color,fontFamily:"'Cinzel',serif",position:"relative",zIndex:1,textShadow:`0 0 12px ${rank.color}88`}}>{rank.name}</span>
             </div>
             <div>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <div style={{fontSize:15,fontWeight:700,color:penaltyActive?"#ef4444":"#fff",fontFamily:"'Outfit',sans-serif"}}>{state.hunterName}</div>
-                {penaltyActive&&<div style={{fontSize:9,color:"#ef4444",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,padding:"1px 5px",borderRadius:3,background:"#ef444415",border:"1px solid #ef444433"}}>PENALTY</div>}
+              <div style={{display:"flex",alignItems:"center",gap:7}}>
+                <div style={{fontSize:16,fontWeight:800,color:penaltyActive?"#ef4444":"#fff",fontFamily:"'Outfit',sans-serif",letterSpacing:0.5}}>{state.hunterName}</div>
+                {penaltyActive&&<div style={{fontSize:8,color:"#ef4444",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,padding:"2px 6px",borderRadius:4,background:"#ef444412",border:"1px solid #ef444433"}}>PENALTY</div>}
               </div>
-              <div style={{fontSize:10,color:rank.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1.5}}>{state.selectedTitle||rank.label}</div>
+              <div style={{fontSize:10,color:rank.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,marginTop:2,opacity:0.9}}>{state.selectedTitle||rank.label}</div>
             </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:12,fontSize:12,fontFamily:"'JetBrains Mono',monospace"}}>
-            <div style={{textAlign:"center"}}>
-              <div style={{fontSize:8,color:"#475569",letterSpacing:1,marginBottom:1}}>PWR</div>
-              <div style={{fontWeight:700,color:theme.accent}}>{powerLevel.toLocaleString()}</div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{textAlign:"center",padding:"4px 10px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
+              <div style={{fontSize:7,color:"#475569",letterSpacing:1.5,fontFamily:"'JetBrains Mono',monospace"}}>PWR</div>
+              <div style={{fontSize:12,fontWeight:800,color:theme.accent,fontFamily:"'JetBrains Mono',monospace"}}>{powerLevel.toLocaleString()}</div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:4,color:"#fbbf24"}}>
-              <span>💰</span><span style={{fontWeight:600}}>{state.gold.toLocaleString()}</span>
+            <div style={{display:"flex",alignItems:"center",gap:3,padding:"4px 10px",borderRadius:8,background:"rgba(251,191,36,0.06)",border:"1px solid rgba(251,191,36,0.1)",color:"#fbbf24",fontFamily:"'JetBrains Mono',monospace",fontSize:12}}>
+              <span style={{fontSize:11}}>💰</span><span style={{fontWeight:700}}>{state.gold.toLocaleString()}</span>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:4,color:state.streak>=5?"#f97316":state.streak>=3?"#fb923c":"#94a3b8"}}>
-              <span style={{animation:state.streak>=3?"pulse 1.5s infinite":"none"}}>🔥</span>
-              <span style={{fontWeight:600}}>{state.streak}</span>
+            <div style={{display:"flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:8,background:state.streak>=3?"rgba(249,115,22,0.08)":"rgba(255,255,255,0.03)",border:`1px solid ${state.streak>=3?"rgba(249,115,22,0.15)":"rgba(255,255,255,0.06)"}`,color:state.streak>=5?"#f97316":state.streak>=3?"#fb923c":"#94a3b8",fontFamily:"'JetBrains Mono',monospace",fontSize:12}}>
+              <span style={{animation:state.streak>=3?"pulse 1.5s infinite":"none",fontSize:11}}>🔥</span>
+              <span style={{fontWeight:700}}>{state.streak}</span>
             </div>
           </div>
         </div>
@@ -3076,21 +3105,24 @@ export default function App({ initialHunterName }) {
         {/* ═══ DASHBOARD ═══ */}
         {view==="dashboard"&&(
           <div style={{animation:"fadeIn 0.35s ease"}}>
-            <div style={{background:theme.card,border:`1px solid ${theme.primary}18`,borderRadius:18,padding:"22px 20px 18px",marginBottom:14,position:"relative",overflow:"hidden",backdropFilter:"blur(12px)"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
+            <div style={{background:theme.card,border:`1px solid ${theme.primary}15`,borderRadius:22,padding:"24px 22px 20px",marginBottom:16,position:"relative",overflow:"hidden",backdropFilter:"blur(16px)",boxShadow:`0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)`}}>
+              <div style={{position:"absolute",top:0,right:0,width:"60%",height:"100%",background:`radial-gradient(circle at 100% 30%,${theme.primary}0a,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,position:"relative"}}>
                 <div>
-                  <div style={{fontSize:10,color:"#64748b",letterSpacing:3,fontFamily:"'JetBrains Mono',monospace",marginBottom:4}}>LEVEL</div>
-                  <div style={{fontSize:48,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif",lineHeight:1}}>{state.level}</div>
-                  {streakBonus>0&&<div style={{fontSize:10,color:"#f59e0b",marginTop:4,fontFamily:"'JetBrains Mono',monospace"}}>🔥 +{streakBonus}% XP</div>}
-                  {formationBonus.dungeonBonus>0&&<div style={{fontSize:10,color:"#a78bfa",marginTop:2,fontFamily:"'JetBrains Mono',monospace"}}>🌑 +{formationBonus.dungeonBonus}% Dungeon</div>}
+                  <div style={{fontSize:9,color:"#64748b",letterSpacing:4,fontFamily:"'JetBrains Mono',monospace",marginBottom:6}}>HUNTER LEVEL</div>
+                  <div style={{fontSize:56,fontWeight:900,color:"#fff",fontFamily:"'Cinzel',serif",lineHeight:1,textShadow:`0 0 40px ${theme.primary}33`}}>{state.level}</div>
+                  {streakBonus>0&&<div style={{fontSize:10,color:"#f59e0b",marginTop:6,fontFamily:"'JetBrains Mono',monospace",display:"flex",alignItems:"center",gap:4}}>🔥 +{streakBonus}% XP</div>}
+                  {formationBonus.dungeonBonus>0&&<div style={{fontSize:10,color:"#a78bfa",marginTop:3,fontFamily:"'JetBrains Mono',monospace"}}>🌑 +{formationBonus.dungeonBonus}% Dungeon</div>}
                 </div>
-                <StatRadar stats={state.stats} theme={theme} size={100}/>
+                <StatRadar stats={state.stats} theme={theme} size={110}/>
               </div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#64748b",marginBottom:5,fontFamily:"'JetBrains Mono',monospace"}}>
-                <span>EXP</span><span>{state.xp.toLocaleString()} / {xpNeeded.toLocaleString()}</span>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#64748b",marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>
+                <span style={{letterSpacing:2}}>EXP</span><span>{state.xp.toLocaleString()} / {xpNeeded.toLocaleString()}</span>
               </div>
-              <div style={{height:8,background:"#0f0f1e",borderRadius:4,overflow:"hidden"}}>
-                <div style={{width:`${xpPercent}%`,height:"100%",borderRadius:4,background:`linear-gradient(90deg,${theme.primary},${theme.accent})`,boxShadow:`0 0 12px ${theme.glow}`,transition:"width 0.8s cubic-bezier(0.4,0,0.2,1)"}}/>
+              <div style={{height:10,background:"rgba(15,15,30,0.9)",borderRadius:5,overflow:"hidden",position:"relative",border:"1px solid rgba(255,255,255,0.04)"}}>
+                <div style={{width:`${xpPercent}%`,height:"100%",borderRadius:5,background:`linear-gradient(90deg,${theme.primary},${theme.accent})`,boxShadow:`0 0 16px ${theme.glow},0 2px 8px ${theme.primary}44`,transition:"width 0.8s cubic-bezier(0.4,0,0.2,1)",position:"relative",overflow:"hidden"}}>
+                  <div style={{position:"absolute",top:0,left:"-100%",width:"60%",height:"100%",background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)",animation:"shimmer 2.5s ease-in-out infinite"}}/>
+                </div>
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6,marginBottom:16}}>
@@ -3134,7 +3166,7 @@ export default function App({ initialHunterName }) {
                   }}>{f.label}</button>
                 ))}
               </div>
-              <button onClick={()=>setShowCreate(true)} style={{padding:"7px 14px",borderRadius:10,fontSize:11,fontWeight:700,background:`linear-gradient(135deg,${theme.primary}22,${theme.primary}10)`,color:theme.accent,border:`1px solid ${theme.primary}44`,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,display:"flex",alignItems:"center",gap:5,flexShrink:0}}>+ QUEST</button>
+              <button onClick={()=>setShowCreate(true)} style={{padding:"10px 20px",borderRadius:12,fontSize:12,fontWeight:900,background:`linear-gradient(135deg,${theme.primary},${theme.secondary})`,color:"#fff",border:"none",boxShadow:`0 4px 16px ${theme.glow}`,textShadow:"0 1px 4px rgba(0,0,0,0.4)",fontFamily:"'Cinzel',serif",letterSpacing:1.5,display:"flex",alignItems:"center",gap:6,flexShrink:0,transition:"all 0.3s",transform:"translateY(-1px)",animation:"float 3s ease-in-out infinite"}}>+ NEUES TO-DO (QUEST)</button>
             </div>
 
             {filteredQuests.length===0?(
@@ -3542,10 +3574,10 @@ export default function App({ initialHunterName }) {
       </main>
 
       {/* BOTTOM NAV */}
-      <nav style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:`${theme.bg}f0`,borderTop:`1px solid ${penaltyActive?"#ef444420":theme.primary+"12"}`,backdropFilter:"blur(20px)"}}>
-        <div style={{display:"flex",justifyContent:"center",maxWidth:480,margin:"0 auto"}}>
+      <nav style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:`linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`,borderTop:`1px solid ${penaltyActive?"#ef444455":theme.primary+"44"}`,backdropFilter:"blur(24px)",boxShadow:`0 -4px 32px ${theme.glow}`}}>
+        <div style={{display:"flex",justifyContent:"center",maxWidth:540,margin:"0 auto",padding:"0 4px"}}>
           {[
-            {key:"dashboard",  icon:"⚔️",  label:"Quests"},
+            {key:"dashboard",  icon:"📝",  label:"ToDos"},
             {key:"story",      icon:"📖",  label:"Story"},
             {key:"dungeon",    icon:"🌀",  label:"Gates",   badge:activeDungeons.length},
             {key:"shadows",    icon:"🌑",  label:"Army",    badge:namedShadows.length>0?namedShadows.length:0},
@@ -3555,13 +3587,13 @@ export default function App({ initialHunterName }) {
             {key:"achievements",icon:"🏆", label:"Ach.",    badge:ACHIEVEMENTS.filter(a=>!achUnlocked.includes(a.id)&&a.check(state)).length},
             {key:"shop",       icon:"🛒",  label:"Shop"},
           ].map(tab=>(
-            <button key={tab.key} onClick={()=>setView(tab.key)} style={{flex:1,padding:"10px 0 8px",background:"transparent",color:view===tab.key?theme.accent:"#334155",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative",transition:"color 0.25s"}}>
-              {view===tab.key&&<div style={{position:"absolute",top:-1,left:"25%",right:"25%",height:2,background:`linear-gradient(90deg,transparent,${theme.accent},transparent)`,borderRadius:1}}/>}
+            <button key={tab.key} onClick={()=>setView(tab.key)} style={{flex:1,padding:"12px 0 10px",background:"transparent",color:view===tab.key?theme.accent:"#475569",display:"flex",flexDirection:"column",alignItems:"center",gap:4,position:"relative",transition:"all 0.3s"}}>
+              {view===tab.key&&<div style={{position:"absolute",top:0,left:"15%",right:"15%",height:3,background:`linear-gradient(90deg,transparent,${theme.accent},transparent)`,borderRadius:"0 0 4px 4px",boxShadow:`0 2px 8px ${theme.accent}`}}/>}
               <div style={{position:"relative"}}>
-                <span style={{fontSize:18,transition:"transform 0.2s",transform:view===tab.key?"scale(1.15)":"scale(1)",display:"block",filter:view===tab.key?`drop-shadow(0 0 6px ${theme.glow})`:"none"}}>{tab.icon}</span>
-                {tab.badge>0&&<div style={{position:"absolute",top:-4,right:-6,width:14,height:14,borderRadius:"50%",background:"#22d3ee",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:"#000",fontFamily:"'JetBrains Mono',monospace",animation:"pulse 2s infinite"}}>{tab.badge}</div>}
+                <span style={{fontSize:18,transition:"all 0.3s",transform:view===tab.key?"scale(1.2) translateY(-2px)":"scale(1)",display:"block",filter:view===tab.key?`drop-shadow(0 0 8px ${theme.glow})`:"grayscale(0.6)"}}>{tab.icon}</span>
+                {tab.badge>0&&<div style={{position:"absolute",top:-6,right:-8,width:16,height:16,borderRadius:"50%",background:"#ef4444",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:"#fff",fontFamily:"'JetBrains Mono',monospace",border:"2px solid #000",animation:"pulse 2s infinite"}}>{tab.badge}</div>}
               </div>
-              <span style={{fontSize:8,fontWeight:700,letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>{tab.label}</span>
+              <span style={{fontSize:8,fontWeight:800,letterSpacing:1,fontFamily:"'Outfit',sans-serif",opacity:view===tab.key?1:0.6}}>{tab.label.toUpperCase()}</span>
             </button>
           ))}
         </div>
