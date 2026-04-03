@@ -8,7 +8,7 @@ export const JOB_QUESTS = {
       tasks: [
         { type: "complete_quests", category: "str", difficulty: "hard", count: 5, current: 0 }
       ],
-      rewards: { jobXp: 50, xp: 200, gold: 100 }
+      rewards: { jobXp: 50, xp: 200, gold: 1000 }
     },
     {
       id: "berserker_trial_3",
@@ -19,7 +19,7 @@ export const JOB_QUESTS = {
         { type: "complete_quests", category: "str", count: 15, current: 0 },
         { type: "stat_reach", stat: "str", value: 50 }
       ],
-      rewards: { jobXp: 100, xp: 500, gold: 250, statBonus: { str: 5 } }
+      rewards: { jobXp: 100, xp: 500, gold: 2500, statBonus: { str: 5 } }
     },
     {
       id: "berserker_trial_5",
@@ -31,7 +31,7 @@ export const JOB_QUESTS = {
         { type: "complete_quests", difficulty: "boss", category: "str", count: 3, current: 0 }
       ],
       rewards: { 
-        jobXp: 200, xp: 1000, gold: 500, 
+        jobXp: 200, xp: 1000, gold: 5000, 
         title: "Berserker's Heir",
         abilityUnlock: "rage_mode" 
       }
@@ -45,7 +45,7 @@ export const JOB_QUESTS = {
         { type: "stat_reach", stat: "str", value: 100 },
         { type: "dungeon_clear", rank: "B", count: 1, current: 0 }
       ],
-      rewards: { jobXp: 400, xp: 2000, gold: 1000, statBonus: { str: 10 } }
+      rewards: { jobXp: 400, xp: 2000, gold: 10000, statBonus: { str: 10 } }
     },
     {
       id: "berserker_mastery",
@@ -57,7 +57,7 @@ export const JOB_QUESTS = {
         { type: "use_ability", ability: "rage_mode", count: 10, current: 0 }
       ],
       rewards: { 
-        jobXp: 1000, xp: 5000, gold: 2500,
+        jobXp: 1000, xp: 5000, gold: 25000,
         title: "Grand Master Berserker",
         cosmetic: "berserker_aura"
       }
@@ -73,7 +73,7 @@ export const JOB_QUESTS = {
       tasks: [
         { type: "complete_quests", category: "int", count: 5, current: 0 }
       ],
-      rewards: { jobXp: 50, xp: 200, gold: 100 }
+      rewards: { jobXp: 50, xp: 200, gold: 1000 }
     },
     {
       id: "archmage_trial_3",
@@ -84,7 +84,7 @@ export const JOB_QUESTS = {
         { type: "stat_reach", stat: "int", value: 40 },
         { type: "complete_quests", category: "int", difficulty: "hard", count: 5, current: 0 }
       ],
-      rewards: { jobXp: 100, xp: 500, gold: 250, shopDiscount: 5 }
+      rewards: { jobXp: 100, xp: 500, gold: 2500, shopDiscount: 5 }
     },
     {
       id: "archmage_trial_5",
@@ -96,7 +96,7 @@ export const JOB_QUESTS = {
         { type: "solve_puzzles", count: 5, current: 0 }
       ],
       rewards: { 
-        jobXp: 200, xp: 1000, gold: 500,
+        jobXp: 200, xp: 1000, gold: 5000,
         title: "Arcane Scholar",
         abilityUnlock: "insight"
       }
@@ -110,7 +110,7 @@ export const JOB_QUESTS = {
         { type: "stat_reach", stat: "int", value: 100 },
         { type: "dungeon_clear", withoutDamage: true, count: 1, current: 0 }
       ],
-      rewards: { jobXp: 400, xp: 2000, gold: 1000, statBonus: { int: 10 } }
+      rewards: { jobXp: 400, xp: 2000, gold: 10000, statBonus: { int: 10 } }
     },
     {
       id: "archmage_mastery",
@@ -122,7 +122,7 @@ export const JOB_QUESTS = {
         { type: "complete_all_puzzle_floors", current: 0 }
       ],
       rewards: {
-        jobXp: 1000, xp: 5000, gold: 2500,
+        jobXp: 1000, xp: 5000, gold: 25000,
         title: "Grand Archmage",
         cosmetic: "arcane_aura"
       }
@@ -138,7 +138,7 @@ export const JOB_QUESTS = {
       tasks: [
         { type: "complete_quests", category: "vit", count: 5, current: 0 }
       ],
-      rewards: { jobXp: 50, xp: 200, gold: 100 }
+      rewards: { jobXp: 50, xp: 200, gold: 1000 }
     },
     {
       id: "guardian_trial_3",
@@ -149,7 +149,7 @@ export const JOB_QUESTS = {
         { type: "maintain_streak", days: 7 },
         { type: "complete_quests", category: "vit", count: 15, current: 0 }
       ],
-      rewards: { jobXp: 100, xp: 500, gold: 250, streakShield: 1 }
+      rewards: { jobXp: 100, xp: 500, gold: 2500, streakShield: 1 }
     },
     {
       id: "guardian_trial_5",
@@ -161,7 +161,7 @@ export const JOB_QUESTS = {
         { type: "survive_without_losing_hp", dungeonCount: 1, current: 0 }
       ],
       rewards: {
-        jobXp: 200, xp: 1000, gold: 500,
+        jobXp: 200, xp: 1000, gold: 5000,
         title: "Bulwark",
         abilityUnlock: "fortress"
       }
@@ -175,7 +175,7 @@ export const JOB_QUESTS = {
         { type: "stat_reach", stat: "vit", value: 100 },
         { type: "maintain_streak", days: 30 }
       ],
-      rewards: { jobXp: 400, xp: 2000, gold: 1000, statBonus: { vit: 10 } }
+      rewards: { jobXp: 400, xp: 2000, gold: 10000, statBonus: { vit: 10 } }
     },
     {
       id: "guardian_mastery",
@@ -187,7 +187,7 @@ export const JOB_QUESTS = {
         { type: "protect_streak", consecutiveDays: 60 }
       ],
       rewards: {
-        jobXp: 1000, xp: 5000, gold: 2500,
+        jobXp: 1000, xp: 5000, gold: 25000,
         title: "Eternal Guardian",
         cosmetic: "guardian_shield_aura"
       }
@@ -203,7 +203,7 @@ export const JOB_QUESTS = {
       tasks: [
         { type: "complete_quests", category: "agi", count: 5, current: 0 }
       ],
-      rewards: { jobXp: 50, xp: 200, gold: 100 }
+      rewards: { jobXp: 50, xp: 200, gold: 1000 }
     },
     {
       id: "assassin_trial_3",
@@ -214,7 +214,7 @@ export const JOB_QUESTS = {
         { type: "earn_gold", amount: 5000, current: 0 },
         { type: "complete_quests", category: "agi", count: 15, current: 0 }
       ],
-      rewards: { jobXp: 100, xp: 500, gold: 500 }
+      rewards: { jobXp: 100, xp: 500, gold: 5000 }
     },
     {
       id: "assassin_trial_5",
@@ -226,7 +226,7 @@ export const JOB_QUESTS = {
         { type: "clear_dungeon_fast", timeBonus: true, count: 2, current: 0 }
       ],
       rewards: {
-        jobXp: 200, xp: 1000, gold: 750,
+        jobXp: 200, xp: 1000, gold: 7500,
         title: "Shadow Dancer",
         abilityUnlock: "shadow_step"
       }
@@ -240,7 +240,7 @@ export const JOB_QUESTS = {
         { type: "stat_reach", stat: "agi", value: 100 },
         { type: "skip_floors", count: 5, current: 0 }
       ],
-      rewards: { jobXp: 400, xp: 2000, gold: 1500, statBonus: { agi: 10 } }
+      rewards: { jobXp: 400, xp: 2000, gold: 15000, statBonus: { agi: 10 } }
     },
     {
       id: "assassin_mastery",
@@ -252,7 +252,7 @@ export const JOB_QUESTS = {
         { type: "use_ability", ability: "shadow_step", count: 30, current: 0 }
       ],
       rewards: {
-        jobXp: 1000, xp: 5000, gold: 3000,
+        jobXp: 1000, xp: 5000, gold: 30000,
         title: "Phantom",
         cosmetic: "shadow_trail"
       }
@@ -268,7 +268,7 @@ export const JOB_QUESTS = {
       tasks: [
         { type: "own_shadows", count: 5, current: 0 }
       ],
-      rewards: { jobXp: 50, xp: 200, gold: 100 }
+      rewards: { jobXp: 50, xp: 200, gold: 1000 }
     },
     {
       id: "monarch_trial_3",
@@ -279,7 +279,7 @@ export const JOB_QUESTS = {
         { type: "own_shadows", count: 15, current: 0 },
         { type: "deploy_formation", count: 10, current: 0 }
       ],
-      rewards: { jobXp: 100, xp: 500, gold: 250, shadowCapacity: 5 }
+      rewards: { jobXp: 100, xp: 500, gold: 2500, shadowCapacity: 5 }
     },
     {
       id: "monarch_trial_5",
@@ -291,7 +291,7 @@ export const JOB_QUESTS = {
         { type: "shadow_evolve", count: 3, current: 0 }
       ],
       rewards: {
-        jobXp: 200, xp: 1000, gold: 500,
+        jobXp: 200, xp: 1000, gold: 5000,
         title: "Shadow Commander",
         abilityUnlock: "domain_expansion"
       }
@@ -305,7 +305,7 @@ export const JOB_QUESTS = {
         { type: "own_named_shadow", count: 1, current: 0 },
         { type: "complete_shadow_missions", count: 20, current: 0 }
       ],
-      rewards: { jobXp: 400, xp: 2000, gold: 1000, shadowCapacity: 10 }
+      rewards: { jobXp: 400, xp: 2000, gold: 10000, shadowCapacity: 10 }
     },
     {
       id: "monarch_mastery",
@@ -318,7 +318,7 @@ export const JOB_QUESTS = {
         { type: "use_ability", ability: "domain_expansion", count: 10, current: 0 }
       ],
       rewards: {
-        jobXp: 1000, xp: 5000, gold: 2500,
+        jobXp: 1000, xp: 5000, gold: 25000,
         title: "Shadow Monarch",
         cosmetic: "monarch_crown_aura"
       }
@@ -334,7 +334,7 @@ export const JOB_QUESTS = {
       tasks: [
         { type: "extract_shadow", count: 5, current: 0 }
       ],
-      rewards: { jobXp: 50, xp: 200, gold: 100 }
+      rewards: { jobXp: 50, xp: 200, gold: 1000 }
     },
     {
       id: "necromancer_trial_3",
@@ -345,7 +345,7 @@ export const JOB_QUESTS = {
         { type: "extract_shadow", count: 15, current: 0 },
         { type: "dungeon_clear", rank: "C", count: 3, current: 0 }
       ],
-      rewards: { jobXp: 100, xp: 500, gold: 250, shadowXpBonus: 0.1 }
+      rewards: { jobXp: 100, xp: 500, gold: 2500, shadowXpBonus: 0.1 }
     },
     {
       id: "necromancer_trial_5",
@@ -357,7 +357,7 @@ export const JOB_QUESTS = {
         { type: "complete_quests", difficulty: "boss", count: 10, current: 0 }
       ],
       rewards: {
-        jobXp: 200, xp: 1000, gold: 500,
+        jobXp: 200, xp: 1000, gold: 5000,
         title: "Death Knight",
         abilityUnlock: "army_of_the_dead"
       }
@@ -371,7 +371,7 @@ export const JOB_QUESTS = {
         { type: "awaken_named_shadow", count: 1, current: 0 },
         { type: "dungeon_clear", rank: "A", count: 1, current: 0 }
       ],
-      rewards: { jobXp: 400, xp: 2000, gold: 1000, shadowEvolutionDiscount: 0.25 }
+      rewards: { jobXp: 400, xp: 2000, gold: 10000, shadowEvolutionDiscount: 0.25 }
     },
     {
       id: "necromancer_mastery",
@@ -384,7 +384,7 @@ export const JOB_QUESTS = {
         { type: "use_ability", ability: "army_of_the_dead", count: 5, current: 0 }
       ],
       rewards: {
-        jobXp: 1000, xp: 5000, gold: 2500,
+        jobXp: 1000, xp: 5000, gold: 25000,
         title: "True Necromancer",
         cosmetic: "death_aura",
         unlock: "tier_6_shadows"
