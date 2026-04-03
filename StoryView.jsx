@@ -112,7 +112,7 @@ export const STORY_ARCS = [
 ];
 
 // ─── STORY PANEL (manga style) ─────────────────────────────────
-function StoryPanel({ arc, chapter, onClose, onComplete, playerLevel }) {
+function StoryPanel({ arc, chapter, onClose, onComplete, playerLevel, isCompleted }) {
   const [panelIndex, setPanelIndex] = useState(0);
   const [textVisible, setTextVisible] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -139,11 +139,17 @@ function StoryPanel({ arc, chapter, onClose, onComplete, playerLevel }) {
         <div style={{ fontSize: 60, marginBottom: 20, animation: "successPulse 0.6s ease" }}>✅</div>
         <div style={{ fontSize: 11, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12 }}>KAPITEL ABGESCHLOSSEN</div>
         <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 3, textShadow: "0 0 30px #7c3aed", marginBottom: 24 }}>{chapter.title}</div>
-        <div style={{ display: "flex", gap: 16, padding: "16px 24px", borderRadius: 16, background: "rgba(124,58,237,0.1)", border: "1px solid #7c3aed33" }}>
-          <span style={{ color: "#f59e0b", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>+{chapter.rewards?.xp} XP</span>
-          <span style={{ color: "#fbbf24", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>+{chapter.rewards?.gold} Gold</span>
-          {chapter.rewards?.title && <span style={{ color: "#a78bfa", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>Titel: "{chapter.rewards.title}"</span>}
-        </div>
+        {isCompleted ? (
+          <div style={{ display: "flex", gap: 16, padding: "16px 24px", borderRadius: 16, background: "rgba(255,255,255,0.05)", border: "1px solid #334155" }}>
+            <span style={{ color: "#94a3b8", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>Keine Belohnung bei Wiederholung</span>
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 16, padding: "16px 24px", borderRadius: 16, background: "rgba(124,58,237,0.1)", border: "1px solid #7c3aed33" }}>
+            <span style={{ color: "#f59e0b", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>+{chapter.rewards?.xp} XP</span>
+            <span style={{ color: "#fbbf24", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>+{chapter.rewards?.gold} Gold</span>
+            {chapter.rewards?.title && <span style={{ color: "#a78bfa", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>Titel: "{chapter.rewards.title}"</span>}
+          </div>
+        )}
         <button onClick={() => onComplete(chapter)} style={{ marginTop: 32, padding: "16px 40px", borderRadius: 14, background: "linear-gradient(135deg,#7c3aed,#5b21b6)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "'Cinzel', serif", letterSpacing: 3, cursor: "pointer" }}>
           WEITER ⚔️
         </button>
@@ -397,6 +403,7 @@ export default function StoryView({ gameState, onChapterComplete, theme }) {
         onClose={() => { setActiveChapter(null); setActiveArcForChapter(null); }}
         onComplete={handleChapterComplete}
         playerLevel={playerLevel}
+        isCompleted={isChapterCompleted(activeChapter.id)}
       />
     );
   }
@@ -482,8 +489,8 @@ export default function StoryView({ gameState, onChapterComplete, theme }) {
                           </div>
                         )}
                         {chCompleted && (
-                          <div style={{ fontSize: 10, color: arc.rankColor, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1, flexShrink: 0 }}>
-                            +{ch.rewards?.xp} XP
+                          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1, flexShrink: 0 }}>
+                            ERNEUT LESEN ›
                           </div>
                         )}
                       </div>

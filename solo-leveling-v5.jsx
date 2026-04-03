@@ -18,10 +18,10 @@ const RANKS = [
 ];
 
 const DIFFICULTIES = [
-  { key:"easy",   label:"Easy",   xp:20,  gold:10,  color:"#6b7280", icon:"◇" },
-  { key:"normal", label:"Normal", xp:50,  gold:25,  color:"#22d3ee", icon:"◆" },
-  { key:"hard",   label:"Hard",   xp:120, gold:60,  color:"#a78bfa", icon:"★" },
-  { key:"boss",   label:"Boss",   xp:300, gold:150, color:"#ef4444", icon:"♛" },
+  { key:"easy",   label:"Easy",   xp:5,   gold:2,   color:"#6b7280", icon:"◇", waitHours:1 },
+  { key:"normal", label:"Normal", xp:15,  gold:5,   color:"#22d3ee", icon:"◆", waitHours:2 },
+  { key:"hard",   label:"Hard",   xp:40,  gold:15,  color:"#a78bfa", icon:"★", waitHours:4 },
+  { key:"boss",   label:"Boss",   xp:100, gold:40,  color:"#ef4444", icon:"♛", waitHours:8 },
 ];
 
 const CATEGORIES = [
@@ -557,6 +557,7 @@ const DUNGEON_TEMPLATES = [
 ];
 
 const SHOP_ITEMS = [
+  { id:"extra_slot",           type:"consumable", name:"Extra Task Slot", cost:100,  minRank:"E", desc:"+1 Tagesaufgabe heute" },
   { id:"title_shadow_monarch", type:"title", name:"Shadow Monarch",   cost:500,  minRank:"D", desc:"Der König der Schatten" },
   { id:"title_arise",          type:"title", name:"ARISE!",           cost:300,  minRank:"D", desc:"Erwecke deine Armee" },
   { id:"title_s_hunter",       type:"title", name:"S-Rank Hunter",    cost:1000, minRank:"B", desc:"Elite unter den Jägern" },
@@ -583,6 +584,7 @@ const DEFAULT_STATE = {
   shopPurchases:[], selectedTheme:"default", selectedTitle:"",
   shadowArmy:{ shadows:[], capacity:20, formations:{ vanguard:[], core:[], rearguard:[] }, totalShadowXp:0 },
   totalXpEarned:0, totalQuestsCompleted:0,
+  dailyUserQuestsCreated: 0, extraDailySlots: 0,
   dungeons:[], lastDungeonRefresh:null, dungeonHistory:[],
   achievements:{ unlocked:[], notified:[] },
   skills:{ unlocked:[] },
@@ -1801,6 +1803,17 @@ function QuestCard({ quest, index, theme, onComplete, onDelete }) {
   const goldGain=Math.round((diff?.gold||25)*(quest.chainMultiplier||1)*(typeCfg.goldMult||1));
   const isHidden=quest.type==="hidden";
   const handleComplete=()=>{
+    // Check constraint before animating disappearance
+    if (!quest.isSystem && quest.createdAtMs) {
+      const waitHours = diff?.waitHours || 1;
+      const elapsedMs = Date.now() - quest.createdAtMs;
+      const requiredMs = waitHours * 3600 * 1000;
+      if (elapsedMs < requiredMs) {
+        onComplete(quest.id, null); // Trigger the notification in App
+        return;
+      }
+    }
+
     if (!confirming) {
       setConfirming(true);
       setTimeout(()=>setConfirming(false), 3000); // 3 seconds to confirm
@@ -2759,6 +2772,8 @@ export default function App({ initialHunterName, onLogout }) {
               s.quests=(s.quests || []).filter(q=>q.type!=="weekly");
               s.weeklyQuestReset=today;
             }
+            s.dailyUserQuestsCreated = 0;
+            s.extraDailySlots = 0;
           }
           s.lastActiveDate=today;
           // Generate emergency quest for today if missing
@@ -2903,6 +2918,19 @@ export default function App({ initialHunterName, onLogout }) {
   const completeQuest=useCallback((questId,rect)=>{
     if(!state) return;
     const quest=state.quests.find(q=>q.id===questId); if(!quest) return;
+    
+    // Check wait time for manual quests
+    if (!quest.isSystem && quest.createdAtMs) {
+      const waitHours = DIFFICULTIES.find(d => d.key === quest.difficulty)?.waitHours || 1;
+      const elapsedMs = Date.now() - quest.createdAtMs;
+      const requiredMs = waitHours * 3600 * 1000;
+      if (elapsedMs < requiredMs) {
+        const remainingHours = ((requiredMs - elapsedMs) / 3600000).toFixed(1);
+        notify(`Diese Quest muss noch reifen! Warte noch ${remainingHours}h.`, "warning");
+        return;
+      }
+    }
+
     const today=getToday();
     const oldStreak=state.streak;
     const newStreak=state.lastActiveDate===today?oldStreak:(oldStreak+1);
@@ -3042,6 +3070,15 @@ export default function App({ initialHunterName, onLogout }) {
 
   const createQuest=()=>{
     if(!qTitle.trim()) return;
+
+    const createdCount = state.dailyUserQuestsCreated || 0;
+    const extraSlots = state.extraDailySlots || 0;
+    const maxAllowed = 4 + extraSlots;
+    if (createdCount >= maxAllowed) {
+      notify("Tägliches Quest-Limit erreicht! Kaufe weitere Slots im Shop.", "warning");
+      return;
+    }
+
     // Weekly quest gets a timeLimit of next Monday midnight
     let timeLimit=undefined;
     if(qType==="weekly"){
@@ -3050,8 +3087,8 @@ export default function App({ initialHunterName, onLogout }) {
       d.setDate(d.getDate()+daysUntilMonday);d.setHours(23,59,59,999);
       timeLimit=d.toISOString();
     }
-    const quest={id:genId(),title:qTitle.trim(),difficulty:qDiff,category:qCat,type:qType,createdAt:getToday(),...(timeLimit?{timeLimit}:{})};
-    persist({...state,quests:[...state.quests,quest]});
+    const quest={id:genId(),title:qTitle.trim(),difficulty:qDiff,category:qCat,type:qType,createdAt:getToday(),createdAtMs:Date.now(),...(timeLimit?{timeLimit}:{})};
+    persist({...state,quests:[...state.quests,quest], dailyUserQuestsCreated: createdCount + 1});
     setQTitle(""); setShowCreate(false);
   };
 
@@ -3224,9 +3261,12 @@ export default function App({ initialHunterName, onLogout }) {
     const discount = jobBonuses.shopDiscount || 0;
     const finalCost = Math.max(1, Math.floor(item.cost * (1 - discount / 100)));
 
-    if(state.gold < finalCost || state.shopPurchases.includes(item.id)) return;
+    if(state.gold < finalCost) return;
+    if(item.type !== "consumable" && state.shopPurchases.includes(item.id)) return;
     if(getRankIndex(getRank(state.level).name)<getRankIndex(item.minRank)) return;
-    let next={...state,gold:state.gold-finalCost,shopPurchases:[...state.shopPurchases,item.id],
+    let next={...state,gold:state.gold-finalCost,
+      ...(item.type!=="consumable" ? {shopPurchases:[...state.shopPurchases,item.id]} : {}),
+      ...(item.type==="consumable" && item.id==="extra_slot" ? {extraDailySlots: (state.extraDailySlots||0)+1} : {}),
       ...(item.type==="theme"?{selectedTheme:item.themeKey}:{}),
       ...(item.type==="title"?{selectedTitle:item.name}:{})};
     next=processAchievements(next);
@@ -3790,48 +3830,53 @@ export default function App({ initialHunterName, onLogout }) {
             onChapterComplete={(chapter) => {
               persist(prev => {
                 const completedChapters = [...(prev.story?.completedChapters || [])];
+                
+                // Abuse Protection: Only give XP and Gold if chapter isn't already completed
                 if (!completedChapters.includes(chapter.id)) {
                   completedChapters.push(chapter.id);
+                  
+                  // XP und Gold vergeben
+                  const xpGain = chapter.rewards?.xp || 0;
+                  const goldGain = chapter.rewards?.gold || 0;
+                  let newXp = (prev.xp || 0) + xpGain;
+                  let newLevel = prev.level;
+                  let newGold = (prev.gold || 0) + goldGain;
+                  let levelsGained = 0;
+
+                  // Level-Up Logik
+                  while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
+                    newXp -= getXpForLevel(newLevel);
+                    newLevel++;
+                    levelsGained++;
+                  }
+                  const earnedPoints = levelsGained * 5;
+
+                  // Titel vergeben falls vorhanden
+                  let newTitle = prev.selectedTitle;
+                  if (chapter.rewards?.title) {
+                    newTitle = chapter.rewards.title;
+                  }
+
+                  notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
+
+                  return {
+                    ...prev,
+                    xp: newXp,
+                    level: newLevel,
+                    gold: newGold,
+                    statPoints: (prev.statPoints || 0) + earnedPoints,
+                    totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
+                    selectedTitle: newTitle,
+                    story: {
+                      ...prev.story,
+                      completedChapters,
+                      totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
+                    },
+                  };
+                } else {
+                  notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
+                  return prev; // Do not modify state, no XP
                 }
-
-                // XP und Gold vergeben
-                const xpGain = chapter.rewards?.xp || 0;
-                const goldGain = chapter.rewards?.gold || 0;
-                let newXp = (prev.xp || 0) + xpGain;
-                let newLevel = prev.level;
-                let newGold = (prev.gold || 0) + goldGain;
-                let levelsGained = 0;
-
-                // Level-Up Logik
-                while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
-                  newXp -= getXpForLevel(newLevel);
-                  newLevel++;
-                  levelsGained++;
-                }
-                const earnedPoints = levelsGained * 5;
-
-                // Titel vergeben falls vorhanden
-                let newTitle = prev.selectedTitle;
-                if (chapter.rewards?.title) {
-                  newTitle = chapter.rewards.title;
-                }
-
-                notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
-
-                return {
-                  ...prev,
-                  xp: newXp,
-                  level: newLevel,
-                  gold: newGold,
-                  statPoints: (prev.statPoints || 0) + earnedPoints,
-                  totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
-                  selectedTitle: newTitle,
-                  story: {
-                    ...prev.story,
-                    completedChapters,
-                    totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
-                  },
-                };
               });
             }}
           />
@@ -3966,9 +4011,9 @@ export default function App({ initialHunterName, onLogout }) {
               </div>
             </div>
             {!shopUnlocked&&<div style={{background:"rgba(239,68,68,0.05)",border:"1px solid #ef444422",borderRadius:14,padding:"16px",marginBottom:16,textAlign:"center",fontSize:12,color:"#ef4444"}}>⚠ Shop ab D-Rang verfügbar</div>}
-            {["title","theme"].map(type=>(
+            {["consumable","title","theme"].map(type=>(
               <div key={type} style={{marginBottom:24}}>
-                <div style={{fontSize:10,letterSpacing:3,color:"#475569",fontFamily:"'JetBrains Mono',monospace",marginBottom:12}}>{type==="title"?"TITEL":"THEMES"}</div>
+                <div style={{fontSize:10,letterSpacing:3,color:"#475569",fontFamily:"'JetBrains Mono',monospace",marginBottom:12}}>{type==="title"?"TITEL":type==="theme"?"THEMES":"VERBRAUCHSGÜTER"}</div>
                 {SHOP_ITEMS.filter(i=>i.type===type).map((item,idx)=>{
                   const owned=state.shopPurchases.includes(item.id);
                   const canAfford=state.gold>=item.cost;
