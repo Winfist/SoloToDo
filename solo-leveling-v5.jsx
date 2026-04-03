@@ -997,7 +997,7 @@ function calculateJobQuestProgress(state, task) {
   }
 }
 
-function calcSuccessChance(dungeon, stats, stratKey, skillBonuses, modifier, formationBonus, jobBonuses = {}) {
+function calcSuccessChance(dungeon, stats, stratKey, skillBonuses, modifier, formationBonus, jobBonuses = {}, playerLevel = 1) {
   let chance = 28;
   const reqs = Object.entries(dungeon.requirements);
   const metCount = reqs.filter(([k,v]) => (stats[k]||0) >= v).length;
@@ -1023,7 +1023,20 @@ function calcSuccessChance(dungeon, stats, stratKey, skillBonuses, modifier, for
     return 100; // Garantierter Erfolg
   }
   
-  return Math.max(10, Math.min(93, Math.round(chance)));
+  let maxChance = 85;
+  const dungeonRankIdx = getRankIndex(dungeon.rank);
+  const playerRankIdx = getRankIndex(getRank(playerLevel).name);
+  const rankDiff = playerRankIdx - dungeonRankIdx;
+  
+  if (rankDiff >= 3) {
+    maxChance = 100; // Overleveled
+  } else if (rankDiff === 2) {
+    maxChance = 95;
+  } else if (rankDiff === 1) {
+    maxChance = 90;
+  }
+  
+  return Math.max(10, Math.min(maxChance, Math.round(chance)));
 }
 function getEquipDropForDungeon(dungeonRank) {
   if (Math.random() > 0.40) return null;
@@ -2046,14 +2059,14 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
   const rankData=RANKS.find(r=>r.name===dungeon.rank)||RANKS[0];
   const bossPhaseDefs=BOSS_PHASES[dungeon.rank]||BOSS_PHASES.E;
   const jobBonuses=getJobBonuses(state);
-  const chance=calcSuccessChance(dungeon,playerStats,strategy.key,skillBonuses,modifier,formationBonus,jobBonuses);
+  const chance=calcSuccessChance(dungeon,playerStats,strategy.key,skillBonuses,modifier,formationBonus,jobBonuses,state?.level||1);
   const chanceLabel=chance>=65?"HIGH":chance>=40?"MEDIUM":"RISKY";
   const chanceColor=chance>=65?"#22c55e":chance>=40?"#f59e0b":"#ef4444";
   
   // Archmage Insight: Best strategy
   const isInsightActive = jobBonuses.autoSolvePuzzle || (state.jobs.activeAbilityCooldowns?.insight && Date.now() < state.jobs.activeAbilityCooldowns.insight + 43200000);
   const bestStrat = isInsightActive ? CATEGORIES.reduce((best, cur) => {
-    const curChance = calcSuccessChance(dungeon, playerStats, cur.key, skillBonuses, modifier, formationBonus, jobBonuses);
+    const curChance = calcSuccessChance(dungeon, playerStats, cur.key, skillBonuses, modifier, formationBonus, jobBonuses, state?.level||1);
     return curChance > best.chance ? { key: cur.key, chance: curChance } : best;
   }, { key: "", chance: -1 }) : null;
 

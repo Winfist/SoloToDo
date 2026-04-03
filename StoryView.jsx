@@ -14,11 +14,11 @@ export const STORY_ARCS = [
     rankColor: "#6b7280",
     icon: "🗡️",
     chapters: [
-      { id: "ch1", title: "First Awakening", description: "Das System erwacht", unlockLevel: 1, type: "tutorial", rewards: { xp: 100, gold: 50, unlock: "daily_quest_system" }, icon: "✨" },
-      { id: "ch2", title: "The Double Dungeon", description: "Dein erstes Gate erwartet dich", unlockLevel: 5, type: "dungeon_intro", rewards: { xp: 200, gold: 100 }, icon: "🌀" },
-      { id: "ch3", title: "System Initialization", description: "Das System offenbart sein wahres Gesicht", unlockLevel: 10, type: "revelation", rewards: { xp: 300, gold: 150 }, icon: "💻" },
+      { id: "ch1", title: "First Awakening", description: "Das System erwacht", unlockLevel: 1, type: "tutorial", rewards: { xp: 25, gold: 10, unlock: "daily_quest_system" }, icon: "✨" },
+      { id: "ch2", title: "The Double Dungeon", description: "Dein erstes Gate erwartet dich", unlockLevel: 5, type: "dungeon_intro", rewards: { xp: 50, gold: 20 }, icon: "🌀" },
+      { id: "ch3", title: "System Initialization", description: "Das System offenbart sein wahres Gesicht", unlockLevel: 10, type: "revelation", rewards: { xp: 75, gold: 30 }, icon: "💻" },
     ],
-    arcBoss: { name: "Statue of God", rank: "E", rewards: { xp: 500, title: "Survivor" }, icon: "🗿" },
+    arcBoss: { name: "Statue of God", rank: "E", rewards: { xp: 125, title: "Survivor" }, icon: "🗿" },
   },
   {
     id: "arc2",
@@ -29,11 +29,11 @@ export const STORY_ARCS = [
     rankColor: "#22d3ee",
     icon: "⚔️",
     chapters: [
-      { id: "ch4", title: "A New Beginning", description: "Erste echte Solo-Dungeons", unlockLevel: 11, type: "exploration", rewards: { xp: 300, gold: 150 }, icon: "🌄" },
-      { id: "ch5", title: "The Secret of Levels", description: "Die wahre Natur des Systems", unlockLevel: 15, type: "lore", rewards: { xp: 400, gold: 200 }, icon: "📜" },
-      { id: "ch6", title: "Shadows of the Past", description: "Erste Shadow-Begegnung", unlockLevel: 20, type: "shadow_intro", rewards: { xp: 500, gold: 250 }, icon: "🌑" },
+      { id: "ch4", title: "A New Beginning", description: "Erste echte Solo-Dungeons", unlockLevel: 11, type: "exploration", rewards: { xp: 80, gold: 40 }, icon: "🌄" },
+      { id: "ch5", title: "The Secret of Levels", description: "Die wahre Natur des Systems", unlockLevel: 15, type: "lore", rewards: { xp: 100, gold: 50 }, icon: "📜" },
+      { id: "ch6", title: "Shadows of the Past", description: "Erste Shadow-Begegnung", unlockLevel: 20, type: "shadow_intro", rewards: { xp: 125, gold: 60 }, icon: "🌑" },
     ],
-    arcBoss: { name: "Cerberus", rank: "C", rewards: { xp: 1000, unlock: "shadow_extraction_ability" }, icon: "🐕" },
+    arcBoss: { name: "Cerberus", rank: "C", rewards: { xp: 250, unlock: "shadow_extraction_ability" }, icon: "🐕" },
   },
   {
     id: "arc3",
@@ -44,11 +44,11 @@ export const STORY_ARCS = [
     rankColor: "#34d399",
     icon: "🌑",
     chapters: [
-      { id: "ch7", title: "ARISE", description: "Deine erste Shadow-Beschwörung", unlockLevel: 21, type: "ability_unlock", cinematicKey: "arise_first", rewards: { xp: 500, gold: 300 }, icon: "⚫" },
-      { id: "ch8", title: "Building an Army", description: "Shadow Army Mechaniken entdecken", unlockLevel: 28, type: "system_unlock", rewards: { xp: 700, gold: 400 }, icon: "🪖" },
-      { id: "ch9", title: "The Hunter Association", description: "Andere Hunter existieren", unlockLevel: 35, type: "world_building", rewards: { xp: 900, gold: 500 }, icon: "🏛️" },
+      { id: "ch7", title: "ARISE", description: "Deine erste Shadow-Beschwörung", unlockLevel: 21, type: "ability_unlock", cinematicKey: "arise_first", rewards: { xp: 150, gold: 75 }, icon: "⚫" },
+      { id: "ch8", title: "Building an Army", description: "Shadow Army Mechaniken entdecken", unlockLevel: 28, type: "system_unlock", rewards: { xp: 200, gold: 100 }, icon: "🪖" },
+      { id: "ch9", title: "The Hunter Association", description: "Andere Hunter existieren", unlockLevel: 35, type: "world_building", rewards: { xp: 250, gold: 125 }, icon: "🏛️" },
     ],
-    arcBoss: { name: "Igris, the Bloodred Commander", rank: "B", rewards: { namedShadow: "igris", xp: 2000 }, icon: "🩸" },
+    arcBoss: { name: "Igris, the Bloodred Commander", rank: "B", rewards: { namedShadow: "igris", xp: 500 }, icon: "🩸" },
   },
   {
     id: "arc4",
@@ -59,11 +59,11 @@ export const STORY_ARCS = [
     rankColor: "#a78bfa",
     icon: "🔴",
     chapters: [
-      { id: "ch10", title: "No Escape", description: "Red Gate Mechaniken", unlockLevel: 36, type: "danger_reveal", rewards: { xp: 1000, gold: 600 }, icon: "🚪" },
-      { id: "ch11", title: "The Ant King", description: "Jeju Island – Die wahre Bedrohung", unlockLevel: 43, type: "major_battle", rewards: { xp: 1500, gold: 800 }, icon: "🐜" },
-      { id: "ch12", title: "National Level", description: "S-Rank Hunter Existenz", unlockLevel: 50, type: "power_reveal", rewards: { xp: 2000, gold: 1000 }, icon: "🏆" },
+      { id: "ch10", title: "No Escape", description: "Red Gate Mechaniken", unlockLevel: 36, type: "danger_reveal", rewards: { xp: 300, gold: 150 }, icon: "🚪" },
+      { id: "ch11", title: "The Ant King", description: "Jeju Island – Die wahre Bedrohung", unlockLevel: 43, type: "major_battle", rewards: { xp: 400, gold: 200 }, icon: "🐜" },
+      { id: "ch12", title: "National Level", description: "S-Rank Hunter Existenz", unlockLevel: 50, type: "power_reveal", rewards: { xp: 500, gold: 250 }, icon: "🏆" },
     ],
-    arcBoss: { name: "Beru, the Ant King", rank: "A", rewards: { namedShadow: "beru", xp: 3500, title: "Ant Slayer" }, icon: "👑" },
+    arcBoss: { name: "Beru, the Ant King", rank: "A", rewards: { namedShadow: "beru", xp: 750, title: "Ant Slayer" }, icon: "👑" },
   },
   {
     id: "arc5",
@@ -74,11 +74,11 @@ export const STORY_ARCS = [
     rankColor: "#f59e0b",
     icon: "👁️",
     chapters: [
-      { id: "ch13", title: "Rulers and Monarchs", description: "Die Wahrheit über die Welt", unlockLevel: 51, type: "lore_heavy", rewards: { xp: 2500, gold: 1200 }, icon: "⚖️" },
-      { id: "ch14", title: "The Shadow Monarch's Legacy", description: "Deine Verbindung zur Vergangenheit", unlockLevel: 60, type: "destiny_reveal", rewards: { xp: 3000, gold: 1500 }, icon: "🌌" },
-      { id: "ch15", title: "Domain Expansion", description: "Shadow Realm Powers erwachen", unlockLevel: 70, type: "power_unlock", rewards: { xp: 4000, gold: 2000 }, icon: "🌀" },
+      { id: "ch13", title: "Rulers and Monarchs", description: "Die Wahrheit über die Welt", unlockLevel: 51, type: "lore_heavy", rewards: { xp: 600, gold: 300 }, icon: "⚖️" },
+      { id: "ch14", title: "The Shadow Monarch's Legacy", description: "Deine Verbindung zur Vergangenheit", unlockLevel: 60, type: "destiny_reveal", rewards: { xp: 750, gold: 400 }, icon: "🌌" },
+      { id: "ch15", title: "Domain Expansion", description: "Shadow Realm Powers erwachen", unlockLevel: 70, type: "power_unlock", rewards: { xp: 1000, gold: 500 }, icon: "🌀" },
     ],
-    arcBoss: { name: "Legia, the Monarch of Giants", rank: "S", rewards: { xp: 6000, title: "Giant Slayer" }, icon: "🏔️" },
+    arcBoss: { name: "Legia, the Monarch of Giants", rank: "S", rewards: { xp: 1500, title: "Giant Slayer" }, icon: "🏔️" },
   },
   {
     id: "arc6",
@@ -89,11 +89,11 @@ export const STORY_ARCS = [
     rankColor: "#ef4444",
     icon: "🌟",
     chapters: [
-      { id: "ch16", title: "Beyond Human", description: "Transzendenz – ein neues Kapitel", unlockLevel: 71, type: "transformation", rewards: { xp: 5000, gold: 2500 }, icon: "🦋" },
-      { id: "ch17", title: "The Final Army", description: "Bellion erwacht", unlockLevel: 80, type: "army_complete", rewards: { xp: 7000, gold: 3000 }, icon: "⚜️" },
-      { id: "ch18", title: "War Declaration", description: "Die letzte Schlacht naht", unlockLevel: 90, type: "setup_finale", rewards: { xp: 9000, gold: 4000 }, icon: "⚡" },
+      { id: "ch16", title: "Beyond Human", description: "Transzendenz – ein neues Kapitel", unlockLevel: 71, type: "transformation", rewards: { xp: 1250, gold: 600 }, icon: "🦋" },
+      { id: "ch17", title: "The Final Army", description: "Bellion erwacht", unlockLevel: 80, type: "army_complete", rewards: { xp: 1750, gold: 800 }, icon: "⚜️" },
+      { id: "ch18", title: "War Declaration", description: "Die letzte Schlacht naht", unlockLevel: 90, type: "setup_finale", rewards: { xp: 2250, gold: 1000 }, icon: "⚡" },
     ],
-    arcBoss: { name: "Antares, the Monarch of Destruction", rank: "SS", rewards: { xp: 10000, title: "Monarch Slayer" }, icon: "💀" },
+    arcBoss: { name: "Antares, the Monarch of Destruction", rank: "SS", rewards: { xp: 2500, title: "Monarch Slayer" }, icon: "💀" },
   },
   {
     id: "arc7",
@@ -104,10 +104,10 @@ export const STORY_ARCS = [
     rankColor: "#e879f9",
     icon: "☠️",
     chapters: [
-      { id: "ch19", title: "Acceptance", description: "Akzeptiere dein Schicksal", unlockLevel: 91, type: "character_growth", rewards: { xp: 12000, gold: 5000 }, icon: "🖤" },
-      { id: "ch20", title: "The Final Gate", description: "Das ultimative Dungeon", unlockLevel: 100, type: "final_dungeon", rewards: { xp: 20000, gold: 10000, title: "Shadow Monarch" }, icon: "🌑" },
+      { id: "ch19", title: "Acceptance", description: "Akzeptiere dein Schicksal", unlockLevel: 91, type: "character_growth", rewards: { xp: 3000, gold: 1500 }, icon: "🖤" },
+      { id: "ch20", title: "The Final Gate", description: "Das ultimative Dungeon", unlockLevel: 100, type: "final_dungeon", rewards: { xp: 5000, gold: 2500, title: "Shadow Monarch" }, icon: "🌑" },
     ],
-    finalBoss: { name: "The Absolute Being", rank: "???", rewards: { xp: 25000, title: "Shadow Monarch", namedShadow: "bellion", unlock: "prestige_system" }, icon: "🌌" },
+    finalBoss: { name: "The Absolute Being", rank: "???", rewards: { xp: 6000, title: "Shadow Monarch", namedShadow: "bellion", unlock: "prestige_system" }, icon: "🌌" },
   },
 ];
 
