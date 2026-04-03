@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { JOBS } from "./data/jobs";
 import { JOB_QUESTS } from "./data/jobQuests";
+import StoryView, { STORY_ARCS } from "./StoryView.jsx";
 
 // ─── RANKS ────────────────────────────────────────────────────
 const RANKS = [
@@ -253,6 +254,11 @@ const ACHIEVEMENTS = [
   { id:"all_stats_10",   name:"Ausgewogener Hunter",   icon:"⭐",  desc:"Alle Stats auf 10",                    cat:"stats",    check: s => Object.values(s.stats||{}).every(v=>v>=10), reward:{ xp:400, gold:200 } },
   { id:"gold_1000",      name:"Goldfieber",            icon:"💰",  desc:"Sammle insgesamt 1000 Gold",           cat:"misc",     check: s => (s.totalGoldEarned||0) >= 1000,       reward:{ xp:200,  gold:0   } },
   { id:"equip_first",    name:"Ausgerüstet",           icon:"🗡️",  desc:"Equipe dein erstes Item",              cat:"misc",     check: s => Object.values(s.equipment?.slots||{}).some(v=>v), reward:{ xp:100, gold:50 } },
+  { id: "story_ch1",     name: "Erste Erweckung",      icon: "📖", desc: "Schließe Kapitel 1 ab",               cat: "story",   check: s => (s.story?.completedChapters || []).includes("ch1"), reward: { xp: 100, gold: 50 } },
+  { id: "story_arc1",    name: "Der schwächste Hunter", icon: "🗡️", desc: "Schließe Arc 1 komplett ab",        cat: "story",   check: s => ["ch1","ch2","ch3"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 500, gold: 200, title: "Survivor" } },
+  { id: "story_arise",   name: "ARISE",               icon: "🌑", desc: "Schließe das ARISE-Kapitel ab",      cat: "story",   check: s => (s.story?.completedChapters || []).includes("ch7"), reward: { xp: 800, gold: 400, title: "Shadow Master" } },
+  { id: "story_arc3",    name: "Der Schattenmonarch erwacht", icon: "👑", desc: "Schließe Arc 3 komplett ab",   cat: "story",   check: s => ["ch7","ch8","ch9"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 2000, gold: 1000 } },
+  { id: "story_complete", name: "Shadow Monarch",      icon: "☠️", desc: "Schließe die gesamte Story aus",      cat: "story",   check: s => ["ch1","ch2","ch3","ch4","ch5","ch6","ch7","ch8","ch9","ch10","ch11","ch12","ch13","ch14","ch15","ch16","ch17","ch18","ch19","ch20"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 25000, gold: 10000, title: "Shadow Monarch" } },
 ];
 
 // ─── SKILLS ───────────────────────────────────────────────────
@@ -603,6 +609,11 @@ const DEFAULT_STATE = {
       necromancer: 0
     },
     activeAbilityCooldowns: {} // jobAbilityKey: timestamp
+  },
+  story: {
+    completedChapters: [],  // Array von chapter IDs z.B. ["ch1", "ch2"]
+    completedArcs: [],       // Array von arc IDs z.B. ["arc1"]
+    totalStoryXp: 0,
   }
 };
 
@@ -1037,6 +1048,13 @@ function migrateState(oldState) {
       levels: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
       xp: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
       activeAbilityCooldowns: {}
+    };
+  }
+  if (!oldState.story) {
+    oldState.story = {
+      completedChapters: [],
+      completedArcs: [],
+      totalStoryXp: 0,
     };
   }
   return oldState;
@@ -3309,6 +3327,57 @@ export default function App({ initialHunterName }) {
           </div>
         )}
 
+        {/* ═══ STORY ═══ */}
+        {view === "story" && state && (
+          <StoryView
+            gameState={state}
+            theme={theme}
+            onChapterComplete={(chapter) => {
+              persist(prev => {
+                const completedChapters = [...(prev.story?.completedChapters || [])];
+                if (!completedChapters.includes(chapter.id)) {
+                  completedChapters.push(chapter.id);
+                }
+
+                // XP und Gold vergeben
+                const xpGain = chapter.rewards?.xp || 0;
+                const goldGain = chapter.rewards?.gold || 0;
+                let newXp = (prev.xp || 0) + xpGain;
+                let newLevel = prev.level;
+                let newGold = (prev.gold || 0) + goldGain;
+
+                // Level-Up Logik
+                while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
+                  newXp -= getXpForLevel(newLevel);
+                  newLevel++;
+                }
+
+                // Titel vergeben falls vorhanden
+                let newTitle = prev.selectedTitle;
+                if (chapter.rewards?.title) {
+                  newTitle = chapter.rewards.title;
+                }
+
+                notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
+
+                return {
+                  ...prev,
+                  xp: newXp,
+                  level: newLevel,
+                  gold: newGold,
+                  totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
+                  selectedTitle: newTitle,
+                  story: {
+                    ...prev.story,
+                    completedChapters,
+                    totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
+                  },
+                };
+              });
+            }}
+          />
+        )}
+
         {/* ═══ JOBS ═══ */}
         {view === "jobs" && state && (
           <JobsView 
@@ -3398,9 +3467,9 @@ export default function App({ initialHunterName }) {
             <div style={{height:5,background:"#0f0f1e",borderRadius:3,overflow:"hidden",marginBottom:20}}>
               <div style={{width:`${(achUnlocked.length/ACHIEVEMENTS.length)*100}%`,height:"100%",borderRadius:3,background:"linear-gradient(90deg,#f59e0b88,#f59e0b)",transition:"width 0.8s ease"}}/>
             </div>
-            {["quests","dungeons","streaks","stats","shadows","misc"].map(cat=>{
+            {["quests","dungeons","story","streaks","stats","shadows","misc"].map(cat=>{
               const catAchs=ACHIEVEMENTS.filter(a=>a.cat===cat);
-              const catLabels={quests:"⚔️ Quests",dungeons:"🌀 Dungeons",streaks:"🔥 Streaks",stats:"📊 Stats",shadows:"🌑 Shadow Army",misc:"🎲 Sonstiges"};
+              const catLabels={quests:"⚔️ Quests",dungeons:"🌀 Dungeons",story:"📖 Story",streaks:"🔥 Streaks",stats:"📊 Stats",shadows:"🌑 Army",misc:"🎲 Sonstiges"};
               return(
                 <div key={cat} style={{marginBottom:20}}>
                   <div style={{fontSize:10,letterSpacing:3,color:"#475569",fontFamily:"'JetBrains Mono',monospace",marginBottom:10}}>{catLabels[cat]}</div>
@@ -3477,6 +3546,7 @@ export default function App({ initialHunterName }) {
         <div style={{display:"flex",justifyContent:"center",maxWidth:480,margin:"0 auto"}}>
           {[
             {key:"dashboard",  icon:"⚔️",  label:"Quests"},
+            {key:"story",      icon:"📖",  label:"Story"},
             {key:"dungeon",    icon:"🌀",  label:"Gates",   badge:activeDungeons.length},
             {key:"shadows",    icon:"🌑",  label:"Army",    badge:namedShadows.length>0?namedShadows.length:0},
             {key:"stats",      icon:"📊",  label:"Stats"},

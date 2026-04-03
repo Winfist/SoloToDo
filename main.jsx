@@ -1,8 +1,10 @@
-// main.jsx – Auth + App Root
+// main.jsx – Auth + App Root (Firebase Integrated)
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './solo-leveling-v5.jsx'
 import AuthScreen from './AuthScreen.jsx'
+import { auth } from "./firebase"
+import { onAuthStateChanged } from "firebase/auth"
 
 // Polyfill window.storage with localStorage
 if (!window.storage) {
@@ -27,31 +29,33 @@ function Root() {
   const [hunterName, setHunterName] = useState("");
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authData = await window.storage.get("sl-auth");
-        if (authData) {
-          const parsed = JSON.parse(authData.value);
-          setHunterName(parsed.hunterName || "Hunter");
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch {
+    // Listen for Firebase Auth changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setHunterName(user.displayName || "");
+        setIsAuthenticated(true);
+      } else {
         setIsAuthenticated(false);
       }
-    };
-    checkAuth();
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const handleAuthSuccess = async (name) => {
-    await window.storage.set("sl-auth", JSON.stringify({
-      hunterName: name,
-      loggedIn: true,
-      timestamp: Date.now(),
-    }));
-    setHunterName(name);
+  const handleAuthSuccess = (user, name) => {
+    // This is called after Login/Register in AuthScreen
+    setHunterName(name || user.displayName || "");
     setIsAuthenticated(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      setIsAuthenticated(false);
+      setHunterName("");
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
   };
 
   // Loading screen
@@ -82,7 +86,11 @@ function Root() {
   }
 
   return isAuthenticated ? (
-    <App initialHunterName={hunterName} />
+    <div style={{ position: 'relative' }}>
+      <App initialHunterName={hunterName} />
+      {/* Optional: Logout helper for testing */}
+      <button onClick={handleLogout} style={{ position: 'fixed', top: 10, right: 10, zIndex: 9999, background: 'rgba(239,68,68,0.1)', border: '1px solid #ef444433', color: '#ef4444', fontSize: '10px', padding: '4px 8px', borderRadius: '4px', fontFamily: 'monospace', cursor: 'pointer' }}>LOGOUT</button>
+    </div>
   ) : (
     <AuthScreen onAuthSuccess={handleAuthSuccess} />
   );
