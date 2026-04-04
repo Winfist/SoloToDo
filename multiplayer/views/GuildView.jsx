@@ -89,7 +89,7 @@ export default function GuildView({ playerState }) {
     }
 
     return (
-      <div style={{ animation: "mpFadeIn 0.3s ease" }}>
+      <div style={{ animation: "mpFadeIn 0.3s ease", width: "100%" }}>
         {/* No Guild Hero */}
         <div style={{
           background: `linear-gradient(180deg, ${MP_THEME.primary}10, transparent)`,
@@ -152,7 +152,7 @@ export default function GuildView({ playerState }) {
   const isMaster = guildData?.masterId === myUid;
 
   return (
-    <div style={{ animation: "mpFadeIn 0.3s ease" }}>
+    <div style={{ animation: "mpFadeIn 0.3s ease", width: "100%" }}>
       {/* Guild Info Card */}
       <div style={{
         background: MP_THEME.card,

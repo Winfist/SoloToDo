@@ -19,11 +19,17 @@ export default function MultiplayerMode({ playerState, onExitMP, onStateUpdate }
       color: "#f8fafc",
       display: "flex",
       flexDirection: "column",
+      alignItems: "center",
       position: "relative",
       paddingBottom: 80,
       overflowX: "hidden",
+      width: "100%",
+      boxSizing: "border-box",
     }}>
-      <style>{MP_CSS}</style>
+      <style>{`
+        * { box-sizing: border-box; }
+        ${MP_CSS}
+      `}</style>
 
       {/* Dynamic Background Effects */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
@@ -44,13 +50,15 @@ export default function MultiplayerMode({ playerState, onExitMP, onStateUpdate }
         borderBottom: `1px solid ${MP_THEME.primary}44`,
         boxShadow: `0 8px 32px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.05) inset`,
         padding: "16px",
+        width: "100%",
+        boxSizing: "border-box",
       }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 480, margin: "0 auto", width: "100%" }}>
           {/* Back Button */}
-          <button 
+          <button
             onClick={onExitMP}
             style={{
-              background: "rgba(255,255,255,0.04)", border: `1px solid rgba(255,255,255,0.08)`, 
+              background: "rgba(255,255,255,0.04)", border: `1px solid rgba(255,255,255,0.08)`,
               color: "#94a3b8", borderRadius: 10, padding: "8px 14px",
               fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700,
               display: "flex", alignItems: "center", gap: 6,
@@ -87,11 +95,11 @@ export default function MultiplayerMode({ playerState, onExitMP, onStateUpdate }
       </header>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, padding: "16px", maxWidth: 480, margin: "0 auto", width: "100%", zIndex: 1 }}>
-        {currentView === "guild" && <GuildView playerState={playerState} />}
-        {currentView === "raids" && <RaidsView playerState={playerState} />}
-        {currentView === "ranks" && <LeaderboardView playerState={playerState} />}
-        {currentView === "social" && <SocialView playerState={playerState} />}
+      <main style={{ flex: 1, padding: "16px", maxWidth: 480, width: "100%", zIndex: 1, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        {currentView === "guild" && <GuildView playerState={playerState} onStateUpdate={onStateUpdate} />}
+        {currentView === "raids" && <RaidsView playerState={playerState} onStateUpdate={onStateUpdate} />}
+        {currentView === "ranks" && <LeaderboardView playerState={playerState} onStateUpdate={onStateUpdate} />}
+        {currentView === "social" && <SocialView playerState={playerState} onStateUpdate={onStateUpdate} />}
       </main>
 
       {/* MP Navigation */}

@@ -95,7 +95,7 @@ export default function LeaderboardView({ playerState }) {
   };
 
   return (
-    <div style={{ animation: "mpFadeIn 0.3s ease", display: "flex", flexDirection: "column", height: "100%" }}>
+    <div style={{ animation: "mpFadeIn 0.3s ease", display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 9, letterSpacing: 4, color: MP_THEME.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>

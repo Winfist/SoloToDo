@@ -3,12 +3,12 @@ import { MP_THEME, RAID_TEMPLATES } from '../data/mpConstants';
 
 const RANK_COLORS = { "S": "#e879f9", "A": "#f59e0b", "B": "#a78bfa", "C": "#22d3ee", "D": "#6b7280" };
 
-export default function RaidsView({ playerState }) {
+export default function RaidsView({ playerState, onStateUpdate }) {
   const [selectedRaid, setSelectedRaid] = useState(null);
   const playerLevel = playerState?.level || 1;
 
   return (
-    <div style={{ animation: "mpFadeIn 0.3s ease" }}>
+    <div style={{ animation: "mpFadeIn 0.3s ease", width: "100%", maxWidth: "100%" }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 9, letterSpacing: 4, color: MP_THEME.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
@@ -19,23 +19,7 @@ export default function RaidsView({ playerState }) {
         </div>
       </div>
 
-      {/* Coming Soon Banner */}
-      <div style={{
-        background: `linear-gradient(135deg, ${MP_THEME.raidPurple}15, ${MP_THEME.secondary}10)`,
-        border: `1px solid ${MP_THEME.raidPurple}33`,
-        borderRadius: 14, padding: "12px 16px", marginBottom: 20,
-        display: "flex", alignItems: "center", gap: 10,
-      }}>
-        <div style={{ fontSize: 20, animation: "mpFloat 2s ease-in-out infinite" }}>🔮</div>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: MP_THEME.raidPurple, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
-            COMING SOON
-          </div>
-          <div style={{ fontSize: 11, color: "#cbd5e1", marginTop: 2 }}>
-            Echtzeit Raid-Lobbies werden in einem zukünftigen Update freigeschaltet
-          </div>
-        </div>
-      </div>
+
 
       {/* Raid Cards */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -155,18 +139,23 @@ export default function RaidsView({ playerState }) {
                     </div>
                   </div>
 
-                  {/* Join Button (disabled – Coming Soon) */}
-                  <button disabled style={{
+                  {/* Join Button */}
+                  <button onClick={() => {
+                    if (playerState && onStateUpdate) {
+                      onStateUpdate({ ...playerState, multiplayer: { ...playerState.multiplayer, activeRaid: raid.id } });
+                    }
+                  }} disabled={!meetsLevel} style={{
                     width: "100%", padding: 14, borderRadius: 14,
-                    background: "rgba(255,255,255,0.03)",
-                    color: "#475569", fontWeight: 800, fontSize: 12,
+                    background: meetsLevel ? `linear-gradient(135deg, ${rankColor}55, ${rankColor}22)` : "rgba(255,255,255,0.03)",
+                    color: meetsLevel ? "#fff" : "#475569", fontWeight: 800, fontSize: 12,
                     fontFamily: "'Cinzel',serif", letterSpacing: 2,
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    cursor: "not-allowed",
+                    border: `1px solid ${meetsLevel ? rankColor + "66" : "rgba(255,255,255,0.06)"}`,
+                    cursor: meetsLevel ? "pointer" : "not-allowed",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    transition: "all 0.3s"
                   }}>
-                    <span style={{ animation: "mpPulseGold 2s infinite", fontSize: 14 }}>🔒</span>
-                    RAID LOBBY · COMING SOON
+                    <span style={{ fontSize: 14, animation: meetsLevel ? "mpPulseGold 2s infinite" : "none" }}>{meetsLevel ? "⚔️" : "🔒"}</span>
+                    {playerState?.multiplayer?.activeRaid === raid.id ? "BEREITS BEIGETRETEN" : "RAID LOBBY BETRETEN"}
                   </button>
                 </div>
               )}
@@ -174,6 +163,42 @@ export default function RaidsView({ playerState }) {
           );
         })}
       </div>
+
+      {playerState?.multiplayer?.activeRaid && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ fontSize: 40, animation: "mpFloat 2s ease-in-out infinite" }}>⚔️</div>
+          <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 20 }}>Raid Lobby: Gefunden</div>
+          <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 10, marginBottom: 30 }}>Suche nach anderen Huntern... (Mock)</div>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            {(playerState.multiplayer?.social?.friends || []).slice(0, 3).map((f, i) => (
+              <div key={i} style={{ width: 60, height: 60, borderRadius: 12, background: "rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ fontSize: 20 }}>👤</div>
+                <div style={{ fontSize: 8 }}>Lv.{f.level}</div>
+              </div>
+            ))}
+            <div style={{ width: 60, height: 60, borderRadius: 12, background: "rgba(34,197,94,0.2)", border: "1px solid #22c55e", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ fontSize: 20 }}>YOU</div>
+            </div>
+          </div>
+
+          <button onClick={() => {
+            if (onStateUpdate) {
+              onStateUpdate({ ...playerState, xp: playerState.xp + 5000, gold: playerState.gold + 2000, multiplayer: { ...playerState.multiplayer, activeRaid: null } });
+              alert("Raid erfolgreich abgeschlossen! +5000 XP / +2000 G");
+            }
+          }} style={{ marginTop: 40, padding: "16px 32px", fontSize: 14, fontWeight: 900, background: MP_THEME.primary, border: "none", color: "#fff", borderRadius: 12, cursor: "pointer", fontFamily: "'Cinzel',serif" }}>
+            RAID STARTEN
+          </button>
+          <button onClick={() => {
+            if (onStateUpdate) {
+              onStateUpdate({ ...playerState, multiplayer: { ...playerState.multiplayer, activeRaid: null } });
+            }
+          }} style={{ marginTop: 16, padding: "12px 24px", fontSize: 12, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 12, cursor: "pointer" }}>
+            VERLASSEN
+          </button>
+        </div>
+      )}
     </div>
   );
 }
