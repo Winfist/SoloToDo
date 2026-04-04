@@ -300,12 +300,19 @@ function UserDetail({ user, onBack, onUpdate }) {
       };
 
       if (wipeQuests) {
+        payload.tutorialCompleted = false;
+        payload.hunterName = ""; // Important to trigger SetupScreen
         payload.story = { completedChapters: [], completedArcs: [], totalStoryXp: 0 };
         payload.quests = [];
         payload.completedQuests = [];
         payload.equipment = { slots:{ weapon:null, armor:null, ring1:null, ring2:null }, inventory:[] };
         payload.shadowArmy = { shadows:[], capacity:20, formations:{ vanguard:[], core:[], rearguard:[] }, totalShadowXp:0 };
         payload.jobs = { current: null, levels: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 }, xp: {}, activeAbilityCooldowns: {} };
+        payload.achievements = { unlocked: [], notified: [] };
+        payload.dungeonHistory = [];
+        payload.hiddenQuests = { discovered: [], completed: [] };
+        payload.analytics = {};
+        payload.multiplayer = { activeRaid: null, guild: null, social: null, publicStats: { totalXp: 0, dungeonsCleared: 0 } };
       }
 
       await updateDoc(userRef, payload);

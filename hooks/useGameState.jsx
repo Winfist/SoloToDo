@@ -16,6 +16,10 @@ import {
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
+  const stateRef = useRef(null);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("dashboard");
   const [showCreate, setShowCreate] = useState(false);
@@ -187,13 +191,19 @@ export function useGameState(initialHunterName, onLogout) {
   }, [initialHunterName, triggerSystemMessage]);
 
   const assignRandomTask = useCallback(() => {
-    if (!state) return;
+    const currentState = stateRef.current;
+    if (!currentState || loading) return;
     const TASK_INTERVAL = 3 * 3600 * 1000; // 3 hours
     const now = Date.now();
-    const lastTime = state.lastSystemTaskTime || 0;
+    const lastTime = currentState.lastSystemTaskTime || 0;
+    
     if (now - lastTime >= TASK_INTERVAL) {
-      // Find tasks in QUEST_POOL not currently in state.quests
-      const availablePool = QUEST_POOL.filter(q => !state.quests.some(sq => sq.title === q.title));
+      // Find tasks in QUEST_POOL not currently in state.quests and not in completedQuests
+      const availablePool = QUEST_POOL.filter(q => 
+        !currentState.quests.some(sq => sq.title === q.title) &&
+        !(currentState.completedQuests || []).some(cq => cq.title === q.title)
+      );
+      
       if (availablePool.length > 0) {
         const randTask = availablePool[Math.floor(Math.random() * availablePool.length)];
         const newQuest = {
@@ -210,25 +220,27 @@ export function useGameState(initialHunterName, onLogout) {
         ]);
 
         persist({
-          ...state,
+          ...currentState,
           lastSystemTaskTime: now,
-          quests: [...state.quests, newQuest]
+          quests: [...currentState.quests, newQuest]
         });
         notify("Neue Aufgabe aus dem Pool erhalten!", "info");
       } else {
-        // If pool exhausted, just update time
-        persist({ ...state, lastSystemTaskTime: now });
+        // If pool exhausted, just update time or do nothing
+        persist({ ...currentState, lastSystemTaskTime: now });
       }
     }
-  }, [state, persist, triggerSystemMessage, notify]);
+  }, [persist, triggerSystemMessage, notify, loading]);
 
   // --- 3 HOURS TASK ASSIGNMENT ---
   useEffect(() => {
-    if (!state || loading) return;
+    if (loading) return;
+    // Initial check on load
     assignRandomTask();
-    const intervalId = setInterval(assignRandomTask, 60000);
+    // Then every hour check if it's time for a new task
+    const intervalId = setInterval(assignRandomTask, 3600000); 
     return () => clearInterval(intervalId);
-  }, [state, loading, assignRandomTask]);
+  }, [loading, assignRandomTask]);
 
   const removeNotif = useCallback(id => setNotifications(prev => prev.filter(n => n.id !== id)), []);
 
