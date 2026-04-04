@@ -652,12 +652,12 @@ const DEFAULT_STATE = {
   hunterName:"", level:1, xp:0, gold:0, totalGoldEarned:0,
   stats:{ str:0, int:0, vit:0, agi:0, cha:0 },
   statPoints:0,
-  quests:[], completedQuests:[], streak:0, lastActiveDate:null,
-  shopPurchases:[], selectedTheme:"default", selectedTitle:"",
-  shadowArmy:{ shadows:[], capacity:20, formations:{ vanguard:[], core:[], rearguard:[] }, totalShadowXp:0 },
-  totalXpEarned:0, totalQuestsCompleted:0,
+  quests:[], completedQuests:[], streak:0, lastActiveDate:null, lastWelcomeDate:null,
+  shopPurchases:[], selectedTheme: "default", selectedTitle: "",
+  shadowArmy: { shadows: [], capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 },
+  totalXpEarned: 0, totalQuestsCompleted: 0,
   dailyUserQuestsCreated: 0, extraDailySlots: 0,
-  dungeons:[], lastDungeonRefresh:null, dungeonHistory:[],
+  dungeons: [], lastDungeonRefresh: null, dungeonHistory: [],
   achievements:{ unlocked:[], notified:[] },
   skills:{ unlocked:[] },
   equipment:{ slots:{ weapon:null, armor:null, ring1:null, ring2:null }, inventory:[] },
@@ -1285,6 +1285,13 @@ input,select{font-family:inherit}
 @keyframes phaseWave{0%{background-position:0% 50%}100%{background-position:200% 50%}}
 @keyframes floorActiveGlow{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 12px var(--floor-color)}}
 @keyframes safeRoomGlow{0%,100%{box-shadow:0 0 6px #22c55e22}50%{box-shadow:0 0 20px #22c55e55}}
+
+@media (max-width: 440px) {
+  .header-hide-mobile { display: none !important; }
+  .header-compact { gap: 4px !important; }
+  .stat-item-compact { padding: 4px 6px !important; }
+  .stat-value-compact { fontSize: 10px !important; }
+}
 `;
 
 // ─── PARTICLES ────────────────────────────────────────────────
@@ -2912,16 +2919,19 @@ export default function App({ initialHunterName, onLogout }) {
             s.todayModifier=getDailyModifier();
           }
 
-          // Trigger Welcome Message every time app loads
-          setTimeout(() => {
-            const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
-            const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "⚠️ NOTFALL-MISSION AKTIV" : "Ihre Aufgabe wartet.";
-            triggerSystemMessage("SYSTEM ONLINE", [
-              `Willkommen zurück, Hunter ${s.hunterName || "Unbekannt"}.`,
-              `Aktive Tages-Quests: ${activeDailies.length}`,
-              urgentMsg
-            ]);
-          }, 1500);
+          // Trigger Welcome Message only once per day
+          if (s.lastWelcomeDate !== today) {
+            setTimeout(() => {
+              const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
+              const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "⚠️ NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
+              triggerSystemMessage("STATUS-CHECK", [
+                `Willkommen zurück, Hunter ${s.hunterName || "Unbekannt"}.`,
+                `Aktive Tages-Quests: ${activeDailies.length}`,
+                urgentMsg
+              ]);
+              persist({ ...s, lastWelcomeDate: today });
+            }, 1500);
+          }
 
           // --- STATS INITIALIZATION FOR OLD USERS ---
           if (s.statPoints === undefined) s.statPoints = 0;
@@ -3627,32 +3637,32 @@ export default function App({ initialHunterName, onLogout }) {
       {/* HEADER */}
       <header style={{position:"sticky",top:0,zIndex:50,padding:"12px 16px",background:`linear-gradient(180deg,${theme.bg}f5,${theme.bg}e8)`,borderBottom:`1px solid ${penaltyActive?"#ef444422":theme.primary+"12"}`,backdropFilter:"blur(24px)"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",maxWidth:480,margin:"0 auto"}}>
-          <div style={{display:"flex",alignItems:"center",gap:14}}>
-            <div style={{width:46,height:46,display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(135deg,${rank.color}28,${rank.color}0a)`,border:`2px solid ${rank.color}66`,position:"relative",overflow:"hidden",clipPath:"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",animation:"hexPulse 3s infinite"}}>
+          <div className="header-compact" style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{width:46,height:46,display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(135deg,${rank.color}28,${rank.color}0a)`,border:`2px solid ${rank.color}66`,position:"relative",overflow:"hidden",clipPath:"polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",animation:"hexPulse 3s infinite", flexShrink:0}}>
               <span style={{fontSize:17,fontWeight:900,color:rank.color,fontFamily:"'Cinzel',serif",position:"relative",zIndex:1,textShadow:`0 0 12px ${rank.color}88`}}>{rank.name}</span>
             </div>
-            <div>
+            <div style={{minWidth: 0, overflow: "hidden"}}>
               <div style={{display:"flex",alignItems:"center",gap:7}}>
-                <div style={{fontSize:16,fontWeight:800,color:penaltyActive?"#ef4444":"#fff",fontFamily:"'Outfit',sans-serif",letterSpacing:0.5}}>{state.hunterName}</div>
+                <div style={{fontSize:16,fontWeight:800,color:penaltyActive?"#ef4444":"#fff",fontFamily:"'Outfit',sans-serif",letterSpacing:0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}}>{state.hunterName}</div>
                 {penaltyActive&&<div style={{fontSize:8,color:"#ef4444",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,padding:"2px 6px",borderRadius:4,background:"#ef444412",border:"1px solid #ef444433"}}>PENALTY</div>}
-                <button onClick={onLogout} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:4,color:"#ef4444",fontSize:8,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",padding:"2px 4px",marginLeft:4,fontWeight:700}} title="System beenden">
+                <button onClick={onLogout} className="header-hide-mobile" style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:4,color:"#ef4444",fontSize:8,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",padding:"2px 4px",marginLeft:4,fontWeight:700}} title="System beenden">
                   EXIT
                 </button>
               </div>
-              <div style={{fontSize:10,color:rank.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,marginTop:2,opacity:0.9}}>{state.selectedTitle||rank.label}</div>
+              <div style={{fontSize:10,color:rank.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,marginTop:2,opacity:0.9, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}}>{state.selectedTitle||rank.label}</div>
             </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <div style={{textAlign:"center",padding:"4px 10px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
-              <div style={{fontSize:7,color:"#475569",letterSpacing:1.5,fontFamily:"'JetBrains Mono',monospace"}}>PWR</div>
-              <div style={{fontSize:12,fontWeight:800,color:theme.accent,fontFamily:"'JetBrains Mono',monospace"}}>{powerLevel.toLocaleString()}</div>
+          <div className="header-compact" style={{display:"flex",alignItems:"center",gap:8}}>
+            <div className="stat-item-compact" style={{textAlign:"center",padding:"4px 10px",borderRadius:8,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
+              <div className="header-hide-mobile" style={{fontSize:7,color:"#475569",letterSpacing:1.5,fontFamily:"'JetBrains Mono',monospace"}}>PWR</div>
+              <div className="stat-value-compact" style={{fontSize:12,fontWeight:800,color:theme.accent,fontFamily:"'JetBrains Mono',monospace"}}>{powerLevel.toLocaleString()}</div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:3,padding:"4px 10px",borderRadius:8,background:"rgba(251,191,36,0.06)",border:"1px solid rgba(251,191,36,0.1)",color:"#fbbf24",fontFamily:"'JetBrains Mono',monospace",fontSize:12}}>
-              <span style={{fontSize:11}}>💰</span><span style={{fontWeight:700}}>{state.gold.toLocaleString()}</span>
+            <div className="stat-item-compact" style={{display:"flex",alignItems:"center",gap:3,padding:"4px 10px",borderRadius:8,background:"rgba(251,191,36,0.06)",border:"1px solid rgba(251,191,36,0.1)",color:"#fbbf24",fontFamily:"'JetBrains Mono',monospace",fontSize:12}}>
+              <span style={{fontSize:11}}>💰</span><span className="stat-value-compact" style={{fontWeight:700}}>{state.gold.toLocaleString()}</span>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:8,background:state.streak>=3?"rgba(249,115,22,0.08)":"rgba(255,255,255,0.03)",border:`1px solid ${state.streak>=3?"rgba(249,115,22,0.15)":"rgba(255,255,255,0.06)"}`,color:state.streak>=5?"#f97316":state.streak>=3?"#fb923c":"#94a3b8",fontFamily:"'JetBrains Mono',monospace",fontSize:12}}>
+            <div className="header-hide-mobile stat-item-compact" style={{display:"flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:8,background:state.streak>=3?"rgba(249,115,22,0.08)":"rgba(255,255,255,0.03)",border:`1px solid ${state.streak>=3?"rgba(249,115,22,0.15)":"rgba(255,255,255,0.06)"}`,color:state.streak>=5?"#f97316":state.streak>=3?"#fb923c":"#94a3b8",fontFamily:"'JetBrains Mono',monospace",fontSize:12}}>
               <span style={{animation:state.streak>=3?"pulse 1.5s infinite":"none",fontSize:11}}>🔥</span>
-              <span style={{fontWeight:700}}>{state.streak}</span>
+              <span className="stat-value-compact" style={{fontWeight:700}}>{state.streak}</span>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:5,paddingLeft:6,marginLeft:2,borderLeft:"1px solid rgba(255,255,255,0.06)"}}>
               <button 
