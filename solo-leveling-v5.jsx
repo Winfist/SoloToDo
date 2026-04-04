@@ -4,6 +4,7 @@ import { JOB_QUESTS } from "./data/jobQuests";
 import { QUEST_POOL } from "./data/questPool";
 import StoryView, { STORY_ARCS } from "./StoryView.jsx";
 import { db, auth } from "./firebase";
+import MultiplayerMode from "./MultiplayerMode.jsx";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 
 // ─── RANKS ────────────────────────────────────────────────────
@@ -692,6 +693,12 @@ const DEFAULT_STATE = {
     completedChapters: [],  // Array von chapter IDs z.B. ["ch1", "ch2"]
     completedArcs: [],       // Array von arc IDs z.B. ["arc1"]
     totalStoryXp: 0,
+  },
+  multiplayer: {
+    activeRaid: null,
+    guild: null,
+    social: null,
+    publicStats: { totalXp: 0, dungeonsCleared: 0 }
   }
 };
 
@@ -2802,6 +2809,8 @@ export default function App({ initialHunterName, onLogout }) {
   const [templateFilter,setTemplateFilter]=useState("all");
   const [randomizing,setRandomizing]=useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem("soloMusicPlaying") !== "false");
+  const [isMultiplayerMode, setIsMultiplayerMode] = useState(false);
+  const [portalTransitioning, setPortalTransitioning] = useState(false);
 
   const notify=useCallback((msg,type="info")=>setNotifications(prev=>[...prev,{id:genId(),msg,type}]),[]);
   const persist=useCallback(s=>{
@@ -3495,6 +3504,57 @@ export default function App({ initialHunterName, onLogout }) {
   if(loading) return <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#080810"}}><div style={{textAlign:"center"}}><div style={{fontSize:40,animation:"float 2s ease-in-out infinite"}}>⚔️</div><div style={{marginTop:12,fontSize:12,letterSpacing:4,color:"#4f6ef7",fontFamily:"'JetBrains Mono',monospace"}}>LOADING</div></div></div>;
   if(showSetup) return <SetupScreen onFinish={finishSetup} theme={theme}/>;
 
+  // Portal transition handler
+  const enterPortal = () => {
+    setPortalTransitioning(true);
+    setTimeout(() => {
+      setIsMultiplayerMode(true);
+      setPortalTransitioning(false);
+    }, 1800);
+  };
+  const exitPortal = () => {
+    setPortalTransitioning(true);
+    setTimeout(() => {
+      setIsMultiplayerMode(false);
+      setPortalTransitioning(false);
+    }, 1200);
+  };
+
+  // Portal Transition Overlay
+  if(portalTransitioning) {
+    const text = isMultiplayerMode ? "RETURNING TO SOLO" : "ENTERING ASSOCIATION";
+    return (
+      <div style={{position:"fixed",inset:0,zIndex:9999,background:"#030208",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+        <style>{`
+          @keyframes portalGate{0%{transform:scale(0) rotate(0);opacity:0}50%{transform:scale(1.3) rotate(180deg);opacity:1}100%{transform:scale(1) rotate(360deg);opacity:0.8}}
+          @keyframes portalRipple{0%{transform:scale(0.5);opacity:0.6;border-color:#f59e0b88}100%{transform:scale(5);opacity:0;border-color:#f59e0b00}}
+          @keyframes portalText{0%{opacity:0;letter-spacing:2px;filter:blur(10px)}50%{opacity:1;letter-spacing:8px;filter:blur(0)}100%{opacity:1;letter-spacing:6px}}
+          @keyframes portalDim{0%{opacity:0}30%{opacity:1}70%{opacity:1}100%{opacity:0}}
+        `}</style>
+        {/* Ripples */}
+        {[0,1,2].map(i=>(
+          <div key={i} style={{position:"absolute",width:80,height:80,borderRadius:"50%",border:"2px solid #f59e0b66",animation:`portalRipple 2s ease-out ${i*0.3}s infinite`}}/>
+        ))}
+        {/* Central Portal */}
+        <div style={{fontSize:64,animation:"portalGate 1.5s cubic-bezier(0.4,0,0.2,1) forwards",filter:"drop-shadow(0 0 40px rgba(245,158,11,0.8))",marginBottom:32}}>🌐</div>
+        {/* Text */}
+        <div style={{fontSize:11,letterSpacing:6,color:"#f59e0b",fontFamily:"'JetBrains Mono',monospace",fontWeight:700,animation:"portalText 1.5s ease-out 0.3s both"}}>{text}</div>
+        {/* Ambient glow */}
+        <div style={{position:"absolute",width:"100%",height:"100%",background:"radial-gradient(circle at 50% 50%, rgba(245,158,11,0.12), transparent 60%)",animation:"portalDim 2s ease forwards"}}/>
+      </div>
+    );
+  }
+
+  if(isMultiplayerMode && state) {
+    return (
+      <MultiplayerMode 
+        playerState={state} 
+        onExitMP={exitPortal}
+        onStateUpdate={persist}
+      />
+    );
+  }
+
   const rank=getRank(state?.level || 1);
   const xpNeeded=getXpForLevel(state?.level || 1);
   const xpPercent=Math.min(((state?.xp || 0)/xpNeeded)*100,100);
@@ -3575,6 +3635,9 @@ export default function App({ initialHunterName, onLogout }) {
               <div style={{display:"flex",alignItems:"center",gap:7}}>
                 <div style={{fontSize:16,fontWeight:800,color:penaltyActive?"#ef4444":"#fff",fontFamily:"'Outfit',sans-serif",letterSpacing:0.5}}>{state.hunterName}</div>
                 {penaltyActive&&<div style={{fontSize:8,color:"#ef4444",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,padding:"2px 6px",borderRadius:4,background:"#ef444412",border:"1px solid #ef444433"}}>PENALTY</div>}
+                <button onClick={onLogout} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:4,color:"#ef4444",fontSize:8,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",padding:"2px 4px",marginLeft:4,fontWeight:700}} title="System beenden">
+                  EXIT
+                </button>
               </div>
               <div style={{fontSize:10,color:rank.color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:2,marginTop:2,opacity:0.9}}>{state.selectedTitle||rank.label}</div>
             </div>
@@ -3591,47 +3654,44 @@ export default function App({ initialHunterName, onLogout }) {
               <span style={{animation:state.streak>=3?"pulse 1.5s infinite":"none",fontSize:11}}>🔥</span>
               <span style={{fontWeight:700}}>{state.streak}</span>
             </div>
-            <button 
-              onClick={() => setIsMusicPlaying(prev => {
-                const next = !prev;
-                localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
-                return next;
-              })}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 32, height: 32, borderRadius: 8,
-                background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
-                border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
-                color: isMusicPlaying ? theme.accent : "#475569",
-                cursor: "pointer", fontSize: 16, transition: "all 0.3s"
-              }}
-              title={isMusicPlaying ? "Musik Stoppen" : "Musik Abspielen"}
-            >
-              {isMusicPlaying ? "🔊" : "🔈"}
-            </button>
+            <div style={{display:"flex",alignItems:"center",gap:5,paddingLeft:6,marginLeft:2,borderLeft:"1px solid rgba(255,255,255,0.06)"}}>
+              <button 
+                onClick={() => setIsMusicPlaying(prev => {
+                  const next = !prev;
+                  localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
+                  return next;
+                })}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 32, height: 32, borderRadius: 8,
+                  background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
+                  color: isMusicPlaying ? theme.accent : "#475569",
+                  cursor: "pointer", fontSize: 16, transition: "all 0.3s"
+                }}
+                title={isMusicPlaying ? "Musik Stoppen" : "Musik Abspielen"}
+              >
+                {isMusicPlaying ? "🔊" : "🔈"}
+              </button>
+              
+              <button 
+                onClick={enterPortal}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 32, height: 32, borderRadius: 8,
+                  background: `linear-gradient(135deg, #f59e0b15, #f59e0b25)`,
+                  border: `1px solid #f59e0b55`,
+                  color: '#fcd34d', fontSize: 16, cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  boxShadow: `0 0 10px rgba(245,158,11,0.1)`,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, #f59e0b25, #f59e0b45)'; e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)'; e.currentTarget.style.boxShadow = `0 4px 15px rgba(245,158,11,0.3)`; e.currentTarget.style.borderColor = '#f59e0b'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, #f59e0b15, #f59e0b25)'; e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = `0 0 10px rgba(245,158,11,0.1)`; e.currentTarget.style.borderColor = '#f59e0b55'; }}
+                title="Hunter Association"
+              >
+                🏛️
+              </button>
+            </div>
           </div>
-          <button onClick={onLogout} style={{ 
-            position: 'absolute', 
-            top: 52, 
-            right: 16, 
-            zIndex: 9999, 
-            background: 'rgba(239,68,68,0.08)', 
-            border: '1px solid #ef444433', 
-            color: '#ef4444', 
-            fontSize: '8px', 
-            padding: '4px 8px', 
-            borderRadius: '4px', 
-            fontFamily: 'monospace', 
-            cursor: 'pointer', 
-            backdropFilter: "blur(4px)",
-            letterSpacing: "1px",
-            transition: "all 0.3s"
-          }}
-          onMouseEnter={(e) => { e.target.style.background = 'rgba(239,68,68,0.2)'; e.target.style.borderColor = '#ef4444'; }}
-          onMouseLeave={(e) => { e.target.style.background = 'rgba(239,68,68,0.08)'; e.target.style.borderColor = '#ef444433'; }}
-          >
-            EXIT SYSTEM
-          </button>
         </div>
       </header>
 
