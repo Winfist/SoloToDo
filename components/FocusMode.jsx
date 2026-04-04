@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { calculateLevelUp } from "../data/constants";
 
 // ═══════════════════════════════════════════════════════════════
 // FOCUS MODE – Fullscreen Pomodoro/Deep Work Timer
@@ -44,11 +45,7 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
                 const streakBonus = sessionStreak * 5;
                 const xpGain = Math.floor(minutesCompleted * 2) + streakBonus; // 2 XP per minute + run bonus
 
-                persist({
-                    ...state,
-                    xp: state.xp + xpGain,
-                    totalXpEarned: (state.totalXpEarned || 0) + xpGain,
-                });
+                persist(calculateLevelUp(state, xpGain));
 
                 notify(`Session komplett! +${xpGain} XP (inkl. +${streakBonus} Streak-Bonus) ⚡`, "success");
                 setSessionStreak(prev => prev + 1);

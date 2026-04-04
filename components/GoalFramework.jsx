@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { genId } from '../data/constants';
+import { genId, calculateLevelUp } from '../data/constants';
 
 // ═══════════════════════════════════════════════════════════════
 // GOAL FRAMEWORK – Overarching Goals with Milestones
@@ -287,12 +287,10 @@ export default function GoalFramework({ state, persist, notify, theme }) {
             }
         }
 
-        persist({
+        persist(calculateLevelUp({
             ...state,
-            goals: updatedGoals,
-            xp: state.xp + xpGain,
-            totalXpEarned: (state.totalXpEarned || 0) + xpGain,
-        });
+            goals: updatedGoals
+        }, xpGain));
     }, [state, goals, persist, notify]);
 
     const activeGoals = goals.filter(g => !g.milestones.every(m => m.completed));

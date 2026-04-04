@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { db, auth } from "../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
+import { QUEST_POOL } from "../data/questPool.js";
 import {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
@@ -9,9 +10,9 @@ import {
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
-  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests
+  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,
+  saveState, loadState, migrateState, calculateLevelUp, awardJobXp
 } from '../data/constants';
-// saveState, loadState, migrateState are defined in solo-leveling-v5.jsx scope
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
@@ -185,49 +186,49 @@ export function useGameState(initialHunterName, onLogout) {
     });
   }, [initialHunterName, triggerSystemMessage]);
 
+  const assignRandomTask = useCallback(() => {
+    if (!state) return;
+    const TASK_INTERVAL = 3 * 3600 * 1000; // 3 hours
+    const now = Date.now();
+    const lastTime = state.lastSystemTaskTime || 0;
+    if (now - lastTime >= TASK_INTERVAL) {
+      // Find tasks in QUEST_POOL not currently in state.quests
+      const availablePool = QUEST_POOL.filter(q => !state.quests.some(sq => sq.title === q.title));
+      if (availablePool.length > 0) {
+        const randTask = availablePool[Math.floor(Math.random() * availablePool.length)];
+        const newQuest = {
+          id: genId(), title: randTask.title, difficulty: randTask.difficulty || "normal",
+          category: randTask.category || "str", desc: randTask.desc || "",
+          type: "side", createdAt: getToday(),
+          xpMult: 1, goldMult: 1, isSystem: true
+        };
+
+        triggerSystemMessage("NEUE AUFGABE", [
+          "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
+          `"${randTask.title}"`,
+          "Schließen Sie diese zeitnah ab, Hunter."
+        ]);
+
+        persist({
+          ...state,
+          lastSystemTaskTime: now,
+          quests: [...state.quests, newQuest]
+        });
+        notify("Neue Aufgabe aus dem Pool erhalten!", "info");
+      } else {
+        // If pool exhausted, just update time
+        persist({ ...state, lastSystemTaskTime: now });
+      }
+    }
+  }, [state, persist, triggerSystemMessage, notify]);
+
   // --- 3 HOURS TASK ASSIGNMENT ---
   useEffect(() => {
     if (!state || loading) return;
-    const TASK_INTERVAL = 3 * 3600 * 1000; // 3 hours
-
-    const assignRandomTask = () => {
-      const now = Date.now();
-      const lastTime = state.lastSystemTaskTime || 0;
-      if (now - lastTime >= TASK_INTERVAL) {
-        // Find tasks in QUEST_POOL not currently in state.quests
-        const availablePool = QUEST_POOL.filter(q => !state.quests.some(sq => sq.title === q.title));
-        if (availablePool.length > 0) {
-          const randTask = availablePool[Math.floor(Math.random() * availablePool.length)];
-          const newQuest = {
-            id: genId(), title: randTask.title, difficulty: randTask.difficulty || "normal",
-            category: randTask.category || "str", desc: randTask.desc || "",
-            type: "side", createdAt: getToday(),
-            xpMult: 1, goldMult: 1, isSystem: true
-          };
-
-          triggerSystemMessage("NEUE AUFGABE", [
-            "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
-            `"${randTask.title}"`,
-            "Schließen Sie diese zeitnah ab, Hunter."
-          ]);
-
-          persist({
-            ...state,
-            lastSystemTaskTime: now,
-            quests: [...state.quests, newQuest]
-          });
-          notify("Neue Aufgabe aus dem Pool erhalten!", "info");
-        } else {
-          // If pool exhausted, just update time
-          persist({ ...state, lastSystemTaskTime: now });
-        }
-      }
-    };
-
     assignRandomTask();
     const intervalId = setInterval(assignRandomTask, 60000);
     return () => clearInterval(intervalId);
-  }, [state, loading, persist, triggerSystemMessage, notify]);
+  }, [state, loading, assignRandomTask]);
 
   const removeNotif = useCallback(id => setNotifications(prev => prev.filter(n => n.id !== id)), []);
 
@@ -238,7 +239,12 @@ export function useGameState(initialHunterName, onLogout) {
     let xpBonus = 0, goldBonus = 0;
     newAchs.forEach(a => { xpBonus += a.reward.xp || 0; goldBonus += a.reward.gold || 0; });
     setAchQueue(prev => [...prev, ...newAchs]);
-    return { ...nextState, xp: nextState.xp + xpBonus, gold: nextState.gold + goldBonus, totalGoldEarned: (nextState.totalGoldEarned || 0) + goldBonus, achievements: { ...nextState.achievements, unlocked } };
+    return calculateLevelUp({
+      ...nextState,
+      gold: nextState.gold + goldBonus,
+      totalGoldEarned: (nextState.totalGoldEarned || 0) + goldBonus,
+      achievements: { ...nextState.achievements, unlocked }
+    }, xpBonus);
   }, []);
 
   const computeXpGain = useCallback((quest, streakBonus, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses = {}) => {
@@ -294,17 +300,12 @@ export function useGameState(initialHunterName, onLogout) {
     const goldGain = Math.round(diff.gold * goldMult);
     if (rect) setXpFloats(prev => [...prev, { id: genId(), x: rect.x - 20, y: rect.y, xp: xpGain, gold: goldGain }]);
     setTimeout(() => setXpFloats(prev => prev.slice(1)), 1400);
-    let newXp = state.xp + xpGain, newLevel = state.level, didLevelUp = false, levelsGained = 0;
     const oldRank = getRank(state.level);
-    while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
-      newXp -= getXpForLevel(newLevel);
-      newLevel++;
-      levelsGained++;
-      didLevelUp = true;
-    }
-    const earnedPoints = levelsGained * 1;
+    let next = calculateLevelUp(state, xpGain);
+    const didLevelUp = next._didLevelUp;
+    const earnedPoints = next._levelsGained;
     // Job XP calculation
-    let next = awardJobXp({ ...state, xp: newXp, level: newLevel, gold: state.gold + goldGain, totalGoldEarned: (state.totalGoldEarned || 0) + goldGain }, "quest_complete", {
+    next = awardJobXp({ ...next, gold: state.gold + goldGain, totalGoldEarned: (state.totalGoldEarned || 0) + goldGain }, "quest_complete", {
       category: quest.category,
       difficulty: quest.difficulty
     });
@@ -355,11 +356,9 @@ export function useGameState(initialHunterName, onLogout) {
 
     next = {
       ...next,
-      stats: { ...state.stats, [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) }, // Reduced auto-increase
-      statPoints: (state.statPoints || 0) + earnedPoints,
+      stats: { ...state.stats, [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) },
       quests: updatedQuests, completedQuests: [...(state.completedQuests || []), { ...quest, completedAt: today }],
       streak: newStreak, lastActiveDate: today, shadowArmy: newShadowArmy,
-      totalXpEarned: (state.totalXpEarned || 0) + xpGain,
       totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1,
       penaltyZone: newPenalty, hiddenQuests: newHiddenQuests
     };
@@ -446,23 +445,17 @@ export function useGameState(initialHunterName, onLogout) {
     const diff = DIFFICULTIES.find(d => d.key === eq.difficulty) || DIFFICULTIES[1];
     const xpGain = Math.round(diff.xp * 2.5);
     const goldGain = Math.round(diff.gold * 2.5);
-    let newXp = state.xp + xpGain, newLevel = state.level, didLevelUp = false, levelsGained = 0;
-    const oldRank = getRank(state.level);
-    const jobBonuses = getJobBonuses(state);
-    while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
-      newXp -= getXpForLevel(newLevel);
-      newLevel++;
-      levelsGained++;
-      didLevelUp = true;
-    }
-    const earnedPoints = levelsGained * 1;
-    let next = {
-      ...state, xp: newXp, level: newLevel, gold: state.gold + goldGain,
+    let next = calculateLevelUp(state, xpGain);
+    const didLevelUp = next._didLevelUp;
+    const earnedPoints = next._levelsGained;
+    const newLevel = next.level;
+
+    next = {
+      ...next,
+      gold: state.gold + goldGain,
       totalGoldEarned: (state.totalGoldEarned || 0) + goldGain,
-      statPoints: (state.statPoints || 0) + earnedPoints,
       stats: { ...state.stats, [eq.category]: (state.stats[eq.category] || 0) + 2 },
       emergencyDone: true,
-      totalXpEarned: (state.totalXpEarned || 0) + xpGain,
       totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1
     };
     next = processAchievements(next);
@@ -488,16 +481,13 @@ export function useGameState(initialHunterName, onLogout) {
   }, [state, persist, notify]);
 
   const finishDungeon = useCallback((dungeon, result) => {
-    let newXp = state.xp + result.xp, newLevel = state.level, didLevelUp = false, levelsGained = 0;
+    let next = calculateLevelUp(state, result.xp);
+    const didLevelUp = next._didLevelUp;
+    const earnedPoints = next._levelsGained;
+    const newLevel = next.level;
     const oldRank = getRank(state.level);
-    while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
-      newXp -= getXpForLevel(newLevel);
-      newLevel++;
-      levelsGained++;
-      didLevelUp = true;
-    }
-    const earnedPoints = levelsGained * 1;
-    let newInventory = [...(state.equipment?.inventory || [])];
+
+    let newInventory = [...(next.equipment?.inventory || [])];
     if (result.drop) newInventory.push(result.drop);
 
     let updatedShadows = (state.shadowArmy?.shadows || []).map(s => {
@@ -511,7 +501,7 @@ export function useGameState(initialHunterName, onLogout) {
     const totalGold = result.gold + (result.goldBonus ? Math.round(result.goldBonus * (state.todayModifier?.goldMult || 1)) : 0);
 
     // Job XP calculation for dungeons
-    let next = awardJobXp({ ...state, xp: newXp, level: newLevel, gold: state.gold + totalGold, totalGoldEarned: (state.totalGoldEarned || 0) + totalGold }, "dungeon_complete", {
+    next = awardJobXp({ ...next, gold: state.gold + totalGold, totalGoldEarned: (state.totalGoldEarned || 0) + totalGold }, "dungeon_complete", {
       strategy: result.strategy,
       dungeonRank: dungeon.rank
     });
@@ -821,8 +811,6 @@ export function useGameState(initialHunterName, onLogout) {
     switchJob,
     activateJobAbility,
     increaseStat,
-    finishSetup,
-    theme,
-    modifier,
+    finishSetup
   };
 }

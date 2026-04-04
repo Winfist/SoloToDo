@@ -27,10 +27,54 @@ import {
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
-  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests
+  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses, calculateLevelUp,
+  CSS, ParticleField, MusicPlayer, SystemNotification, AchievementToast, XpFloat, LevelUpCinematic, AriseCinematic,
+  ShadowCard, ShadowDetailModal, FormationEditor, StatRadar, QuestTimer, QuestTypeBadge,
+  EmergencyQuestCard, ChainedQuestProgress, QuestCard, DungeonGate, FloorProgressBar, BossPhaseUI, DungeonBattle,
+  JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI
 } from './data/constants';
 import { useGameState } from './hooks/useGameState.jsx';
-export default function App({ initialHunterName, onLogout }) {
+function hoursUntilMidnight() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  return Math.ceil((midnight - now) / 3600000);
+}
+
+export default function AppWrapper(props) {
+  return (
+    <ErrorBoundary>
+      <App {...props} />
+    </ErrorBoundary>
+  );
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 20, background: "red", color: "white" }}>
+          <h1>App Crashed!</h1>
+          <pre>{this.state.error && this.state.error.toString()}</pre>
+          <pre>{this.state.error && this.state.error.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function App({ initialHunterName, onLogout }) {
   const gameState = useGameState(initialHunterName, onLogout);
   const {
     state,
@@ -90,7 +134,6 @@ export default function App({ initialHunterName, onLogout }) {
     notify,
     persist,
     triggerSystemMessage,
-    assignRandomTask,
     removeNotif,
     processAchievements,
     computeXpGain,
@@ -110,21 +153,34 @@ export default function App({ initialHunterName, onLogout }) {
     activateJobAbility,
     increaseStat
   } = gameState;
+  const modifier = useMemo(() => getDailyModifier(), []);
+  const [showFocusMode, setShowFocusMode] = React.useState(false);
 
-  // Tutorial gate: show tutorial for new users who haven't completed it
-  if (!loading && state && !state.tutorialCompleted && !showSetup) {
-    return (
-      <DoubleDungeonTutorial
-        hunterName={state.hunterName}
-        onComplete={() => {
-          persist({ ...state, tutorialCompleted: true });
-        }}
-      />
-    );
-  }
+  const [customNav, setCustomNav] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem("solo_custom_nav");
+      return saved ? JSON.parse(saved) : ["dashboard", "dungeon", "story", "habits"];
+    } catch {
+      return ["dashboard", "dungeon", "story", "habits"];
+    }
+  });
 
-  if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><div style={{ fontSize: 40, animation: "float 2s ease-in-out infinite" }}>⚔️</div><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
-  if (showSetup) return <SetupScreen onFinish={gameState.finishSetup} theme={gameState.theme || "default"} />;
+  const toggleNavPin = (key) => {
+    setCustomNav(prev => {
+      if (prev.includes(key)) {
+        const next = prev.filter(k => k !== key);
+        localStorage.setItem("solo_custom_nav", JSON.stringify(next));
+        return next;
+      }
+      if (prev.length >= 4) {
+        alert("Maximal 4 Tabs in der Navigationsleiste erlaubt. Bitte erst einen entfernen.");
+        return prev;
+      }
+      const next = [...prev, key];
+      localStorage.setItem("solo_custom_nav", JSON.stringify(next));
+      return next;
+    });
+  };
 
   // ── Adaptive System Coach: periodic intervention checks ──
   const prevStateRef = useRef(null);
@@ -143,6 +199,21 @@ export default function App({ initialHunterName, onLogout }) {
     const interval = setInterval(checkCoach, 1800000);
     return () => { clearTimeout(initial); clearInterval(interval); };
   }, [state?.streak, state?.lastActiveDate, (state?.habits || []).length, loading]);
+
+  // Tutorial gate: show tutorial for new users who haven't completed it
+  if (!loading && state && !state.tutorialCompleted && !showSetup) {
+    return (
+      <DoubleDungeonTutorial
+        hunterName={state.hunterName}
+        onComplete={() => {
+          persist({ ...state, tutorialCompleted: true });
+        }}
+      />
+    );
+  }
+
+  if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><div style={{ fontSize: 40, animation: "float 2s ease-in-out infinite" }}>⚔️</div><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
+  if (showSetup) return <SetupScreen onFinish={gameState.finishSetup} theme={gameState.theme || "default"} />;
 
   // Portal transition handler
   const enterPortal = () => {
@@ -221,6 +292,11 @@ export default function App({ initialHunterName, onLogout }) {
   const formationBonus = calcFormationBonus(shadowArmy, jobBonuses.allShadowsActive);
   const namedShadows = shadowArmy.shadows.filter(s => s.isNamed);
   const totalShadows = shadowArmy.shadows.length;
+
+  const theme = (state?.selectedTheme === "custom" && state?.customThemeData)
+    ? state.customThemeData
+    : (THEMES[state?.selectedTheme] || THEMES["default"]);
+
 
   return (
     <div style={{ minHeight: "100vh", background: penaltyActive ? `linear-gradient(180deg,${theme.bg},rgba(20,4,4,0.95))` : theme.bg, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", position: "relative", overflow: "hidden" }}>
@@ -676,21 +752,10 @@ export default function App({ initialHunterName, onLogout }) {
                 // XP und Gold vergeben
                 const xpGain = chapter.rewards?.xp || 0;
                 const goldGain = chapter.rewards?.gold || 0;
-                let newXp = (prev.xp || 0) + xpGain;
-                let newLevel = prev.level;
-                let newGold = (prev.gold || 0) + goldGain;
-                let levelsGained = 0;
-
-                // Level-Up Logik
-                while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
-                  newXp -= getXpForLevel(newLevel);
-                  newLevel++;
-                  levelsGained++;
-                }
-                const earnedPoints = levelsGained * 1;
-
+                let next = calculateLevelUp(prev, xpGain);
+                
                 // Titel vergeben falls vorhanden
-                let newTitle = prev.selectedTitle;
+                let newTitle = next.selectedTitle;
                 if (chapter.rewards?.title) {
                   newTitle = chapter.rewards.title;
                 }
@@ -698,11 +763,8 @@ export default function App({ initialHunterName, onLogout }) {
                 notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
 
                 persist({
-                  ...prev,
-                  xp: newXp,
-                  level: newLevel,
-                  gold: newGold,
-                  statPoints: (prev.statPoints || 0) + earnedPoints,
+                  ...next,
+                  gold: (prev.gold || 0) + goldGain,
                   totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
                   selectedTitle: newTitle,
                   story: {
@@ -922,15 +984,26 @@ export default function App({ initialHunterName, onLogout }) {
           {(() => {
             const level = state?.level || 1;
             // Primary visible tabs
-            const visibleTabs = [
-              { key: "dashboard", icon: "📝", label: "ToDos" },
-              { key: "habits", icon: "🔄", label: "Habits", badge: (state.habits || []).filter(h => h.active && !h.history?.[new Date().toISOString().slice(0, 10)]?.completed).length || 0 },
-            ];
+            const allTabsMap = {
+              "dashboard": { key: "dashboard", icon: "📝", label: "ToDos" },
+              "habits": { key: "habits", icon: "🔄", label: "Habits", badge: (state.habits || []).filter(h => h.active && !h.history?.[new Date().toISOString().slice(0, 10)]?.completed).length || 0 },
+              "dungeon": { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length },
+              "story": { key: "story", icon: "📖", label: "Story" },
+              "multiplayer": { key: "multiplayer", icon: "🌐", label: "Hunters" },
+              "goals": { key: "goals", icon: "🎯", label: "Goals" },
+              "challenges": { key: "challenges", icon: "🎖️", label: "Events" },
+              "calendar": { key: "calendar", icon: "📅", label: "Plan" },
+              "health": { key: "health", icon: "❤️", label: "Health" },
+              "shadows": { key: "shadows", icon: "🌑", label: "Army", badge: namedShadows.length > 0 ? namedShadows.length : 0 },
+              "equipment": { key: "equipment", icon: "🗡️", label: "Equip", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 },
+              "achievements": { key: "achievements", icon: "🏆", label: "Ach.", badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length },
+              "analytics": { key: "analytics", icon: "📊", label: "Stats" },
+              "jobs": { key: "jobs", icon: "🎭", label: "Jobs" },
+              "shop": { key: "shop", icon: "🛒", label: "Shop" },
+              "settings": { key: "settings", icon: "⚙️", label: "System" }
+            };
 
-            if (level >= 5) visibleTabs.push({ key: "goals", icon: "🎯", label: "Goals" });
-            if (level >= 5) visibleTabs.push({ key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length });
-
-            // "More" tab is always visible but its contents depend on level
+            const visibleTabs = customNav.map(key => allTabsMap[key]).filter(Boolean);
             visibleTabs.push({ key: "more", icon: "≡", label: "More" });
 
             return visibleTabs.map(tab => (
@@ -949,38 +1022,51 @@ export default function App({ initialHunterName, onLogout }) {
 
       {/* MORE MENU (Full screen overlay) */}
       {view === "more" && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingBottom: 90, overflowY: "auto" }}>
-          <div style={{ fontSize: 12, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 16, textAlign: "center", marginTop: 24 }}>SYSTEM MODULES</div>
+        <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+          <div style={{ fontSize: 12, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 16, textAlign: "center", marginTop: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+            <span>SYSTEM MODULES</span>
+            <span style={{ fontSize: 9, color: "#64748b", textTransform: "none", letterSpacing: 0 }}>Nav-Bar Pinning: Klicke auf 📌 (max 4)</span>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {(() => {
-              const level = state?.level || 1;
               const moreItems = [];
-              moreItems.push({ key: "challenges", icon: "🎖️", label: "Events", min: 1, desc: "Missions" });
-              moreItems.push({ key: "health", icon: "❤️", label: "Health", min: 1, desc: "Sync" });
-              moreItems.push({ key: "calendar", icon: "📅", label: "Plan", min: 1, desc: "Schedule" });
-              moreItems.push({ key: "story", icon: "📖", label: "Story", min: 1, desc: "Lore" });
-              moreItems.push({ key: "settings", icon: "⚙️", label: "System", min: 1, desc: "Settings/Exports" });
-              if (level >= 5) moreItems.push({ key: "shop", icon: "🛒", label: "Shop", min: 5, desc: "Items" });
-              if (level >= 10) {
-                moreItems.push({ key: "shadows", icon: "🌑", label: "Army", min: 10, desc: "Minions", badge: namedShadows.length > 0 ? namedShadows.length : 0 });
-                moreItems.push({ key: "equipment", icon: "🗡️", label: "Equip", min: 10, desc: "Gear", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 });
-                moreItems.push({ key: "achievements", icon: "🏆", label: "Ach.", min: 10, desc: "Trophies", badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length });
-                moreItems.push({ key: "analytics", icon: "📊", label: "Stats", min: 10, desc: "Analytics" });
-              }
-              if (level >= 50) moreItems.push({ key: "jobs", icon: "🎭", label: "Jobs", min: 50, desc: "Classes" });
+              moreItems.push({ key: "dashboard", icon: "📝", label: "ToDos", desc: "Main View" });
+              moreItems.push({ key: "habits", icon: "🔄", label: "Habits", desc: "Routines", badge: (state.habits || []).filter(h => h.active && !h.history?.[new Date().toISOString().slice(0, 10)]?.completed).length || 0 });
+              moreItems.push({ key: "dungeon", icon: "🌀", label: "Gates", desc: "Dungeons", badge: activeDungeons.length });
+              moreItems.push({ key: "story", icon: "📖", label: "Story", desc: "Lore" });
+              moreItems.push({ key: "multiplayer", icon: "🌐", label: "Hunters", desc: "Association" });
+              moreItems.push({ key: "goals", icon: "🎯", label: "Goals", desc: "Long-term" });
+              moreItems.push({ key: "challenges", icon: "🎖️", label: "Events", desc: "Missions" });
+              moreItems.push({ key: "calendar", icon: "📅", label: "Plan", desc: "Schedule" });
+              moreItems.push({ key: "health", icon: "❤️", label: "Health", desc: "App Sync" });
+              moreItems.push({ key: "shadows", icon: "🌑", label: "Army", desc: "Minions", badge: namedShadows.length > 0 ? namedShadows.length : 0 });
+              moreItems.push({ key: "equipment", icon: "🗡️", label: "Equip", desc: "Gear", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 });
+              moreItems.push({ key: "achievements", icon: "🏆", label: "Ach.", desc: "Trophies", badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length });
+              moreItems.push({ key: "analytics", icon: "📊", label: "Stats", desc: "Analytics" });
+              moreItems.push({ key: "jobs", icon: "🎭", label: "Jobs", desc: "Classes" });
+              moreItems.push({ key: "shop", icon: "🛒", label: "Shop", desc: "Items" });
+              moreItems.push({ key: "settings", icon: "⚙️", label: "System", desc: "Settings/Exports" });
 
-              return moreItems.map(item => (
-                <button key={item.key} onClick={() => setView(item.key)} style={{ padding: "16px", borderRadius: 16, background: theme.card, border: `1px solid ${theme.primary}22`, display: "flex", alignItems: "center", gap: 12, transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = theme.primary} onMouseLeave={e => e.currentTarget.style.borderColor = theme.primary + "22"}>
-                  <div style={{ fontSize: 28, position: "relative" }}>
-                    {item.icon}
-                    {item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{item.badge}</div>}
+              return moreItems.map(item => {
+                const isPinned = customNav.includes(item.key);
+                return (
+                  <div key={item.key} style={{ position: "relative" }}>
+                    <button onClick={() => setView(item.key)} style={{ width: "100%", padding: "16px", paddingRight: "36px", height: "100%", borderRadius: 16, background: theme.card, border: `1px solid ${theme.primary}22`, display: "flex", alignItems: "center", gap: 12, transition: "all 0.2s", textAlign: "left" }} onMouseEnter={e => e.currentTarget.style.borderColor = theme.primary} onMouseLeave={e => e.currentTarget.style.borderColor = theme.primary + "22"}>
+                      <div style={{ fontSize: 24, position: "relative", flexShrink: 0 }}>
+                        {item.icon}
+                        {item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{item.badge}</div>}
+                      </div>
+                      <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Cinzel',serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</div>
+                        <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.desc}</div>
+                      </div>
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); toggleNavPin(item.key); }} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", background: isPinned ? `${theme.accent}33` : "rgba(12,12,26,0.6)", color: isPinned ? theme.accent : "#475569", border: `1px solid ${isPinned ? theme.accent : "#1e2940"}`, borderRadius: 8, fontSize: 14, cursor: "pointer", transition: "all 0.2s" }} title={isPinned ? "Unpin from NavBar" : "Pin to NavBar"}>
+                      {isPinned ? "📌" : "📍"}
+                    </button>
                   </div>
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.label}</div>
-                    <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{item.desc}</div>
-                  </div>
-                </button>
-              ));
+                );
+              });
             })()}
           </div>
         </div>

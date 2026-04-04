@@ -1,3 +1,9 @@
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { JOBS } from "./jobs.js";
+import { QUEST_POOL } from "./questPool.js";
+import { db, auth } from "../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+
 const RANKS = [
   { name: "E", label: "E-Rank Hunter", minLv: 1, maxLv: 10, xpPerLv: 100, color: "#6b7280", glow: "rgba(107,114,128,0.4)" },
   { name: "D", label: "D-Rank Hunter", minLv: 11, maxLv: 20, xpPerLv: 250, color: "#22d3ee", glow: "rgba(34,211,238,0.4)" },
@@ -957,6 +963,36 @@ function getJobBonuses(state) {
   return bonuses;
 }
 
+/**
+ * Calculates level-up logic based on XP gain.
+ * Returns the updated state object with new level, XP, and statPoints.
+ */
+function calculateLevelUp(state, xpGain) {
+  let newXp = (state.xp || 0) + xpGain;
+  let newLevel = state.level || 1;
+  let levelsGained = 0;
+
+  while (newXp >= getXpForLevel(newLevel) && newLevel < 100) {
+    newXp -= getXpForLevel(newLevel);
+    newLevel++;
+    levelsGained++;
+  }
+
+  const didLevelUp = levelsGained > 0;
+  const earnedPoints = levelsGained * 1;
+
+  return {
+    ...state,
+    xp: newXp,
+    level: newLevel,
+    statPoints: (state.statPoints || 0) + earnedPoints,
+    totalXpEarned: (state.totalXpEarned || 0) + xpGain,
+    _didLevelUp: didLevelUp,
+    _levelsGained: levelsGained,
+    _oldLevel: state.level
+  };
+}
+
 function awardJobXp(state, source, context = {}) {
   if (!state.jobs?.current) return state;
 
@@ -1179,6 +1215,12 @@ function migrateState(oldState) {
     }));
     s.shadowArmy = { shadows: newShadows, capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 };
   }
+
+  // Ensure level matches XP (Fixes stuck level issue)
+  const evaluated = calculateLevelUp(s, 0);
+  s.level = evaluated.level;
+  s.xp = evaluated.xp;
+  s.statPoints = evaluated.statPoints;
 
   return s;
 }
@@ -2813,5 +2855,11 @@ export {
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
-  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests
+  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,
+  awardJobXp, calculateLevelUp,
+  saveState, loadState, migrateState,
+  CSS, ParticleField, MusicPlayer, SystemNotification, AchievementToast, XpFloat, LevelUpCinematic, AriseCinematic,
+  ShadowCard, ShadowDetailModal, FormationEditor, StatRadar, QuestTimer, QuestTypeBadge,
+  EmergencyQuestCard, ChainedQuestProgress, QuestCard, DungeonGate, FloorProgressBar, BossPhaseUI, DungeonBattle,
+  JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI
 };

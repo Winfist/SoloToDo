@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { calculateLevelUp } from "../data/constants";
 
 const WEEKLY_CHALLENGES = [
     { id: "iron_week", title: "Iron Week", req: "7 STR-Quests in einer Woche", reward: { xp: 500, gold: 200, badge: "iron_will" }, icon: "💪" },
@@ -24,13 +25,11 @@ export default function ChallengesSystem({ state, persist, notify, theme }) {
             notify("Challenge wurde bereits abgeschlossen!", "warning");
             return;
         }
-        const next = {
+        persist(calculateLevelUp({
             ...state,
-            xp: state.xp + (c.reward.xp || 0),
             gold: state.gold + (c.reward.gold || 0),
             completedChallenges: [...(state.completedChallenges || []), c.id]
-        };
-        persist(next);
+        }, (c.reward.xp || 0)));
         notify(`Challenge bestanden: ${c.title}! +${c.reward.xp} XP`, "success");
     };
 

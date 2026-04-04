@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { calculateLevelUp } from "../data/constants";
 
 export default function HealthIntegration({ state, persist, notify, theme }) {
     const [syncing, setSyncing] = useState(false);
@@ -26,11 +27,10 @@ export default function HealthIntegration({ state, persist, notify, theme }) {
 
             const newXp = Math.floor(data.steps * 0.05 + data.workout * 2 + (data.sleep >= 7 ? 50 : 0));
 
-            persist({
+            persist(calculateLevelUp({
                 ...state,
-                xp: state.xp + newXp,
                 healthSyncDate: dateStr
-            });
+            }, newXp));
 
             notify(`Apple Health / Google Fit synchronisiert! +${newXp} Bonus XP erhalten.`, "success");
         }, 1500);

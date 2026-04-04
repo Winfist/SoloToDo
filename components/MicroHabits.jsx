@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { calculateLevelUp } from "../data/constants";
 
 /**
  * MicroHabits – Quick tap-counter widget for tiny daily habits.
@@ -47,12 +48,10 @@ export default function MicroHabits({ state, persist, notify, theme }) {
             notify("🎯 Micro-Habit Tagesziel erreicht! +25 Bonus-XP", "success");
         }
 
-        persist({
+        persist(calculateLevelUp({
             ...state,
             microHabits: newMicro,
-            xp: state.xp + xpBonus,
-            totalXpEarned: (state.totalXpEarned || 0) + xpBonus,
-        });
+        }, xpBonus));
     }, [state, persist, notify, todayData, microHabits, today, totalDone, totalTarget]);
 
     return (

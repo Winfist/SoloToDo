@@ -123,6 +123,7 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
     const [fadeOut, setFadeOut] = useState(false);
 
     const step = STEPS[stepIndex];
+    if (!step) return null;
     const isLastLine = lineIndex >= step.lines.length - 1;
     const hasHighlight = step.highlight && step.highlight.length > 0;
 

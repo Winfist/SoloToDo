@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { calculateLevelUp } from "../data/constants";
 
 // ═══════════════════════════════════════════════════════════════
 // HABIT TRACKER – Recurring Habits with per-Habit Streaks & Timer
@@ -533,12 +534,10 @@ export default function HabitTracker({ state, persist, notify, theme }) {
         const streakBonus = Math.min((habit?.currentStreak || 0), 10);
         const xpGain = baseXp + streakBonus;
 
-        persist({
+        persist(calculateLevelUp({
             ...state,
-            habits: updated,
-            xp: state.xp + xpGain,
-            totalXpEarned: (state.totalXpEarned || 0) + xpGain,
-        });
+            habits: updated
+        }, xpGain));
         notify(`Habit erledigt! +${xpGain} XP 🔥 Streak: ${(updated.find(h => h.id === habitId)?.currentStreak || 1)}`, "success");
     }, [habits, state, persist, notify, today]);
 
@@ -569,7 +568,13 @@ export default function HabitTracker({ state, persist, notify, theme }) {
                 history: { ...h.history, [today]: { ...(h.history?.[today] || {}), counterValue: value } },
             };
         });
-        persist({ ...state, habits: updated });
+        const habitObj = habits.find(h => h.id === habitId);
+        const xpToGain = (value >= habitObj.targetCount && !habitObj.history?.[today]?.completed) ? 12 : 0;
+        
+        persist(calculateLevelUp({
+            ...state,
+            habits: updated
+        }, xpToGain));
         if (value >= habit.targetCount && !habit.history?.[today]?.completed) {
             notify(`Ziel erreicht! 🎯 +12 XP`, "success");
         }
