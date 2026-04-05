@@ -16,7 +16,7 @@ const GOAL_CATEGORIES = [
 function getToday() { return new Date().toISOString().slice(0, 10); }
 
 // ── Goal Card ────────────────────────────────────────────────
-function GoalCard({ goal, onUpdateMilestone, onDelete, theme }) {
+function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, theme }) {
     const [expanded, setExpanded] = useState(false);
     const cat = GOAL_CATEGORIES.find(c => c.key === goal.category) || GOAL_CATEGORIES[0];
 
@@ -102,7 +102,7 @@ function GoalCard({ goal, onUpdateMilestone, onDelete, theme }) {
                                         {m.title}
                                     </div>
                                     <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                                        <span style={{ fontSize: 9, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace" }}>+{m.xpBonus} XP</span>
+                                        <span style={{ fontSize: 9, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace" }}>+{Math.min(m.xpBonus || 50, 50)} XP</span>
                                         {m.titleReward && <span style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace" }}>🏆 Titel: {m.titleReward}</span>}
                                     </div>
                                 </div>
@@ -110,7 +110,13 @@ function GoalCard({ goal, onUpdateMilestone, onDelete, theme }) {
                         ))}
                     </div>
 
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16, gap: 10 }}>
+                        <button
+                            onClick={() => onEdit(goal)}
+                            style={{ padding: "8px 12px", borderRadius: 8, fontSize: 10, background: "rgba(34,211,238,0.1)", color: "#22d3ee", border: "1px solid #22d3ee33", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
+                        >
+                            BEARBEITEN
+                        </button>
                         <button
                             onClick={() => onDelete(goal.id)}
                             style={{ padding: "8px 12px", borderRadius: 8, fontSize: 10, background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid #ef444433", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
@@ -125,17 +131,19 @@ function GoalCard({ goal, onUpdateMilestone, onDelete, theme }) {
 }
 
 // ── Create Goal Modal ────────────────────────────────────────
-function CreateGoalModal({ onClose, onCreate, theme }) {
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [category, setCategory] = useState("fitness");
-    const [deadline, setDeadline] = useState("");
-    const [milestones, setMilestones] = useState([
-        { id: genId(), title: "", xpBonus: 200, completed: false }
+function CreateGoalModal({ onClose, onSave, initialGoal, theme }) {
+    const isEdit = !!initialGoal;
+    const [title, setTitle] = useState(initialGoal?.title || "");
+    const [description, setDescription] = useState(initialGoal?.description || "");
+    const [category, setCategory] = useState(initialGoal?.category || "fitness");
+    const [deadline, setDeadline] = useState(initialGoal?.deadline || "");
+    const [milestones, setMilestones] = useState(initialGoal?.milestones || [
+        { id: genId(), title: "", xpBonus: 50, completed: false }
     ]);
 
     const addMilestone = () => {
-        setMilestones([...milestones, { id: genId(), title: "", xpBonus: 200 * (milestones.length + 1), completed: false }]);
+        if (milestones.length >= 5) return;
+        setMilestones([...milestones, { id: genId(), title: "", xpBonus: 50, completed: false }]);
     };
 
     const updateMilestone = (id, field, value) => {
@@ -146,22 +154,22 @@ function CreateGoalModal({ onClose, onCreate, theme }) {
         setMilestones(milestones.filter(m => m.id !== id));
     };
 
-    const handleCreate = () => {
+    const handleSave = () => {
         if (!title.trim() || milestones.some(m => !m.title.trim())) return;
 
         // Auto-generate title reward for final milestone if not set
         const finalMilestones = [...milestones];
-        if (finalMilestones.length > 0 && !finalMilestones[finalMilestones.length - 1].titleReward) {
+        if (finalMilestones.length > 0 && !finalMilestones[finalMilestones.length - 1].titleReward && finalMilestones[finalMilestones.length - 1].completedAt == null) {
             finalMilestones[finalMilestones.length - 1].titleReward = `${title.split(" ")[0]} Master`;
         }
 
-        onCreate({
-            id: "goal_" + genId(),
+        onSave({
+            id: initialGoal ? initialGoal.id : "goal_" + genId(),
             title: title.trim(),
             description: description.trim(),
             category,
             deadline,
-            createdAt: getToday(),
+            createdAt: initialGoal ? initialGoal.createdAt : getToday(),
             milestones: finalMilestones,
             autoGeneratedQuests: true
         });
@@ -185,7 +193,7 @@ function CreateGoalModal({ onClose, onCreate, theme }) {
                 borderRadius: 24, padding: 24,
             }}>
                 <div style={{ fontSize: 10, letterSpacing: 4, color: theme?.primary || "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>MAIN QUEST</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginBottom: 20 }}>Neues Ziel setzen</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginBottom: 20 }}>{isEdit ? "Ziel anpassen" : "Neues Ziel setzen"}</div>
 
                 {/* Name & Desc */}
                 <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Titel des Ziels (z.B. Marathon Laufen)"
@@ -218,24 +226,25 @@ function CreateGoalModal({ onClose, onCreate, theme }) {
                             </div>
                             <input value={m.title} onChange={e => updateMilestone(m.id, "title", e.target.value)} placeholder={`Meilenstein ${idx + 1}...`} style={{ flex: 1, padding: "8px", background: "transparent", border: "none", color: "#fff", fontSize: 14, outline: "none" }} />
                             <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(34,211,238,0.1)", padding: "4px 8px", borderRadius: 8 }}>
-                                <span style={{ fontSize: 10, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace" }}>XP</span>
-                                <input type="number" value={m.xpBonus} onChange={e => updateMilestone(m.id, "xpBonus", parseInt(e.target.value) || 0)} style={{ width: 40, background: "transparent", border: "none", color: "#22d3ee", fontSize: 12, outline: "none", fontFamily: "'JetBrains Mono',monospace" }} />
+                                <span style={{ fontSize: 10, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace" }}>+50 XP</span>
                             </div>
                             <button onClick={() => removeMilestone(m.id)} style={{ width: 28, height: 28, background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "none", borderRadius: 6, cursor: "pointer" }}>✕</button>
                         </div>
                     ))}
-                    <button onClick={addMilestone} style={{ padding: "10px", borderRadius: 12, background: "transparent", border: "1px dashed #475569", color: "#94a3b8", fontSize: 12, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace" }}>
-                        + MEILENSTEIN HINZUFÜGEN
-                    </button>
+                    {milestones.length < 5 && (
+                        <button onClick={addMilestone} style={{ padding: "10px", borderRadius: 12, background: "transparent", border: "1px dashed #475569", color: "#94a3b8", fontSize: 12, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace" }}>
+                            + MEILENSTEIN HINZUFÜGEN
+                        </button>
+                    )}
                 </div>
 
-                <button onClick={handleCreate} disabled={!canCreate} style={{
+                <button onClick={handleSave} disabled={!canCreate} style={{
                     width: "100%", padding: 14, borderRadius: 14, fontSize: 13, fontWeight: 900,
                     background: canCreate ? `linear-gradient(135deg,${theme?.primary || "#22d3ee"},${theme?.secondary || "#a855f7"})` : "rgba(15,15,30,0.6)",
                     color: canCreate ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif",
                     cursor: canCreate ? "pointer" : "not-allowed", border: "none",
                 }}>
-                    ✦ ZIEL BESCHWÖREN ✦
+                    ✦ {isEdit ? "SPEICHERN" : "ZIEL BESCHWÖREN"} ✦
                 </button>
             </div>
         </div>
@@ -245,11 +254,17 @@ function CreateGoalModal({ onClose, onCreate, theme }) {
 // ═══ MAIN COMPONENT ══════════════════════════════════════════
 export default function GoalFramework({ state, persist, notify, theme }) {
     const [showCreate, setShowCreate] = useState(false);
+    const [editingGoal, setEditingGoal] = useState(null);
     const goals = state?.goals || [];
 
     const handleCreate = useCallback((newGoal) => {
         persist({ ...state, goals: [...goals, newGoal] });
         notify(`System: Neues Main-Goal "${newGoal.title}" registriert.`, "info");
+    }, [state, goals, persist, notify]);
+
+    const handleEdit = useCallback((updatedGoal) => {
+        persist({ ...state, goals: goals.map(g => g.id === updatedGoal.id ? updatedGoal : g) });
+        notify(`Ziel "${updatedGoal.title}" aktualisiert.`, "info");
     }, [state, goals, persist, notify]);
 
     const handleDelete = useCallback((goalId) => {
@@ -263,18 +278,19 @@ export default function GoalFramework({ state, persist, notify, theme }) {
         const updatedGoals = goals.map(g => {
             if (g.id !== goalId) return g;
             const msOld = g.milestones.find(m => m.id === milestoneId);
-            const isNewlyCompleted = completed && !msOld.completed;
+            const isNewlyCompleted = completed && !msOld.completedAt;
 
-            const newMilestones = g.milestones.map(m => m.id === milestoneId ? { ...m, completed } : m);
+            const newMilestones = g.milestones.map(m => m.id === milestoneId ? { ...m, completed, completedAt: completed ? (msOld.completedAt || getToday()) : msOld.completedAt } : m);
             return { ...g, milestones: newMilestones };
         });
 
         const goal = updatedGoals.find(g => g.id === goalId);
+        const msOld = goals.find(g => g.id === goalId).milestones.find(m => m.id === milestoneId);
         const ms = goal.milestones.find(m => m.id === milestoneId);
 
         let xpGain = 0;
-        if (completed) {
-            xpGain = ms.xpBonus;
+        if (completed && !msOld.completedAt) {
+            xpGain = Math.min(msOld.xpBonus || 50, 50); // Cap old huge XP values to 50
             notify(`Meilenstein erreicht! +${xpGain} XP ✨`, "success");
             if (ms.titleReward) {
                 notify(`Titel freigeschaltet: ${ms.titleReward} 🏆`, "info");
@@ -298,7 +314,8 @@ export default function GoalFramework({ state, persist, notify, theme }) {
 
     return (
         <div style={{ animation: "fadeIn 0.35s ease" }}>
-            {showCreate && <CreateGoalModal onClose={() => setShowCreate(false)} onCreate={handleCreate} theme={theme} />}
+            {showCreate && <CreateGoalModal onClose={() => setShowCreate(false)} onSave={handleCreate} theme={theme} />}
+            {editingGoal && <CreateGoalModal onClose={() => setEditingGoal(null)} onSave={handleEdit} initialGoal={editingGoal} theme={theme} />}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <div>
@@ -318,7 +335,7 @@ export default function GoalFramework({ state, persist, notify, theme }) {
             {activeGoals.length > 0 && (
                 <div style={{ marginBottom: 24 }}>
                     {activeGoals.map(goal => (
-                        <GoalCard key={goal.id} goal={goal} onUpdateMilestone={handleUpdateMilestone} onDelete={handleDelete} theme={theme} />
+                        <GoalCard key={goal.id} goal={goal} onUpdateMilestone={handleUpdateMilestone} onEdit={setEditingGoal} onDelete={handleDelete} theme={theme} />
                     ))}
                 </div>
             )}
@@ -349,7 +366,7 @@ export default function GoalFramework({ state, persist, notify, theme }) {
                 <div>
                     <div style={{ fontSize: 10, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12, marginTop: 32 }}>ERFOLGREICH BEENDET</div>
                     {completedGoals.map(goal => (
-                        <GoalCard key={goal.id} goal={goal} onUpdateMilestone={handleUpdateMilestone} onDelete={handleDelete} theme={theme} />
+                        <GoalCard key={goal.id} goal={goal} onUpdateMilestone={handleUpdateMilestone} onEdit={setEditingGoal} onDelete={handleDelete} theme={theme} />
                     ))}
                 </div>
             )}

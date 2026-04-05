@@ -993,6 +993,36 @@ function calculateLevelUp(state, xpGain) {
   };
 }
 
+/**
+ * Recalculates level from totalXpEarned, starting from level 1.
+ * Fixes inflated levels that calculateLevelUp(state, 0) cannot correct.
+ */
+function recalculateLevelFromTotalXp(state) {
+  const totalXp = state.totalXpEarned || state.xp || 0;
+  let remainingXp = totalXp;
+  let level = 1;
+  let levelsGained = 0;
+
+  while (remainingXp >= getXpForLevel(level) && level < 100) {
+    remainingXp -= getXpForLevel(level);
+    level++;
+    levelsGained++;
+  }
+
+  // Preserve stat points: at minimum the points from leveling, but keep
+  // any extra that were already assigned (e.g. from achievements/events)
+  const spentStatPoints = Object.values(state.stats || {}).reduce((a, b) => a + b, 0);
+  const statPoints = Math.max(levelsGained, spentStatPoints);
+
+  return {
+    ...state,
+    level,
+    xp: remainingXp,
+    statPoints,
+    totalXpEarned: totalXp
+  };
+}
+
 function awardJobXp(state, source, context = {}) {
   if (!state.jobs?.current) return state;
 
@@ -1216,11 +1246,12 @@ function migrateState(oldState) {
     s.shadowArmy = { shadows: newShadows, capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 };
   }
 
-  // Ensure level matches XP (Fixes stuck level issue)
-  const evaluated = calculateLevelUp(s, 0);
+  // Recalculate level from totalXpEarned (fixes inflated levels)
+  const evaluated = recalculateLevelFromTotalXp(s);
   s.level = evaluated.level;
   s.xp = evaluated.xp;
   s.statPoints = evaluated.statPoints;
+  s.totalXpEarned = evaluated.totalXpEarned;
 
   return s;
 }
@@ -1958,7 +1989,7 @@ function ChainedQuestProgress({ quest }) {
 }
 
 // ─── QUEST CARD ───────────────────────────────────────────────
-function QuestCard({ quest, index, theme, onComplete, onDelete }) {
+function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [hover, setHover] = useState(false);
@@ -2023,7 +2054,10 @@ function QuestCard({ quest, index, theme, onComplete, onDelete }) {
           {isHidden && <span style={{ margin: "0 5px", color: typeCfg.color }}>· 🌟 Verborgene Belohnung</span>}
         </div>
       </div>
-      <button onClick={() => onDelete(quest.id)} style={{ fontSize: 14, color: "#1e293b", background: "transparent", padding: "4px", opacity: hover ? 1 : 0, transition: "opacity 0.2s", flexShrink: 0 }}>✕</button>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0, opacity: hover ? 1 : 0, transition: "opacity 0.2s" }}>
+        {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(quest); }} style={{ fontSize: 14, color: "#3b82f6", background: "transparent", padding: "4px", cursor: "pointer", border: "none" }}>✎</button>}
+        {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(quest.id); }} style={{ fontSize: 14, color: "#ef4444", background: "transparent", padding: "4px", cursor: "pointer", border: "none" }}>✕</button>}
+      </div>
     </div>
   );
 }
@@ -2852,7 +2886,7 @@ export {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
-  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE,
+  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,

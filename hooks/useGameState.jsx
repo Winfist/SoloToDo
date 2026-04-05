@@ -7,7 +7,7 @@ import {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
-  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE,
+  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,
@@ -39,6 +39,8 @@ export function useGameState(initialHunterName, onLogout) {
   const [qDiff, setQDiff] = useState("normal");
   const [qCat, setQCat] = useState("agi");
   const [qType, setQType] = useState("side");
+  const [qSyncHabit, setQSyncHabit] = useState(false);
+  const [editingQuestId, setEditingQuestId] = useState(null);
   const [showHiddenQuestModal, setShowHiddenQuestModal] = useState(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateFilter, setTemplateFilter] = useState("all");
@@ -196,14 +198,14 @@ export function useGameState(initialHunterName, onLogout) {
     const TASK_INTERVAL = 3 * 3600 * 1000; // 3 hours
     const now = Date.now();
     const lastTime = currentState.lastSystemTaskTime || 0;
-    
+
     if (now - lastTime >= TASK_INTERVAL) {
       // Find tasks in QUEST_POOL not currently in state.quests and not in completedQuests
-      const availablePool = QUEST_POOL.filter(q => 
+      const availablePool = QUEST_POOL.filter(q =>
         !currentState.quests.some(sq => sq.title === q.title) &&
         !(currentState.completedQuests || []).some(cq => cq.title === q.title)
       );
-      
+
       if (availablePool.length > 0) {
         const randTask = availablePool[Math.floor(Math.random() * availablePool.length)];
         const newQuest = {
@@ -238,7 +240,7 @@ export function useGameState(initialHunterName, onLogout) {
     // Initial check on load
     assignRandomTask();
     // Then every hour check if it's time for a new task
-    const intervalId = setInterval(assignRandomTask, 3600000); 
+    const intervalId = setInterval(assignRandomTask, 3600000);
     return () => clearInterval(intervalId);
   }, [loading, assignRandomTask]);
 
@@ -366,10 +368,28 @@ export function useGameState(initialHunterName, onLogout) {
       ...extraQuests
     ];
 
+    let newHabits = state.habits;
+    if (quest.linkedHabitId && state.habits) {
+      newHabits = state.habits.map(h => {
+        if (h.id === quest.linkedHabitId && !h.history?.[today]?.completed) {
+          const hNewStreak = state.lastActiveDate === today ? h.streak : (h.streak + 1);
+          return {
+            ...h,
+            streak: hNewStreak,
+            bestStreak: Math.max(h.bestStreak || 0, hNewStreak),
+            totalCompletions: (h.totalCompletions || 0) + 1,
+            history: { ...h.history, [today]: { completed: true, xp: 0, gold: 0 } }
+          };
+        }
+        return h;
+      });
+    }
+
     next = {
       ...next,
       stats: { ...state.stats, [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) },
       quests: updatedQuests, completedQuests: [...(state.completedQuests || []), { ...quest, completedAt: today }],
+      habits: newHabits,
       streak: newStreak, lastActiveDate: today, shadowArmy: newShadowArmy,
       totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1,
       penaltyZone: newPenalty, hiddenQuests: newHiddenQuests
@@ -428,8 +448,31 @@ export function useGameState(initialHunterName, onLogout) {
 
   const deleteQuest = id => persist({ ...state, quests: state.quests.filter(q => q.id !== id) });
 
+  const startEditingQuest = useCallback((quest) => {
+    setEditingQuestId(quest.id);
+    setQTitle(quest.title);
+    setQDiff(quest.difficulty);
+    setQCat(quest.category);
+    setQType(quest.type);
+    setQSyncHabit(!!quest.linkedHabitId);
+    setShowCreate(true);
+  }, []);
+
   const createQuest = () => {
     if (!qTitle.trim()) return;
+
+    if (editingQuestId) {
+      const updatedQuests = state.quests.map(q =>
+        q.id === editingQuestId
+          ? { ...q, title: qTitle.trim(), difficulty: qDiff, category: qCat, type: qType }
+          : q
+      );
+      persist({ ...state, quests: updatedQuests });
+      setQTitle("");
+      setEditingQuestId(null);
+      setShowCreate(false);
+      return;
+    }
 
     const createdCount = state.dailyUserQuestsCreated || 0;
     const extraSlots = state.extraDailySlots || 0;
@@ -447,8 +490,29 @@ export function useGameState(initialHunterName, onLogout) {
       d.setDate(d.getDate() + daysUntilMonday); d.setHours(23, 59, 59, 999);
       timeLimit = d.toISOString();
     }
-    const quest = { id: genId(), title: qTitle.trim(), difficulty: qDiff, category: qCat, type: qType, createdAt: getToday(), createdAtMs: Date.now(), ...(timeLimit ? { timeLimit } : {}) };
-    persist({ ...state, quests: [...state.quests, quest], dailyUserQuestsCreated: createdCount + 1 });
+    const habitId = ((qType === "daily" || qType === "weekly") && qSyncHabit) ? genId() : null;
+    const quest = { id: genId(), title: qTitle.trim(), difficulty: qDiff, category: qCat, type: qType, createdAt: getToday(), createdAtMs: Date.now(), ...(timeLimit ? { timeLimit } : {}), ...(habitId ? { linkedHabitId: habitId } : {}) };
+
+    let nextState = { ...state, quests: [...state.quests, quest], dailyUserQuestsCreated: createdCount + 1 };
+
+    if (habitId) {
+      const linkedHabit = {
+        id: habitId,
+        title: qTitle.trim(),
+        category: qCat,
+        frequency: qType,
+        history: {},
+        streak: 0,
+        bestStreak: 0,
+        totalCompletions: 0,
+        createdAt: getToday(),
+        active: true,
+        linkedQuestId: quest.id
+      };
+      nextState.habits = [...(state.habits || []), linkedHabit];
+    }
+
+    persist(nextState);
     setQTitle(""); setShowCreate(false);
   };
 
@@ -787,6 +851,11 @@ export function useGameState(initialHunterName, onLogout) {
     setQCat,
     qType,
     setQType,
+    qSyncHabit,
+    setQSyncHabit,
+    editingQuestId,
+    setEditingQuestId,
+    startEditingQuest,
     showHiddenQuestModal,
     setShowHiddenQuestModal,
     showTemplates,

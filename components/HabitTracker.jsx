@@ -169,7 +169,7 @@ function HabitCounter({ target, current, onUpdate, theme }) {
 }
 
 // ── Habit Card ───────────────────────────────────────────────
-function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, theme }) {
+function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDelete, theme }) {
     const [expanded, setExpanded] = useState(false);
     const cat = HABIT_CATEGORIES.find(c => c.key === habit.category) || HABIT_CATEGORIES[0];
     const completed = todayLog?.completed;
@@ -317,28 +317,44 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, theme }) {
                             })}
                         </div>
                     </div>
+                    {/* Action Buttons */}
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onEdit(habit); }}
+                            style={{ padding: "8px 12px", borderRadius: 8, fontSize: 10, background: "rgba(34,211,238,0.1)", color: "#22d3ee", border: "1px solid #22d3ee33", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
+                        >
+                            BEARBEITEN
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(habit.id); }}
+                            style={{ padding: "8px 12px", borderRadius: 8, fontSize: 10, background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid #ef444433", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
+                        >
+                            LÖSCHEN
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
     );
 }
 
-// ── Create Habit Modal ───────────────────────────────────────
-function CreateHabitModal({ onClose, onCreate, theme }) {
-    const [title, setTitle] = useState("");
-    const [category, setCategory] = useState("fitness");
-    const [frequency, setFrequency] = useState("daily");
-    const [verification, setVerification] = useState("manual");
-    const [targetMinutes, setTargetMinutes] = useState(30);
-    const [targetCount, setTargetCount] = useState(10);
-    const [icon, setIcon] = useState("");
+// ── Create/Edit Habit Modal ───────────────────────────────────────
+function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
+    const isEdit = !!initialHabit;
+    const [title, setTitle] = useState(initialHabit?.title || "");
+    const [category, setCategory] = useState(initialHabit?.category || "fitness");
+    const [frequency, setFrequency] = useState(initialHabit?.frequency || "daily");
+    const [verification, setVerification] = useState(initialHabit?.verification || "manual");
+    const [targetMinutes, setTargetMinutes] = useState(initialHabit?.targetMinutes || 30);
+    const [targetCount, setTargetCount] = useState(initialHabit?.targetCount || 10);
+    const [icon, setIcon] = useState(initialHabit?.icon || "");
 
     const cat = HABIT_CATEGORIES.find(c => c.key === category);
 
-    const handleCreate = () => {
+    const handleSave = () => {
         if (!title.trim()) return;
-        onCreate({
-            id: genId(),
+        onSave({
+            id: initialHabit ? initialHabit.id : genId(),
             title: title.trim(),
             category,
             frequency,
@@ -346,13 +362,13 @@ function CreateHabitModal({ onClose, onCreate, theme }) {
             targetMinutes: verification === "timer" ? targetMinutes : undefined,
             targetCount: verification === "counter" ? targetCount : undefined,
             icon: icon || cat?.icon || "📋",
-            createdAt: getToday(),
-            currentStreak: 0,
-            bestStreak: 0,
-            totalCompletions: 0,
-            scheduledDays: 0,
-            history: {},
-            active: true,
+            createdAt: initialHabit ? initialHabit.createdAt : getToday(),
+            currentStreak: initialHabit ? initialHabit.currentStreak : 0,
+            bestStreak: initialHabit ? initialHabit.bestStreak : 0,
+            totalCompletions: initialHabit ? initialHabit.totalCompletions : 0,
+            scheduledDays: initialHabit ? initialHabit.scheduledDays : 0,
+            history: initialHabit ? initialHabit.history : {},
+            active: initialHabit ? initialHabit.active : true,
         });
         onClose();
     };
@@ -372,8 +388,8 @@ function CreateHabitModal({ onClose, onCreate, theme }) {
                 borderRadius: 24, padding: 24,
                 animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)",
             }}>
-                <div style={{ fontSize: 10, letterSpacing: 4, color: theme?.primary || "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>SYSTEM: NEUER HABIT</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2, marginBottom: 20 }}>Gewohnheit erstellen</div>
+                <div style={{ fontSize: 10, letterSpacing: 4, color: theme?.primary || "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>SYSTEM: {isEdit ? "HABIT ÄNDERN" : "NEUER HABIT"}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2, marginBottom: 20 }}>{isEdit ? "Gewohnheit anpassen" : "Gewohnheit erstellen"}</div>
 
                 {/* Title */}
                 <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 6 }}>TITEL</label>
@@ -471,7 +487,7 @@ function CreateHabitModal({ onClose, onCreate, theme }) {
                 )}
 
                 {/* Create button */}
-                <button onClick={handleCreate} disabled={!title.trim()} style={{
+                <button onClick={handleSave} disabled={!title.trim()} style={{
                     width: "100%", padding: 14, borderRadius: 14, fontSize: 13, fontWeight: 900,
                     background: title.trim() ? `linear-gradient(135deg,${theme?.primary || "#22d3ee"},${theme?.secondary || "#a855f7"})` : "rgba(15,15,30,0.6)",
                     color: title.trim() ? "#fff" : "#334155",
@@ -479,7 +495,7 @@ function CreateHabitModal({ onClose, onCreate, theme }) {
                     boxShadow: title.trim() ? `0 8px 32px ${theme?.glow || "rgba(34,211,238,0.35)"}` : "none",
                     cursor: title.trim() ? "pointer" : "not-allowed", border: "none",
                 }}>
-                    ✦ HABIT ERSTELLEN ✦
+                    ✦ {isEdit ? "SPEICHERN" : "HABIT ERSTELLEN"} ✦
                 </button>
             </div>
         </div>
@@ -489,6 +505,7 @@ function CreateHabitModal({ onClose, onCreate, theme }) {
 // ═══ MAIN COMPONENT ══════════════════════════════════════════
 export default function HabitTracker({ state, persist, notify, theme }) {
     const [showCreate, setShowCreate] = useState(false);
+    const [editingHabit, setEditingHabit] = useState(null);
     const [filter, setFilter] = useState("all");
     const habits = state?.habits || [];
     const today = getToday();
@@ -534,9 +551,17 @@ export default function HabitTracker({ state, persist, notify, theme }) {
         const streakBonus = Math.min((habit?.currentStreak || 0), 10);
         const xpGain = baseXp + streakBonus;
 
+        // Synchronize linked quest if one exists
+        const linkedQuestId = habit?.linkedQuestId;
+        const updatedQuests = state.quests ? state.quests.map(q => {
+            if (q.id === linkedQuestId && !q.completed) return { ...q, completed: true, completedAt: today };
+            return q;
+        }) : state.quests;
+
         persist(calculateLevelUp({
             ...state,
-            habits: updated
+            habits: updated,
+            quests: updatedQuests
         }, xpGain));
         notify(`Habit erledigt! +${xpGain} XP 🔥 Streak: ${(updated.find(h => h.id === habitId)?.currentStreak || 1)}`, "success");
     }, [habits, state, persist, notify, today]);
@@ -570,10 +595,17 @@ export default function HabitTracker({ state, persist, notify, theme }) {
         });
         const habitObj = habits.find(h => h.id === habitId);
         const xpToGain = (value >= habitObj.targetCount && !habitObj.history?.[today]?.completed) ? 12 : 0;
-        
+
+        const linkedQuestId = habitObj?.linkedQuestId;
+        const updatedQuests = (value >= habitObj.targetCount && state.quests) ? state.quests.map(q => {
+            if (q.id === linkedQuestId && !q.completed) return { ...q, completed: true, completedAt: today };
+            return q;
+        }) : state.quests;
+
         persist(calculateLevelUp({
             ...state,
-            habits: updated
+            habits: updated,
+            quests: updatedQuests
         }, xpToGain));
         if (value >= habit.targetCount && !habit.history?.[today]?.completed) {
             notify(`Ziel erreicht! 🎯 +12 XP`, "success");
@@ -581,17 +613,48 @@ export default function HabitTracker({ state, persist, notify, theme }) {
     }, [habits, state, persist, notify, today]);
 
     const createHabit = useCallback((newHabit) => {
-        persist({ ...state, habits: [...(state.habits || []), newHabit] });
+        let quest = null;
+        if (newHabit.frequency === "daily" || newHabit.frequency === "weekly") {
+            const questId = genId();
+            newHabit.linkedQuestId = questId;
+            let timeLimit = undefined;
+            if (newHabit.frequency === "weekly") {
+                const d = new Date();
+                const daysUntilMonday = (8 - d.getDay()) % 7 || 7;
+                d.setDate(d.getDate() + daysUntilMonday); d.setHours(23, 59, 59, 999);
+                timeLimit = d.toISOString();
+            }
+            quest = {
+                id: questId, title: newHabit.title, category: newHabit.category, difficulty: "normal",
+                type: newHabit.frequency, createdAt: getToday(), createdAtMs: Date.now(),
+                linkedHabitId: newHabit.id,
+                ...(timeLimit ? { timeLimit } : {})
+            };
+        }
+        persist({
+            ...state,
+            habits: [...habits, newHabit],
+            ...(quest ? { quests: [...(state.quests || []), quest] } : {})
+        });
         notify(`Neuer Habit: "${newHabit.title}" erstellt!`, "info");
-    }, [state, persist, notify]);
+    }, [state, persist, notify, habits]);
+
+    const editHabit = useCallback((updatedHabit) => {
+        persist({ ...state, habits: habits.map(h => h.id === updatedHabit.id ? updatedHabit : h) });
+        notify(`Habit "${updatedHabit.title}" aktualisiert!`, "info");
+    }, [habits, state, persist, notify]);
 
     const deleteHabit = useCallback((habitId) => {
-        persist({ ...state, habits: habits.filter(h => h.id !== habitId) });
-    }, [habits, state, persist]);
+        if (window.confirm("Habit wirklich löschen? Historie geht verloren.")) {
+            persist({ ...state, habits: habits.filter(h => h.id !== habitId) });
+            notify("Habit gelöscht.", "warning");
+        }
+    }, [habits, state, persist, notify]);
 
     return (
         <div style={{ animation: "fadeIn 0.35s ease" }}>
-            {showCreate && <CreateHabitModal onClose={() => setShowCreate(false)} onCreate={createHabit} theme={theme} />}
+            {showCreate && <CreateHabitModal onClose={() => setShowCreate(false)} onSave={createHabit} theme={theme} />}
+            {editingHabit && <CreateHabitModal onClose={() => setEditingHabit(null)} onSave={editHabit} initialHabit={editingHabit} theme={theme} />}
 
             {/* Header with progress */}
             <div style={{
@@ -681,6 +744,8 @@ export default function HabitTracker({ state, persist, notify, theme }) {
                             todayLog={habit.history?.[today]}
                             onComplete={completeHabit}
                             onCounterUpdate={updateCounter}
+                            onEdit={setEditingHabit}
+                            onDelete={deleteHabit}
                             theme={theme}
                         />
                     ))}

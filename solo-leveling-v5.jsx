@@ -24,7 +24,7 @@ import {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
-  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE,
+  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses, calculateLevelUp,
@@ -117,6 +117,11 @@ function App({ initialHunterName, onLogout }) {
     setQCat,
     qType,
     setQType,
+    qSyncHabit,
+    setQSyncHabit,
+    editingQuestId,
+    setEditingQuestId,
+    startEditingQuest,
     showHiddenQuestModal,
     setShowHiddenQuestModal,
     showTemplates,
@@ -156,31 +161,7 @@ function App({ initialHunterName, onLogout }) {
   const modifier = useMemo(() => getDailyModifier(), []);
   const [showFocusMode, setShowFocusMode] = React.useState(false);
 
-  const [customNav, setCustomNav] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem("solo_custom_nav");
-      return saved ? JSON.parse(saved) : ["dashboard", "dungeon", "story", "habits"];
-    } catch {
-      return ["dashboard", "dungeon", "story", "habits"];
-    }
-  });
 
-  const toggleNavPin = (key) => {
-    setCustomNav(prev => {
-      if (prev.includes(key)) {
-        const next = prev.filter(k => k !== key);
-        localStorage.setItem("solo_custom_nav", JSON.stringify(next));
-        return next;
-      }
-      if (prev.length >= 4) {
-        alert("Maximal 4 Tabs in der Navigationsleiste erlaubt. Bitte erst einen entfernen.");
-        return prev;
-      }
-      const next = [...prev, key];
-      localStorage.setItem("solo_custom_nav", JSON.stringify(next));
-      return next;
-    });
-  };
 
   // ── Adaptive System Coach: periodic intervention checks ──
   const prevStateRef = useRef(null);
@@ -498,6 +479,17 @@ function App({ initialHunterName, onLogout }) {
               ))}
             </div>
 
+            {/* ── HABITS & DAILY ROUTINE ── */}
+            <div style={{ marginBottom: 24 }}>
+              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} />
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
+              <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
+              <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
+              <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
+            </div>
+
             {/* ── EMERGENCY QUEST ── */}
             {state.emergencyQuest && (
               <EmergencyQuestCard
@@ -538,7 +530,7 @@ function App({ initialHunterName, onLogout }) {
                 <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
                 <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
               </div>
-            ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onDelete={deleteQuest} />)}
+            ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}
           </div>
         )}
 
@@ -753,7 +745,7 @@ function App({ initialHunterName, onLogout }) {
                 const xpGain = chapter.rewards?.xp || 0;
                 const goldGain = chapter.rewards?.gold || 0;
                 let next = calculateLevelUp(prev, xpGain);
-                
+
                 // Titel vergeben falls vorhanden
                 let newTitle = next.selectedTitle;
                 if (chapter.rewards?.title) {
@@ -942,11 +934,6 @@ function App({ initialHunterName, onLogout }) {
           </div>
         )}
 
-        {/* ═══ HABITS ═══ */}
-        {view === "habits" && (
-          <HabitTracker state={state} persist={persist} notify={notify} theme={theme} />
-        )}
-
         {/* ═══ ANALYTICS ═══ */}
         {view === "analytics" && (
           <AnalyticsDashboard state={state} theme={theme} />
@@ -981,93 +968,161 @@ function App({ initialHunterName, onLogout }) {
       {/* BOTTOM NAV */}
       <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}` }}>
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
-          {(() => {
-            const level = state?.level || 1;
-            // Primary visible tabs
-            const allTabsMap = {
-              "dashboard": { key: "dashboard", icon: "📝", label: "ToDos" },
-              "habits": { key: "habits", icon: "🔄", label: "Habits", badge: (state.habits || []).filter(h => h.active && !h.history?.[new Date().toISOString().slice(0, 10)]?.completed).length || 0 },
-              "dungeon": { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length },
-              "story": { key: "story", icon: "📖", label: "Story" },
-              "multiplayer": { key: "multiplayer", icon: "🌐", label: "Hunters" },
-              "goals": { key: "goals", icon: "🎯", label: "Goals" },
-              "challenges": { key: "challenges", icon: "🎖️", label: "Events" },
-              "calendar": { key: "calendar", icon: "📅", label: "Plan" },
-              "health": { key: "health", icon: "❤️", label: "Health" },
-              "shadows": { key: "shadows", icon: "🌑", label: "Army", badge: namedShadows.length > 0 ? namedShadows.length : 0 },
-              "equipment": { key: "equipment", icon: "🗡️", label: "Equip", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 },
-              "achievements": { key: "achievements", icon: "🏆", label: "Ach.", badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length },
-              "analytics": { key: "analytics", icon: "📊", label: "Stats" },
-              "jobs": { key: "jobs", icon: "🎭", label: "Jobs" },
-              "shop": { key: "shop", icon: "🛒", label: "Shop" },
-              "settings": { key: "settings", icon: "⚙️", label: "System" }
-            };
-
-            const visibleTabs = customNav.map(key => allTabsMap[key]).filter(Boolean);
-            visibleTabs.push({ key: "more", icon: "≡", label: "More" });
-
-            return visibleTabs.map(tab => (
-              <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
-                {view === tab.key && <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 8px ${theme.accent}` }} />}
-                <div style={{ position: "relative" }}>
-                  <span style={{ fontSize: 18, transition: "all 0.3s", transform: view === tab.key ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: view === tab.key ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
-                  {tab.badge > 0 && <div style={{ position: "absolute", top: -6, right: -8, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono',monospace", border: "2px solid #000", animation: "pulse 2s infinite" }}>{tab.badge}</div>}
-                </div>
-                <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: view === tab.key ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
-              </button>
-            ));
-          })()}
+          {[{ key: "dashboard", icon: "📋", label: "Heute" }, { key: "training", icon: "🎯", label: "Ziele" }, { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length }, { key: "shadows", icon: "🌑", label: "Army", badge: namedShadows.length > 0 ? namedShadows.length : 0 }, { key: "system", icon: "⚙️", label: "System" }].map(tab => (
+            <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
+              {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
+              <div style={{ position: "relative" }}>
+                <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
+                {tab.badge > 0 && <div style={{ position: "absolute", top: -6, right: -8, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono',monospace", border: "2px solid #000", animation: "pulse 2s infinite" }}>{tab.badge}</div>}
+              </div>
+              <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
+            </button>
+          ))}
         </div>
       </nav>
 
-      {/* MORE MENU (Full screen overlay) */}
-      {view === "more" && (
+      {/* TRAINING HUB — unified view for habits/goals/calendar */}
+      {view === "training" && (
         <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
-          <div style={{ fontSize: 12, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 16, textAlign: "center", marginTop: 24, display: "flex", flexDirection: "column", gap: 8 }}>
-            <span>SYSTEM MODULES</span>
-            <span style={{ fontSize: 9, color: "#64748b", textTransform: "none", letterSpacing: 0 }}>Nav-Bar Pinning: Klicke auf 📌 (max 4)</span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {(() => {
-              const moreItems = [];
-              moreItems.push({ key: "dashboard", icon: "📝", label: "ToDos", desc: "Main View" });
-              moreItems.push({ key: "habits", icon: "🔄", label: "Habits", desc: "Routines", badge: (state.habits || []).filter(h => h.active && !h.history?.[new Date().toISOString().slice(0, 10)]?.completed).length || 0 });
-              moreItems.push({ key: "dungeon", icon: "🌀", label: "Gates", desc: "Dungeons", badge: activeDungeons.length });
-              moreItems.push({ key: "story", icon: "📖", label: "Story", desc: "Lore" });
-              moreItems.push({ key: "multiplayer", icon: "🌐", label: "Hunters", desc: "Association" });
-              moreItems.push({ key: "goals", icon: "🎯", label: "Goals", desc: "Long-term" });
-              moreItems.push({ key: "challenges", icon: "🎖️", label: "Events", desc: "Missions" });
-              moreItems.push({ key: "calendar", icon: "📅", label: "Plan", desc: "Schedule" });
-              moreItems.push({ key: "health", icon: "❤️", label: "Health", desc: "App Sync" });
-              moreItems.push({ key: "shadows", icon: "🌑", label: "Army", desc: "Minions", badge: namedShadows.length > 0 ? namedShadows.length : 0 });
-              moreItems.push({ key: "equipment", icon: "🗡️", label: "Equip", desc: "Gear", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 });
-              moreItems.push({ key: "achievements", icon: "🏆", label: "Ach.", desc: "Trophies", badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length });
-              moreItems.push({ key: "analytics", icon: "📊", label: "Stats", desc: "Analytics" });
-              moreItems.push({ key: "jobs", icon: "🎭", label: "Jobs", desc: "Classes" });
-              moreItems.push({ key: "shop", icon: "🛒", label: "Shop", desc: "Items" });
-              moreItems.push({ key: "settings", icon: "⚙️", label: "System", desc: "Settings/Exports" });
+          <div style={{ maxWidth: 480, margin: "0 auto" }}>
+            {/* Training header */}
+            <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px 20px", marginBottom: 16, backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, right: 0, width: "50%", height: "100%", background: `radial-gradient(circle at 100% 30%, ${theme.primary}0c, transparent 70%)`, pointerEvents: "none" }} />
+              <div style={{ fontSize: 9, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>PATH OF THE HUNTER</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>Ziele & Fortschritt</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>Langzeit-Ziele und Quest-Kalender</div>
+            </div>
 
-              return moreItems.map(item => {
-                const isPinned = customNav.includes(item.key);
-                return (
-                  <div key={item.key} style={{ position: "relative" }}>
-                    <button onClick={() => setView(item.key)} style={{ width: "100%", padding: "16px", paddingRight: "36px", height: "100%", borderRadius: 16, background: theme.card, border: `1px solid ${theme.primary}22`, display: "flex", alignItems: "center", gap: 12, transition: "all 0.2s", textAlign: "left" }} onMouseEnter={e => e.currentTarget.style.borderColor = theme.primary} onMouseLeave={e => e.currentTarget.style.borderColor = theme.primary + "22"}>
-                      <div style={{ fontSize: 24, position: "relative", flexShrink: 0 }}>
+            {/* Training modules combined */}
+            <div style={{ marginBottom: 32 }}>
+              <GoalFramework state={state} persist={persist} notify={notify} theme={theme} />
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
+              <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
+              <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>TÄGLICHES TRAINING</div>
+              <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
+            </div>
+
+            <div style={{ marginBottom: 32 }}>
+              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} />
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
+              <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
+              <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
+              <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
+            </div>
+
+            {filteredQuests.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}>
+                <div style={{ fontSize: 36, marginBottom: 10, animation: "float 3s ease-in-out infinite" }}>⚔️</div>
+                <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
+                <div style={{ fontSize: 11, color: "#334155" }}>Erstelle Quests auf dem Heute-Tab.</div>
+              </div>
+            ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}
+          </div>
+        </div>
+      )}
+
+      {/* SYSTEM MENU — themed module hub */}
+      {view === "system" && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+          <div style={{ maxWidth: 480, margin: "0 auto" }}>
+            {/* System header */}
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <div style={{ fontSize: 9, letterSpacing: 5, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, animation: "pulse 3s infinite" }}>&gt; SYSTEM INTERFACE ACTIVE</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>System</div>
+              <div style={{ width: 60, height: 2, background: `linear-gradient(90deg, transparent, ${theme.primary}, transparent)`, margin: "10px auto 0" }} />
+            </div>
+
+            {/* HUNTER PROFILE SECTION */}
+            {[{
+              title: "HUNTER INTEL", icon: "📊", color: theme.accent,
+              items: [
+                { key: "stats", icon: "📊", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
+                { key: "analytics", icon: "📈", label: "Analytics", desc: "Fortschritt & Trends" },
+                { key: "achievements", icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length },
+                { key: "challenges", icon: "🎖️", label: "Events", desc: "Challenges & Missionen" },
+              ]
+            }, {
+              title: "ARSENAL", icon: "🗡️", color: "#f59e0b",
+              items: [
+                { key: "equipment", icon: "🗡️", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 },
+                { key: "jobs", icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" },
+                { key: "shop", icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` },
+              ]
+            }, {
+              title: "LORE", icon: "📖", color: "#a855f7",
+              items: [
+                { key: "story", icon: "📖", label: "Story", desc: "Die Geschichte des Hunters" },
+              ]
+            }, {
+              title: "SYSTEM", icon: "⚙️", color: "#64748b",
+              items: [
+                { key: "health", icon: "❤️", label: "Health Sync", desc: "Gesundheitstracker" },
+                { key: "settings", icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
+              ]
+            }].map((section, si) => (
+              <div key={section.title} style={{ marginBottom: 20, animation: `slideUp 0.3s ease ${si * 0.08}s both` }}>
+                {/* Section header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingLeft: 4 }}>
+                  <div style={{ width: 3, height: 16, borderRadius: 2, background: section.color, boxShadow: `0 0 8px ${section.color}44` }} />
+                  <span style={{ fontSize: 10, letterSpacing: 3, color: section.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{section.icon} {section.title}</span>
+                </div>
+                {/* Section items */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {section.items.map((item, ii) => (
+                    <button key={item.key} onClick={() => setView(item.key)} style={{
+                      width: "100%", padding: "14px 16px", borderRadius: 14,
+                      background: theme.card, border: `1px solid ${section.color}15`,
+                      display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+                      transition: "all 0.2s", cursor: "pointer", backdropFilter: "blur(8px)",
+                      animation: `cardEnter 0.3s ease ${(si * 0.08) + (ii * 0.04)}s both`
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = section.color + "44"; e.currentTarget.style.transform = "translateX(4px)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = section.color + "15"; e.currentTarget.style.transform = "none"; }}
+                    >
+                      <div style={{ fontSize: 20, position: "relative", flexShrink: 0 }}>
                         {item.icon}
-                        {item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{item.badge}</div>}
+                        {item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -6, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
                       </div>
-                      <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Cinzel',serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</div>
-                        <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.desc}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.label}</div>
+                        <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{item.desc}</div>
                       </div>
+                      <div style={{ fontSize: 12, color: "#334155", opacity: 0.5 }}>›</div>
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); toggleNavPin(item.key); }} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", background: isPinned ? `${theme.accent}33` : "rgba(12,12,26,0.6)", color: isPinned ? theme.accent : "#475569", border: `1px solid ${isPinned ? theme.accent : "#1e2940"}`, borderRadius: 8, fontSize: 14, cursor: "pointer", transition: "all 0.2s" }} title={isPinned ? "Unpin from NavBar" : "Pin to NavBar"}>
-                      {isPinned ? "📌" : "📍"}
-                    </button>
-                  </div>
-                );
-              });
-            })()}
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Multiplayer Portal */}
+            <div style={{ marginBottom: 20, animation: `slideUp 0.3s ease 0.4s both` }}>
+              <button onClick={enterPortal} style={{
+                width: "100%", padding: "16px 20px", borderRadius: 16,
+                background: `linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03))`,
+                border: `1px solid #f59e0b33`, borderLeft: `3px solid #f59e0b66`,
+                display: "flex", alignItems: "center", gap: 14, textAlign: "left",
+                transition: "all 0.3s", cursor: "pointer"
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b88"; e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(245,158,11,0.1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#f59e0b33"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
+              >
+                <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b44", fontSize: 22, flexShrink: 0 }}>🌐</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fcd34d", fontFamily: "'Cinzel',serif" }}>Hunter Association</div>
+                  <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>Multiplayer Portal betreten</div>
+                </div>
+                <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>⟶</div>
+              </button>
+            </div>
+
+            {/* Version footer */}
+            <div style={{ textAlign: "center", padding: "12px 0", fontSize: 9, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 3 }}>
+              ARISE SYSTEM v1.3.7
+            </div>
           </div>
         </div>
       )}
@@ -1080,8 +1135,8 @@ function App({ initialHunterName, onLogout }) {
             <div style={{ padding: "20px 24px 0", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <div>
-                  <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>SYSTEM: NEUE QUEST</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>Quest erstellen</div>
+                  <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>SYSTEM: {editingQuestId ? "QUEST ÄNDERN" : "NEUE QUEST"}</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{editingQuestId ? "Quest anpassen" : "Quest erstellen"}</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {/* RANDOMIZER BUTTON */}
@@ -1282,6 +1337,17 @@ function App({ initialHunterName, onLogout }) {
                   );
                 })()}
 
+                {/* Habit Sync Toggle */}
+                {(qType === "daily" || qType === "weekly") && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: "rgba(10,10,24,0.6)", padding: "12px 14px", borderRadius: 12, border: `1px solid ${qSyncHabit ? theme.primary + "55" : "#1e2940"}`, transition: "all 0.2s", marginBottom: 16 }}>
+                    <input type="checkbox" checked={qSyncHabit} onChange={e => setQSyncHabit(e.target.checked)} style={{ accentColor: theme.primary, width: 16, height: 16, cursor: "pointer" }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>Mit Habit-Tracker verknüpfen</div>
+                      <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Erstellt automatisch eine Routine zum Tracken des Streaks.</div>
+                    </div>
+                  </label>
+                )}
+
               </>}
             </div>
 
@@ -1294,14 +1360,15 @@ function App({ initialHunterName, onLogout }) {
                 }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(15,15,30,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)` : "none", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid #1e2940" }}
                   onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.filter = "brightness(1.1)"; } }}
                   onMouseLeave={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "none"; e.currentTarget.style.filter = "none"; } }}
-                >{qTitle.trim() ? "✦ QUEST ANNEHMEN ✦" : "Quest-Titel eingeben..."}</button>
+                >{qTitle.trim() ? (editingQuestId ? "✦ SPEICHERN ✦" : "✦ QUEST ANNEHMEN ✦") : "Quest-Titel eingeben..."}</button>
               </div>
             )}
 
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }
 
