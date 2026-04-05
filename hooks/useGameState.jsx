@@ -93,10 +93,21 @@ export function useGameState(initialHunterName, onLogout) {
 
   useEffect(() => {
     console.log("System Initialisierung gestartet...");
-    loadState().then(s => {
+    loadState().then(({ data: s, source }) => {
       try {
+        const user = auth.currentUser;
         if (s) {
           const today = getToday();
+
+          // If we loaded from LocalStorage but there's a logged-in user,
+          // check if we should reset the tutorial for a "Fresh Cloud Start"
+          if (source === "local" && user) {
+            if (s.tutorialCompleted) {
+              console.log("System: Local tutorial detected. Resetting for new Cloud Hunter.");
+              s.tutorialCompleted = false;
+            }
+          }
+
           if (s.lastActiveDate && s.lastActiveDate !== today) {
             const diff = Math.floor((new Date(today) - new Date(s.lastActiveDate)) / 86400000);
             if (diff > 1) {
@@ -106,18 +117,13 @@ export function useGameState(initialHunterName, onLogout) {
                 s.penaltyZone = { active: true, redemptionLeft: 3, questsCompletedInPenalty: 0 };
               }
             }
-            // Reset existing dailies and add new system quests
             s.quests = s.quests?.map(q => q.type === "daily" && !q.isSystem ? { ...q, completed: false } : q) || [];
-            // Filter out old system quests and add new ones
             s.quests = (s.quests || []).filter(q => !q.isSystem);
             const newSysQuests = generateDailySystemQuests(3);
             s.quests = [...s.quests, ...newSysQuests];
-
-            // Reset emergency quest daily
             s.emergencyQuest = null;
             s.emergencyDone = false;
             s.emergencyFailed = false;
-            // Reset weekly quests on Monday
             const dayOfWeek = new Date().getDay();
             if (dayOfWeek === 1) {
               s.quests = (s.quests || []).filter(q => q.type !== "weekly");
@@ -127,12 +133,10 @@ export function useGameState(initialHunterName, onLogout) {
             s.extraDailySlots = 0;
           }
           s.lastActiveDate = today;
-          // Generate emergency quest for today if missing
           if (!s.emergencyQuest || !s.emergencyQuest.id.endsWith(today)) {
             s.emergencyQuest = generateEmergencyQuest(s.level || 1);
             s.emergencyDone = false;
             s.emergencyFailed = false;
-            // Trigger System Message for Emergency Quest
             setTimeout(() => {
               triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
                 "ACHTUNG: Eine temporale Anomalie wurde registriert.",
@@ -148,31 +152,29 @@ export function useGameState(initialHunterName, onLogout) {
             s.lastDungeonRefresh = today;
             s.todayModifier = getDailyModifier();
           }
-
-          // Trigger Welcome Message only once per day
           if (s.lastWelcomeDate !== today) {
             setTimeout(() => {
               const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
               const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "⚠️ NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
               triggerSystemMessage("STATUS-CHECK", [
-                `Willkommen zurück, Hunter ${s.hunterName || "Unbekannt"}.`,
+                `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`,
                 `Aktive Tages-Quests: ${activeDailies.length}`,
                 urgentMsg
               ]);
               persist({ ...s, lastWelcomeDate: today });
             }, 1500);
           }
-
-          // --- STATS INITIALIZATION FOR OLD USERS ---
           if (s.statPoints === undefined) s.statPoints = 0;
-
-          // --- AUTH INTEGRATION ---
           if (!s.hunterName && initialHunterName) {
             s.hunterName = initialHunterName;
           }
-
           setState(s);
           if (!s.hunterName) setShowSetup(true);
+
+          // If we loaded from local, save to cloud now that we have a user
+          if (source === "local" && user) {
+            saveState(s);
+          }
         } else {
           const startState = { ...DEFAULT_STATE };
           if (initialHunterName) {

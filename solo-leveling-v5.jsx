@@ -182,6 +182,13 @@ function App({ initialHunterName, onLogout }) {
   }, [state?.streak, state?.lastActiveDate, (state?.habits || []).length, loading]);
 
   // Tutorial gate: show tutorial for new users who haven't completed it
+  if (!loading && state) {
+    console.log("System: Tutorial-Check:", {
+      completed: !!state.tutorialCompleted,
+      showSetup,
+      hunter: state.hunterName
+    });
+  }
   if (!loading && state && !state.tutorialCompleted && !showSetup) {
     return (
       <DoubleDungeonTutorial
@@ -968,14 +975,14 @@ function App({ initialHunterName, onLogout }) {
       {/* BOTTOM NAV */}
       <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}` }}>
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
-          {[{ key: "dashboard", icon: "📋", label: "Heute" }, { key: "training", icon: "🎯", label: "Ziele" }, { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length }, { key: "shadows", icon: "🌑", label: "Army", badge: namedShadows.length > 0 ? namedShadows.length : 0 }, { key: "system", icon: "⚙️", label: "System" }].map(tab => (
-            <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
-              {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
+          {[{ key: "dashboard", icon: "📋", label: "Heute" }, { key: "training", icon: "🎯", label: "Ziele" }, { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length }, { key: "story", icon: "📖", label: "Story" }, { key: "system", icon: "⚙️", label: "System" }].map(tab => (
+            <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
+              {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
               <div style={{ position: "relative" }}>
-                <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
+                <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
                 {tab.badge > 0 && <div style={{ position: "absolute", top: -6, right: -8, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono',monospace", border: "2px solid #000", animation: "pulse 2s infinite" }}>{tab.badge}</div>}
               </div>
-              <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "story", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
+              <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
             </button>
           ))}
         </div>
@@ -1048,14 +1055,10 @@ function App({ initialHunterName, onLogout }) {
             }, {
               title: "ARSENAL", icon: "🗡️", color: "#f59e0b",
               items: [
+                { key: "shadows", icon: "🌑", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 },
                 { key: "equipment", icon: "🗡️", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 },
                 { key: "jobs", icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" },
                 { key: "shop", icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` },
-              ]
-            }, {
-              title: "LORE", icon: "📖", color: "#a855f7",
-              items: [
-                { key: "story", icon: "📖", label: "Story", desc: "Die Geschichte des Hunters" },
               ]
             }, {
               title: "SYSTEM", icon: "⚙️", color: "#64748b",

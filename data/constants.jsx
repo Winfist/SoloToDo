@@ -1266,7 +1266,7 @@ async function loadState() {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         console.log("System: Cloud-Daten geladen.");
-        return migrateState(docSnap.data());
+        return { data: migrateState(docSnap.data()), source: "cloud" };
       }
     }
     // 2. Fallback to LocalStorage
@@ -1274,15 +1274,14 @@ async function loadState() {
     if (!r) r = await window.storage.get("sl-todo-v4");
     if (r) {
       const s = migrateState(JSON.parse(r.value));
-      if (s && user) {
-        saveState(s);
-      }
-      return s;
+      // Note: We don't save to Cloud here immediately; 
+      // we let useGameState decide if this LocalStorage state belongs to the current user.
+      return { data: s, source: "local" };
     }
-    return null;
+    return { data: null, source: "none" };
   } catch (e) {
     console.error("System: Ladefehler:", e);
-    return null;
+    return { data: null, source: "error" };
   }
 }
 
