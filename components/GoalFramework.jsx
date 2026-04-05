@@ -332,7 +332,7 @@ function CreateGoalModal({ onClose, onSave, initialGoal, theme }) {
 }
 
 // ═══ MAIN COMPONENT ══════════════════════════════════════════
-export default function GoalFramework({ state, persist, notify, theme, onModalOpen, onModalClose, onOpenQuestCreate }) {
+export default function GoalFramework({ state, persist, notify, theme, onModalOpen, onModalClose }) {
     const [showCreate, setShowCreate] = useState(false);
     const [editingGoal, setEditingGoal] = useState(null);
     const goals = state?.goals || [];
@@ -402,34 +402,6 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                 <div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 20px ${theme?.primary || "#22d3ee"}33` }}>Main Quests</div>
                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 2, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>ZIELE · MEILENSTEINE</div>
-                </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    {onOpenQuestCreate && (
-                        <button onClick={onOpenQuestCreate} style={{
-                            padding: "9px 13px", borderRadius: 11, fontSize: 10, fontWeight: 700,
-                            background: "rgba(239,68,68,0.1)", color: "#f87171",
-                            border: "1px solid rgba(239,68,68,0.28)",
-                            fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
-                            transition: "all 0.2s", whiteSpace: "nowrap",
-                        }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"; e.currentTarget.style.boxShadow = "0 0 14px rgba(239,68,68,0.2)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.28)"; e.currentTarget.style.boxShadow = "none"; }}
-                        >
-                            ⚔️ QUEST
-                        </button>
-                    )}
-                    <button onClick={openCreate} style={{
-                        padding: "9px 14px", borderRadius: 11, fontSize: 10, fontWeight: 700,
-                        background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
-                        color: theme?.accent || "#67e8f9", border: `1px solid ${theme?.primary || "#22d3ee"}44`,
-                        fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
-                        transition: "all 0.2s", whiteSpace: "nowrap",
-                    }}
-                        onMouseEnter={e => { e.currentTarget.style.background = `linear-gradient(135deg,${theme?.primary || "#22d3ee"}33,${theme?.primary || "#22d3ee"}08)`; e.currentTarget.style.boxShadow = `0 0 14px ${theme?.glow || "rgba(34,211,238,0.2)"}`; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`; e.currentTarget.style.boxShadow = "none"; }}
-                    >
-                        + ZIEL
-                    </button>
                 </div>
             </div>
 

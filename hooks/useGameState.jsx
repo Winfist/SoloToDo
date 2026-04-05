@@ -152,18 +152,15 @@ export function useGameState(initialHunterName, onLogout) {
             s.lastDungeonRefresh = today;
             s.todayModifier = getDailyModifier();
           }
-          if (s.lastWelcomeDate !== today) {
-            setTimeout(() => {
-              const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
-              const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "⚠️ NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
-              triggerSystemMessage("STATUS-CHECK", [
-                `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`,
-                `Aktive Tages-Quests: ${activeDailies.length}`,
-                urgentMsg
-              ]);
-              persist({ ...s, lastWelcomeDate: today });
-            }, 1500);
-          }
+          setTimeout(() => {
+            const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
+            const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "⚠️ NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
+            triggerSystemMessage("STATUS-CHECK", [
+              `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`,
+              `Aktive Tages-Quests: ${activeDailies.length}`,
+              urgentMsg
+            ]);
+          }, 1500);
           if (s.statPoints === undefined) s.statPoints = 0;
           if (!s.hunterName && initialHunterName) {
             s.hunterName = initialHunterName;

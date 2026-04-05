@@ -2856,7 +2856,10 @@ function SystemCLI({ message, onClose }) {
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#6366f1", boxShadow: "0 0 10px #6366f1" }} />
             <div style={{ fontSize: 12, color: "#6366f1", fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, letterSpacing: 3 }}>SYSTEM NACHRICHT</div>
           </div>
-          <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono', monospace" }}>UID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
+          <button onClick={() => { if (message.onComplete) message.onComplete(); onClose(); }} style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono', monospace", background: "transparent", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 4, transition: "color 0.2s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#94a3b8"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "#475569"; }}
+          >[ SKIP ✕ ]</button>
         </div>
 
         <div style={{ minHeight: 120, marginBottom: 24 }}>
