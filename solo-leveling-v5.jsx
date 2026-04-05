@@ -160,6 +160,7 @@ function App({ initialHunterName, onLogout }) {
   } = gameState;
   const modifier = useMemo(() => getDailyModifier(), []);
   const [showFocusMode, setShowFocusMode] = React.useState(false);
+  const [isCreatingEntry, setIsCreatingEntry] = React.useState(false);
 
 
 
@@ -332,7 +333,7 @@ function App({ initialHunterName, onLogout }) {
       )}
 
       {/* HEADER */}
-      <header style={{ position: "sticky", top: 0, zIndex: 100, padding: "12px 16px", background: `linear-gradient(180deg,${theme.bg}f5,${theme.bg}e8)`, borderBottom: `1px solid ${penaltyActive ? "#ef444422" : theme.primary + "12"}`, backdropFilter: "blur(24px)" }}>
+      <header style={{ position: "sticky", top: 0, zIndex: 100, padding: "12px 16px", background: `linear-gradient(180deg,${theme.bg}f5,${theme.bg}e8)`, borderBottom: `1px solid ${penaltyActive ? "#ef444422" : theme.primary + "12"}`, backdropFilter: "blur(24px)", opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 480, margin: "0 auto", width: "100%" }}>
           {/* TOP ROW: Rank + Name + Exit */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
@@ -488,7 +489,7 @@ function App({ initialHunterName, onLogout }) {
 
             {/* ── HABITS & DAILY ROUTINE ── */}
             <div style={{ marginBottom: 24 }}>
-              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} />
+              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
@@ -948,7 +949,7 @@ function App({ initialHunterName, onLogout }) {
 
         {/* ═══ GOALS ═══ */}
         {view === "goals" && (
-          <GoalFramework state={state} persist={persist} notify={notify} theme={theme} />
+          <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
         )}
 
         {/* ═══ CALENDAR ═══ */}
@@ -973,7 +974,7 @@ function App({ initialHunterName, onLogout }) {
       </main>
 
       {/* BOTTOM NAV */}
-      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}` }}>
+      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
           {[{ key: "dashboard", icon: "📋", label: "Heute" }, { key: "training", icon: "🎯", label: "Ziele" }, { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length }, { key: "story", icon: "📖", label: "Story" }, { key: "system", icon: "⚙️", label: "System" }].map(tab => (
             <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
@@ -1002,7 +1003,7 @@ function App({ initialHunterName, onLogout }) {
 
             {/* Training modules combined */}
             <div style={{ marginBottom: 32 }}>
-              <GoalFramework state={state} persist={persist} notify={notify} theme={theme} />
+              <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
@@ -1012,12 +1013,16 @@ function App({ initialHunterName, onLogout }) {
             </div>
 
             <div style={{ marginBottom: 32 }}>
-              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} />
+              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
               <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
               <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
+              <button onClick={() => setShowCreate(true)} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 9, fontWeight: 700, background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.28)", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.2)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+              >⚔️ QUEST</button>
               <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
             </div>
 

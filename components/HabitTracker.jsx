@@ -9,8 +9,8 @@ const HABIT_CATEGORIES = [
     { key: "fitness", icon: "💪", label: "Fitness", color: "#ef4444" },
     { key: "learning", icon: "📖", label: "Lernen", color: "#3b82f6" },
     { key: "health", icon: "🧘", label: "Gesundheit", color: "#22c55e" },
-    { key: "productivity", icon: "⚡", label: "Produktivität", color: "#f59e0b" },
-    { key: "social", icon: "👥", label: "Soziales", color: "#a855f7" },
+    { key: "productivity", icon: "⚡", label: "Produktiv", color: "#f59e0b" },
+    { key: "social", icon: "👥", label: "Sozial", color: "#a855f7" },
     { key: "mindfulness", icon: "🧠", label: "Achtsamkeit", color: "#06b6d4" },
 ];
 
@@ -59,7 +59,6 @@ function HabitTimer({ targetMinutes, onComplete, theme }) {
 
     return (
         <div style={{ textAlign: "center", padding: "16px 0" }}>
-            {/* Circular progress */}
             <div style={{ position: "relative", width: 120, height: 120, margin: "0 auto 16px" }}>
                 <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
                     <circle cx="60" cy="60" r="54" fill="none" stroke="#1e293b" strokeWidth="6" />
@@ -68,17 +67,11 @@ function HabitTimer({ targetMinutes, onComplete, theme }) {
                         strokeWidth="6" strokeLinecap="round"
                         strokeDasharray={`${2 * Math.PI * 54}`}
                         strokeDashoffset={`${2 * Math.PI * 54 * (1 - progress / 100)}`}
-                        style={{ transition: "stroke-dashoffset 0.5s ease" }}
+                        style={{ transition: "stroke-dashoffset 0.5s ease", filter: `drop-shadow(0 0 6px ${done ? "#22c55e" : (theme?.primary || "#22d3ee")})` }}
                     />
                 </svg>
-                <div style={{
-                    position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-                    alignItems: "center", justifyContent: "center",
-                }}>
-                    <div style={{
-                        fontSize: 28, fontWeight: 900, color: done ? "#22c55e" : "#fff",
-                        fontFamily: "'JetBrains Mono',monospace",
-                    }}>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: done ? "#22c55e" : "#fff", fontFamily: "'JetBrains Mono',monospace" }}>
                         {done ? "✓" : `${mm}:${ss}`}
                     </div>
                     <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
@@ -89,46 +82,33 @@ function HabitTimer({ targetMinutes, onComplete, theme }) {
 
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                 {!done && (
-                    <button
-                        onClick={() => setRunning(!running)}
-                        style={{
-                            padding: "10px 28px", borderRadius: 12, fontSize: 12, fontWeight: 700,
-                            background: running ? "rgba(239,68,68,0.15)" : `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
-                            color: running ? "#ef4444" : (theme?.accent || "#67e8f9"),
-                            border: `1px solid ${running ? "#ef444444" : (theme?.primary || "#22d3ee") + "44"}`,
-                            fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
-                        }}
-                    >
+                    <button onClick={() => setRunning(!running)} style={{
+                        padding: "10px 28px", borderRadius: 12, fontSize: 12, fontWeight: 700,
+                        background: running ? "rgba(239,68,68,0.15)" : `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
+                        color: running ? "#ef4444" : (theme?.accent || "#67e8f9"),
+                        border: `1px solid ${running ? "#ef444444" : (theme?.primary || "#22d3ee") + "44"}`,
+                        fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
+                    }}>
                         {running ? "⏸ PAUSE" : "▶ START"}
                     </button>
                 )}
                 {done && (
-                    <button
-                        onClick={onComplete}
-                        style={{
-                            padding: "10px 28px", borderRadius: 12, fontSize: 12, fontWeight: 700,
-                            background: "linear-gradient(135deg,#22c55e22,#22c55e08)",
-                            color: "#22c55e",
-                            border: "1px solid #22c55e44",
-                            fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
-                            animation: "pulse 2s infinite",
-                        }}
-                    >
+                    <button onClick={onComplete} style={{
+                        padding: "10px 28px", borderRadius: 12, fontSize: 12, fontWeight: 700,
+                        background: "linear-gradient(135deg,#22c55e22,#22c55e08)",
+                        color: "#22c55e", border: "1px solid #22c55e44",
+                        fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
+                        animation: "pulse 2s infinite",
+                    }}>
                         ✓ ABSCHLIESSEN
                     </button>
                 )}
                 {!done && elapsed > 0 && (
-                    <button
-                        onClick={() => { setElapsed(0); setRunning(false); }}
-                        style={{
-                            padding: "10px 16px", borderRadius: 12, fontSize: 12, fontWeight: 700,
-                            background: "transparent", color: "#475569",
-                            border: "1px solid #1e2940",
-                            fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
-                        }}
-                    >
-                        ↺
-                    </button>
+                    <button onClick={() => { setElapsed(0); setRunning(false); }} style={{
+                        padding: "10px 16px", borderRadius: 12, fontSize: 12, fontWeight: 700,
+                        background: "transparent", color: "#475569", border: "1px solid #1e2940",
+                        fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
+                    }}>↺</button>
                 )}
             </div>
         </div>
@@ -142,10 +122,7 @@ function HabitCounter({ target, current, onUpdate, theme }) {
 
     return (
         <div style={{ textAlign: "center", padding: "12px 0" }}>
-            <div style={{
-                fontSize: 36, fontWeight: 900, color: done ? "#22c55e" : "#fff",
-                fontFamily: "'Cinzel',serif", marginBottom: 8,
-            }}>
+            <div style={{ fontSize: 36, fontWeight: 900, color: done ? "#22c55e" : "#fff", fontFamily: "'Cinzel',serif", marginBottom: 8 }}>
                 {current}<span style={{ fontSize: 16, color: "#475569" }}>/{target}</span>
             </div>
             <div style={{ height: 6, background: "#0f0f1e", borderRadius: 3, overflow: "hidden", marginBottom: 12 }}>
@@ -181,159 +158,174 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
     return (
         <div
             style={{
-                background: completed ? "rgba(34,197,94,0.06)" : (theme?.card || "rgba(10,10,22,0.88)"),
-                border: `1px solid ${completed ? "#22c55e33" : cat.color + "22"}`,
+                background: completed
+                    ? "rgba(34,197,94,0.06)"
+                    : `radial-gradient(ellipse at 5% 50%, ${cat.color}08 0%, ${theme?.card || "rgba(10,10,22,0.92)"} 55%)`,
+                border: `1px solid ${completed ? "#22c55e33" : cat.color + "1a"}`,
                 borderLeft: `3px solid ${completed ? "#22c55e" : cat.color}`,
                 borderRadius: 16, padding: "14px 16px", marginBottom: 10,
-                backdropFilter: "blur(8px)",
-                transition: "all 0.3s ease",
+                backdropFilter: "blur(12px)",
+                transition: "all 0.3s cubic-bezier(0.23,1,0.32,1)",
                 cursor: "pointer",
+                position: "relative", overflow: "hidden",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)",
+                transform: "perspective(800px) rotateX(0deg) translateZ(0)",
+            }}
+            onMouseEnter={e => {
+                e.currentTarget.style.transform = "perspective(800px) rotateX(-1deg) translateZ(4px) translateY(-2px)";
+                e.currentTarget.style.boxShadow = `0 10px 36px rgba(0,0,0,0.5), 0 0 16px ${completed ? "#22c55e" : cat.color}1a, inset 0 1px 0 rgba(255,255,255,0.06)`;
+                e.currentTarget.style.borderLeftWidth = "4px";
+            }}
+            onMouseLeave={e => {
+                e.currentTarget.style.transform = "perspective(800px) rotateX(0deg) translateZ(0)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)";
+                e.currentTarget.style.borderLeftWidth = "3px";
+            }}
+            onTouchEnd={e => {
+                e.currentTarget.style.transform = "perspective(800px) rotateX(0deg) translateZ(0)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)";
+                e.currentTarget.style.borderLeftWidth = "3px";
             }}
             onClick={() => setExpanded(!expanded)}
         >
-            {/* Header row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                    width: 42, height: 42, borderRadius: 12,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: completed ? "#22c55e15" : cat.color + "12",
-                    border: `1px solid ${completed ? "#22c55e33" : cat.color + "33"}`,
-                    fontSize: 22,
-                }}>
-                    {completed ? "✓" : habit.icon || cat.icon}
-                </div>
-                <div style={{ flex: 1 }}>
+            {/* Scan-line overlay */}
+            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", borderRadius: 16, background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.009) 3px, rgba(255,255,255,0.009) 4px)", zIndex: 0 }} />
+            {/* Top shine edge */}
+            <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: `linear-gradient(90deg, transparent, ${completed ? "#22c55e" : cat.color}55, transparent)`, pointerEvents: "none", zIndex: 2 }} />
+
+            <div style={{ position: "relative", zIndex: 1 }}>
+                {/* Header row */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{
-                        fontSize: 13, fontWeight: 700,
-                        color: completed ? "#22c55e" : "#e2e8f0",
-                        fontFamily: "'Cinzel',serif",
-                        textDecoration: completed ? "line-through" : "none",
-                        opacity: completed ? 0.7 : 1,
+                        width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: completed ? "#22c55e18" : cat.color + "18",
+                        border: `1px solid ${completed ? "#22c55e55" : cat.color + "55"}`,
+                        fontSize: 22,
+                        boxShadow: `0 0 10px ${completed ? "#22c55e" : cat.color}22`,
                     }}>
-                        {habit.title}
+                        {completed ? "✓" : habit.icon || cat.icon}
                     </div>
-                    <div style={{ display: "flex", gap: 6, marginTop: 3, flexWrap: "wrap" }}>
-                        <span style={{
-                            fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4,
-                            background: cat.color + "15", fontFamily: "'JetBrains Mono',monospace",
-                        }}>{cat.icon} {cat.label}</span>
-                        {streak > 0 && (
-                            <span style={{
-                                fontSize: 8, color: "#f59e0b", padding: "1px 5px", borderRadius: 4,
-                                background: "#f59e0b15", fontFamily: "'JetBrains Mono',monospace",
-                            }}>🔥 {streak}d</span>
-                        )}
-                        {habit.verification === "timer" && (
-                            <span style={{
-                                fontSize: 8, color: "#06b6d4", padding: "1px 5px", borderRadius: 4,
-                                background: "#06b6d415", fontFamily: "'JetBrains Mono',monospace",
-                            }}>⏱️ {habit.targetMinutes}min</span>
-                        )}
-                        {habit.verification === "counter" && (
-                            <span style={{
-                                fontSize: 8, color: "#a855f7", padding: "1px 5px", borderRadius: 4,
-                                background: "#a855f715", fontFamily: "'JetBrains Mono',monospace",
-                            }}>🔢 {todayLog?.counterValue || 0}/{habit.targetCount}</span>
-                        )}
-                    </div>
-                </div>
-                {!completed && habit.verification === "manual" && (
-                    <button
-                        onClick={e => { e.stopPropagation(); onComplete(habit.id); }}
-                        style={{
-                            padding: "8px 14px", borderRadius: 10, fontSize: 10, fontWeight: 700,
-                            background: `linear-gradient(135deg,${cat.color}22,transparent)`,
-                            color: cat.color, border: `1px solid ${cat.color}44`,
-                            fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
-                        }}
-                    >
-                        DONE
-                    </button>
-                )}
-            </div>
-
-            {/* Expanded view */}
-            {expanded && (
-                <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                    {/* Stats row */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 12 }}>
-                        {[
-                            { label: "Streak", value: `${streak}d`, color: "#f59e0b" },
-                            { label: "Best", value: `${bestStreak}d`, color: "#a855f7" },
-                            { label: "Total", value: totalCompletions, color: "#22d3ee" },
-                            { label: "Rate", value: `${completionRate}%`, color: completionRate >= 80 ? "#22c55e" : completionRate >= 50 ? "#f59e0b" : "#ef4444" },
-                        ].map(s => (
-                            <div key={s.label} style={{
-                                textAlign: "center", padding: "6px 4px",
-                                background: "rgba(255,255,255,0.02)", borderRadius: 8,
-                            }}>
-                                <div style={{ fontSize: 14, fontWeight: 800, color: s.color, fontFamily: "'Cinzel',serif" }}>{s.value}</div>
-                                <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{s.label}</div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Timer / Counter view */}
-                    {!completed && habit.verification === "timer" && (
-                        <HabitTimer
-                            targetMinutes={habit.targetMinutes}
-                            onComplete={() => onComplete(habit.id)}
-                            theme={theme}
-                        />
-                    )}
-                    {!completed && habit.verification === "counter" && (
-                        <HabitCounter
-                            target={habit.targetCount}
-                            current={todayLog?.counterValue || 0}
-                            onUpdate={(val) => onCounterUpdate(habit.id, val)}
-                            theme={theme}
-                        />
-                    )}
-
-                    {/* 7-day mini heatmap */}
-                    <div style={{ marginTop: 8 }}>
-                        <div style={{ fontSize: 8, color: "#334155", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 6 }}>LETZTE 7 TAGE</div>
-                        <div style={{ display: "flex", gap: 4 }}>
-                            {Array.from({ length: 7 }).map((_, i) => {
-                                const d = new Date();
-                                d.setDate(d.getDate() - (6 - i));
-                                const dateKey = d.toISOString().slice(0, 10);
-                                const log = habit.history?.[dateKey];
-                                const dayName = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][d.getDay()];
-                                return (
-                                    <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                                        <div style={{ fontSize: 8, color: "#334155", marginBottom: 3, fontFamily: "'JetBrains Mono',monospace" }}>{dayName}</div>
-                                        <div style={{
-                                            width: "100%", height: 20, borderRadius: 4,
-                                            background: log?.completed ? "#22c55e33" : "rgba(255,255,255,0.03)",
-                                            border: `1px solid ${log?.completed ? "#22c55e44" : "#1e294022"}`,
-                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                            fontSize: 10, color: log?.completed ? "#22c55e" : "#1e2940",
-                                        }}>
-                                            {log?.completed ? "✓" : "·"}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                            fontSize: 13, fontWeight: 700,
+                            color: completed ? "#22c55e" : "#e2e8f0",
+                            fontFamily: "'Cinzel',serif",
+                            textDecoration: completed ? "line-through" : "none",
+                            opacity: completed ? 0.7 : 1,
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                        }}>
+                            {habit.title}
+                        </div>
+                        <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "18", fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon} {cat.label}</span>
+                            {streak > 0 && (
+                                <span style={{ fontSize: 8, color: streak >= 5 ? "#f97316" : "#f59e0b", padding: "1px 5px", borderRadius: 4, background: "#f59e0b15", fontFamily: "'JetBrains Mono',monospace" }}>
+                                    <span style={{ display: "inline-block", animation: streak >= 3 ? "fireGlow 1.5s ease-in-out infinite" : "none" }}>🔥</span> {streak}d
+                                </span>
+                            )}
+                            {habit.verification === "timer" && (
+                                <span style={{ fontSize: 8, color: "#06b6d4", padding: "1px 5px", borderRadius: 4, background: "#06b6d415", fontFamily: "'JetBrains Mono',monospace" }}>⏱️ {habit.targetMinutes}min</span>
+                            )}
+                            {habit.verification === "counter" && (
+                                <span style={{ fontSize: 8, color: "#a855f7", padding: "1px 5px", borderRadius: 4, background: "#a855f715", fontFamily: "'JetBrains Mono',monospace" }}>🔢 {todayLog?.counterValue || 0}/{habit.targetCount}</span>
+                            )}
                         </div>
                     </div>
-                    {/* Action Buttons */}
-                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+                    {!completed && habit.verification === "manual" && (
                         <button
-                            onClick={(e) => { e.stopPropagation(); onEdit(habit); }}
-                            style={{ padding: "8px 12px", borderRadius: 8, fontSize: 10, background: "rgba(34,211,238,0.1)", color: "#22d3ee", border: "1px solid #22d3ee33", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
+                            onClick={e => { e.stopPropagation(); onComplete(habit.id); }}
+                            style={{
+                                padding: "7px 12px", borderRadius: 9, fontSize: 9, fontWeight: 700,
+                                background: `linear-gradient(135deg,${cat.color}22,transparent)`,
+                                color: cat.color, border: `1px solid ${cat.color}44`,
+                                fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
+                                flexShrink: 0, transition: "all 0.2s",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = `linear-gradient(135deg,${cat.color}35,${cat.color}10)`; e.currentTarget.style.boxShadow = `0 0 12px ${cat.color}33`; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(135deg,${cat.color}22,transparent)`; e.currentTarget.style.boxShadow = "none"; }}
                         >
-                            BEARBEITEN
+                            DONE
                         </button>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onDelete(habit.id); }}
-                            style={{ padding: "8px 12px", borderRadius: 8, fontSize: 10, background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid #ef444433", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
-                        >
-                            LÖSCHEN
-                        </button>
-                    </div>
+                    )}
                 </div>
-            )}
+
+                {/* Expanded view */}
+                {expanded && (
+                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${cat.color}18` }}>
+                        {/* Stats row */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 12 }}>
+                            {[
+                                { label: "Streak", value: streak > 0 ? `${streak}d` : "0", color: streak >= 5 ? "#f97316" : "#f59e0b", fire: streak >= 3 },
+                                { label: "Best", value: `${bestStreak}d`, color: "#a855f7", fire: false },
+                                { label: "Total", value: totalCompletions, color: theme?.primary || "#22d3ee", fire: false },
+                                { label: "Rate", value: `${completionRate}%`, color: completionRate >= 80 ? "#22c55e" : completionRate >= 50 ? "#f59e0b" : "#ef4444", fire: false },
+                            ].map(s => (
+                                <div key={s.label} style={{
+                                    textAlign: "center", padding: "7px 4px",
+                                    background: "rgba(255,255,255,0.025)", borderRadius: 8,
+                                    border: "1px solid rgba(255,255,255,0.04)",
+                                }}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: s.color, fontFamily: "'Cinzel',serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+                                        {s.fire && <span style={{ fontSize: 11, animation: "fireGlow 1.5s ease-in-out infinite", display: "inline-block" }}>🔥</span>}
+                                        {s.value}
+                                    </div>
+                                    <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{s.label}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Timer / Counter view */}
+                        {!completed && habit.verification === "timer" && (
+                            <HabitTimer targetMinutes={habit.targetMinutes} onComplete={() => onComplete(habit.id)} theme={theme} />
+                        )}
+                        {!completed && habit.verification === "counter" && (
+                            <HabitCounter target={habit.targetCount} current={todayLog?.counterValue || 0} onUpdate={(val) => onCounterUpdate(habit.id, val)} theme={theme} />
+                        )}
+
+                        {/* 7-day mini heatmap */}
+                        <div style={{ marginTop: 10 }}>
+                            <div style={{ fontSize: 8, color: "#334155", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 6 }}>LETZTE 7 TAGE</div>
+                            <div style={{ display: "flex", gap: 4 }}>
+                                {Array.from({ length: 7 }).map((_, i) => {
+                                    const d = new Date();
+                                    d.setDate(d.getDate() - (6 - i));
+                                    const dateKey = d.toISOString().slice(0, 10);
+                                    const log = habit.history?.[dateKey];
+                                    const dayName = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][d.getDay()];
+                                    return (
+                                        <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                                            <div style={{ fontSize: 7, color: "#334155", marginBottom: 3, fontFamily: "'JetBrains Mono',monospace" }}>{dayName}</div>
+                                            <div style={{
+                                                width: "100%", height: 20, borderRadius: 4,
+                                                background: log?.completed ? cat.color + "25" : "rgba(255,255,255,0.03)",
+                                                border: `1px solid ${log?.completed ? cat.color + "44" : "#1e294022"}`,
+                                                display: "flex", alignItems: "center", justifyContent: "center",
+                                                fontSize: 9, color: log?.completed ? cat.color : "#1e2940",
+                                                boxShadow: log?.completed ? `0 0 6px ${cat.color}22` : "none",
+                                            }}>
+                                                {log?.completed ? "✓" : "·"}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+                            <button onClick={(e) => { e.stopPropagation(); onEdit(habit); }}
+                                style={{ padding: "7px 12px", borderRadius: 8, fontSize: 9, background: `${theme?.primary || "#22d3ee"}12`, color: theme?.primary || "#22d3ee", border: `1px solid ${theme?.primary || "#22d3ee"}33`, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 1 }}>
+                                BEARBEITEN
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); onDelete(habit.id); }}
+                                style={{ padding: "7px 12px", borderRadius: 8, fontSize: 9, background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid #ef444433", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 1 }}>
+                                LÖSCHEN
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -349,7 +341,7 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
     const [targetCount, setTargetCount] = useState(initialHabit?.targetCount || 10);
     const [icon, setIcon] = useState(initialHabit?.icon || "");
 
-    const cat = HABIT_CATEGORIES.find(c => c.key === category);
+    const cat = HABIT_CATEGORIES.find(c => c.key === category) || HABIT_CATEGORIES[0];
 
     const handleSave = () => {
         if (!title.trim()) return;
@@ -376,139 +368,172 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
     return (
         <div onClick={onClose} style={{
             position: "fixed", inset: 0, zIndex: 500,
-            background: "rgba(2,2,10,0.92)", backdropFilter: "blur(16px)",
+            background: "rgba(2,2,10,0.95)", backdropFilter: "blur(20px)",
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 16, animation: "fadeIn 0.25s ease",
         }}>
             <div onClick={e => e.stopPropagation()} style={{
-                width: "100%", maxWidth: 440, maxHeight: "90vh", overflowY: "auto",
-                background: `linear-gradient(180deg,${theme?.card || "rgba(10,10,22,0.95)"},rgba(6,6,16,0.99))`,
+                width: "100%", maxWidth: 440, maxHeight: "100dvh", overflowY: "auto",
+                background: `linear-gradient(180deg,${theme?.card || "rgba(10,10,22,0.98)"},rgba(4,4,14,0.99))`,
                 border: `1px solid ${theme?.primary || "#22d3ee"}33`,
                 borderTop: `2px solid ${theme?.primary || "#22d3ee"}`,
                 borderRadius: 24, padding: 24,
                 animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                position: "relative", overflow: "hidden",
+                boxShadow: `0 0 80px ${theme?.glow || "rgba(34,211,238,0.14)"}, 0 24px 60px rgba(0,0,0,0.8)`,
             }}>
-                <div style={{ fontSize: 10, letterSpacing: 4, color: theme?.primary || "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>SYSTEM: {isEdit ? "HABIT ÄNDERN" : "NEUER HABIT"}</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2, marginBottom: 20 }}>{isEdit ? "Gewohnheit anpassen" : "Gewohnheit erstellen"}</div>
+                {/* Grid overlay */}
+                <div style={{ position: "absolute", inset: 0, borderRadius: 24, pointerEvents: "none", backgroundImage: `linear-gradient(${theme?.primary || "#22d3ee"}07 1px, transparent 1px), linear-gradient(90deg, ${theme?.primary || "#22d3ee"}07 1px, transparent 1px)`, backgroundSize: "24px 24px", maskImage: "radial-gradient(ellipse at 50% 0%, black 30%, transparent 72%)", WebkitMaskImage: "radial-gradient(ellipse at 50% 0%, black 30%, transparent 72%)", zIndex: 0 }} />
 
-                {/* Title */}
-                <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 6 }}>TITEL</label>
-                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="z.B. 30 Minuten Lesen"
-                    style={{
-                        width: "100%", padding: "12px 16px", borderRadius: 12, fontSize: 14, marginBottom: 16,
-                        background: "rgba(4,4,12,0.9)", border: `1px solid ${theme?.primary || "#22d3ee"}33`,
-                        color: "#fff", outline: "none", fontFamily: "'Outfit',sans-serif", boxSizing: "border-box",
-                    }} />
-
-                {/* Category */}
-                <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>KATEGORIE</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 16 }}>
-                    {HABIT_CATEGORIES.map(c => (
-                        <button key={c.key} onClick={() => setCategory(c.key)} style={{
-                            padding: "8px 4px", borderRadius: 10, fontSize: 10, fontWeight: 700,
-                            background: category === c.key ? c.color + "22" : "transparent",
-                            color: category === c.key ? c.color : "#475569",
-                            border: `1px solid ${category === c.key ? c.color + "55" : "#1e2940"}`,
-                            fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
-                            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                        }}>
-                            <span style={{ fontSize: 16 }}>{c.icon}</span>
-                            <span>{c.label}</span>
-                        </button>
-                    ))}
-                </div>
-
-                {/* Frequency */}
-                <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>FREQUENZ</label>
-                <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
-                    {FREQUENCY_OPTIONS.slice(0, 4).map(f => (
-                        <button key={f.key} onClick={() => setFrequency(f.key)} style={{
-                            flex: 1, padding: "8px 6px", borderRadius: 10, fontSize: 9, fontWeight: 700,
-                            background: frequency === f.key ? `${theme?.primary || "#22d3ee"}22` : "transparent",
-                            color: frequency === f.key ? (theme?.accent || "#67e8f9") : "#475569",
-                            border: `1px solid ${frequency === f.key ? (theme?.primary || "#22d3ee") + "55" : "#1e2940"}`,
-                            fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
-                        }}>
-                            {f.icon} {f.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Verification */}
-                <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>VERIFIZIERUNG</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 16 }}>
-                    {VERIFICATION_TYPES.map(v => (
-                        <button key={v.key} onClick={() => setVerification(v.key)} style={{
-                            padding: "10px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700,
-                            background: verification === v.key ? `${theme?.primary || "#22d3ee"}22` : "transparent",
-                            color: verification === v.key ? (theme?.accent || "#67e8f9") : "#475569",
-                            border: `1px solid ${verification === v.key ? (theme?.primary || "#22d3ee") + "55" : "#1e2940"}`,
-                            fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
-                            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                        }}>
-                            <span style={{ fontSize: 16 }}>{v.icon}</span>
-                            <span>{v.label}</span>
-                            <span style={{ fontSize: 7, opacity: 0.6 }}>{v.desc}</span>
-                        </button>
-                    ))}
-                </div>
-
-                {/* Timer target */}
-                {verification === "timer" && (
-                    <div style={{ marginBottom: 16 }}>
-                        <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>ZIELZEIT (MINUTEN)</label>
-                        <div style={{ display: "flex", gap: 6 }}>
-                            {[5, 10, 15, 20, 30, 45, 60, 90].map(m => (
-                                <button key={m} onClick={() => setTargetMinutes(m)} style={{
-                                    flex: 1, padding: "8px 2px", borderRadius: 8, fontSize: 10, fontWeight: 700,
-                                    background: targetMinutes === m ? "#06b6d422" : "transparent",
-                                    color: targetMinutes === m ? "#22d3ee" : "#475569",
-                                    border: `1px solid ${targetMinutes === m ? "#06b6d455" : "#1e2940"}`,
-                                    fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
-                                }}>
-                                    {m}
-                                </button>
-                            ))}
+                <div style={{ position: "relative", zIndex: 1 }}>
+                    {/* Header with diamond decoration */}
+                    <div style={{ position: "relative", marginBottom: 20, paddingTop: 4 }}>
+                        <div style={{ position: "absolute", top: -8, right: 0, width: 48, height: 48, background: `linear-gradient(135deg, ${theme?.primary || "#22d3ee"}14, transparent)`, clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", animation: "breathe 3s ease-in-out infinite", pointerEvents: "none" }} />
+                        <div style={{ fontSize: 9, letterSpacing: 4, color: theme?.primary || "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>[ SYSTEM: {isEdit ? "HABIT ÄNDERN" : "NEUER HABIT"} ]</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 1, textShadow: `0 0 20px ${theme?.primary || "#22d3ee"}33` }}>
+                            {isEdit ? "Gewohnheit anpassen" : "Gewohnheit erstellen"}
                         </div>
+                        <div style={{ height: 1, marginTop: 10, background: `linear-gradient(90deg, ${theme?.primary || "#22d3ee"}55, transparent)` }} />
                     </div>
-                )}
 
-                {/* Counter target */}
-                {verification === "counter" && (
-                    <div style={{ marginBottom: 16 }}>
-                        <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>ZIEL-ANZAHL</label>
-                        <input type="number" value={targetCount} onChange={e => setTargetCount(parseInt(e.target.value) || 1)}
-                            style={{
-                                width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 14,
-                                background: "rgba(4,4,12,0.9)", border: `1px solid ${theme?.primary || "#22d3ee"}33`,
-                                color: "#fff", outline: "none", fontFamily: "'JetBrains Mono',monospace", boxSizing: "border-box",
-                            }} />
+                    {/* Title */}
+                    <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 6 }}>TITEL</label>
+                    <input value={title} onChange={e => setTitle(e.target.value)} placeholder="z.B. 30 Minuten Lesen"
+                        style={{ width: "100%", padding: "12px 16px", borderRadius: 12, fontSize: 14, marginBottom: 16, background: "rgba(4,4,12,0.9)", border: `1px solid ${theme?.primary || "#22d3ee"}33`, color: "#fff", outline: "none", fontFamily: "'Outfit',sans-serif", boxSizing: "border-box" }}
+                        onFocus={e => { e.target.style.borderColor = theme?.primary || "#22d3ee"; e.target.style.boxShadow = `0 0 16px ${theme?.glow || "rgba(34,211,238,0.2)"}`; }}
+                        onBlur={e => { e.target.style.borderColor = `${theme?.primary || "#22d3ee"}33`; e.target.style.boxShadow = "none"; }}
+                    />
+
+                    {/* Category */}
+                    <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>KATEGORIE</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 16 }}>
+                        {HABIT_CATEGORIES.map(c => (
+                            <button key={c.key} onClick={() => setCategory(c.key)} style={{
+                                padding: "8px 4px", borderRadius: 10, fontSize: 9, fontWeight: 700,
+                                background: category === c.key ? c.color + "25" : "rgba(4,4,12,0.8)",
+                                color: category === c.key ? c.color : "#475569",
+                                border: `1px solid ${category === c.key ? c.color + "66" : "#1e2940"}`,
+                                fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
+                                display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                                transition: "all 0.15s cubic-bezier(0.23,1,0.32,1)",
+                                transform: category === c.key ? "scale(0.93) translateY(1px)" : "scale(1)",
+                                boxShadow: category === c.key ? `0 0 14px ${c.color}33, inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)` : "none",
+                            }}
+                                onMouseEnter={e => { if (category !== c.key) { e.currentTarget.style.borderColor = c.color + "44"; e.currentTarget.style.color = c.color + "aa"; } }}
+                                onMouseLeave={e => { if (category !== c.key) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
+                            >
+                                <span style={{ fontSize: 16 }}>{c.icon}</span>
+                                <span>{c.label}</span>
+                            </button>
+                        ))}
                     </div>
-                )}
 
-                {/* Create button */}
-                <button onClick={handleSave} disabled={!title.trim()} style={{
-                    width: "100%", padding: 14, borderRadius: 14, fontSize: 13, fontWeight: 900,
-                    background: title.trim() ? `linear-gradient(135deg,${theme?.primary || "#22d3ee"},${theme?.secondary || "#a855f7"})` : "rgba(15,15,30,0.6)",
-                    color: title.trim() ? "#fff" : "#334155",
-                    letterSpacing: 3, fontFamily: "'Cinzel',serif",
-                    boxShadow: title.trim() ? `0 8px 32px ${theme?.glow || "rgba(34,211,238,0.35)"}` : "none",
-                    cursor: title.trim() ? "pointer" : "not-allowed", border: "none",
-                }}>
-                    ✦ {isEdit ? "SPEICHERN" : "HABIT ERSTELLEN"} ✦
-                </button>
+                    {/* Frequency */}
+                    <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>FREQUENZ</label>
+                    <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+                        {FREQUENCY_OPTIONS.slice(0, 4).map(f => (
+                            <button key={f.key} onClick={() => setFrequency(f.key)} style={{
+                                flex: 1, padding: "8px 6px", borderRadius: 10, fontSize: 9, fontWeight: 700,
+                                background: frequency === f.key ? `${theme?.primary || "#22d3ee"}22` : "transparent",
+                                color: frequency === f.key ? (theme?.accent || "#67e8f9") : "#475569",
+                                border: `1px solid ${frequency === f.key ? (theme?.primary || "#22d3ee") + "55" : "#1e2940"}`,
+                                fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
+                                transition: "all 0.15s",
+                                transform: frequency === f.key ? "scale(0.96) translateY(1px)" : "scale(1)",
+                                boxShadow: frequency === f.key ? `inset 0 -2px 4px rgba(0,0,0,0.3)` : "none",
+                            }}>
+                                {f.icon} {f.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Verification */}
+                    <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>VERIFIZIERUNG</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 16 }}>
+                        {VERIFICATION_TYPES.map(v => (
+                            <button key={v.key} onClick={() => setVerification(v.key)} style={{
+                                padding: "10px 6px", borderRadius: 10, fontSize: 10, fontWeight: 700,
+                                background: verification === v.key ? `${theme?.primary || "#22d3ee"}22` : "transparent",
+                                color: verification === v.key ? (theme?.accent || "#67e8f9") : "#475569",
+                                border: `1px solid ${verification === v.key ? (theme?.primary || "#22d3ee") + "55" : "#1e2940"}`,
+                                fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
+                                display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                                transition: "all 0.15s",
+                                transform: verification === v.key ? "scale(0.95) translateY(1px)" : "scale(1)",
+                                boxShadow: verification === v.key ? `0 0 12px ${theme?.primary || "#22d3ee"}22, inset 0 -2px 4px rgba(0,0,0,0.3)` : "none",
+                            }}>
+                                <span style={{ fontSize: 16 }}>{v.icon}</span>
+                                <span>{v.label}</span>
+                                <span style={{ fontSize: 7, opacity: 0.6 }}>{v.desc}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Timer target */}
+                    {verification === "timer" && (
+                        <div style={{ marginBottom: 16 }}>
+                            <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>ZIELZEIT (MINUTEN)</label>
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                {[5, 10, 15, 20, 30, 45, 60, 90].map(m => (
+                                    <button key={m} onClick={() => setTargetMinutes(m)} style={{
+                                        flex: 1, minWidth: 36, padding: "8px 2px", borderRadius: 8, fontSize: 10, fontWeight: 700,
+                                        background: targetMinutes === m ? "#06b6d422" : "transparent",
+                                        color: targetMinutes === m ? "#22d3ee" : "#475569",
+                                        border: `1px solid ${targetMinutes === m ? "#06b6d455" : "#1e2940"}`,
+                                        fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
+                                        transition: "all 0.15s",
+                                        transform: targetMinutes === m ? "scale(0.93)" : "scale(1)",
+                                        boxShadow: targetMinutes === m ? "inset 0 -2px 4px rgba(0,0,0,0.3)" : "none",
+                                    }}>
+                                        {m}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Counter target */}
+                    {verification === "counter" && (
+                        <div style={{ marginBottom: 16 }}>
+                            <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>ZIEL-ANZAHL</label>
+                            <input type="number" value={targetCount} onChange={e => setTargetCount(parseInt(e.target.value) || 1)}
+                                style={{ width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 14, background: "rgba(4,4,12,0.9)", border: `1px solid ${theme?.primary || "#22d3ee"}33`, color: "#fff", outline: "none", fontFamily: "'JetBrains Mono',monospace", boxSizing: "border-box" }} />
+                        </div>
+                    )}
+
+                    {/* Create button */}
+                    <button onClick={handleSave} disabled={!title.trim()} style={{
+                        width: "100%", padding: 14, borderRadius: 14, fontSize: 12, fontWeight: 900,
+                        background: title.trim() ? `linear-gradient(135deg,${theme?.primary || "#22d3ee"},${theme?.secondary || "#a855f7"})` : "rgba(15,15,30,0.6)",
+                        color: title.trim() ? "#fff" : "#334155",
+                        letterSpacing: 3, fontFamily: "'Cinzel',serif",
+                        boxShadow: title.trim() ? `0 4px 20px ${theme?.glow || "rgba(34,211,238,0.3)"}` : "none",
+                        cursor: title.trim() ? "pointer" : "not-allowed", border: "none",
+                        transition: "all 0.2s",
+                    }}
+                        onMouseEnter={e => { if (title.trim()) e.currentTarget.style.transform = "translateY(-1px)"; }}
+                        onMouseLeave={e => { if (title.trim()) e.currentTarget.style.transform = "none"; }}
+                    >
+                        ✦ {isEdit ? "SPEICHERN" : "HABIT ERSTELLEN"} ✦
+                    </button>
+                </div>
             </div>
         </div>
     );
 }
 
 // ═══ MAIN COMPONENT ══════════════════════════════════════════
-export default function HabitTracker({ state, persist, notify, theme }) {
+export default function HabitTracker({ state, persist, notify, theme, onModalOpen, onModalClose }) {
     const [showCreate, setShowCreate] = useState(false);
     const [editingHabit, setEditingHabit] = useState(null);
     const [filter, setFilter] = useState("all");
     const habits = state?.habits || [];
     const today = getToday();
+
+    const openCreate = () => { setShowCreate(true); onModalOpen?.(); };
+    const closeCreate = () => { setShowCreate(false); onModalClose?.(); };
+    const openEdit = (habit) => { setEditingHabit(habit); onModalOpen?.(); };
+    const closeEdit = () => { setEditingHabit(null); onModalClose?.(); };
 
     const todayHabits = habits.filter(h => {
         if (!h.active) return false;
@@ -538,31 +563,22 @@ export default function HabitTracker({ state, persist, notify, theme }) {
                 bestStreak: Math.max(h.bestStreak || 0, newStreak),
                 totalCompletions: (h.totalCompletions || 0) + 1,
                 scheduledDays: (h.scheduledDays || 0) + (h.history?.[today]?.scheduled ? 0 : 1),
-                history: {
-                    ...h.history,
-                    [today]: { completed: true, completedAt: new Date().toISOString() },
-                },
+                history: { ...h.history, [today]: { completed: true, completedAt: new Date().toISOString() } },
             };
         });
 
-        // XP reward for habit completion
         const habit = habits.find(h => h.id === habitId);
         const baseXp = habit?.verification === "timer" ? 15 : habit?.verification === "counter" ? 12 : 8;
         const streakBonus = Math.min((habit?.currentStreak || 0), 10);
         const xpGain = baseXp + streakBonus;
 
-        // Synchronize linked quest if one exists
         const linkedQuestId = habit?.linkedQuestId;
         const updatedQuests = state.quests ? state.quests.map(q => {
             if (q.id === linkedQuestId && !q.completed) return { ...q, completed: true, completedAt: today };
             return q;
         }) : state.quests;
 
-        persist(calculateLevelUp({
-            ...state,
-            habits: updated,
-            quests: updatedQuests
-        }, xpGain));
+        persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpGain));
         notify(`Habit erledigt! +${xpGain} XP 🔥 Streak: ${(updated.find(h => h.id === habitId)?.currentStreak || 1)}`, "success");
     }, [habits, state, persist, notify, today]);
 
@@ -573,7 +589,6 @@ export default function HabitTracker({ state, persist, notify, theme }) {
             if (h.id !== habitId) return h;
             const reachedTarget = value >= h.targetCount;
             if (reachedTarget && !h.history?.[today]?.completed) {
-                // Auto-complete when target reached
                 const wasCompletedYesterday = (() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
@@ -588,10 +603,7 @@ export default function HabitTracker({ state, persist, notify, theme }) {
                     history: { ...h.history, [today]: { completed: true, counterValue: value, completedAt: new Date().toISOString() } },
                 };
             }
-            return {
-                ...h,
-                history: { ...h.history, [today]: { ...(h.history?.[today] || {}), counterValue: value } },
-            };
+            return { ...h, history: { ...h.history, [today]: { ...(h.history?.[today] || {}), counterValue: value } } };
         });
         const habitObj = habits.find(h => h.id === habitId);
         const xpToGain = (value >= habitObj.targetCount && !habitObj.history?.[today]?.completed) ? 12 : 0;
@@ -602,15 +614,13 @@ export default function HabitTracker({ state, persist, notify, theme }) {
             return q;
         }) : state.quests;
 
-        persist(calculateLevelUp({
-            ...state,
-            habits: updated,
-            quests: updatedQuests
-        }, xpToGain));
+        persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpToGain));
         if (value >= habit.targetCount && !habit.history?.[today]?.completed) {
             notify(`Ziel erreicht! 🎯 +12 XP`, "success");
         }
     }, [habits, state, persist, notify, today]);
+
+    const HABIT_TO_QUEST_CATEGORY = { fitness: "str", learning: "int", health: "vit", productivity: "agi", social: "cha", mindfulness: "vit" };
 
     const createHabit = useCallback((newHabit) => {
         let quest = null;
@@ -625,17 +635,13 @@ export default function HabitTracker({ state, persist, notify, theme }) {
                 timeLimit = d.toISOString();
             }
             quest = {
-                id: questId, title: newHabit.title, category: newHabit.category, difficulty: "normal",
+                id: questId, title: newHabit.title, category: HABIT_TO_QUEST_CATEGORY[newHabit.category] || "str", difficulty: "normal",
                 type: newHabit.frequency, createdAt: getToday(), createdAtMs: Date.now(),
                 linkedHabitId: newHabit.id,
                 ...(timeLimit ? { timeLimit } : {})
             };
         }
-        persist({
-            ...state,
-            habits: [...habits, newHabit],
-            ...(quest ? { quests: [...(state.quests || []), quest] } : {})
-        });
+        persist({ ...state, habits: [...habits, newHabit], ...(quest ? { quests: [...(state.quests || []), quest] } : {}) });
         notify(`Neuer Habit: "${newHabit.title}" erstellt!`, "info");
     }, [state, persist, notify, habits]);
 
@@ -653,62 +659,65 @@ export default function HabitTracker({ state, persist, notify, theme }) {
 
     return (
         <div style={{ animation: "fadeIn 0.35s ease" }}>
-            {showCreate && <CreateHabitModal onClose={() => setShowCreate(false)} onSave={createHabit} theme={theme} />}
-            {editingHabit && <CreateHabitModal onClose={() => setEditingHabit(null)} onSave={editHabit} initialHabit={editingHabit} theme={theme} />}
+            {showCreate && <CreateHabitModal onClose={closeCreate} onSave={createHabit} theme={theme} />}
+            {editingHabit && <CreateHabitModal onClose={closeEdit} onSave={editHabit} initialHabit={editingHabit} theme={theme} />}
 
             {/* Header with progress */}
             <div style={{
-                background: theme?.card || "rgba(10,10,22,0.88)",
+                background: `radial-gradient(ellipse at 90% 20%, ${theme?.primary || "#22d3ee"}0c, ${theme?.card || "rgba(10,10,22,0.92)"} 65%)`,
                 border: `1px solid ${theme?.primary || "#22d3ee"}15`,
                 borderRadius: 18, padding: "18px 20px", marginBottom: 14,
-                backdropFilter: "blur(12px)",
+                backdropFilter: "blur(16px)",
+                position: "relative", overflow: "hidden",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
             }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                    <div>
-                        <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>HABIT TRACKER</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>{completedToday}/{totalToday} heute erledigt</div>
-                    </div>
-                    <div style={{
-                        width: 56, height: 56, borderRadius: "50%",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        background: completionPct === 100 ? "#22c55e18" : `${theme?.primary || "#22d3ee"}12`,
-                        border: `2px solid ${completionPct === 100 ? "#22c55e55" : theme?.primary + "33" || "#22d3ee33"}`,
-                    }}>
-                        <span style={{
-                            fontSize: 16, fontWeight: 900,
-                            color: completionPct === 100 ? "#22c55e" : (theme?.accent || "#67e8f9"),
-                            fontFamily: "'Cinzel',serif",
+                {/* Grid pattern at top */}
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "60%", backgroundImage: `linear-gradient(${theme?.primary || "#22d3ee"}06 1px, transparent 1px), linear-gradient(90deg, ${theme?.primary || "#22d3ee"}06 1px, transparent 1px)`, backgroundSize: "20px 20px", pointerEvents: "none", maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 100%)" }} />
+
+                <div style={{ position: "relative", zIndex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                        <div>
+                            <div style={{ fontSize: 9, letterSpacing: 3, color: theme?.primary || "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>HABIT TRACKER</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif" }}>{completedToday}/{totalToday} heute erledigt</div>
+                        </div>
+                        <div style={{
+                            width: 54, height: 54, borderRadius: "50%",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            background: completionPct === 100 ? "#22c55e18" : `${theme?.primary || "#22d3ee"}12`,
+                            border: `2px solid ${completionPct === 100 ? "#22c55e55" : (theme?.primary || "#22d3ee") + "33"}`,
+                            boxShadow: completionPct === 100 ? "0 0 16px #22c55e33" : `0 0 12px ${theme?.glow || "rgba(34,211,238,0.15)"}`,
                         }}>
-                            {completionPct}%
-                        </span>
+                            <span style={{ fontSize: 14, fontWeight: 900, color: completionPct === 100 ? "#22c55e" : (theme?.accent || "#67e8f9"), fontFamily: "'Cinzel',serif" }}>
+                                {completionPct}%
+                            </span>
+                        </div>
                     </div>
-                </div>
-                {/* Progress bar */}
-                <div style={{ height: 6, background: "#0a0a14", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{
-                        width: `${completionPct}%`, height: "100%", borderRadius: 3,
-                        background: completionPct === 100
-                            ? "linear-gradient(90deg,#22c55e88,#22c55e)"
-                            : `linear-gradient(90deg,${theme?.primary || "#22d3ee"}88,${theme?.primary || "#22d3ee"})`,
-                        transition: "width 0.6s ease",
-                    }} />
+                    <div style={{ height: 5, background: "rgba(0,0,0,0.5)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{
+                            width: `${completionPct}%`, height: "100%", borderRadius: 3,
+                            background: completionPct === 100
+                                ? "linear-gradient(90deg,#22c55e88,#22c55e)"
+                                : `linear-gradient(90deg,${theme?.primary || "#22d3ee"}88,${theme?.primary || "#22d3ee"})`,
+                            transition: "width 0.6s ease",
+                            boxShadow: `0 0 6px ${completionPct === 100 ? "#22c55e" : theme?.primary || "#22d3ee"}66`,
+                        }} />
+                    </div>
                 </div>
             </div>
 
             {/* Category filter */}
             <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
-                {[
-                    { key: "all", label: "Alle", color: theme?.accent || "#67e8f9" },
-                    ...HABIT_CATEGORIES,
-                ].map(f => (
+                {[{ key: "all", label: "Alle", icon: "📋", color: theme?.accent || "#67e8f9" }, ...HABIT_CATEGORIES].map(f => (
                     <button key={f.key} onClick={() => setFilter(f.key)} style={{
                         padding: "5px 10px", borderRadius: 8, fontSize: 9, fontWeight: 700, flexShrink: 0,
                         background: filter === f.key ? f.color + "22" : "transparent",
                         color: filter === f.key ? f.color : "#475569",
                         border: `1px solid ${filter === f.key ? f.color + "55" : "#1e2940"}`,
                         fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
+                        transition: "all 0.15s",
+                        boxShadow: filter === f.key ? `0 0 8px ${f.color}22` : "none",
                     }}>
-                        {f.icon || "📋"} {f.label}
+                        {f.icon} {f.label}
                     </button>
                 ))}
             </div>
@@ -717,34 +726,33 @@ export default function HabitTracker({ state, persist, notify, theme }) {
             {todayHabits.length === 0 ? (
                 <div style={{
                     textAlign: "center", padding: "48px 24px",
-                    background: theme?.card || "rgba(10,10,22,0.88)",
+                    background: `radial-gradient(ellipse at 50% 0%, ${theme?.primary || "#22d3ee"}08, ${theme?.card || "rgba(10,10,22,0.88)"} 70%)`,
                     borderRadius: 16, border: `1px dashed ${theme?.primary || "#22d3ee"}22`,
+                    position: "relative", overflow: "hidden",
                 }}>
-                    <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.3, animation: "float 3s ease-in-out infinite" }}>🔄</div>
-                    <div style={{ fontSize: 14, color: "#475569", fontFamily: "'Cinzel',serif", marginBottom: 8 }}>Keine Habits vorhanden</div>
-                    <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
-                        Erstelle deine erste Gewohnheit und tracke deinen Fortschritt
+                    <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.007) 3px, rgba(255,255,255,0.007) 4px)", pointerEvents: "none" }} />
+                    <div style={{ position: "relative", zIndex: 1 }}>
+                        <div style={{ fontSize: 44, marginBottom: 12, animation: "float 3s ease-in-out infinite", filter: `drop-shadow(0 0 12px ${theme?.primary || "#22d3ee"}44)` }}>🔄</div>
+                        <div style={{ fontSize: 13, color: "#64748b", fontFamily: "'Cinzel',serif", marginBottom: 8 }}>Keine Habits vorhanden</div>
+                        <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>Erstelle deine erste Gewohnheit</div>
+                        <button onClick={openCreate} style={{
+                            padding: "10px 24px", borderRadius: 12, fontSize: 11, fontWeight: 700,
+                            background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
+                            color: theme?.accent || "#67e8f9", border: `1px solid ${theme?.primary || "#22d3ee"}44`,
+                            fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, cursor: "pointer",
+                        }}>✦ HABIT ERSTELLEN ✦</button>
                     </div>
-                    <button onClick={() => setShowCreate(true)} style={{
-                        padding: "10px 24px", borderRadius: 12, fontSize: 12, fontWeight: 700,
-                        background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
-                        color: theme?.accent || "#67e8f9",
-                        border: `1px solid ${theme?.primary || "#22d3ee"}44`,
-                        fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
-                    }}>
-                        + HABIT ERSTELLEN
-                    </button>
                 </div>
             ) : (
                 <>
-                    {todayHabits.map((habit, i) => (
+                    {todayHabits.map((habit) => (
                         <HabitCard
                             key={habit.id}
                             habit={habit}
                             todayLog={habit.history?.[today]}
                             onComplete={completeHabit}
                             onCounterUpdate={updateCounter}
-                            onEdit={setEditingHabit}
+                            onEdit={openEdit}
                             onDelete={deleteHabit}
                             theme={theme}
                         />
@@ -752,16 +760,19 @@ export default function HabitTracker({ state, persist, notify, theme }) {
                 </>
             )}
 
-            {/* Add button (fixed) */}
+            {/* Add button */}
             {todayHabits.length > 0 && (
-                <button onClick={() => setShowCreate(true)} style={{
-                    width: "100%", padding: 14, borderRadius: 14, fontSize: 12, fontWeight: 700,
-                    background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}12,transparent)`,
+                <button onClick={openCreate} style={{
+                    width: "100%", padding: 13, borderRadius: 14, fontSize: 11, fontWeight: 700,
+                    background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}10,transparent)`,
                     color: theme?.accent || "#67e8f9",
-                    border: `1px dashed ${theme?.primary || "#22d3ee"}33`,
+                    border: `1px dashed ${theme?.primary || "#22d3ee"}30`,
                     fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2,
-                    cursor: "pointer", marginTop: 8,
-                }}>
+                    cursor: "pointer", marginTop: 8, transition: "all 0.2s",
+                }}
+                    onMouseEnter={e => { e.currentTarget.style.background = `linear-gradient(135deg,${theme?.primary || "#22d3ee"}18,transparent)`; e.currentTarget.style.borderColor = `${theme?.primary || "#22d3ee"}55`; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(135deg,${theme?.primary || "#22d3ee"}10,transparent)`; e.currentTarget.style.borderColor = `${theme?.primary || "#22d3ee"}30`; }}
+                >
                     + NEUER HABIT
                 </button>
             )}

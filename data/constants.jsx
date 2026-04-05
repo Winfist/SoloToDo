@@ -1366,6 +1366,9 @@ input,select{font-family:inherit}
 @keyframes phaseWave{0%{background-position:0% 50%}100%{background-position:200% 50%}}
 @keyframes floorActiveGlow{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 12px var(--floor-color)}}
 @keyframes safeRoomGlow{0%,100%{box-shadow:0 0 6px #22c55e22}50%{box-shadow:0 0 20px #22c55e55}}
+@keyframes hexPulse{0%,100%{opacity:0.85}50%{opacity:1;filter:brightness(1.2)}}
+@keyframes shimmer{0%{left:-100%}100%{left:200%}}
+@keyframes fireGlow{0%,100%{filter:drop-shadow(0 0 4px #f97316) drop-shadow(0 -2px 8px #fbbf24)}50%{filter:drop-shadow(0 0 10px #ef4444) drop-shadow(0 -4px 16px #f97316)}}
 
 @media (max-width: 440px) {
   .header-hide-mobile { display: none !important; }
@@ -1993,8 +1996,8 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
   const [confirming, setConfirming] = useState(false);
   const [hover, setHover] = useState(false);
   const cardRef = useRef(null);
-  const diff = DIFFICULTIES.find(d => d.key === quest.difficulty);
-  const cat = CATEGORIES.find(c => c.key === quest.category);
+  const diff = DIFFICULTIES.find(d => d.key === quest.difficulty) || DIFFICULTIES[0];
+  const cat = CATEGORIES.find(c => c.key === quest.category) || CATEGORIES[0];
   const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
   const xpGain = Math.round((diff?.xp || 50) * (quest.chainMultiplier || 1) * (typeCfg.xpMult || 1));
   const goldGain = Math.round((diff?.gold || 25) * (quest.chainMultiplier || 1) * (typeCfg.goldMult || 1));
