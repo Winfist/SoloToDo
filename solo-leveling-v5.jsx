@@ -15,7 +15,6 @@ import GoalFramework from "./components/GoalFramework.jsx";
 import CalendarSchedule from "./components/CalendarSchedule.jsx";
 import FocusMode from "./components/FocusMode.jsx";
 import ChallengesSystem from "./components/ChallengesSystem.jsx";
-import HealthIntegration from "./components/HealthIntegration.jsx";
 import SettingsView from "./components/SettingsView.jsx";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 
@@ -632,48 +631,81 @@ function App({ initialHunterName, onLogout }) {
         {/* ═══ SHADOW ARMY ═══ */}
         {view === "shadows" && (
           <div style={{ animation: "fadeIn 0.35s ease" }}>
-            {/* Header card */}
-            <div style={{ background: `linear-gradient(135deg,rgba(8,6,20,0.95),rgba(12,8,28,0.9))`, border: `1px solid #7c3aed33`, borderRadius: 18, padding: "18px 20px", marginBottom: 16, backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, right: 0, width: 120, height: 120, background: "radial-gradient(circle at 100% 0%,#7c3aed15,transparent)", borderRadius: "0 18px 0 0" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                <div>
-                  <div style={{ fontSize: 9, letterSpacing: 4, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>SHADOW ARMY</div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1 }}>{totalShadows}<span style={{ fontSize: 14, color: "#475569", fontWeight: 400, marginLeft: 4 }}>/{shadowArmy.capacity}</span></div>
-                  {namedShadows.length > 0 && <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 4, fontFamily: "'JetBrains Mono',monospace" }}>★ {namedShadows.length} Named Shadow{namedShadows.length > 1 ? "s" : ""}</div>}
+            {/* Monarch's Banner */}
+            <div style={{ position: "relative", background: "linear-gradient(160deg,rgba(4,3,12,0.99) 0%,rgba(16,6,32,0.97) 100%)", border: "1px solid #7c3aed44", borderRadius: 20, padding: "22px 20px 16px", marginBottom: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(124,58,237,0.12), inset 0 1px 0 rgba(167,139,250,0.06)" }}>
+              {/* Rotating monarch rays */}
+              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 340, height: 340, background: "conic-gradient(from 0deg,transparent 0%,#7c3aed04 8%,transparent 16%)", animation: "monarchRays 25s linear infinite", pointerEvents: "none" }} />
+              {/* Central glow */}
+              <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)", width: 200, height: 200, background: "radial-gradient(circle,#7c3aed0d 0%,transparent 70%)", pointerEvents: "none" }} />
+
+              <div style={{ position: "relative" }}>
+                {/* Crown header */}
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                      <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,transparent,#7c3aed66)" }} />
+                      <div style={{ fontSize: 7, letterSpacing: 5, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>SHADOW MONARCHIE</div>
+                      <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,#7c3aed66,transparent)" }} />
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: "#e2e8f0", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 30px #7c3aed55, 0 2px 4px rgba(0,0,0,0.8)" }}>Schattenarmee</div>
+                    {namedShadows.length > 0 && (
+                      <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ animation: "namedGlow 2s ease-in-out infinite", filter: "drop-shadow(0 0 4px #f59e0b88)", fontSize: 10 }}>★</span>
+                        {namedShadows.length} Named Shadow{namedShadows.length > 1 ? "s" : ""}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: "center", padding: "10px 16px", background: "rgba(124,58,237,0.08)", border: "1px solid #7c3aed33", borderRadius: 14 }}>
+                    <div style={{ fontSize: 36, fontWeight: 900, color: "#a78bfa", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 20px #7c3aed88" }}>{totalShadows}</div>
+                    <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 2 }}>/{shadowArmy.capacity} KAPAZITÄT</div>
+                  </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
-                  {[{ label: "Deployed", value: shadowArmy.shadows.filter(s => s.isDeployed).length, color: "#22c55e" }, { label: "Dungeon", value: `+${formationBonus.dungeonBonus}%`, color: "#ef4444" }, { label: "XP Bonus", value: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa" }].map(({ label, value, color }) => (
-                    <div key={label} style={{ padding: "6px 8px", background: "rgba(255,255,255,0.03)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color, fontFamily: "'Cinzel',serif" }}>{value}</div>
-                      <div style={{ fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 1 }}>{label}</div>
+
+                {/* Stats orbs */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+                  {[
+                    { label: "Stationiert", value: shadowArmy.shadows.filter(s => s.isDeployed).length, color: "#22c55e", icon: "🌑" },
+                    { label: "Dungeon-Boost", value: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", icon: "⚔️" },
+                    { label: "XP-Boost", value: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", icon: "✦" }
+                  ].map(({ label, value, color, icon }) => (
+                    <div key={label} style={{ padding: "10px 6px", background: `radial-gradient(circle at 50% 0%,${color}14,${color}04)`, borderRadius: 12, border: `1px solid ${color}25`, textAlign: "center" }}>
+                      <div style={{ fontSize: 13, marginBottom: 4 }}>{icon}</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color, fontFamily: "'Cinzel',serif", lineHeight: 1 }}>{value}</div>
+                      <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 3, letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
                     </div>
                   ))}
                 </div>
-              </div>
-              {/* Capacity bar */}
-              <div style={{ height: 4, background: "#0a0a14", borderRadius: 2, overflow: "hidden" }}>
-                <div style={{ width: `${(totalShadows / shadowArmy.capacity) * 100}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#7c3aed88,#a78bfa)", transition: "width 0.6s ease" }} />
-              </div>
-              {/* Sub nav */}
-              <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
-                {[{ key: "army", label: "Armee", icon: "🌑" }, { key: "formation", label: "Formation", icon: "⚔️" }, { key: "named", label: "Named", icon: "★" }].map(sv => (
-                  <button key={sv.key} onClick={() => setShadowSubView(sv.key)} style={{ flex: 1, padding: "7px 4px", borderRadius: 9, fontSize: 10, fontWeight: 700, background: shadowSubView === sv.key ? "#7c3aed22" : "transparent", color: shadowSubView === sv.key ? "#a78bfa" : "#475569", border: `1px solid ${shadowSubView === sv.key ? "#7c3aed44" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, transition: "all 0.2s" }}>
-                    <span>{sv.icon}</span><span>{sv.label}</span>
-                  </button>
-                ))}
+
+                {/* Capacity bar */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ height: 3, background: "rgba(6,4,16,0.9)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ width: `${(totalShadows / shadowArmy.capacity) * 100}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#7c3aed,#a78bfa)", transition: "width 0.6s ease", boxShadow: "0 0 8px #7c3aed88" }} />
+                  </div>
+                </div>
+
+                {/* Sub nav */}
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[{ key: "army", label: "Armee", icon: "🌑" }, { key: "formation", label: "Formation", icon: "⚔️" }, { key: "named", label: "Named", icon: "★" }].map(sv => (
+                    <button key={sv.key} onClick={() => setShadowSubView(sv.key)} style={{ flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: shadowSubView === sv.key ? "linear-gradient(135deg,#7c3aed22,#a78bfa08)" : "transparent", color: shadowSubView === sv.key ? "#a78bfa" : "#334155", border: `1px solid ${shadowSubView === sv.key ? "#7c3aed55" : "#1a1e30"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "all 0.2s", boxShadow: shadowSubView === sv.key ? "0 0 14px #7c3aed20" : "none", cursor: "pointer" }}>
+                      <span style={{ fontSize: 11 }}>{sv.icon}</span>
+                      <span>{sv.label.toUpperCase()}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* ARMY sub-view */}
             {shadowSubView === "army" && (
               totalShadows === 0 ? (
-                <div style={{ textAlign: "center", padding: "48px 24px", background: theme.card, borderRadius: 16, border: "1px dashed #7c3aed22", backdropFilter: "blur(8px)" }}>
-                  <div style={{ fontSize: 52, marginBottom: 12, opacity: 0.3, animation: "float 3s ease-in-out infinite" }}>🌑</div>
-                  <div style={{ fontSize: 15, color: "#475569", fontFamily: "'Cinzel',serif", marginBottom: 8 }}>Keine Schatten erweckt</div>
-                  <div style={{ fontSize: 12, color: "#334155", lineHeight: 1.6 }}>Schließe <span style={{ color: "#ef4444" }}>Boss-Quests</span> ab um Schatten zu beschwören</div>
+                <div style={{ textAlign: "center", padding: "52px 24px", background: "linear-gradient(160deg,rgba(4,3,12,0.98),rgba(12,6,24,0.95))", borderRadius: 18, border: "1px dashed #7c3aed28", position: "relative", overflow: "hidden" }}>
+                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 180, height: 180, background: "radial-gradient(circle,#7c3aed08,transparent 70%)", pointerEvents: "none" }} />
+                  <div style={{ fontSize: 56, marginBottom: 16, opacity: 0.2, animation: "float 3s ease-in-out infinite", filter: "drop-shadow(0 0 20px #7c3aed)" }}>🌑</div>
+                  <div style={{ fontSize: 14, color: "#334155", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>Keine Schatten erweckt</div>
+                  <div style={{ fontSize: 11, color: "#1e293b", lineHeight: 1.7 }}>Schließe <span style={{ color: "#7c3aed88" }}>Boss-Quests</span> ab,<br />um Schatten zu beschwören</div>
                 </div>
               ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   {shadowArmy.shadows.map((s, i) => <ShadowCard key={s.id} shadow={s} theme={theme} index={i} onClick={() => setSelectedShadow(s)} />)}
                 </div>
               )
@@ -962,11 +994,6 @@ function App({ initialHunterName, onLogout }) {
           <ChallengesSystem state={state} persist={persist} notify={notify} theme={theme} />
         )}
 
-        {/* ═══ HEALTH SYNC ═══ */}
-        {view === "health" && (
-          <HealthIntegration state={state} persist={persist} notify={notify} theme={theme} />
-        )}
-
         {/* ═══ SETTINGS ═══ */}
         {view === "settings" && (
           <SettingsView state={state} persist={persist} theme={theme} />
@@ -977,13 +1004,13 @@ function App({ initialHunterName, onLogout }) {
       <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
           {[{ key: "dashboard", icon: "📋", label: "Heute" }, { key: "training", icon: "🎯", label: "Ziele" }, { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length }, { key: "story", icon: "📖", label: "Story" }, { key: "system", icon: "⚙️", label: "System" }].map(tab => (
-            <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
-              {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
+            <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
+              {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
               <div style={{ position: "relative" }}>
-                <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
+                <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
                 {tab.badge > 0 && <div style={{ position: "absolute", top: -6, right: -8, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono',monospace", border: "2px solid #000", animation: "pulse 2s infinite" }}>{tab.badge}</div>}
               </div>
-              <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "health", "settings", "more"].includes(view))) ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
+              <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
             </button>
           ))}
         </div>
@@ -1068,7 +1095,6 @@ function App({ initialHunterName, onLogout }) {
             }, {
               title: "SYSTEM", icon: "⚙️", color: "#64748b",
               items: [
-                { key: "health", icon: "❤️", label: "Health Sync", desc: "Gesundheitstracker" },
                 { key: "settings", icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
               ]
             }].map((section, si) => (

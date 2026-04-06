@@ -1599,68 +1599,112 @@ function ShadowCard({ shadow, theme, onClick, showSlot, index }) {
   const tierData = SHADOW_TIERS[shadow.tier] || SHADOW_TIERS[1];
   const xpPct = Math.min((shadow.xp / shadow.xpToNext) * 100, 100);
   const slotData = shadow.deploymentSlot ? FORMATION_SLOTS[shadow.deploymentSlot] : null;
+  const glowColor = shadow.isNamed ? shadow.glowColor : cls.color;
+  const isDeployed = shadow.isDeployed;
 
   return (
     <div onClick={onClick} style={{
-      background: `linear-gradient(135deg,rgba(8,8,20,0.9),rgba(12,10,24,0.85))`,
-      border: `1px solid ${shadow.isNamed ? shadow.glowColor + "55" : cls.color + "33"}`,
-      borderRadius: 16, padding: "14px 12px", cursor: "pointer",
-      boxShadow: shadow.isNamed ? `0 0 16px ${shadow.glowColor}22` : "none",
+      background: `linear-gradient(170deg,rgba(4,3,12,0.98) 0%,${glowColor}07 100%)`,
+      border: `1px solid ${glowColor}${isDeployed ? "55" : "28"}`,
+      borderRadius: 16, cursor: "pointer",
+      boxShadow: isDeployed
+        ? `0 0 22px ${glowColor}22, inset 0 0 28px ${glowColor}04`
+        : shadow.isNamed ? `0 0 14px ${glowColor}18` : "none",
       position: "relative", overflow: "hidden",
       animation: `shadowRise 0.4s ease ${index * 0.06}s both`,
-      transition: "all 0.2s",
-      ["--shadow-glow"]: cls.color,
+      transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)",
+      ["--shadow-glow"]: glowColor,
+      ["--named-color"]: shadow.glowColor || glowColor,
     }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = shadow.isNamed ? shadow.glowColor + "88" : cls.color + "66"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = shadow.isNamed ? shadow.glowColor + "55" : cls.color + "33"; e.currentTarget.style.transform = "none"; }}>
-      {/* Tier shine */}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-3px) scale(1.01)";
+        e.currentTarget.style.borderColor = glowColor + "77";
+        e.currentTarget.style.boxShadow = `0 8px 28px ${glowColor}33, inset 0 0 20px ${glowColor}07`;
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "";
+        e.currentTarget.style.borderColor = glowColor + (isDeployed ? "55" : "28");
+        e.currentTarget.style.boxShadow = isDeployed ? `0 0 22px ${glowColor}22` : shadow.isNamed ? `0 0 14px ${glowColor}18` : "none";
+      }}>
+
+      {/* Tier sweep shine */}
       {shadow.tier >= 3 && (
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflow: "hidden", borderRadius: 16, pointerEvents: "none" }}>
-          <div style={{ position: "absolute", width: "40%", height: "100%", background: `linear-gradient(90deg,transparent,${tierData.color}0a,transparent)`, animation: "tierShine 3s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 16, pointerEvents: "none" }}>
+          <div style={{ position: "absolute", width: "45%", height: "100%", background: `linear-gradient(90deg,transparent,${tierData.color}0d,transparent)`, animation: "tierShine 4s ease-in-out infinite" }} />
         </div>
       )}
-      {/* Named badge */}
-      {shadow.isNamed && (
-        <div style={{ position: "absolute", top: 8, right: 8, padding: "2px 6px", borderRadius: 4, background: `${shadow.glowColor}22`, border: `1px solid ${shadow.glowColor}55`, fontSize: 8, color: shadow.glowColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>NAMED</div>
-      )}
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: `${cls.color}15`, border: `1px solid ${cls.color}33`, flexShrink: 0, fontSize: shadow.isNamed ? 26 : 22 }}>
+
+      {/* Portrait area */}
+      <div style={{ position: "relative", padding: "16px 12px 10px", textAlign: "center" }}>
+        {/* Deployed aura pulse */}
+        {isDeployed && (
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 72, height: 72, borderRadius: "50%", border: `1px solid ${glowColor}44`, animation: "ringExpand 2.2s ease-out infinite", pointerEvents: "none" }} />
+        )}
+        {/* Named glow orb */}
+        {shadow.isNamed && (
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, background: `radial-gradient(circle,${glowColor}12,transparent 70%)`, pointerEvents: "none" }} />
+        )}
+
+        {/* Icon portrait */}
+        <div style={{
+          width: 56, height: 56, margin: "0 auto",
+          borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+          background: `radial-gradient(circle at 38% 28%,${glowColor}22,${glowColor}06)`,
+          border: `1.5px solid ${glowColor}${isDeployed ? "66" : "33"}`,
+          fontSize: shadow.isNamed ? 30 : 26,
+          boxShadow: isDeployed ? `0 0 18px ${glowColor}33` : "none",
+          animation: shadow.isNamed ? "namedGlow 3s ease-in-out infinite" : "none",
+          position: "relative", zIndex: 1,
+        }}>
           {shadow.isNamed ? shadow.icon : cls.icon}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: shadow.isNamed ? shadow.glowColor : "#e2e8f0", fontFamily: "'Cinzel',serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shadow.name}</div>
-          {shadow.isNamed && shadow.title && <div style={{ fontSize: 9, color: shadow.glowColor + "99", fontFamily: "'Outfit',sans-serif", marginTop: 1 }}>{shadow.title}</div>}
-          <div style={{ display: "flex", gap: 5, marginTop: 4, alignItems: "center" }}>
-            <span style={{ fontSize: 9, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: cls.color + "15" }}>{cls.icon} {shadow.class.toUpperCase()}</span>
-            <span style={{ fontSize: 9, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: tierData.color + "15", border: `1px solid ${tierData.color}33` }}>T{shadow.tier}</span>
+
+        {/* Tier badge top-left */}
+        <div style={{ position: "absolute", top: 10, left: 10, padding: "2px 5px", borderRadius: 5, background: tierData.color + "20", border: `1px solid ${tierData.color}44`, fontSize: 7, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>T{shadow.tier}</div>
+        {/* Named star top-right */}
+        {shadow.isNamed && <div style={{ position: "absolute", top: 8, right: 10, fontSize: 11, color: shadow.glowColor, animation: "namedGlow 2.5s ease-in-out infinite", filter: `drop-shadow(0 0 5px ${shadow.glowColor})` }}>★</div>}
+        {/* Deployed indicator dot top-right */}
+        {isDeployed && !shadow.isNamed && <div style={{ position: "absolute", top: 10, right: 10, width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 8px #22c55eaa", animation: "pulse 1.8s infinite" }} />}
+      </div>
+
+      {/* Info area */}
+      <div style={{ padding: "0 11px 12px", textAlign: "center" }}>
+        {/* Name */}
+        <div style={{ fontSize: 11, fontWeight: 800, color: shadow.isNamed ? shadow.glowColor : "#dde4f0", fontFamily: "'Cinzel',serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2, lineHeight: 1.2, textShadow: shadow.isNamed ? `0 0 12px ${shadow.glowColor}55` : "none" }}>{shadow.name}</div>
+        {shadow.isNamed && shadow.title && <div style={{ fontSize: 8, color: shadow.glowColor + "88", fontFamily: "'Outfit',sans-serif", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shadow.title}</div>}
+        {/* Class pill */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 9 }}>
+          <span style={{ fontSize: 8, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 6px", borderRadius: 4, background: cls.color + "14", border: `1px solid ${cls.color}28`, letterSpacing: 0.5 }}>{cls.icon} {shadow.class.toUpperCase()}</span>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 3, marginBottom: 9 }}>
+          {[{ k: "power", icon: "⚔", c: "#ef4444" }, { k: "speed", icon: "⚡", c: "#f59e0b" }, { k: "loyalty", icon: "💙", c: "#3b82f6" }, { k: "presence", icon: "✦", c: "#a855f7" }].map(({ k, icon, c }) => (
+            <div key={k} style={{ textAlign: "center", background: c + "09", borderRadius: 5, padding: "4px 2px", border: `1px solid ${c}18` }}>
+              <div style={{ fontSize: 8, color: c, lineHeight: 1 }}>{icon}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#b8c5d6", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.4 }}>{shadow.stats[k]}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Level + XP bar */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+          <div style={{ fontSize: 8, color: "#2d3a4a", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>EXP</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: glowColor, fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 10px ${glowColor}55` }}>Lv.{shadow.level}</div>
+        </div>
+        <div style={{ height: 2, background: "rgba(6,4,16,0.9)", borderRadius: 1, overflow: "hidden", marginBottom: 7 }}>
+          <div style={{ width: `${xpPct}%`, height: "100%", borderRadius: 1, background: `linear-gradient(90deg,${glowColor}66,${glowColor})`, transition: "width 0.6s ease", boxShadow: `0 0 4px ${glowColor}88` }} />
+        </div>
+
+        {/* Deployment status */}
+        {isDeployed && slotData ? (
+          <div style={{ fontSize: 8, color: slotData.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, padding: "3px 8px", borderRadius: 5, background: slotData.color + "12", border: `1px solid ${slotData.color}28` }}>
+            <span>{slotData.icon}</span><span>{slotData.name.toUpperCase()}</span>
           </div>
-        </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: "#e2e8f0", fontFamily: "'Cinzel',serif" }}>Lv.{shadow.level}</div>
-        </div>
+        ) : (
+          <div style={{ fontSize: 8, color: "#1e2840", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>◌ IN RESERVE</div>
+        )}
       </div>
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4, marginBottom: 10 }}>
-        {[{ k: "power", icon: "⚔", c: "#ef4444" }, { k: "speed", icon: "⚡", c: "#f59e0b" }, { k: "loyalty", icon: "💙", c: "#3b82f6" }, { k: "presence", icon: "✦", c: "#a855f7" }].map(({ k, icon, c }) => (
-          <div key={k} style={{ textAlign: "center", background: c + "0a", borderRadius: 6, padding: "4px 2px", border: `1px solid ${c}18` }}>
-            <div style={{ fontSize: 9, color: c }}>{icon}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", fontFamily: "'JetBrains Mono',monospace" }}>{shadow.stats[k]}</div>
-          </div>
-        ))}
-      </div>
-      {/* XP bar */}
-      <div style={{ height: 3, background: "#0f1628", borderRadius: 2, overflow: "hidden", marginBottom: 6 }}>
-        <div style={{ width: `${xpPct}%`, height: "100%", borderRadius: 2, background: `linear-gradient(90deg,${cls.color}88,${cls.color})`, transition: "width 0.6s ease" }} />
-      </div>
-      {/* Deployment / slot info */}
-      {shadow.isDeployed && slotData ? (
-        <div style={{ fontSize: 9, color: slotData.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, display: "flex", alignItems: "center", gap: 4 }}>
-          <span>{slotData.icon}</span><span>{slotData.name.toUpperCase()}</span>
-        </div>
-      ) : (
-        <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>RESERVE</div>
-      )}
     </div>
   );
 }
@@ -1803,54 +1847,92 @@ function FormationEditor({ shadowArmy, theme, onDeploy, onUndeploy, formationBon
 
   return (
     <div>
-      {/* Bonus overview */}
-      <div style={{ background: `linear-gradient(135deg,${theme.primary}0a,transparent)`, border: `1px solid ${theme.primary}18`, borderRadius: 14, padding: "14px 16px", marginBottom: 16 }}>
-        <div style={{ fontSize: 9, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>FORMATIONS-BONI</div>
+      {/* Tactical bonus bar */}
+      <div style={{ background: "linear-gradient(135deg,rgba(4,3,12,0.98),rgba(14,6,28,0.95))", border: "1px solid #7c3aed28", borderRadius: 16, padding: "14px 16px", marginBottom: 14, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 200, height: 80, background: "radial-gradient(ellipse,#7c3aed08,transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ fontSize: 8, letterSpacing: 4, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 16, height: 1, background: "#7c3aed55" }} />
+          FORMATIONS-BONI
+          <div style={{ width: 16, height: 1, background: "#7c3aed55" }} />
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-          {[{ label: "Dungeon", val: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", icon: "⚔️" }, { label: "XP", val: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", icon: "✨" }, { label: "Gold", val: `+${Math.round(formationBonus.goldBonus * 100)}%`, color: "#fbbf24", icon: "💰" }].map(({ label, val, color, icon }) => (
-            <div key={label} style={{ textAlign: "center", padding: "8px", background: color + "0a", borderRadius: 10, border: `1px solid ${color}18` }}>
-              <div style={{ fontSize: 14 }}>{icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 900, color, fontFamily: "'Cinzel',serif", marginTop: 2 }}>{val}</div>
-              <div style={{ fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 1 }}>{label}</div>
+          {[
+            { label: "Dungeon", val: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", icon: "⚔️" },
+            { label: "XP", val: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", icon: "✦" },
+            { label: "Gold", val: `+${Math.round(formationBonus.goldBonus * 100)}%`, color: "#fbbf24", icon: "◆" }
+          ].map(({ label, val, color, icon }) => (
+            <div key={label} style={{ textAlign: "center", padding: "10px 6px", background: `radial-gradient(circle at 50% 0%,${color}12,${color}04)`, borderRadius: 12, border: `1px solid ${color}22` }}>
+              <div style={{ fontSize: 14, marginBottom: 3 }}>{icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 900, color, fontFamily: "'Cinzel',serif" }}>{val}</div>
+              <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
             </div>
           ))}
         </div>
       </div>
-      {/* Slots */}
-      {Object.entries(FORMATION_SLOTS).map(([slotKey, slot]) => {
+
+      {/* Battlefield slots */}
+      {Object.entries(FORMATION_SLOTS).map(([slotKey, slot], si) => {
         const inSlot = deployed.filter(s => s.deploymentSlot === slotKey);
         const emptySlots = slot.maxSlots - inSlot.length;
         return (
-          <div key={slotKey} style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 16 }}>{slot.icon}</span>
+          <div key={slotKey} style={{ marginBottom: 12, background: "linear-gradient(135deg,rgba(4,3,12,0.96),rgba(10,5,20,0.92))", border: `1px solid ${slot.color}22`, borderRadius: 16, padding: "14px 14px", overflow: "hidden", position: "relative" }}>
+            {/* slot glow */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${slot.color}44,transparent)` }} />
+            {/* Slot header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: slot.color + "14", border: `1px solid ${slot.color}33`, fontSize: 15, flexShrink: 0 }}>{slot.icon}</div>
               <div style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: slot.color, fontFamily: "'JetBrains Mono',monospace" }}>{slot.name.toUpperCase()}</span>
-                <span style={{ fontSize: 9, color: "#475569", marginLeft: 8 }}>{slot.bonus}</span>
+                <div style={{ fontSize: 10, fontWeight: 800, color: slot.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{slot.name.toUpperCase()}</div>
+                <div style={{ fontSize: 8, color: "#334155", marginTop: 1 }}>{slot.bonus}</div>
               </div>
-              <span style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>{inSlot.length}/{slot.maxSlots}</span>
+              <div style={{ fontSize: 9, color: inSlot.length > 0 ? slot.color : "#1e2840", fontFamily: "'JetBrains Mono',monospace", padding: "2px 8px", borderRadius: 6, background: inSlot.length > 0 ? slot.color + "14" : "transparent", border: `1px solid ${inSlot.length > 0 ? slot.color + "33" : "#1a1e30"}` }}>{inSlot.length}/{slot.maxSlots}</div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${slot.maxSlots},1fr)`, gap: 6 }}>
+            {/* Shadow slots grid */}
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${slot.maxSlots},1fr)`, gap: 7 }}>
               {inSlot.map(s => {
                 const cls = SHADOW_CLASSES[s.class] || SHADOW_CLASSES.soldier;
+                const glow = s.isNamed ? s.glowColor : cls.color;
                 return (
-                  <div key={s.id} onClick={() => onUndeploy(s.id)} style={{ background: `${cls.color}12`, border: `1px solid ${cls.color}33`, borderRadius: 10, padding: "8px 6px", textAlign: "center", cursor: "pointer", transition: "all 0.2s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#ef444420"; e.currentTarget.style.borderColor = "#ef444455"; }} onMouseLeave={e => { e.currentTarget.style.background = cls.color + "12"; e.currentTarget.style.borderColor = cls.color + "33"; }}>
-                    <div style={{ fontSize: 16 }}>{s.isNamed ? s.icon : cls.icon}</div>
-                    <div style={{ fontSize: 8, color: "#e2e8f0", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name.length > 7 ? s.name.slice(0, 7) + "…" : s.name}</div>
-                    <div style={{ fontSize: 7, color: "#475569", marginTop: 1 }}>Lv.{s.level}</div>
+                  <div key={s.id} onClick={() => onUndeploy(s.id)}
+                    style={{ background: `linear-gradient(160deg,${glow}14,${glow}06)`, border: `1px solid ${glow}44`, borderRadius: 12, padding: "10px 6px", textAlign: "center", cursor: "pointer", transition: "all 0.2s", boxShadow: `0 0 10px ${glow}18`, position: "relative" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#ef444418"; e.currentTarget.style.borderColor = "#ef444466"; e.currentTarget.style.boxShadow = "0 0 14px #ef444428"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(160deg,${glow}14,${glow}06)`; e.currentTarget.style.borderColor = glow + "44"; e.currentTarget.style.boxShadow = `0 0 10px ${glow}18`; }}>
+                    <div style={{ position: "absolute", top: 4, right: 4, width: 5, height: 5, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 5px #22c55e" }} />
+                    <div style={{ fontSize: 18, marginBottom: 3 }}>{s.isNamed ? s.icon : cls.icon}</div>
+                    <div style={{ fontSize: 8, color: s.isNamed ? s.glowColor : "#c8d4e0", fontFamily: "'JetBrains Mono',monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name.length > 7 ? s.name.slice(0, 7) + "…" : s.name}</div>
+                    <div style={{ fontSize: 7, color: "#334155", marginTop: 2, fontFamily: "'JetBrains Mono',monospace" }}>Lv.{s.level}</div>
                   </div>
                 );
               })}
               {Array.from({ length: emptySlots }).map((_, i) => (
-                <div key={`empty-${i}`} style={{ border: `1px dashed ${slot.color}22`, borderRadius: 10, padding: "8px 6px", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ fontSize: 16, opacity: 0.2, animation: "formationPulse 2s ease-in-out infinite" }}>{slot.icon}</div>
+                <div key={`empty-${i}`} style={{ border: `1px dashed ${slot.color}18`, borderRadius: 12, padding: "10px 6px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, minHeight: 68 }}>
+                  <div style={{ fontSize: 16, opacity: 0.15, animation: "formationPulse 2.5s ease-in-out infinite" }}>{slot.icon}</div>
+                  <div style={{ fontSize: 7, color: "#1a2030", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>LEER</div>
                 </div>
               ))}
             </div>
           </div>
         );
       })}
+
+      {/* Reserve pool */}
+      {reserve.length > 0 && (
+        <div style={{ marginTop: 4, background: "rgba(4,3,12,0.9)", border: "1px solid #1a1e30", borderRadius: 16, padding: "14px" }}>
+          <div style={{ fontSize: 8, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>RESERVE — TIPPE UM ZUZUWEISEN</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
+            {reserve.map(s => {
+              const cls = SHADOW_CLASSES[s.class] || SHADOW_CLASSES.soldier;
+              const glow = s.isNamed ? s.glowColor : cls.color;
+              return (
+                <div key={s.id} style={{ background: glow + "09", border: `1px solid ${glow}22`, borderRadius: 10, padding: "8px 4px", textAlign: "center", opacity: 0.65 }}>
+                  <div style={{ fontSize: 16 }}>{s.isNamed ? s.icon : cls.icon}</div>
+                  <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name.length > 6 ? s.name.slice(0, 6) + "…" : s.name}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

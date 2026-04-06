@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { calculateLevelUp } from "../data/constants";
 
 export default function HealthIntegration({ state, persist, notify, theme }) {
     const [syncing, setSyncing] = useState(false);
@@ -25,14 +24,12 @@ export default function HealthIntegration({ state, persist, notify, theme }) {
             const dateStr = new Date().toISOString().slice(0, 16).replace('T', ' ');
             setLastSync(dateStr);
 
-            const newXp = Math.floor(data.steps * 0.05 + data.workout * 2 + (data.sleep >= 7 ? 50 : 0));
+            // Only save the sync date — no XP reward per sync.
+            // The one-time "health_link" achievement (300 XP) fires automatically
+            // via checkAchievements when healthSyncDate is first set.
+            persist({ ...state, healthSyncDate: dateStr });
 
-            persist(calculateLevelUp({
-                ...state,
-                healthSyncDate: dateStr
-            }, newXp));
-
-            notify(`Apple Health / Google Fit synchronisiert! +${newXp} Bonus XP erhalten.`, "success");
+            notify("Apple Health / Google Fit synchronisiert!", "success");
         }, 1500);
     };
 
@@ -80,13 +77,15 @@ export default function HealthIntegration({ state, persist, notify, theme }) {
                             ))}
                         </div>
 
-                        <div style={{ marginTop: 16, padding: "12px", borderRadius: 12, background: "rgba(251,191,36,0.05)", border: "1px dashed rgba(251,191,36,0.3)", display: "flex", gap: 10, alignItems: "center" }}>
-                            <span style={{ fontSize: 20 }}>🔥</span>
-                            <div>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>Passive XP Gutschrift</div>
-                                <div style={{ fontSize: 9, color: "#d97706", marginTop: 2 }}>Basierend auf deinem Activity-Level hast du Statuspunkte-Erfahrung gesammelt.</div>
+                        {!state.healthSyncDate && (
+                            <div style={{ marginTop: 16, padding: "12px", borderRadius: 12, background: "rgba(139,92,246,0.05)", border: "1px dashed rgba(139,92,246,0.3)", display: "flex", gap: 10, alignItems: "center" }}>
+                                <span style={{ fontSize: 20 }}>🏆</span>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa" }}>Einmaliges Achievement</div>
+                                    <div style={{ fontSize: 9, color: "#7c3aed", marginTop: 2 }}>Erster Sync schaltet "Vitalität Gekoppelt" frei (+300 XP).</div>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </div>

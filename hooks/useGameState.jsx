@@ -63,23 +63,14 @@ export function useGameState(initialHunterName, onLogout) {
     console.log("System: Cloud-Synchronisierung aktiviert für", user.uid);
     const docRef = doc(db, "users", user.uid);
 
-    // Listen for remote changes (e.g., from other devices)
+    // Listen for remote changes — only apply cloud data when local state is absent
+    // (e.g. first load on a new device). Never overwrite an active session to
+    // prevent cloud overwrites from wiping locally-created quests/habits/goals.
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const cloudData = migrateState(docSnap.data());
-
-        // Only update local state if cloud data has more XP or different level
         setState(prev => {
           if (!prev) return cloudData;
-
-          const isNewer = (cloudData.totalXpEarned || 0) > (prev.totalXpEarned || 0) ||
-            (cloudData.level || 0) > (prev.level || 0);
-
-          if (isNewer) {
-            console.log("System: Cloud-Daten synchronisiert.");
-            notify("Online-Daten synchronisiert!", "success");
-            return cloudData;
-          }
           return prev;
         });
       }
@@ -99,14 +90,7 @@ export function useGameState(initialHunterName, onLogout) {
         if (s) {
           const today = getToday();
 
-          // If we loaded from LocalStorage but there's a logged-in user,
-          // check if we should reset the tutorial for a "Fresh Cloud Start"
-          if (source === "local" && user) {
-            if (s.tutorialCompleted) {
-              console.log("System: Local tutorial detected. Resetting for new Cloud Hunter.");
-              s.tutorialCompleted = false;
-            }
-          }
+          // Local state belongs to this user — preserve it as-is.
 
           if (s.lastActiveDate && s.lastActiveDate !== today) {
             const diff = Math.floor((new Date(today) - new Date(s.lastActiveDate)) / 86400000);
