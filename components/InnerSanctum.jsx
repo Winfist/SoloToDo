@@ -1,15 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { genId } from "../data/constants";
 
+const PREMIUM_MANIFESTATIONS = [
+    "Ich bin der Architekt meines eigenen Schicksals. Niemand wird die Arbeit für mich erledigen.",
+    "Jeder Widerstand formt meinen Charakter. Ich begrüße den Schmerz des Wachstums.",
+    "Meine Zeit ist mein wertvollstes Asset. Ich investiere sie in meine ultimative Vision.",
+    "Disziplin wiegt Unzen, Bedauern wiegt Tonnen. Ich wähle die Disziplin.",
+    "Ich fokussiere mich nur auf das, was ich kontrollieren kann. Der Rest ist Illusion.",
+    "Ich vergleiche mich nicht mit anderen, sondern nur damit, wer ich gestern war.",
+    "Motivation ist flüchtig. Wahre Macht liegt in der unerschütterlichen Konsistenz.",
+    "Es gibt kein Limit. Mein Potenzial wächst mit jeder Herausforderung, die ich meistere.",
+    "Erfolg mietet man, und die Miete ist jeden Tag fällig. Ich gebe heute 100%.",
+    "Jede Ablenkung ist ein Feind meiner Zukunft. Mein Fokus ist absolute Priorität."
+];
+
 export default function InnerSanctum({ state, persist, notify, theme }) {
-    // Initialization check
     const sanctum = state.sanctum || { level: 1, willpower: 0, totalMeditationMinutes: 0 };
     const manifestations = state.manifestations || [];
+    const [inputText, setInputText] = useState("");
 
     const handleAddVision = (e) => {
         e.preventDefault();
-        const fd = new FormData(e.target);
-        const text = fd.get("text");
+        const text = inputText.trim();
         if (!text) return;
 
         const newVision = {
@@ -22,8 +34,25 @@ export default function InnerSanctum({ state, persist, notify, theme }) {
             ...state,
             manifestations: [newVision, ...manifestations]
         });
-        e.target.reset();
+        setInputText("");
         if (notify) notify("Vision ins Sanctum aufgenommen", "success");
+    };
+
+    const rollPremiumManifestation = () => {
+        if ((state.gold || 0) < 20) {
+            if (notify) notify("Nicht genug Gold! (20G benötigt)", "error");
+            return;
+        }
+
+        const randomItem = PREMIUM_MANIFESTATIONS[Math.floor(Math.random() * PREMIUM_MANIFESTATIONS.length)];
+        setInputText(randomItem);
+
+        persist({
+            ...state,
+            gold: state.gold - 20
+        });
+
+        if (notify) notify("Einsicht des Monarchen erlangt! (-20G)", "success");
     };
 
     const handleDeleteVision = (id) => {
@@ -67,8 +96,38 @@ export default function InnerSanctum({ state, persist, notify, theme }) {
             {/* VISION BOARD VIEW */}
             <div style={{ animation: "slideUp 0.3s ease" }}>
                 <form onSubmit={handleAddVision} style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-                    <input name="text" placeholder="Neue Manifestation oder Ziel..." style={{ flex: 1, background: "rgba(10,10,22,0.8)", border: `1px solid ${theme.primary}33`, color: "#fff", padding: "14px 16px", borderRadius: 12, fontSize: 14, outline: "none" }} />
-                    <button type="submit" style={{ padding: "0 20px", background: `linear-gradient(135deg, ${theme.secondary}, ${theme.primary})`, border: "none", borderRadius: 12, color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: 20 }}>+</button>
+                    <input
+                        value={inputText}
+                        onChange={e => setInputText(e.target.value)}
+                        placeholder="Neue Manifestation oder Ziel..."
+                        style={{ flex: 1, background: "rgba(10,10,22,0.8)", border: `1px solid ${theme.primary}33`, color: "#fff", padding: "14px 16px", borderRadius: 12, fontSize: 14, outline: "none", transition: "all 0.2s" }}
+                    />
+                    <button
+                        type="button"
+                        onClick={rollPremiumManifestation}
+                        title="Premium Manifestation (20G)"
+                        disabled={(state.gold || 0) < 20}
+                        style={{
+                            padding: "6px 14px",
+                            background: (state.gold || 0) >= 20 ? "rgba(245,158,11,0.15)" : "rgba(15,15,30,0.5)",
+                            border: `1px solid ${(state.gold || 0) >= 20 ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.05)"}`,
+                            borderRadius: 12,
+                            color: (state.gold || 0) >= 20 ? "#f59e0b" : "#475569",
+                            cursor: (state.gold || 0) >= 20 ? "pointer" : "not-allowed",
+                            transition: "all 0.2s",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 2
+                        }}
+                        onMouseEnter={e => { if ((state.gold || 0) >= 20) { e.currentTarget.style.background = "rgba(245,158,11,0.25)"; e.currentTarget.style.transform = "scale(1.05)"; } }}
+                        onMouseLeave={e => { if ((state.gold || 0) >= 20) { e.currentTarget.style.background = "rgba(245,158,11,0.15)"; e.currentTarget.style.transform = "none"; } }}
+                    >
+                        <span style={{ fontSize: 20 }}>🎲</span>
+                        <span style={{ fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>20G</span>
+                    </button>
+                    <button type="submit" disabled={!inputText.trim()} style={{ padding: "0 22px", background: inputText.trim() ? `linear-gradient(135deg, ${theme.secondary}, ${theme.primary})` : "rgba(255,255,255,0.05)", border: "none", borderRadius: 12, color: inputText.trim() ? "#fff" : "#475569", fontWeight: 800, cursor: inputText.trim() ? "pointer" : "not-allowed", fontSize: 20, transition: "all 0.3s" }}>+</button>
                 </form>
 
                 <div style={{ display: "grid", gap: 10 }}>
