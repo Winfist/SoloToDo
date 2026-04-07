@@ -1,5 +1,14 @@
 // AuthScreen.jsx - Premium Solo Leveling Login/Register (Firebase Integrated)
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+
+const AuthTunnelScene = lazy(() => import("./3d/auth/AuthTunnelScene.jsx"));
+
+function supportsWebGL() {
+  try {
+    return !!document.createElement("canvas").getContext("webgl2");
+  } catch { return false; }
+}
+const HAS_WEBGL = supportsWebGL();
 import { auth } from "./firebase";
 import { 
   signInWithEmailAndPassword, 
@@ -307,6 +316,45 @@ export default function AuthScreen({ onAuthSuccess }) {
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const authScrollRef    = useRef(null);
+  // Imperative refs for progress-driven UI (no re-renders)
+  const formContainerRef = useRef(null);
+  const headerRef        = useRef(null);
+  const scrollHintRef    = useRef(null);
+  const msg1Ref          = useRef(null);
+  const msg2Ref          = useRef(null);
+  const msg3Ref          = useRef(null);
+  const vignetteRef      = useRef(null);
+
+  // Called every frame by AuthTunnelScene — only DOM manipulation, no setState
+  const handleProgress = useCallback((p) => {
+    // Vignette deepens with approach
+    if (vignetteRef.current) {
+      const v = 0.7 + p * 0.3;
+      vignetteRef.current.style.opacity = v.toString();
+    }
+    // Scroll hint fades immediately
+    if (scrollHintRef.current) {
+      scrollHintRef.current.style.opacity = Math.max(0, 1 - p * 6).toString();
+    }
+    // Header fades out between 65% and 85%
+    if (headerRef.current) {
+      const hOp = Math.max(0, 1 - Math.max(0, (p - 0.62) / 0.22));
+      headerRef.current.style.opacity = hOp.toString();
+    }
+    // SL narrative overlays — CSS transition handles smoothing
+    const setOp = (ref, val) => { if (ref.current) ref.current.style.opacity = val > 0 ? "1" : "0"; };
+    setOp(msg1Ref, p >= 0.12 && p < 0.40 ? 1 : 0);
+    setOp(msg2Ref, p >= 0.44 && p < 0.70 ? 1 : 0);
+    setOp(msg3Ref, p >= 0.76 && p < 0.87 ? 1 : 0);
+    // Form fades in at 85%, slides up slightly
+    if (formContainerRef.current) {
+      const fOp = Math.max(0, Math.min(1, (p - 0.84) / 0.14));
+      formContainerRef.current.style.opacity = fOp.toString();
+      formContainerRef.current.style.pointerEvents = fOp > 0.05 ? "auto" : "none";
+      formContainerRef.current.style.transform = `translateY(${(1 - fOp) * 22}px)`;
+    }
+  }, []);
 
   const validate = () => {
     const newErrors = {};
@@ -404,130 +452,224 @@ export default function AuthScreen({ onAuthSuccess }) {
     return <SuccessAnimation hunterName={hunterName || "Hunter"} onComplete={() => onAuthSuccess(auth.currentUser, hunterName || "Hunter")} />;
   }
 
+  // ── Form card (pure HTML — rendered as fixed overlay, NOT in 3D) ─────────────
+  const formCard = (
+    <div style={{ background:"rgba(8,5,20,0.88)", border:"1px solid #2d1b69", borderRadius:20, padding:"32px 28px", backdropFilter:"blur(24px) saturate(1.4)", boxShadow:"0 0 0 1px #7c3aed22, 0 20px 60px rgba(0,0,0,0.7), 0 0 80px rgba(124,58,237,0.12), inset 0 1px 0 rgba(167,139,250,0.08)", position:"relative", overflow:"hidden" }}>
+      {/* Inner glow accent line at top */}
+      <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg, transparent, #7c3aed88, transparent)", zIndex:1 }} />
+
+      {/* Mode tabs */}
+      {mode !== "forgot" && (
+        <div style={{ display:"flex", marginBottom:28, background:"rgba(10,8,25,0.7)", borderRadius:12, padding:4, border:"1px solid #1e1040" }}>
+          {["login","register"].map((m) => (
+            <button key={m} onClick={() => switchMode(m)}
+              style={{
+                flex:1, padding:"11px 16px", borderRadius:10, fontSize:11, fontWeight:700,
+                fontFamily:"'JetBrains Mono', monospace", letterSpacing:2,
+                background:mode === m ? "linear-gradient(135deg, #7c3aed28, #4c1d9522)" : "transparent",
+                color:mode === m ? "#a78bfa" : "#3d3560",
+                border:mode === m ? "1px solid #7c3aed55" : "1px solid transparent",
+                cursor:"pointer", transition:"all 0.3s ease",
+              }}
+            >{m === "login" ? "EINLOGGEN" : "REGISTRIEREN"}</button>
+          ))}
+        </div>
+      )}
+
+      {mode === "register" && <AuthInput type="text" placeholder="Hunter-Name" value={hunterName} onChange={(e) => setHunterName(e.target.value)} icon="⚔️" error={errors.hunterName} delay={0} />}
+      <AuthInput type="email" placeholder="E-Mail Adresse" value={email} onChange={(e) => setEmail(e.target.value)} icon="📧" error={errors.email} delay={mode === "register" ? 0.05 : 0} />
+
+      {mode !== "forgot" && (
+        <>
+          <AuthInput type="password" placeholder="Passwort" value={password} onChange={(e) => setPassword(e.target.value)} icon="🔐" error={errors.password} delay={mode === "register" ? 0.1 : 0.05} />
+          {mode === "register" && <PasswordStrength password={password} />}
+        </>
+      )}
+      {mode === "register" && <AuthInput type="password" placeholder="Passwort bestätigen" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} icon="🔒" error={errors.confirmPassword} delay={0.15} />}
+
+      {mode === "register" && (
+        <div style={{ marginBottom:20, animation:"slideUp 0.6s ease 0.2s both" }}>
+          <label style={{ display:"flex", alignItems:"flex-start", gap:12, cursor:"pointer" }}>
+            <div
+              style={{ width:20, height:20, borderRadius:6, border:`2px solid ${errors.terms ? "#ef4444" : agreedToTerms ? "#7c3aed" : "#1e1e3f"}`, background:agreedToTerms ? "#7c3aed" : "transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.3s ease", flexShrink:0, marginTop:2 }}
+              onClick={() => setAgreedToTerms(!agreedToTerms)}
+            >
+              {agreedToTerms && <span style={{ color:"#fff", fontSize:12 }}>✓</span>}
+            </div>
+            <span style={{ fontSize:12, color:"#64748b", lineHeight:1.5 }}>
+              Ich akzeptiere die <span style={{ color:"#a78bfa", cursor:"pointer" }}>Hunter-Vereinbarung</span> und die <span style={{ color:"#a78bfa", cursor:"pointer" }}>System-Bedingungen</span>
+            </span>
+          </label>
+          {errors.terms && <div style={{ marginTop:6, fontSize:11, color:"#ef4444", fontFamily:"'JetBrains Mono', monospace", paddingLeft:32 }}>⚠ {errors.terms}</div>}
+        </div>
+      )}
+
+      {mode === "login" && (
+        <div style={{ textAlign:"right", marginBottom:20, animation:"fadeIn 0.6s ease 0.2s both" }}>
+          <button onClick={() => switchMode("forgot")} style={{ background:"transparent", border:"none", color:"#4a4070", fontSize:12, fontFamily:"'JetBrains Mono', monospace", cursor:"pointer", transition:"color 0.3s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#a78bfa"}
+            onMouseLeave={e => e.currentTarget.style.color = "#4a4070"}
+          >Passwort vergessen?</button>
+        </div>
+      )}
+
+      {errors.server && (
+        <div style={{ marginBottom:16, padding:"12px 16px", borderRadius:10, background:"rgba(239,68,68,0.08)", border:"1px solid #ef444433", color:"#ef4444", fontSize:12, fontFamily:"'JetBrains Mono', monospace", animation:"fadeIn 0.3s ease" }}>
+          ⚠ {errors.server}
+        </div>
+      )}
+      {errors.success && (
+        <div style={{ marginBottom:16, padding:"12px 16px", borderRadius:10, background:"rgba(34,197,94,0.08)", border:"1px solid #22c55e33", color:"#22c55e", fontSize:12, fontFamily:"'JetBrains Mono', monospace", animation:"fadeIn 0.3s ease" }}>
+          ✓ {errors.success}
+        </div>
+      )}
+
+      <AuthButton onClick={handleSubmit} loading={loading} delay={mode === "register" ? 0.25 : 0.15}>
+        {mode === "login" && "⚔️ EINLOGGEN"}
+        {mode === "register" && "✨ HUNTER WERDEN"}
+        {mode === "forgot" && "📧 LINK SENDEN"}
+      </AuthButton>
+
+      {mode === "forgot" && <AuthButton variant="secondary" onClick={() => switchMode("login")} delay={0.2}>← ZURÜCK ZUM LOGIN</AuthButton>}
+
+      {mode !== "forgot" && (
+        <>
+          <div style={{ display:"flex", alignItems:"center", gap:16, margin:"24px 0" }}>
+            <div style={{ flex:1, height:1, background:"#1a1035" }} />
+            <span style={{ fontSize:10, color:"#2d2050", fontFamily:"'JetBrains Mono', monospace", letterSpacing:2 }}>ODER</span>
+            <div style={{ flex:1, height:1, background:"#1a1035" }} />
+          </div>
+          <div style={{ display:"flex", gap:12 }}>
+            <SocialButton icon="🔷" label="Google" onClick={handleGoogleLogin} delay={0.35} />
+            <SocialButton icon="🍎" label="Apple" onClick={handleAppleLogin} delay={0.4} />
+          </div>
+        </>
+      )}
+
+      <div style={{ textAlign:"center", marginTop:20 }}>
+        <p style={{ fontSize:11, color:"#2d2a4a", fontFamily:"'JetBrains Mono', monospace" }}>
+          {mode === "login" && <>Noch kein Hunter?{" "}<span onClick={() => switchMode("register")} style={{ color:"#7c3aed", cursor:"pointer" }}>Jetzt registrieren</span></>}
+          {mode === "register" && <>Bereits ein Hunter?{" "}<span onClick={() => switchMode("login")} style={{ color:"#7c3aed", cursor:"pointer" }}>Einloggen</span></>}
+        </p>
+      </div>
+    </div>
+  );
+
+  const SL_MSG = {
+    fontFamily: "'JetBrains Mono', monospace",
+    letterSpacing: 5,
+    fontSize: 11,
+    pointerEvents: "none",
+    transition: "opacity 0.9s ease",
+  };
+
   return (
-    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"20px", position:"relative" }}>
+    <div ref={authScrollRef} style={{ position:"fixed", inset:0, overflow:"hidden", background:"#030009" }}>
       <style>{AUTH_CSS}</style>
-      <AnimatedBackground />
-      <ParticleField />
+
+      {/* ── 3D Tunnel scene ──────────────────────────────────────── */}
+      {HAS_WEBGL ? (
+        <Suspense fallback={<><AnimatedBackground /><ParticleField /></>}>
+          <AuthTunnelScene
+            scrollContainerRef={authScrollRef}
+            onProgress={handleProgress}
+          />
+        </Suspense>
+      ) : (
+        <>
+          <AnimatedBackground />
+          <ParticleField />
+        </>
+      )}
+
+      {/* ── Scanlines — SL terminal aesthetic ────────────────────── */}
+      <div style={{ position:"fixed", inset:0, zIndex:2, pointerEvents:"none",
+        backgroundImage:"repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)" }} />
+
+      {/* ── Vignette ──────────────────────────────────────────────── */}
+      <div ref={vignetteRef} style={{ position:"fixed", inset:0, zIndex:3, pointerEvents:"none", opacity:0.7,
+        background:"radial-gradient(ellipse 80% 70% at 50% 50%, transparent 20%, rgba(2,0,12,0.85) 100%)" }} />
+
+      {/* ── Corner brackets (SL UI accent) ───────────────────────── */}
+      {["top:12px;left:12px", "top:12px;right:12px", "bottom:12px;left:12px", "bottom:12px;right:12px"].map((pos, i) => {
+        const style = Object.fromEntries(pos.split(";").map(s => s.split(":")));
+        const isRight = pos.includes("right");
+        const isBottom = pos.includes("bottom");
+        return (
+          <div key={i} style={{ position:"fixed", ...style, zIndex:6, pointerEvents:"none", width:20, height:20,
+            borderTop: isBottom ? "none" : "1px solid #7c3aed44",
+            borderBottom: isBottom ? "1px solid #7c3aed44" : "none",
+            borderLeft: isRight ? "none" : "1px solid #7c3aed44",
+            borderRight: isRight ? "1px solid #7c3aed44" : "none" }} />
+        );
+      })}
+
+      {/* ── Solo Leveling narrative overlays ──────────────────────── */}
+      <div style={{ position:"fixed", bottom:120, left:0, right:0, zIndex:8, textAlign:"center", pointerEvents:"none" }}>
+        {/* msg1: 12%–40% — gate detected */}
+        <div ref={msg1Ref} style={{ ...SL_MSG, opacity:0, color:"#a78bfa", textShadow:"0 0 18px #7c3aed" }}>
+          ⚠ SYSTEM · GATE DETECTED
+        </div>
+        {/* msg2: 44%–70% — portal sequence */}
+        <div ref={msg2Ref} style={{ ...SL_MSG, opacity:0, color:"#7c3aed", letterSpacing:4, textShadow:"0 0 12px #7c3aed66" }}>
+          PORTAL AUTHENTICATION SEQUENCE INITIATED
+        </div>
+        {/* msg3: 76%–87% — auth required (pulses) */}
+        <div ref={msg3Ref} style={{ ...SL_MSG, opacity:0, color:"#e2d9ff", letterSpacing:6, animation:"pulse 1.2s ease-in-out infinite", textShadow:"0 0 28px #a78bfa" }}>
+          ⚔ HUNTER AUTHENTICATION REQUIRED
+        </div>
+      </div>
+
+      {/* ── Header — fades out as user approaches portal ──────────── */}
+      <div ref={headerRef} style={{ position:"fixed", top:0, left:0, right:0, display:"flex", flexDirection:"column", alignItems:"center", paddingTop:38, zIndex:12, pointerEvents:"none", transition:"opacity 0.5s ease" }}>
+        <div style={{ fontSize:50, marginBottom:10, animation:"float 3s ease-in-out infinite, glow 3s ease-in-out infinite" }}>⚔️</div>
+        <h1 style={{ fontSize:36, fontWeight:900, fontFamily:"'Cinzel', serif", color:"#fff", letterSpacing:8, marginBottom:6, animation:"textGlow 3s ease-in-out infinite, slideDown 0.8s ease" }}>ARISE</h1>
+        <p style={{ fontSize:11, fontFamily:"'JetBrains Mono', monospace", color:"#7c3aed", letterSpacing:5, animation:"fadeIn 1s ease 0.3s both" }}>
+          {mode === "login" && "HUNTER SYSTEM ACCESS"}
+          {mode === "register" && "NEW HUNTER REGISTRATION"}
+          {mode === "forgot" && "PASSWORD RECOVERY"}
+        </p>
+      </div>
+
+      {/* ── Scroll hint ───────────────────────────────────────────── */}
+      {HAS_WEBGL && (
+        <div ref={scrollHintRef} style={{ position:"fixed", bottom:36, left:"50%", transform:"translateX(-50%)", zIndex:10, pointerEvents:"none", textAlign:"center", transition:"opacity 0.6s ease" }}>
+          <div style={{ animation:"float 2.2s ease-in-out infinite" }}>
+            <p style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:9, letterSpacing:5, color:"#2d1f5e", marginBottom:4 }}>SCROLL TO APPROACH</p>
+            <p style={{ fontSize:16, color:"#3d2a7a" }}>↓</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── FORM — fixed overlay, fully stable, never in 3D space ─── */}
+      <div
+        ref={formContainerRef}
+        style={{
+          position: "fixed", inset: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "20px", paddingTop: "90px",
+          zIndex: 25,
+          opacity: 0, pointerEvents: "none",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: 440 }}>
+          {formCard}
+        </div>
+      </div>
+
+      {/* No-WebGL fallback: form shown immediately */}
+      {!HAS_WEBGL && (
+        <div style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px", zIndex:25 }}>
+          <div style={{ width:"100%", maxWidth:440 }}>{formCard}</div>
+        </div>
+      )}
+
+      {/* MagicCircle overlay */}
       <MagicCircle active={loading} />
 
-      <div style={{ width:"100%", maxWidth:420, position:"relative", zIndex:10 }}>
-        {/* Header */}
-        <div style={{ textAlign:"center", marginBottom:40 }}>
-          <div style={{ fontSize:64, marginBottom:20, animation:"float 3s ease-in-out infinite, glow 3s ease-in-out infinite" }}>⚔️</div>
-          <h1 style={{ fontSize:42, fontWeight:900, fontFamily:"'Cinzel', serif", color:"#fff", letterSpacing:8, marginBottom:8, animation:"textGlow 3s ease-in-out infinite, slideDown 0.8s ease" }}>ARISE</h1>
-          <p style={{ fontSize:12, fontFamily:"'JetBrains Mono', monospace", color:"#7c3aed", letterSpacing:4, animation:"fadeIn 1s ease 0.3s both" }}>
-            {mode === "login" && "HUNTER SYSTEM ACCESS"}
-            {mode === "register" && "NEW HUNTER REGISTRATION"}
-            {mode === "forgot" && "PASSWORD RECOVERY"}
-          </p>
-        </div>
-
-        {/* Form card */}
-        <div style={{ background:"rgba(10,8,20,0.8)", border:"1px solid #1e1e3f", borderRadius:24, padding:"32px 28px", backdropFilter:"blur(20px)", boxShadow:"0 20px 60px rgba(0,0,0,0.5), 0 0 100px rgba(124,58,237,0.1)", animation:"scaleIn 0.6s ease, borderGlow 4s ease-in-out infinite" }}>
-
-          {/* Mode tabs */}
-          {mode !== "forgot" && (
-            <div style={{ display:"flex", marginBottom:28, background:"rgba(15,15,30,0.6)", borderRadius:12, padding:4 }}>
-              {["login","register"].map((m) => (
-                <button key={m} onClick={() => switchMode(m)}
-                  style={{
-                    flex:1, padding:"12px 16px", borderRadius:10, fontSize:11, fontWeight:700,
-                    fontFamily:"'JetBrains Mono', monospace", letterSpacing:2,
-                    background:mode === m ? "linear-gradient(135deg, #7c3aed22, #6d28d922)" : "transparent",
-                    color:mode === m ? "#a78bfa" : "#475569",
-                    border:mode === m ? "1px solid #7c3aed44" : "1px solid transparent",
-                    cursor:"pointer", transition:"all 0.3s ease",
-                  }}
-                >{m === "login" ? "EINLOGGEN" : "REGISTRIEREN"}</button>
-              ))}
-            </div>
-          )}
-
-          {mode === "register" && <AuthInput type="text" placeholder="Hunter-Name" value={hunterName} onChange={(e) => setHunterName(e.target.value)} icon="⚔️" error={errors.hunterName} delay={0} />}
-          <AuthInput type="email" placeholder="E-Mail Adresse" value={email} onChange={(e) => setEmail(e.target.value)} icon="📧" error={errors.email} delay={mode === "register" ? 0.05 : 0} />
-
-          {mode !== "forgot" && (
-            <>
-              <AuthInput type="password" placeholder="Passwort" value={password} onChange={(e) => setPassword(e.target.value)} icon="🔐" error={errors.password} delay={mode === "register" ? 0.1 : 0.05} />
-              {mode === "register" && <PasswordStrength password={password} />}
-            </>
-          )}
-
-          {mode === "register" && <AuthInput type="password" placeholder="Passwort bestätigen" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} icon="🔒" error={errors.confirmPassword} delay={0.15} />}
-
-          {mode === "register" && (
-            <div style={{ marginBottom:20, animation:"slideUp 0.6s ease 0.2s both" }}>
-              <label style={{ display:"flex", alignItems:"flex-start", gap:12, cursor:"pointer" }}>
-                <div
-                  style={{ width:20, height:20, borderRadius:6, border:`2px solid ${errors.terms ? "#ef4444" : agreedToTerms ? "#7c3aed" : "#1e1e3f"}`, background:agreedToTerms ? "#7c3aed" : "transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.3s ease", flexShrink:0, marginTop:2 }}
-                  onClick={() => setAgreedToTerms(!agreedToTerms)}
-                >
-                  {agreedToTerms && <span style={{ color:"#fff", fontSize:12 }}>✓</span>}
-                </div>
-                <span style={{ fontSize:12, color:"#64748b", lineHeight:1.5 }}>
-                  Ich akzeptiere die <span style={{ color:"#a78bfa", cursor:"pointer" }}>Hunter-Vereinbarung</span> und die <span style={{ color:"#a78bfa", cursor:"pointer" }}>System-Bedingungen</span>
-                </span>
-              </label>
-              {errors.terms && <div style={{ marginTop:6, fontSize:11, color:"#ef4444", fontFamily:"'JetBrains Mono', monospace", paddingLeft:32 }}>⚠ {errors.terms}</div>}
-            </div>
-          )}
-
-          {mode === "login" && (
-            <div style={{ textAlign:"right", marginBottom:20, animation:"fadeIn 0.6s ease 0.2s both" }}>
-              <button onClick={() => switchMode("forgot")} style={{ background:"transparent", border:"none", color:"#64748b", fontSize:12, fontFamily:"'JetBrains Mono', monospace", cursor:"pointer", transition:"color 0.3s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#a78bfa"}
-                onMouseLeave={e => e.currentTarget.style.color = "#64748b"}
-              >Passwort vergessen?</button>
-            </div>
-          )}
-
-          {errors.server && (
-            <div style={{ marginBottom:16, padding:"12px 16px", borderRadius:10, background:"rgba(239,68,68,0.1)", border:"1px solid #ef444444", color:"#ef4444", fontSize:12, fontFamily:"'JetBrains Mono', monospace", animation:"fadeIn 0.3s ease" }}>
-              ⚠ {errors.server}
-            </div>
-          )}
-
-          {errors.success && (
-            <div style={{ marginBottom:16, padding:"12px 16px", borderRadius:10, background:"rgba(34,197,94,0.1)", border:"1px solid #22c55e44", color:"#22c55e", fontSize:12, fontFamily:"'JetBrains Mono', monospace", animation:"fadeIn 0.3s ease" }}>
-              ✓ {errors.success}
-            </div>
-          )}
-
-          <AuthButton onClick={handleSubmit} loading={loading} delay={mode === "register" ? 0.25 : 0.15}>
-            {mode === "login" && "⚔️ EINLOGGEN"}
-            {mode === "register" && "✨ HUNTER WERDEN"}
-            {mode === "forgot" && "📧 LINK SENDEN"}
-          </AuthButton>
-
-          {mode === "forgot" && <AuthButton variant="secondary" onClick={() => switchMode("login")} delay={0.2}>← ZURÜCK ZUM LOGIN</AuthButton>}
-
-          {mode !== "forgot" && (
-            <>
-              <div style={{ display:"flex", alignItems:"center", gap:16, margin:"24px 0", animation:"fadeIn 0.6s ease 0.3s both" }}>
-                <div style={{ flex:1, height:1, background:"#1e1e3f" }} />
-                <span style={{ fontSize:10, color:"#334155", fontFamily:"'JetBrains Mono', monospace", letterSpacing:2 }}>ODER</span>
-                <div style={{ flex:1, height:1, background:"#1e1e3f" }} />
-              </div>
-              <div style={{ display:"flex", gap:12 }}>
-                <SocialButton icon="🔷" label="Google" onClick={handleGoogleLogin} delay={0.35} />
-                <SocialButton icon="🍎" label="Apple" onClick={handleAppleLogin} delay={0.4} />
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div style={{ textAlign:"center", marginTop:24, animation:"fadeIn 1s ease 0.5s both" }}>
-          <p style={{ fontSize:11, color:"#334155", fontFamily:"'JetBrains Mono', monospace" }}>
-            {mode === "login" && <>Noch kein Hunter?{" "}<span onClick={() => switchMode("register")} style={{ color:"#7c3aed", cursor:"pointer" }}>Jetzt registrieren</span></>}
-            {mode === "register" && <>Bereits ein Hunter?{" "}<span onClick={() => switchMode("login")} style={{ color:"#7c3aed", cursor:"pointer" }}>Einloggen</span></>}
-          </p>
-        </div>
-
-        <div style={{ position:"fixed", bottom:20, left:"50%", transform:"translateX(-50%)", fontSize:9, color:"#1e1e3f", fontFamily:"'JetBrains Mono', monospace", letterSpacing:2 }}>
-          SOLO LEVELING v5.0 • ARISE
-        </div>
+      {/* Version watermark */}
+      <div style={{ position:"fixed", bottom:20, left:"50%", transform:"translateX(-50%)", fontSize:9, color:"#1e2a3a", fontFamily:"'JetBrains Mono', monospace", letterSpacing:2, zIndex:5 }}>
+        SOLO LEVELING v5.0 • ARISE
       </div>
     </div>
   );
