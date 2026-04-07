@@ -299,6 +299,9 @@ function UserDetail({ user, onBack, onUpdate }) {
         lastSystemTaskTime: null,
         // Reset Job Cooldowns (Base level)
         "jobs.activeAbilityCooldowns": {},
+        // Reset Inner Sanctum & Manifestations
+        sanctum: { level: 1, willpower: 0, totalMeditationMinutes: 0 },
+        manifestations: []
       };
 
       if (wipeQuests) {
@@ -316,6 +319,8 @@ function UserDetail({ user, onBack, onUpdate }) {
         payload.analytics = {};
         payload.multiplayer = { activeRaid: null, guild: null, social: null, publicStats: { totalXp: 0, dungeonsCleared: 0 } };
         payload.lifeDomains = [];
+        payload.manifestations = [];
+        payload.sanctum = { level: 1, willpower: 0, totalMeditationMinutes: 0 };
       }
 
       await updateDoc(userRef, payload);
