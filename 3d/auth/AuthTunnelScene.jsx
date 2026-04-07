@@ -85,7 +85,7 @@ function AuthCameraController({ scrollContainerRef, onProgress, onComplete, auto
 // ── Pulsing purple atmosphere light ──────────────────────────────────────────
 function AtmosphereLight({ progressRef }) {
   const lightRef = useRef();
-  const fillRef  = useRef();
+  const fillRef = useRef();
 
   useFrame(({ clock }) => {
     const p = progressRef?.current ?? 0;
@@ -105,7 +105,7 @@ function AtmosphereLight({ progressRef }) {
   return (
     <>
       <pointLight ref={lightRef} color="#7c3aed" intensity={0} distance={45} decay={2} position={[0, 1, -1]} />
-      <pointLight ref={fillRef}  color="#4f46e5" intensity={0} distance={30} decay={2} position={[0, -1, 3]} />
+      <pointLight ref={fillRef} color="#4f46e5" intensity={0} distance={30} decay={2} position={[0, -1, 3]} />
     </>
   );
 }
@@ -118,21 +118,21 @@ export default function AuthTunnelScene({
   autoApproachRef,
 }) {
   const mobile = typeof window !== "undefined" && window.innerWidth < 768;
-  const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.0 : 1.5);
+  const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 1.5);
   const sharedProgressRef = useRef(0);
 
   return (
     <Canvas
       dpr={dpr}
       gl={{
-        antialias: !mobile,
+        antialias: true,
         alpha: false,
         powerPreference: "high-performance",
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.15,
       }}
       style={{ width: "100%", height: "100%", display: "block" }}
-      frameloop={mobile ? "demand" : "always"}
+      frameloop="always"
     >
       {/* Dense atmosphere fog */}
       <fogExp2 attach="fog" color="#040210" density={0.065} />

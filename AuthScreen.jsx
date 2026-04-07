@@ -10,9 +10,9 @@ function supportsWebGL() {
 }
 const HAS_WEBGL = supportsWebGL();
 import { auth } from "./firebase";
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile,
   signInWithPopup,
@@ -63,7 +63,7 @@ function ParticleField() {
       speedX: (Math.random() - 0.5) * 0.3, opacity: Math.random() * 0.5 + 0.2,
       hue: Math.random() * 60 + 250,
     }));
-    const runes = ["ᚠ","ᚢ","ᚦ","ᚨ","ᚱ","ᚲ","ᚷ","ᚹ","ᚺ","ᚾ","ᛁ","ᛃ"];
+    const runes = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ", "ᚺ", "ᚾ", "ᛁ", "ᛃ"];
     const floatingRunes = Array.from({ length: 8 }, () => ({
       x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight,
       rune: runes[Math.floor(Math.random() * runes.length)],
@@ -105,39 +105,45 @@ function ParticleField() {
     draw();
     return () => { cancelAnimationFrame(animationId); window.removeEventListener("resize", resize); };
   }, []);
-  return <canvas ref={canvasRef} style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:0 }} />;
+  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }} />;
 }
 
 // ─── ANIMATED BACKGROUND ──────────────────────────────────────
 function AnimatedBackground() {
   return (
-    <div style={{ position:"fixed", inset:0, overflow:"hidden", zIndex:0 }}>
-      <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 50% 0%, #1a0a2e 0%, #0a0612 50%, #060410 100%)" }} />
-      <div style={{ position:"absolute", top:"-20%", left:"-10%", width:"50%", height:"50%", background:"radial-gradient(circle, #7c3aed15 0%, transparent 70%)", animation:"float 8s ease-in-out infinite", filter:"blur(60px)" }} />
-      <div style={{ position:"absolute", bottom:"-20%", right:"-10%", width:"60%", height:"60%", background:"radial-gradient(circle, #4f46e515 0%, transparent 70%)", animation:"float 10s ease-in-out infinite reverse", filter:"blur(80px)" }} />
-      <div style={{ position:"absolute", top:"30%", right:"10%", width:"30%", height:"30%", background:"radial-gradient(circle, #a78bfa10 0%, transparent 70%)", animation:"float 6s ease-in-out infinite", animationDelay:"-3s", filter:"blur(40px)" }} />
-      <div style={{ position:"absolute", inset:0, backgroundImage:`linear-gradient(rgba(124,58,237,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,0.03) 1px,transparent 1px)`, backgroundSize:"50px 50px", maskImage:"radial-gradient(ellipse at center, black 30%, transparent 80%)" }} />
-      <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%)" }} />
+    <div style={{ position: "fixed", inset: 0, overflow: "hidden", zIndex: 0 }}>
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 0%, #1a0a2e 0%, #0a0612 50%, #060410 100%)" }} />
+      <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "50%", height: "50%", background: "radial-gradient(circle, #7c3aed15 0%, transparent 70%)", animation: "float 8s ease-in-out infinite", filter: "blur(60px)" }} />
+      <div style={{ position: "absolute", bottom: "-20%", right: "-10%", width: "60%", height: "60%", background: "radial-gradient(circle, #4f46e515 0%, transparent 70%)", animation: "float 10s ease-in-out infinite reverse", filter: "blur(80px)" }} />
+      <div style={{ position: "absolute", top: "30%", right: "10%", width: "30%", height: "30%", background: "radial-gradient(circle, #a78bfa10 0%, transparent 70%)", animation: "float 6s ease-in-out infinite", animationDelay: "-3s", filter: "blur(40px)" }} />
+      <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(rgba(124,58,237,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,0.03) 1px,transparent 1px)`, backgroundSize: "50px 50px", maskImage: "radial-gradient(ellipse at center, black 30%, transparent 80%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%)" }} />
     </div>
   );
 }
 
 // ─── MAGIC CIRCLE ─────────────────────────────────────────────
 function MagicCircle({ active }) {
+  const isMob = typeof window !== "undefined" && window.innerWidth < 768;
+  const size = isMob ? 280 : 500;
+  const innerOff = isMob ? 35 : 60;
+  const coreOff = isMob ? 70 : 120;
+  const spoke = isMob ? -130 : -230;
+  const diamond = isMob ? -90 : -160;
   return (
-    <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%, -50%)", width:500, height:500, pointerEvents:"none", opacity:active ? 0.6 : 0.2, transition:"opacity 0.5s ease" }}>
-      <div style={{ position:"absolute", inset:0, border:"1px solid #7c3aed33", borderRadius:"50%", animation:"runeRotate 60s linear infinite" }}>
+    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: size, height: size, pointerEvents: "none", opacity: active ? 0.6 : 0.2, transition: "opacity 0.5s ease" }}>
+      <div style={{ position: "absolute", inset: 0, border: "1px solid #7c3aed33", borderRadius: "50%", animation: "runeRotate 60s linear infinite" }}>
         {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} style={{ position:"absolute", top:"50%", left:"50%", width:2, height:20, background:"linear-gradient(to bottom, #7c3aed44, transparent)", transformOrigin:"center -230px", transform:`rotate(${i * 30}deg)` }} />
+          <div key={i} style={{ position: "absolute", top: "50%", left: "50%", width: 2, height: isMob ? 12 : 20, background: "linear-gradient(to bottom, #7c3aed44, transparent)", transformOrigin: `center ${spoke}px`, transform: `rotate(${i * 30}deg)` }} />
         ))}
       </div>
-      <div style={{ position:"absolute", inset:60, border:"1px solid #a78bfa22", borderRadius:"50%", animation:"runeRotate 40s linear infinite reverse" }}>
+      <div style={{ position: "absolute", inset: innerOff, border: "1px solid #a78bfa22", borderRadius: "50%", animation: "runeRotate 40s linear infinite reverse" }}>
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} style={{ position:"absolute", top:"50%", left:"50%", fontSize:14, color:"#7c3aed44", transformOrigin:"center -160px", transform:`rotate(${i * 45}deg) translateY(-160px)` }}>◆</div>
+          <div key={i} style={{ position: "absolute", top: "50%", left: "50%", fontSize: isMob ? 10 : 14, color: "#7c3aed44", transformOrigin: `center ${diamond}px`, transform: `rotate(${i * 45}deg) translateY(${diamond}px)` }}>◆</div>
         ))}
       </div>
-      <div style={{ position:"absolute", inset:120, border:"1px solid #7c3aed22", borderRadius:"50%", animation:"runeRotate 25s linear infinite", background:active ? "radial-gradient(circle, #7c3aed08 0%, transparent 70%)" : "transparent", transition:"background 0.5s ease" }} />
-      {active && <div style={{ position:"absolute", inset:"35%", borderRadius:"50%", border:"2px solid #7c3aed44", animation:"energyPulse 2s ease-out infinite" }} />}
+      <div style={{ position: "absolute", inset: coreOff, border: "1px solid #7c3aed22", borderRadius: "50%", animation: "runeRotate 25s linear infinite", background: active ? "radial-gradient(circle, #7c3aed08 0%, transparent 70%)" : "transparent", transition: "background 0.5s ease" }} />
+      {active && <div style={{ position: "absolute", inset: "35%", borderRadius: "50%", border: "2px solid #7c3aed44", animation: "energyPulse 2s ease-out infinite" }} />}
     </div>
   );
 }
@@ -149,9 +155,9 @@ function AuthInput({ type = "text", placeholder, value, onChange, icon, error, d
   const isPassword = type === "password";
   const inputType = isPassword && showPassword ? "text" : type;
   return (
-    <div style={{ position:"relative", marginBottom:16, animation:`slideUp 0.6s ease ${delay}s both` }}>
-      <div style={{ position:"relative", display:"flex", alignItems:"center" }}>
-        <div style={{ position:"absolute", left:16, fontSize:18, color:focused ? "#a78bfa" : "#64748b", transition:"color 0.3s ease", zIndex:1 }}>{icon}</div>
+    <div style={{ position: "relative", marginBottom: 16, animation: `slideUp 0.6s ease ${delay}s both` }}>
+      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+        <div style={{ position: "absolute", left: 16, fontSize: 18, color: focused ? "#a78bfa" : "#64748b", transition: "color 0.3s ease", zIndex: 1 }}>{icon}</div>
         <input
           type={inputType}
           placeholder={placeholder}
@@ -160,25 +166,25 @@ function AuthInput({ type = "text", placeholder, value, onChange, icon, error, d
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={{
-            width:"100%", padding:"16px 50px 16px 48px", borderRadius:14, fontSize:15,
-            fontFamily:"'Outfit', sans-serif",
-            background:focused ? "rgba(124,58,237,0.08)" : "rgba(15,15,30,0.6)",
-            border:`2px solid ${error ? "#ef4444" : focused ? "#7c3aed" : "#1e1e3f"}`,
-            color:"#e2e8f0", outline:"none", transition:"all 0.3s cubic-bezier(0.4,0,0.2,1)",
-            animation:error ? "shakeX 0.5s ease" : "none",
-            boxShadow:focused ? "0 0 30px rgba(124,58,237,0.2), inset 0 0 20px rgba(124,58,237,0.05)" : "none",
+            width: "100%", padding: "16px 50px 16px 48px", borderRadius: 14, fontSize: 15,
+            fontFamily: "'Outfit', sans-serif",
+            background: focused ? "rgba(124,58,237,0.08)" : "rgba(15,15,30,0.6)",
+            border: `2px solid ${error ? "#ef4444" : focused ? "#7c3aed" : "#1e1e3f"}`,
+            color: "#e2e8f0", outline: "none", transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
+            animation: error ? "shakeX 0.5s ease" : "none",
+            boxShadow: focused ? "0 0 30px rgba(124,58,237,0.2), inset 0 0 20px rgba(124,58,237,0.05)" : "none",
           }}
         />
         {isPassword && (
           <button type="button" onClick={() => setShowPassword(!showPassword)}
-            style={{ position:"absolute", right:16, background:"transparent", border:"none", color:"#64748b", cursor:"pointer", fontSize:16, padding:4, transition:"color 0.3s" }}
+            style={{ position: "absolute", right: 16, background: "transparent", border: "none", color: "#64748b", cursor: "pointer", fontSize: 16, padding: 4, transition: "color 0.3s" }}
             onMouseEnter={e => e.currentTarget.style.color = "#a78bfa"}
             onMouseLeave={e => e.currentTarget.style.color = "#64748b"}
           >{showPassword ? "👁️" : "👁️‍🗨️"}</button>
         )}
       </div>
-      {error && <div style={{ marginTop:6, fontSize:11, color:"#ef4444", fontFamily:"'JetBrains Mono', monospace", paddingLeft:16, animation:"slideUp 0.3s ease" }}>⚠ {error}</div>}
-      <div style={{ position:"absolute", bottom:error ? 24 : 0, left:"50%", transform:"translateX(-50%)", width:focused ? "90%" : "0%", height:2, background:"linear-gradient(90deg, transparent, #7c3aed, transparent)", borderRadius:2, transition:"width 0.3s ease" }} />
+      {error && <div style={{ marginTop: 6, fontSize: 11, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", paddingLeft: 16, animation: "slideUp 0.3s ease" }}>⚠ {error}</div>}
+      <div style={{ position: "absolute", bottom: error ? 24 : 0, left: "50%", transform: "translateX(-50%)", width: focused ? "90%" : "0%", height: 2, background: "linear-gradient(90deg, transparent, #7c3aed, transparent)", borderRadius: 2, transition: "width 0.3s ease" }} />
     </div>
   );
 }
@@ -191,26 +197,26 @@ function AuthButton({ children, onClick, loading, disabled, variant = "primary",
     <button onClick={onClick} disabled={disabled || loading}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
-        width:"100%", padding:isPrimary ? "18px 24px" : "14px 24px", borderRadius:14,
-        fontSize:isPrimary ? 15 : 13, fontWeight:700,
-        fontFamily:isPrimary ? "'Cinzel', serif" : "'JetBrains Mono', monospace",
-        letterSpacing:isPrimary ? 3 : 1,
-        background:isPrimary ? (hover ? "linear-gradient(135deg,#8b5cf6 0%,#7c3aed 50%,#6d28d9 100%)" : "linear-gradient(135deg,#7c3aed 0%,#6d28d9 50%,#5b21b6 100%)") : (hover ? "rgba(124,58,237,0.1)" : "transparent"),
-        color:isPrimary ? "#fff" : (hover ? "#a78bfa" : "#64748b"),
-        border:isPrimary ? "none" : "1px solid #1e1e3f",
-        cursor:disabled || loading ? "not-allowed" : "pointer",
-        transition:"all 0.3s cubic-bezier(0.4,0,0.2,1)",
-        position:"relative", overflow:"hidden", opacity:disabled ? 0.5 : 1,
-        transform:hover && !disabled ? "translateY(-2px)" : "none",
-        boxShadow:isPrimary && hover && !disabled ? "0 10px 40px rgba(124,58,237,0.4), 0 0 80px rgba(124,58,237,0.2)" : isPrimary ? "0 4px 20px rgba(124,58,237,0.3)" : "none",
-        animation:`slideUp 0.6s ease ${delay}s both`,
+        width: "100%", padding: isPrimary ? "18px 24px" : "14px 24px", borderRadius: 14,
+        fontSize: isPrimary ? 15 : 13, fontWeight: 700,
+        fontFamily: isPrimary ? "'Cinzel', serif" : "'JetBrains Mono', monospace",
+        letterSpacing: isPrimary ? 3 : 1,
+        background: isPrimary ? (hover ? "linear-gradient(135deg,#8b5cf6 0%,#7c3aed 50%,#6d28d9 100%)" : "linear-gradient(135deg,#7c3aed 0%,#6d28d9 50%,#5b21b6 100%)") : (hover ? "rgba(124,58,237,0.1)" : "transparent"),
+        color: isPrimary ? "#fff" : (hover ? "#a78bfa" : "#64748b"),
+        border: isPrimary ? "none" : "1px solid #1e1e3f",
+        cursor: disabled || loading ? "not-allowed" : "pointer",
+        transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
+        position: "relative", overflow: "hidden", opacity: disabled ? 0.5 : 1,
+        transform: hover && !disabled ? "translateY(-2px)" : "none",
+        boxShadow: isPrimary && hover && !disabled ? "0 10px 40px rgba(124,58,237,0.4), 0 0 80px rgba(124,58,237,0.2)" : isPrimary ? "0 4px 20px rgba(124,58,237,0.3)" : "none",
+        animation: `slideUp 0.6s ease ${delay}s both`,
         marginBottom: 8,
       }}
     >
-      {isPrimary && !loading && <div style={{ position:"absolute", top:0, left:hover ? "100%" : "-100%", width:"100%", height:"100%", background:"linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)", transition:"left 0.5s ease" }} />}
+      {isPrimary && !loading && <div style={{ position: "absolute", top: 0, left: hover ? "100%" : "-100%", width: "100%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)", transition: "left 0.5s ease" }} />}
       {loading ? (
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
-          <div style={{ width:18, height:18, border:"2px solid rgba(255,255,255,0.3)", borderTopColor:"#fff", borderRadius:"50%", animation:"runeRotate 0.8s linear infinite" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+          <div style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "runeRotate 0.8s linear infinite" }} />
           <span>PROCESSING...</span>
         </div>
       ) : children}
@@ -224,17 +230,17 @@ function SocialButton({ icon, label, onClick, delay = 0 }) {
   return (
     <button onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
-        flex:1, padding:"14px 16px", borderRadius:12, fontSize:12,
-        fontFamily:"'JetBrains Mono', monospace",
-        background:hover ? "rgba(124,58,237,0.1)" : "rgba(15,15,30,0.6)",
-        color:hover ? "#a78bfa" : "#94a3b8",
-        border:`1px solid ${hover ? "#7c3aed44" : "#1e1e3f"}`,
-        cursor:"pointer", transition:"all 0.3s ease",
-        display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-        animation:`slideUp 0.6s ease ${delay}s both`,
+        flex: 1, padding: "14px 16px", borderRadius: 12, fontSize: 12,
+        fontFamily: "'JetBrains Mono', monospace",
+        background: hover ? "rgba(124,58,237,0.1)" : "rgba(15,15,30,0.6)",
+        color: hover ? "#a78bfa" : "#94a3b8",
+        border: `1px solid ${hover ? "#7c3aed44" : "#1e1e3f"}`,
+        cursor: "pointer", transition: "all 0.3s ease",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        animation: `slideUp 0.6s ease ${delay}s both`,
       }}
     >
-      <span style={{ fontSize:18 }}>{icon}</span>
+      <span style={{ fontSize: 18 }}>{icon}</span>
       <span>{label}</span>
     </button>
   );
@@ -243,28 +249,28 @@ function SocialButton({ icon, label, onClick, delay = 0 }) {
 // ─── PASSWORD STRENGTH ────────────────────────────────────────
 function PasswordStrength({ password }) {
   const getStrength = () => {
-    if (!password) return { level:0, label:"", color:"#1e1e3f" };
+    if (!password) return { level: 0, label: "", color: "#1e1e3f" };
     let score = 0;
     if (password.length >= 8) score++;
     if (password.length >= 12) score++;
     if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
     if (/\d/.test(password)) score++;
     if (/[^a-zA-Z0-9]/.test(password)) score++;
-    if (score <= 1) return { level:1, label:"SCHWACH", color:"#ef4444" };
-    if (score <= 2) return { level:2, label:"MITTEL", color:"#f59e0b" };
-    if (score <= 3) return { level:3, label:"GUT", color:"#22c55e" };
-    return { level:4, label:"STARK", color:"#7c3aed" };
+    if (score <= 1) return { level: 1, label: "SCHWACH", color: "#ef4444" };
+    if (score <= 2) return { level: 2, label: "MITTEL", color: "#f59e0b" };
+    if (score <= 3) return { level: 3, label: "GUT", color: "#22c55e" };
+    return { level: 4, label: "STARK", color: "#7c3aed" };
   };
   const strength = getStrength();
   if (!password) return null;
   return (
-    <div style={{ marginBottom:16, animation:"fadeIn 0.3s ease" }}>
-      <div style={{ display:"flex", gap:4, marginBottom:6 }}>
-        {[1,2,3,4].map(level => (
-          <div key={level} style={{ flex:1, height:3, borderRadius:2, background:level <= strength.level ? strength.color : "#1e1e3f", transition:"all 0.3s ease" }} />
+    <div style={{ marginBottom: 16, animation: "fadeIn 0.3s ease" }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+        {[1, 2, 3, 4].map(level => (
+          <div key={level} style={{ flex: 1, height: 3, borderRadius: 2, background: level <= strength.level ? strength.color : "#1e1e3f", transition: "all 0.3s ease" }} />
         ))}
       </div>
-      <div style={{ fontSize:10, fontFamily:"'JetBrains Mono', monospace", color:strength.color, letterSpacing:1, textAlign:"right" }}>{strength.label}</div>
+      <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: strength.color, letterSpacing: 1, textAlign: "right" }}>{strength.label}</div>
     </div>
   );
 }
@@ -284,19 +290,19 @@ function SuccessAnimation({ hunterName, onComplete }) {
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:1000, background:"rgba(2,1,8,0.98)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column" }}>
-      {phase >= 1 && <div style={{ position:"absolute", width:300, height:300, borderRadius:"50%", border:"2px solid #7c3aed", animation:"portalOpen 1s cubic-bezier(0.34,1.56,0.64,1)", boxShadow:"0 0 60px #7c3aed44, inset 0 0 60px #7c3aed22" }} />}
-      {phase >= 2 && <div style={{ position:"absolute", width:4, background:"linear-gradient(to top, transparent, #7c3aed, #a78bfa, transparent)", animation:"lightBeam 1s ease-out forwards", filter:"blur(2px)" }} />}
-      {phase >= 2 && <div style={{ fontSize:80, animation:"successPulse 0.6s cubic-bezier(0.34,1.56,0.64,1)", filter:"drop-shadow(0 0 40px #7c3aed)", marginBottom:20, zIndex:1 }}>⚔️</div>}
-      {phase >= 3 && <div style={{ fontSize:11, letterSpacing:6, color:"#7c3aed", fontFamily:"'JetBrains Mono', monospace", marginBottom:12, animation:"fadeIn 0.6s ease" }}>SYSTEM ACTIVATED</div>}
-      {phase >= 4 && <div style={{ fontSize:36, fontWeight:900, color:"#fff", fontFamily:"'Cinzel', serif", letterSpacing:4, textShadow:"0 0 40px #7c3aed", marginBottom:8, animation:"slideUp 0.6s ease" }}>{hunterName.toUpperCase()}</div>}
-      {phase >= 4 && <div style={{ fontSize:14, color:"#6b7280", fontFamily:"'Cinzel', serif", letterSpacing:3, animation:"fadeIn 0.6s ease 0.2s both" }}>E-RANK HUNTER</div>}
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(2,1,8,0.98)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+      {phase >= 1 && <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", border: "2px solid #7c3aed", animation: "portalOpen 1s cubic-bezier(0.34,1.56,0.64,1)", boxShadow: "0 0 60px #7c3aed44, inset 0 0 60px #7c3aed22" }} />}
+      {phase >= 2 && <div style={{ position: "absolute", width: 4, background: "linear-gradient(to top, transparent, #7c3aed, #a78bfa, transparent)", animation: "lightBeam 1s ease-out forwards", filter: "blur(2px)" }} />}
+      {phase >= 2 && <div style={{ fontSize: 80, animation: "successPulse 0.6s cubic-bezier(0.34,1.56,0.64,1)", filter: "drop-shadow(0 0 40px #7c3aed)", marginBottom: 20, zIndex: 1 }}>⚔️</div>}
+      {phase >= 3 && <div style={{ fontSize: 11, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, animation: "fadeIn 0.6s ease" }}>SYSTEM ACTIVATED</div>}
+      {phase >= 4 && <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 4, textShadow: "0 0 40px #7c3aed", marginBottom: 8, animation: "slideUp 0.6s ease" }}>{hunterName.toUpperCase()}</div>}
+      {phase >= 4 && <div style={{ fontSize: 14, color: "#6b7280", fontFamily: "'Cinzel', serif", letterSpacing: 3, animation: "fadeIn 0.6s ease 0.2s both" }}>E-RANK HUNTER</div>}
       {phase >= 5 && (
-        <div style={{ marginTop:30, display:"flex", gap:20, animation:"fadeIn 0.6s ease" }}>
-          {[{stat:"STR",val:0,color:"#ef4444"},{stat:"INT",val:0,color:"#3b82f6"},{stat:"VIT",val:0,color:"#22c55e"},{stat:"AGI",val:0,color:"#f59e0b"},{stat:"CHA",val:0,color:"#a855f7"}].map((s, i) => (
-            <div key={s.stat} style={{ textAlign:"center", animation:`statsReveal 0.4s ease ${i * 0.1}s both` }}>
-              <div style={{ fontSize:10, color:s.color, fontFamily:"'JetBrains Mono', monospace", marginBottom:4 }}>{s.stat}</div>
-              <div style={{ fontSize:18, fontWeight:900, color:"#fff", fontFamily:"'Cinzel', serif" }}>{s.val}</div>
+        <div style={{ marginTop: 30, display: "flex", gap: 20, animation: "fadeIn 0.6s ease" }}>
+          {[{ stat: "STR", val: 0, color: "#ef4444" }, { stat: "INT", val: 0, color: "#3b82f6" }, { stat: "VIT", val: 0, color: "#22c55e" }, { stat: "AGI", val: 0, color: "#f59e0b" }, { stat: "CHA", val: 0, color: "#a855f7" }].map((s, i) => (
+            <div key={s.stat} style={{ textAlign: "center", animation: `statsReveal 0.4s ease ${i * 0.1}s both` }}>
+              <div style={{ fontSize: 10, color: s.color, fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>{s.stat}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif" }}>{s.val}</div>
             </div>
           ))}
         </div>
@@ -316,15 +322,16 @@ export default function AuthScreen({ onAuthSuccess }) {
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const authScrollRef    = useRef(null);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const authScrollRef = useRef(null);
   // Imperative refs for progress-driven UI (no re-renders)
   const formContainerRef = useRef(null);
-  const headerRef        = useRef(null);
-  const scrollHintRef    = useRef(null);
-  const msg1Ref          = useRef(null);
-  const msg2Ref          = useRef(null);
-  const msg3Ref          = useRef(null);
-  const vignetteRef      = useRef(null);
+  const headerRef = useRef(null);
+  const scrollHintRef = useRef(null);
+  const msg1Ref = useRef(null);
+  const msg2Ref = useRef(null);
+  const msg3Ref = useRef(null);
+  const vignetteRef = useRef(null);
 
   // Called every frame by AuthTunnelScene — only DOM manipulation, no setState
   const handleProgress = useCallback((p) => {
@@ -454,22 +461,22 @@ export default function AuthScreen({ onAuthSuccess }) {
 
   // ── Form card (pure HTML — rendered as fixed overlay, NOT in 3D) ─────────────
   const formCard = (
-    <div style={{ background:"rgba(8,5,20,0.88)", border:"1px solid #2d1b69", borderRadius:20, padding:"32px 28px", backdropFilter:"blur(24px) saturate(1.4)", boxShadow:"0 0 0 1px #7c3aed22, 0 20px 60px rgba(0,0,0,0.7), 0 0 80px rgba(124,58,237,0.12), inset 0 1px 0 rgba(167,139,250,0.08)", position:"relative", overflow:"hidden" }}>
+    <div style={{ background: "rgba(8,5,20,0.88)", border: "1px solid #2d1b69", borderRadius: isMobile ? 16 : 20, padding: isMobile ? "24px 18px" : "32px 28px", backdropFilter: "blur(24px) saturate(1.4)", boxShadow: "0 0 0 1px #7c3aed22, 0 20px 60px rgba(0,0,0,0.7), 0 0 80px rgba(124,58,237,0.12), inset 0 1px 0 rgba(167,139,250,0.08)", position: "relative", overflow: "hidden" }}>
       {/* Inner glow accent line at top */}
-      <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg, transparent, #7c3aed88, transparent)", zIndex:1 }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, #7c3aed88, transparent)", zIndex: 1 }} />
 
       {/* Mode tabs */}
       {mode !== "forgot" && (
-        <div style={{ display:"flex", marginBottom:28, background:"rgba(10,8,25,0.7)", borderRadius:12, padding:4, border:"1px solid #1e1040" }}>
-          {["login","register"].map((m) => (
+        <div style={{ display: "flex", marginBottom: 28, background: "rgba(10,8,25,0.7)", borderRadius: 12, padding: 4, border: "1px solid #1e1040" }}>
+          {["login", "register"].map((m) => (
             <button key={m} onClick={() => switchMode(m)}
               style={{
-                flex:1, padding:"11px 16px", borderRadius:10, fontSize:11, fontWeight:700,
-                fontFamily:"'JetBrains Mono', monospace", letterSpacing:2,
-                background:mode === m ? "linear-gradient(135deg, #7c3aed28, #4c1d9522)" : "transparent",
-                color:mode === m ? "#a78bfa" : "#3d3560",
-                border:mode === m ? "1px solid #7c3aed55" : "1px solid transparent",
-                cursor:"pointer", transition:"all 0.3s ease",
+                flex: 1, padding: "11px 16px", borderRadius: 10, fontSize: 11, fontWeight: 700,
+                fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2,
+                background: mode === m ? "linear-gradient(135deg, #7c3aed28, #4c1d9522)" : "transparent",
+                color: mode === m ? "#a78bfa" : "#3d3560",
+                border: mode === m ? "1px solid #7c3aed55" : "1px solid transparent",
+                cursor: "pointer", transition: "all 0.3s ease",
               }}
             >{m === "login" ? "EINLOGGEN" : "REGISTRIEREN"}</button>
           ))}
@@ -488,25 +495,25 @@ export default function AuthScreen({ onAuthSuccess }) {
       {mode === "register" && <AuthInput type="password" placeholder="Passwort bestätigen" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} icon="🔒" error={errors.confirmPassword} delay={0.15} />}
 
       {mode === "register" && (
-        <div style={{ marginBottom:20, animation:"slideUp 0.6s ease 0.2s both" }}>
-          <label style={{ display:"flex", alignItems:"flex-start", gap:12, cursor:"pointer" }}>
+        <div style={{ marginBottom: 20, animation: "slideUp 0.6s ease 0.2s both" }}>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer" }}>
             <div
-              style={{ width:20, height:20, borderRadius:6, border:`2px solid ${errors.terms ? "#ef4444" : agreedToTerms ? "#7c3aed" : "#1e1e3f"}`, background:agreedToTerms ? "#7c3aed" : "transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.3s ease", flexShrink:0, marginTop:2 }}
+              style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${errors.terms ? "#ef4444" : agreedToTerms ? "#7c3aed" : "#1e1e3f"}`, background: agreedToTerms ? "#7c3aed" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s ease", flexShrink: 0, marginTop: 2 }}
               onClick={() => setAgreedToTerms(!agreedToTerms)}
             >
-              {agreedToTerms && <span style={{ color:"#fff", fontSize:12 }}>✓</span>}
+              {agreedToTerms && <span style={{ color: "#fff", fontSize: 12 }}>✓</span>}
             </div>
-            <span style={{ fontSize:12, color:"#64748b", lineHeight:1.5 }}>
-              Ich akzeptiere die <span style={{ color:"#a78bfa", cursor:"pointer" }}>Hunter-Vereinbarung</span> und die <span style={{ color:"#a78bfa", cursor:"pointer" }}>System-Bedingungen</span>
+            <span style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+              Ich akzeptiere die <span style={{ color: "#a78bfa", cursor: "pointer" }}>Hunter-Vereinbarung</span> und die <span style={{ color: "#a78bfa", cursor: "pointer" }}>System-Bedingungen</span>
             </span>
           </label>
-          {errors.terms && <div style={{ marginTop:6, fontSize:11, color:"#ef4444", fontFamily:"'JetBrains Mono', monospace", paddingLeft:32 }}>⚠ {errors.terms}</div>}
+          {errors.terms && <div style={{ marginTop: 6, fontSize: 11, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", paddingLeft: 32 }}>⚠ {errors.terms}</div>}
         </div>
       )}
 
       {mode === "login" && (
-        <div style={{ textAlign:"right", marginBottom:20, animation:"fadeIn 0.6s ease 0.2s both" }}>
-          <button onClick={() => switchMode("forgot")} style={{ background:"transparent", border:"none", color:"#4a4070", fontSize:12, fontFamily:"'JetBrains Mono', monospace", cursor:"pointer", transition:"color 0.3s" }}
+        <div style={{ textAlign: "right", marginBottom: 20, animation: "fadeIn 0.6s ease 0.2s both" }}>
+          <button onClick={() => switchMode("forgot")} style={{ background: "transparent", border: "none", color: "#4a4070", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", transition: "color 0.3s" }}
             onMouseEnter={e => e.currentTarget.style.color = "#a78bfa"}
             onMouseLeave={e => e.currentTarget.style.color = "#4a4070"}
           >Passwort vergessen?</button>
@@ -514,12 +521,12 @@ export default function AuthScreen({ onAuthSuccess }) {
       )}
 
       {errors.server && (
-        <div style={{ marginBottom:16, padding:"12px 16px", borderRadius:10, background:"rgba(239,68,68,0.08)", border:"1px solid #ef444433", color:"#ef4444", fontSize:12, fontFamily:"'JetBrains Mono', monospace", animation:"fadeIn 0.3s ease" }}>
+        <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid #ef444433", color: "#ef4444", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", animation: "fadeIn 0.3s ease" }}>
           ⚠ {errors.server}
         </div>
       )}
       {errors.success && (
-        <div style={{ marginBottom:16, padding:"12px 16px", borderRadius:10, background:"rgba(34,197,94,0.08)", border:"1px solid #22c55e33", color:"#22c55e", fontSize:12, fontFamily:"'JetBrains Mono', monospace", animation:"fadeIn 0.3s ease" }}>
+        <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 10, background: "rgba(34,197,94,0.08)", border: "1px solid #22c55e33", color: "#22c55e", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", animation: "fadeIn 0.3s ease" }}>
           ✓ {errors.success}
         </div>
       )}
@@ -534,22 +541,22 @@ export default function AuthScreen({ onAuthSuccess }) {
 
       {mode !== "forgot" && (
         <>
-          <div style={{ display:"flex", alignItems:"center", gap:16, margin:"24px 0" }}>
-            <div style={{ flex:1, height:1, background:"#1a1035" }} />
-            <span style={{ fontSize:10, color:"#2d2050", fontFamily:"'JetBrains Mono', monospace", letterSpacing:2 }}>ODER</span>
-            <div style={{ flex:1, height:1, background:"#1a1035" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "24px 0" }}>
+            <div style={{ flex: 1, height: 1, background: "#1a1035" }} />
+            <span style={{ fontSize: 10, color: "#2d2050", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2 }}>ODER</span>
+            <div style={{ flex: 1, height: 1, background: "#1a1035" }} />
           </div>
-          <div style={{ display:"flex", gap:12 }}>
+          <div style={{ display: "flex", gap: 12 }}>
             <SocialButton icon="🔷" label="Google" onClick={handleGoogleLogin} delay={0.35} />
             <SocialButton icon="🍎" label="Apple" onClick={handleAppleLogin} delay={0.4} />
           </div>
         </>
       )}
 
-      <div style={{ textAlign:"center", marginTop:20 }}>
-        <p style={{ fontSize:11, color:"#2d2a4a", fontFamily:"'JetBrains Mono', monospace" }}>
-          {mode === "login" && <>Noch kein Hunter?{" "}<span onClick={() => switchMode("register")} style={{ color:"#7c3aed", cursor:"pointer" }}>Jetzt registrieren</span></>}
-          {mode === "register" && <>Bereits ein Hunter?{" "}<span onClick={() => switchMode("login")} style={{ color:"#7c3aed", cursor:"pointer" }}>Einloggen</span></>}
+      <div style={{ textAlign: "center", marginTop: 20 }}>
+        <p style={{ fontSize: 11, color: "#2d2a4a", fontFamily: "'JetBrains Mono', monospace" }}>
+          {mode === "login" && <>Noch kein Hunter?{" "}<span onClick={() => switchMode("register")} style={{ color: "#7c3aed", cursor: "pointer" }}>Jetzt registrieren</span></>}
+          {mode === "register" && <>Bereits ein Hunter?{" "}<span onClick={() => switchMode("login")} style={{ color: "#7c3aed", cursor: "pointer" }}>Einloggen</span></>}
         </p>
       </div>
     </div>
@@ -557,14 +564,15 @@ export default function AuthScreen({ onAuthSuccess }) {
 
   const SL_MSG = {
     fontFamily: "'JetBrains Mono', monospace",
-    letterSpacing: 5,
-    fontSize: 11,
+    letterSpacing: isMobile ? 2 : 5,
+    fontSize: isMobile ? 9 : 11,
     pointerEvents: "none",
     transition: "opacity 0.9s ease",
+    padding: isMobile ? "0 16px" : 0,
   };
 
   return (
-    <div ref={authScrollRef} style={{ position:"fixed", inset:0, overflow:"hidden", background:"#030009" }}>
+    <div ref={authScrollRef} style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#030009" }}>
       <style>{AUTH_CSS}</style>
 
       {/* ── 3D Tunnel scene ──────────────────────────────────────── */}
@@ -583,12 +591,16 @@ export default function AuthScreen({ onAuthSuccess }) {
       )}
 
       {/* ── Scanlines — SL terminal aesthetic ────────────────────── */}
-      <div style={{ position:"fixed", inset:0, zIndex:2, pointerEvents:"none",
-        backgroundImage:"repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)" }} />
+      <div style={{
+        position: "fixed", inset: 0, zIndex: 2, pointerEvents: "none",
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)"
+      }} />
 
       {/* ── Vignette ──────────────────────────────────────────────── */}
-      <div ref={vignetteRef} style={{ position:"fixed", inset:0, zIndex:3, pointerEvents:"none", opacity:0.7,
-        background:"radial-gradient(ellipse 80% 70% at 50% 50%, transparent 20%, rgba(2,0,12,0.85) 100%)" }} />
+      <div ref={vignetteRef} style={{
+        position: "fixed", inset: 0, zIndex: 3, pointerEvents: "none", opacity: 0.7,
+        background: "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 20%, rgba(2,0,12,0.85) 100%)"
+      }} />
 
       {/* ── Corner brackets (SL UI accent) ───────────────────────── */}
       {["top:12px;left:12px", "top:12px;right:12px", "bottom:12px;left:12px", "bottom:12px;right:12px"].map((pos, i) => {
@@ -596,35 +608,37 @@ export default function AuthScreen({ onAuthSuccess }) {
         const isRight = pos.includes("right");
         const isBottom = pos.includes("bottom");
         return (
-          <div key={i} style={{ position:"fixed", ...style, zIndex:6, pointerEvents:"none", width:20, height:20,
+          <div key={i} style={{
+            position: "fixed", ...style, zIndex: 6, pointerEvents: "none", width: 20, height: 20,
             borderTop: isBottom ? "none" : "1px solid #7c3aed44",
             borderBottom: isBottom ? "1px solid #7c3aed44" : "none",
             borderLeft: isRight ? "none" : "1px solid #7c3aed44",
-            borderRight: isRight ? "1px solid #7c3aed44" : "none" }} />
+            borderRight: isRight ? "1px solid #7c3aed44" : "none"
+          }} />
         );
       })}
 
       {/* ── Solo Leveling narrative overlays ──────────────────────── */}
-      <div style={{ position:"fixed", bottom:120, left:0, right:0, zIndex:8, textAlign:"center", pointerEvents:"none" }}>
+      <div style={{ position: "fixed", bottom: isMobile ? 80 : 120, left: 0, right: 0, zIndex: 8, textAlign: "center", pointerEvents: "none" }}>
         {/* msg1: 12%–40% — gate detected */}
-        <div ref={msg1Ref} style={{ ...SL_MSG, opacity:0, color:"#a78bfa", textShadow:"0 0 18px #7c3aed" }}>
+        <div ref={msg1Ref} style={{ ...SL_MSG, opacity: 0, color: "#a78bfa", textShadow: "0 0 18px #7c3aed" }}>
           ⚠ SYSTEM · GATE DETECTED
         </div>
         {/* msg2: 44%–70% — portal sequence */}
-        <div ref={msg2Ref} style={{ ...SL_MSG, opacity:0, color:"#7c3aed", letterSpacing:4, textShadow:"0 0 12px #7c3aed66" }}>
+        <div ref={msg2Ref} style={{ ...SL_MSG, opacity: 0, color: "#7c3aed", letterSpacing: 4, textShadow: "0 0 12px #7c3aed66" }}>
           PORTAL AUTHENTICATION SEQUENCE INITIATED
         </div>
         {/* msg3: 76%–87% — auth required (pulses) */}
-        <div ref={msg3Ref} style={{ ...SL_MSG, opacity:0, color:"#e2d9ff", letterSpacing:6, animation:"pulse 1.2s ease-in-out infinite", textShadow:"0 0 28px #a78bfa" }}>
+        <div ref={msg3Ref} style={{ ...SL_MSG, opacity: 0, color: "#e2d9ff", letterSpacing: 6, animation: "pulse 1.2s ease-in-out infinite", textShadow: "0 0 28px #a78bfa" }}>
           ⚔ HUNTER AUTHENTICATION REQUIRED
         </div>
       </div>
 
       {/* ── Header — fades out as user approaches portal ──────────── */}
-      <div ref={headerRef} style={{ position:"fixed", top:0, left:0, right:0, display:"flex", flexDirection:"column", alignItems:"center", paddingTop:38, zIndex:12, pointerEvents:"none", transition:"opacity 0.5s ease" }}>
-        <div style={{ fontSize:50, marginBottom:10, animation:"float 3s ease-in-out infinite, glow 3s ease-in-out infinite" }}>⚔️</div>
-        <h1 style={{ fontSize:36, fontWeight:900, fontFamily:"'Cinzel', serif", color:"#fff", letterSpacing:8, marginBottom:6, animation:"textGlow 3s ease-in-out infinite, slideDown 0.8s ease" }}>ARISE</h1>
-        <p style={{ fontSize:11, fontFamily:"'JetBrains Mono', monospace", color:"#7c3aed", letterSpacing:5, animation:"fadeIn 1s ease 0.3s both" }}>
+      <div ref={headerRef} style={{ position: "fixed", top: 0, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: isMobile ? 24 : 38, zIndex: 12, pointerEvents: "none", transition: "opacity 0.5s ease" }}>
+        <div style={{ fontSize: isMobile ? 36 : 50, marginBottom: isMobile ? 6 : 10, animation: "float 3s ease-in-out infinite, glow 3s ease-in-out infinite" }}>⚔️</div>
+        <h1 style={{ fontSize: isMobile ? 26 : 36, fontWeight: 900, fontFamily: "'Cinzel', serif", color: "#fff", letterSpacing: isMobile ? 5 : 8, marginBottom: 6, animation: "textGlow 3s ease-in-out infinite, slideDown 0.8s ease" }}>ARISE</h1>
+        <p style={{ fontSize: isMobile ? 9 : 11, fontFamily: "'JetBrains Mono', monospace", color: "#7c3aed", letterSpacing: isMobile ? 3 : 5, animation: "fadeIn 1s ease 0.3s both" }}>
           {mode === "login" && "HUNTER SYSTEM ACCESS"}
           {mode === "register" && "NEW HUNTER REGISTRATION"}
           {mode === "forgot" && "PASSWORD RECOVERY"}
@@ -633,10 +647,10 @@ export default function AuthScreen({ onAuthSuccess }) {
 
       {/* ── Scroll hint ───────────────────────────────────────────── */}
       {HAS_WEBGL && (
-        <div ref={scrollHintRef} style={{ position:"fixed", bottom:36, left:"50%", transform:"translateX(-50%)", zIndex:10, pointerEvents:"none", textAlign:"center", transition:"opacity 0.6s ease" }}>
-          <div style={{ animation:"float 2.2s ease-in-out infinite" }}>
-            <p style={{ fontFamily:"'JetBrains Mono', monospace", fontSize:9, letterSpacing:5, color:"#2d1f5e", marginBottom:4 }}>SCROLL TO APPROACH</p>
-            <p style={{ fontSize:16, color:"#3d2a7a" }}>↓</p>
+        <div ref={scrollHintRef} style={{ position: "fixed", bottom: isMobile ? 24 : 36, left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none", textAlign: "center", transition: "opacity 0.6s ease" }}>
+          <div style={{ animation: "float 2.2s ease-in-out infinite" }}>
+            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: isMobile ? 8 : 9, letterSpacing: isMobile ? 3 : 5, color: "#2d1f5e", marginBottom: 4 }}>{isMobile ? "SWIPE TO APPROACH" : "SCROLL TO APPROACH"}</p>
+            <p style={{ fontSize: isMobile ? 14 : 16, color: "#3d2a7a" }}>↓</p>
           </div>
         </div>
       )}
@@ -646,21 +660,23 @@ export default function AuthScreen({ onAuthSuccess }) {
         ref={formContainerRef}
         style={{
           position: "fixed", inset: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "20px", paddingTop: "90px",
+          display: "flex", alignItems: isMobile ? "flex-start" : "center", justifyContent: "center",
+          padding: isMobile ? "12px" : "20px", paddingTop: isMobile ? "60px" : "90px",
           zIndex: 25,
           opacity: 0, pointerEvents: "none",
+          overflowY: isMobile ? "auto" : "hidden",
+          WebkitOverflowScrolling: "touch",
         }}
       >
-        <div style={{ width: "100%", maxWidth: 440 }}>
+        <div style={{ width: "100%", maxWidth: isMobile ? 380 : 440 }}>
           {formCard}
         </div>
       </div>
 
       {/* No-WebGL fallback: form shown immediately */}
       {!HAS_WEBGL && (
-        <div style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px", zIndex:25 }}>
-          <div style={{ width:"100%", maxWidth:440 }}>{formCard}</div>
+        <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", zIndex: 25 }}>
+          <div style={{ width: "100%", maxWidth: 440 }}>{formCard}</div>
         </div>
       )}
 
@@ -668,7 +684,7 @@ export default function AuthScreen({ onAuthSuccess }) {
       <MagicCircle active={loading} />
 
       {/* Version watermark */}
-      <div style={{ position:"fixed", bottom:20, left:"50%", transform:"translateX(-50%)", fontSize:9, color:"#1e2a3a", fontFamily:"'JetBrains Mono', monospace", letterSpacing:2, zIndex:5 }}>
+      <div style={{ position: "fixed", bottom: isMobile ? 10 : 20, left: "50%", transform: "translateX(-50%)", fontSize: isMobile ? 7 : 9, color: "#1e2a3a", fontFamily: "'JetBrains Mono', monospace", letterSpacing: isMobile ? 1 : 2, zIndex: 5 }}>
         SOLO LEVELING v5.0 • ARISE
       </div>
     </div>

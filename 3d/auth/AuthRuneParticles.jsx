@@ -8,9 +8,9 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-const RUNES = ["ᚠ","ᚢ","ᚦ","ᚨ","ᚱ","ᚲ","ᚷ","ᚹ","ᚺ","ᚾ","ᛁ","ᛃ","ᛇ","ᛈ","ᛉ","ᛊ","ᛏ","ᛒ","ᛖ","ᛗ","ᛚ","ᛜ","ᛞ","ᛟ"];
-const RUNE_COLOR   = "#a78bfa"; // light purple
-const RUNE_GLOW    = "#7c3aed"; // deep purple glow
+const RUNES = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ", "ᚺ", "ᚾ", "ᛁ", "ᛃ", "ᛇ", "ᛈ", "ᛉ", "ᛊ", "ᛏ", "ᛒ", "ᛖ", "ᛗ", "ᛚ", "ᛜ", "ᛞ", "ᛟ"];
+const RUNE_COLOR = "#a78bfa"; // light purple
+const RUNE_GLOW = "#7c3aed"; // deep purple glow
 
 function makeRuneTexture(rune) {
   const size = 64;
@@ -40,7 +40,7 @@ function makeRuneTexture(rune) {
 }
 
 export default function AuthRuneParticles({ progressRef, mobile = false }) {
-  const count = mobile ? 8 : 20;
+  const count = mobile ? 14 : 20;
 
   const runes = useMemo(() => Array.from({ length: count }, (_, i) => ({
     tex: makeRuneTexture(RUNES[i % RUNES.length]),

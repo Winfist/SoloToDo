@@ -13,10 +13,10 @@ const VEIN_COLOR = "#7c3aed";
 const VEIN_R = 124, VEIN_G = 58, VEIN_B = 237;
 
 export const TUNNEL_CURVE = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(0,    0,    20),
-  new THREE.Vector3(0.7,  0.15, 13),
-  new THREE.Vector3(-0.5, -0.1,  7),
-  new THREE.Vector3(0,    0,     0),
+  new THREE.Vector3(0, 0, 20),
+  new THREE.Vector3(0.7, 0.15, 13),
+  new THREE.Vector3(-0.5, -0.1, 7),
+  new THREE.Vector3(0, 0, 0),
 ]);
 
 // ── Procedural stone texture with purple energy veins ────────────────────────
@@ -34,7 +34,7 @@ function makeStoneTexture() {
     const x = Math.random() * SIZE, y = Math.random() * SIZE;
     ctx.beginPath();
     ctx.arc(x, y, Math.random() * 2, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${Math.floor(Math.random()*30)},${Math.floor(Math.random()*20)},${Math.floor(Math.random()*50)},0.09)`;
+    ctx.fillStyle = `rgba(${Math.floor(Math.random() * 30)},${Math.floor(Math.random() * 20)},${Math.floor(Math.random() * 50)},0.09)`;
     ctx.fill();
   }
 
@@ -67,7 +67,7 @@ function makeStoneTexture() {
   }
 
   // Rune glyphs — purple tinted
-  const RUNES = ["ᚠ","ᚢ","ᚦ","ᚨ","ᚱ","ᚲ","ᚷ","ᚹ","ᚺ","ᚾ","ᛁ","ᛃ","ᛇ","ᛈ","ᛉ","ᛊ","ᛏ","ᛒ","ᛖ","ᛗ","ᛚ","ᛜ","ᛞ","ᛟ"];
+  const RUNES = ["ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ", "ᚷ", "ᚹ", "ᚺ", "ᚾ", "ᛁ", "ᛃ", "ᛇ", "ᛈ", "ᛉ", "ᛊ", "ᛏ", "ᛒ", "ᛖ", "ᛗ", "ᛚ", "ᛜ", "ᛞ", "ᛟ"];
   ctx.font = "bold 18px monospace";
   ctx.fillStyle = `rgba(${VEIN_R},${VEIN_G},${VEIN_B},0.10)`;
   for (let row = 0; row < 20; row++) {
@@ -157,11 +157,11 @@ function ArchRings({ count = 7 }) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function AuthTunnelWalls({ mobile = false }) {
-  const segs    = mobile ? 60 : 120;
-  const radSegs = mobile ? 8  : 12;
+  const segs = mobile ? 80 : 120;
+  const radSegs = mobile ? 10 : 12;
 
   const wallGeo = useMemo(() => new THREE.TubeGeometry(TUNNEL_CURVE, segs, 3.2, radSegs, false), [segs, radSegs]);
-  const veinGeo = useMemo(() => mobile ? null : new THREE.TubeGeometry(TUNNEL_CURVE, 60, 3.13, radSegs, false), [mobile, radSegs]);
+  const veinGeo = useMemo(() => new THREE.TubeGeometry(TUNNEL_CURVE, 60, 3.13, radSegs, false), [radSegs]);
 
   const wallTex = useMemo(() => {
     const t = makeStoneTexture();
@@ -197,7 +197,7 @@ export default function AuthTunnelWalls({ mobile = false }) {
       <PulsingVeinTube veinTex={veinTex} geo={veinGeo} />
 
       {/* Arch trim rings */}
-      <ArchRings count={mobile ? 4 : 7} />
+      <ArchRings count={mobile ? 5 : 7} />
 
       {/* Back cap — solid dark behind portal */}
       <mesh position={[0, 0, -1.5]}>
