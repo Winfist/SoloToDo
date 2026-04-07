@@ -38,6 +38,7 @@ export function useScrollCamera(
     camera.position.set(0, 0, Z_START);
 
     const state = { z: Z_START };
+    let currentTargetZ = Z_START;
 
     function getProgress() {
       return Math.max(0, Math.min(1, 1 - (state.z - Z_END) / Z_RANGE));
@@ -79,6 +80,7 @@ export function useScrollCamera(
 
     if (autoApproachRef) {
       autoApproachRef.current = () => {
+        currentTargetZ = Z_END;
         // Continuous, unbroken cinematic approach for AAA feel
         // Starts very slow to build tension, then accelerates powerfully into the void
         gsap.to(state, {
@@ -95,7 +97,9 @@ export function useScrollCamera(
       if (!scrollContainerRef?.current) return;
       e.preventDefault();
       const mult = getZoneMultiplier(state.z);
-      moveTo(state.z + e.deltaY * 0.3 * mult);
+      currentTargetZ += e.deltaY * 0.15 * mult;
+      currentTargetZ = Math.max(Z_END, Math.min(Z_START, currentTargetZ));
+      moveTo(currentTargetZ);
     }
 
     let touchY = 0;
@@ -109,7 +113,9 @@ export function useScrollCamera(
       const dy = touchY - e.touches[0].clientY;
       touchY = e.touches[0].clientY;
       const mult = getZoneMultiplier(state.z);
-      moveTo(state.z + dy * 0.8 * mult);
+      currentTargetZ += dy * 0.3 * mult;
+      currentTargetZ = Math.max(Z_END, Math.min(Z_START, currentTargetZ));
+      moveTo(currentTargetZ);
     }
 
     window.addEventListener("wheel", handleWheel, { passive: false });
