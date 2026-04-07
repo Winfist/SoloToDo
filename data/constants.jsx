@@ -710,6 +710,12 @@ const DEFAULT_STATE = {
     totalStoryXp: 0,
   },
   lifeDomains: [],
+  manifestations: [],
+  sanctum: {
+    level: 1,
+    willpower: 0,
+    totalMeditationMinutes: 0
+  },
   multiplayer: {
     activeRaid: null,
     guild: null,

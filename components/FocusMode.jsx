@@ -36,15 +36,19 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
 
     const timerRef = useRef(null);
 
+    const manifestationsList = state.manifestations?.length > 0
+        ? state.manifestations.map(m => m.text)
+        : AFFIRMATIONS;
+
     // Affirmation Rotator
     useEffect(() => {
         if (running && phase === "work") {
             const interval = setInterval(() => {
-                setAffirmationIdx(prev => (prev + 1) % AFFIRMATIONS.length);
+                setAffirmationIdx(prev => (prev + 1) % manifestationsList.length);
             }, 8000);
             return () => clearInterval(interval);
         }
-    }, [running, phase]);
+    }, [running, phase, manifestationsList.length]);
 
     // Handle mode switches when not running
     useEffect(() => {
@@ -72,16 +76,36 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
 
                 let nextState = calculateLevelUp(state, xpGain);
 
+                // Add Focus minutes to Sanctum Total Time
+                nextState.sanctum = nextState.sanctum || { level: 1, willpower: 0, totalMeditationMinutes: 0 };
+                nextState.sanctum.totalMeditationMinutes += minutesCompleted;
+
                 if (activeMode.isSanctum) {
                     const vitGain = Math.floor(minutesCompleted / 10);
+                    const willpowerGain = Math.floor(minutesCompleted / 5); // 1 WP per 5 min
+
+                    nextState.sanctum.willpower += willpowerGain;
+
+                    let leveledUp = false;
+                    while (nextState.sanctum.willpower >= nextState.sanctum.level * 10) {
+                        nextState.sanctum.willpower -= (nextState.sanctum.level * 10);
+                        nextState.sanctum.level += 1;
+                        leveledUp = true;
+                    }
+
                     if (vitGain > 0) {
                         nextState.stats = { ...nextState.stats, vit: (nextState.stats.vit || 0) + vitGain };
-                        notify(`Sanctum Meditation komplett! +${xpGain} XP & +${vitGain} VIT 🧘‍♂️`, "success");
-                    } else {
-                        notify(`Sanctum Meditation komplett! +${xpGain} XP 🧘‍♂️`, "success");
+                    }
+
+                    let msg = `Meditation komplett! +${willpowerGain} Willpower & +${xpGain} XP`;
+                    if (vitGain > 0) msg += ` (+${vitGain} VIT)`;
+                    notify(msg, "success");
+
+                    if (leveledUp) {
+                        setTimeout(() => notify(`SANCTUM LEVEL UP! (Level ${nextState.sanctum.level})`, "success"), 1500);
                     }
                 } else {
-                    notify(`Session komplett! +${xpGain} XP (inkl. +${streakBonus} Streak-Bonus) ⚡`, "success");
+                    notify(`Session komplett! +${minutesCompleted}m Focus Zeit erfasst. +${xpGain} XP (inkl. +${streakBonus} Streak-Bonus) ⚡`, "success");
                 }
 
                 persist(nextState);
@@ -191,7 +215,7 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
                                 animation: "fadeIn 1s ease",
                                 textShadow: `0 0 16px ${activeMode.color}44`
                             }}>
-                                "{AFFIRMATIONS[affirmationIdx]}"
+                                "{manifestationsList[affirmationIdx]}"
                             </div>
                         )}
                     </div>

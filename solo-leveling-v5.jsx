@@ -389,19 +389,36 @@ function App({ initialHunterName, onLogout }) {
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                onClick={() => setView("sanctum")}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
+                  height: 32, borderRadius: 10, background: "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))",
+                  border: "1px solid rgba(34,211,153,0.3)", color: "#34d399",
+                  cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
+                  transition: "all 0.3s", letterSpacing: 1, boxShadow: "0 0 10px rgba(34,211,153,0.05)",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(34,211,153,0.2)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.7)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.2), rgba(34,211,153,0.05))"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(34,211,153,0.05)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))"; }}
+                title="Inner Sanctum Base"
+              >
+                <span style={{ fontSize: 13 }}>🏛️</span> <span className="hide-on-mobile">SANCTUM</span>
+              </button>
               <button
                 onClick={() => setShowFocusMode(true)}
                 style={{
-                  display: "flex", alignItems: "center", justifyContent: "center", padding: "0 10px",
-                  height: 34, borderRadius: 10, background: "rgba(168,85,247,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
+                  height: 32, borderRadius: 10, background: "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))",
                   border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc",
-                  cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
-                  transition: "all 0.3s", letterSpacing: 1
+                  cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
+                  transition: "all 0.3s", letterSpacing: 1, boxShadow: "0 0 10px rgba(168,85,247,0.05)",
                 }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(168,85,247,0.2)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.7)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.05))"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(168,85,247,0.05)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))"; }}
                 title="Focus Mode starten"
               >
-                FOCUS
+                <span style={{ fontSize: 13 }}>⚡</span> <span className="hide-on-mobile">FOCUS</span>
               </button>
               <button
                 onClick={() => setIsMusicPlaying(prev => {
@@ -1185,7 +1202,7 @@ function App({ initialHunterName, onLogout }) {
                     <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>Ziele & Fortschritt</div>
                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>Langzeit-Ziele und Quest-Kalender</div>
                   </div>
-                  <button onClick={() => setShowFocusMode(true)} style={{ padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #a855f722, #7c3aed11)", color: "#a855f7", border: "1px solid #a855f744", fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px #a855f722", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 16px #a855f744"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 12px #a855f722"; }}>
+                  <button onClick={() => setView("sanctum")} style={{ padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #a855f722, #7c3aed11)", color: "#a855f7", border: "1px solid #a855f744", fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px #a855f722", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 16px #a855f744"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 12px #a855f722"; }}>
                     🧘 SANCTUM
                   </button>
                 </div>
@@ -1327,8 +1344,14 @@ function App({ initialHunterName, onLogout }) {
         )
       }
 
-      {/* INNER SANCTUM MODAL */}
-      {showFocusMode && <InnerSanctum onClose={() => setShowFocusMode(false)} theme={theme} state={state} persist={persist} notify={notify} />}
+      {/* INNER SANCTUM VIEW */}
+      {view === "sanctum" && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+          <div style={{ maxWidth: 480, margin: "0 auto" }}>
+            <InnerSanctum theme={theme} state={state} persist={persist} notify={notify} />
+          </div>
+        </div>
+      )}
 
       {/* QUEST CREATE MODAL */}
       {
