@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 
 /**
  * DoubleDungeonTutorial – Thematisches Onboarding nach Solo Leveling.
@@ -127,8 +127,12 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
     const isLastLine = step ? lineIndex >= step.lines.length - 1 : true;
     const hasHighlight = !!(step?.highlight && step.highlight.length > 0);
 
+    const isCompletingRef = useRef(false);
+
     // useCallback MUST be declared before any early return (Rules of Hooks)
     const advance = useCallback(() => {
+        if (fadeOut || isCompletingRef.current) return;
+
         if (!isLastLine) {
             setLineIndex(prev => prev + 1);
             return;
@@ -156,10 +160,15 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
             }, 400);
         } else {
             // Tutorial complete
+            console.log("System: DoubleDungeonTutorial - Finalizing...");
+            isCompletingRef.current = true;
             setFadeOut(true);
-            setTimeout(() => onComplete(), 800);
+            setTimeout(() => {
+                console.log("System: DoubleDungeonTutorial - Calling onComplete()");
+                onComplete();
+            }, 800);
         }
-    }, [isLastLine, showSystem, showHighlight, hasHighlight, stepIndex, onComplete]);
+    }, [isLastLine, showSystem, showHighlight, hasHighlight, stepIndex, onComplete, fadeOut]);
 
     // Early return AFTER all hooks
     if (!step) return null;
@@ -176,7 +185,7 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
                 fontFamily: "'Outfit',sans-serif",
                 cursor: "pointer",
                 padding: "24px",
-                transition: "background 0.8s ease",
+                transition: "background 0.8s ease, opacity 0.8s ease",
                 opacity: fadeOut ? 0 : 1,
             }}
         >

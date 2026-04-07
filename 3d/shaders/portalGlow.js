@@ -206,8 +206,8 @@ export const portalGlowFrag = /* glsl */ `
     float arcs = 0.0;
     for (float i = 0.0; i < 8.0; i++) {
       float phase  = floor(t * 14.0 + i * 5.73);
-      float active = step(0.60, hash(vec2(phase, i * 3.1)));
-      if (active > 0.0) {
+      float isActiveArc = step(0.60, hash(vec2(phase, i * 3.1)));
+      if (isActiveArc > 0.0) {
         float arcAngle = hash(vec2(phase + 0.5, i)) * 6.28318;
         float da       = mod(abs(angle - arcAngle), 6.28318);
         da             = min(da, 6.28318 - da);

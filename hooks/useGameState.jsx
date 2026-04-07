@@ -11,8 +11,11 @@ import {
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,
-  saveState, loadState, migrateState, calculateLevelUp, awardJobXp
+  saveState, loadState, migrateState, calculateLevelUp, awardJobXp,
+  generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests
 } from '../data/constants';
+import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
+import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextMonday } from '../data/seasons.js';
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
@@ -48,6 +51,8 @@ export function useGameState(initialHunterName, onLogout) {
   const [isMusicPlaying, setIsMusicPlaying] = useState(() => localStorage.getItem("soloMusicPlaying") !== "false");
   const [isMultiplayerMode, setIsMultiplayerMode] = useState(false);
   const [portalTransitioning, setPortalTransitioning] = useState(false);
+  const [showShadowRegression, setShowShadowRegression] = useState(false);
+  const [showDawnDusk, setShowDawnDusk] = useState(false);
 
   const notify = useCallback((msg, type = "info") => setNotifications(prev => [...prev, { id: genId(), msg, type }]), []);
   const persist = useCallback(s => {
@@ -55,6 +60,18 @@ export function useGameState(initialHunterName, onLogout) {
     setState(next);
     stateRef.current = next;
     saveState(next);
+    // Soul Link: push live status to Firestore on every save
+    if (next.soulLink?.linkCode && auth.currentUser) {
+      import('../multiplayer/soulLinkFirebase.js').then(({ updateSoulLinkStatus }) => {
+        updateSoulLinkStatus(next.soulLink.linkCode, auth.currentUser.uid, {
+          streak: next.streak || 0,
+          questsCompletedToday: next.dailyUserQuestsCreated || 0,
+          lastActiveDate: next.lastActiveDate || null,
+          hunterName: next.hunterName || "Hunter",
+          level: next.level || 1
+        });
+      }).catch(() => {});
+    }
   }, []);
 
   // Real-time Cloud Sync
@@ -80,6 +97,26 @@ export function useGameState(initialHunterName, onLogout) {
 
     return () => unsubscribe();
   }, [notify]);
+
+  // Soul Link real-time partner subscription
+  useEffect(() => {
+    const linkCode = stateRef.current?.soulLink?.linkCode;
+    const user = auth.currentUser;
+    if (!linkCode || !user) return;
+    let unsub = () => {};
+    import('../multiplayer/soulLinkFirebase.js').then(({ subscribeSoulLink }) => {
+      unsub = subscribeSoulLink(linkCode, user.uid, (partnerData) => {
+        setState(prev => {
+          if (!prev) return prev;
+          const today = new Date().toISOString().slice(0, 10);
+          const bothActive = partnerData.partnerLastActive === today && prev.lastActiveDate === today;
+          return { ...prev, soulLink: { ...(prev.soulLink || {}), ...partnerData, bothActive } };
+        });
+      });
+    }).catch(() => {});
+    return () => unsub();
+  }, [state?.soulLink?.linkCode]);
+
   const triggerSystemMessage = useCallback((title, lines, onComplete) => {
     setSystemMessage({ title, lines, onComplete });
   }, []);
@@ -111,10 +148,25 @@ export function useGameState(initialHunterName, onLogout) {
               const hadDailies = s.quests?.some(q => q.type === "daily" && !q.completed);
               if (diff >= 2 && hadDailies && !s.penaltyZone?.active) {
                 s.penaltyZone = { active: true, redemptionLeft: 3, questsCompletedInPenalty: 0 };
+                // Shadow Regression: heroic comeback instead of shameful penalty
+                if (!s.shadowRegression?.active) {
+                  const previousStreak = s.streak || 0;
+                  const redemptionQs = generateRedemptionQuests(s.level || 1);
+                  s.shadowRegression = {
+                    active: true,
+                    previousStreak,
+                    redemptionQuests: redemptionQs.map(q => q.id),
+                    questsCompleted: 0,
+                    completedAt: null,
+                    regressionHistory: s.shadowRegression?.regressionHistory || []
+                  };
+                  s.quests = [...(s.quests || []), ...redemptionQs];
+                  setTimeout(() => setShowShadowRegression(true), 800);
+                }
               }
             }
             s.quests = s.quests?.map(q => q.type === "daily" && !q.isSystem ? { ...q, completed: false } : q) || [];
-            s.quests = (s.quests || []).filter(q => !q.isSystem);
+            s.quests = (s.quests || []).filter(q => !q.isSystem && !q.isSeasonal && !q.isRedemption);
             const newSysQuests = generateDailySystemQuests(3);
             s.quests = [...s.quests, ...newSysQuests];
             s.emergencyQuest = null;
@@ -124,6 +176,32 @@ export function useGameState(initialHunterName, onLogout) {
             if (dayOfWeek === 1) {
               s.quests = (s.quests || []).filter(q => q.type !== "weekly");
               s.weeklyQuestReset = today;
+              // World Event rotation on Monday
+              const nextEvent = getNextWorldEvent(s.seasons?.currentWorldEvent || null);
+              s.seasons = { ...(s.seasons || {}), currentWorldEvent: nextEvent.key, worldEventExpires: getNextMonday() };
+              setTimeout(() => notify(`🌍 Neues World-Event: ${nextEvent.icon} ${nextEvent.name} – ${nextEvent.desc}`, "named"), 3000);
+            }
+            // Season detection (runs daily)
+            const detectedSeason = detectCurrentSeason();
+            if (!s.seasons?.currentSeason || s.seasons.currentSeason !== detectedSeason) {
+              const oldSeason = s.seasons?.currentSeason;
+              s.seasons = {
+                ...(s.seasons || {}),
+                currentSeason: detectedSeason,
+                seasonStartDate: today,
+                seasonalCompletions: [],
+              };
+              const seasonalQs = generateSeasonalQuests(detectedSeason);
+              s.quests = [...s.quests, ...seasonalQs];
+              if (oldSeason) {
+                setTimeout(() => notify(`🌸 Neue Saison: ${SEASONS[detectedSeason].icon} ${SEASONS[detectedSeason].name}! Saison-Quests wurden hinzugefügt.`, "named"), 2000);
+              }
+            } else {
+              // Ensure seasonal quests still exist
+              const hasSeasonal = s.quests.some(q => q.isSeasonal);
+              if (!hasSeasonal) {
+                s.quests = [...s.quests, ...generateSeasonalQuests(detectedSeason)];
+              }
             }
             s.dailyUserQuestsCreated = 0;
             s.extraDailySlots = 0;
@@ -300,6 +378,8 @@ export function useGameState(initialHunterName, onLogout) {
     const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
     xp *= (typeCfg.xpMult || 1);
     xp *= (quest.chainMultiplier || 1);
+    // Quest-specific xpMult (redemption, seasonal, charisma)
+    xp *= (quest.xpMult || 1);
     return Math.round(xp);
   }, []);
 
@@ -382,6 +462,13 @@ export function useGameState(initialHunterName, onLogout) {
       ariseData = newShadow;
       notify(`${quest.title} wurde zu einem ${SHADOW_CLASSES[newShadow.class].name}!`, "shadow");
     }
+    // Soul Link +25% XP bonus when both partners active today
+    let newSoulLink = { ...(state.soulLink || {}) };
+    if (newSoulLink.bothActive) {
+      xpGain = Math.round(xpGain * 1.25);
+      notify("🔗 Soul Link aktiv! +25% XP Bonus", "success");
+    }
+
     // Penalty update
     let newPenalty = { ...state.penaltyZone };
     if (newPenalty.active) {
@@ -389,6 +476,38 @@ export function useGameState(initialHunterName, onLogout) {
       const needed = newPenalty.redemptionLeft || 3;
       if (newPenalty.questsCompletedInPenalty >= needed) { newPenalty.active = false; notify("Strafe abgebüßt. Willkommen zurück, Hunter.", "success"); }
     }
+
+    // Shadow Regression: track redemption quest completions
+    let newShadowRegression = { ...(state.shadowRegression || {}) };
+    if (newShadowRegression.active && quest.isRedemption) {
+      newShadowRegression.questsCompleted = (newShadowRegression.questsCompleted || 0) + 1;
+      if (newShadowRegression.questsCompleted >= 3) {
+        const restoredStreak = Math.floor((newShadowRegression.previousStreak || 0) * 0.5);
+        newShadowRegression = {
+          ...newShadowRegression,
+          active: false,
+          completedAt: today,
+          regressionHistory: [
+            ...(newShadowRegression.regressionHistory || []),
+            { date: today, previousStreak: newShadowRegression.previousStreak, restoredStreak }
+          ]
+        };
+        newPenalty = { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 };
+        setTimeout(() => triggerSystemMessage("SCHATTENRÜCKKEHR VOLLSTÄNDIG", [
+          "Du hast die Dunkelheit überwunden.",
+          `Streak wiederhergestellt: ${restoredStreak} Tage`,
+          "Der Schatten wird zu deiner Stärke.",
+          "WILLKOMMEN ZURÜCK, HUNTER."
+        ]), 600);
+        // streak will be set below in next = {...}
+        xpGain = Math.round(xpGain * 2); // double XP for completing regression
+        notify(`⚡ SHADOW REGRESSION ABGESCHLOSSEN! Streak auf ${restoredStreak} Tage wiederhergestellt!`, "named");
+      } else {
+        const remaining = 3 - newShadowRegression.questsCompleted;
+        notify(`Schattenrückforderung ${newShadowRegression.questsCompleted}/3 – Noch ${remaining} verbleibend.`, "info");
+      }
+    }
+
     // Handle chained quest: on complete, spawn next step or finish chain
     let extraQuests = [];
     if (quest.type === "chained" && quest.chainStep < quest.chainTotal) {
@@ -397,6 +516,60 @@ export function useGameState(initialHunterName, onLogout) {
       notify(`⛓️ Kette ${quest.chainStep}/${quest.chainTotal} erfüllt! Multiplikator: x${nextStep.chainMultiplier.toFixed(2)}`, "info");
     } else if (quest.type === "chained" && quest.chainStep >= quest.chainTotal) {
       notify("⛓️ QUEST-KETTE ABGESCHLOSSEN! Maximaler Multiplikator erreicht!", "gold");
+    }
+
+    // Charisma Dungeon progression
+    let newCharismaDungeons = { ...(state.charismaDungeons || {}) };
+    if (quest.isCharismaQuest && quest.charismaChainId) {
+      const chain = CHARISMA_CHAINS.find(c => c.id === quest.charismaChainId);
+      if (chain) {
+        const nextStepIdx = quest.charismaStep; // 0-indexed next step
+        const stepHistory = [...(newCharismaDungeons.stepHistory || []), {
+          chainId: quest.charismaChainId, step: quest.charismaStep, completedAt: today, xpGained: xpGain
+        }];
+        if (nextStepIdx < chain.steps.length) {
+          const nextStepData = chain.steps[nextStepIdx];
+          const nextQ = {
+            id: genId(),
+            title: `[${chain.name}] Etage ${nextStepIdx + 1}: ${nextStepData.title}`,
+            category: "cha",
+            difficulty: nextStepData.difficulty,
+            type: "side",
+            isSystem: true,
+            isCharismaQuest: true,
+            charismaChainId: chain.id,
+            charismaStep: nextStepIdx + 1,
+            xpMult: nextStepData.xpMult,
+            createdAt: today,
+            createdAtMs: Date.now(),
+          };
+          extraQuests = [...extraQuests, nextQ];
+          newCharismaDungeons = { ...newCharismaDungeons, stepHistory };
+          notify(`🎭 ${chain.name}: Etage ${quest.charismaStep} bezwungen! Weiter zu Etage ${nextStepIdx + 1}.`, "info");
+        } else {
+          // Chain complete!
+          const chaBonus = chain.reward.chaBonus || 3;
+          newCharismaDungeons = {
+            ...newCharismaDungeons,
+            stepHistory,
+            completedChains: [...(newCharismaDungeons.completedChains || []), chain.id],
+            activeChains: Object.fromEntries(
+              Object.entries(newCharismaDungeons.activeChains || {}).filter(([k]) => k !== chain.id)
+            )
+          };
+          // stat bonus applied below in next = {...}
+          setTimeout(() => triggerSystemMessage("CHARISMA-DUNGEON BEZWUNGEN", [
+            `${chain.icon} ${chain.name} vollständig abgeschlossen.`,
+            `+${chaBonus} CHA dauerhaft erlangt.`,
+            `Titel freigeschaltet: "${chain.reward.title}"`,
+            "Das System erkennt dein soziales Erwachen an."
+          ]), 700);
+          notify(`👑 CHARISMA DUNGEON ABGESCHLOSSEN: ${chain.name}! +${chaBonus} CHA permanent.`, "named");
+          // Store bonus to apply below
+          next._charismaChaBonus = (next._charismaChaBonus || 0) + chaBonus;
+          next._charismaTitle = chain.reward.title;
+        }
+      }
     }
     // Handle hidden quest completion
     let newHiddenQuests = { ...state.hiddenQuests };
@@ -440,18 +613,55 @@ export function useGameState(initialHunterName, onLogout) {
       }
     }
 
+    // Determine final streak (Shadow Regression may restore it)
+    const finalStreak = (newShadowRegression.active === false && newShadowRegression.completedAt === today && !state.shadowRegression?.completedAt)
+      ? Math.floor((newShadowRegression.previousStreak || 0) * 0.5)
+      : newStreak;
+    // CHA bonus from completed charisma chain
+    const charismaChaBonus = next._charismaChaBonus || 0;
+    const charismaTitle = next._charismaTitle || null;
+    delete next._charismaChaBonus;
+    delete next._charismaTitle;
+
     next = {
       ...next,
-      stats: { ...state.stats, [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) + codexStatBonus },
+      stats: {
+        ...state.stats,
+        [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) + codexStatBonus,
+        cha: (state.stats.cha || 0) + (quest.category === "cha" ? 0 : 0) + charismaChaBonus + (quest.category === "cha" ? Math.ceil(xpGain / 40) + codexStatBonus : 0)
+      },
       quests: updatedQuests, completedQuests: [...(state.completedQuests || []), { ...quest, completedAt: today }],
       habits: newHabits,
-      streak: newStreak, lastActiveDate: today, shadowArmy: newShadowArmy,
+      streak: finalStreak, lastActiveDate: today, shadowArmy: newShadowArmy,
       totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1,
       penaltyZone: newPenalty, hiddenQuests: newHiddenQuests,
       dailyUserXP: (state.dailyUserXP || 0) + (!quest.isSystem ? xpGain : 0),
       integrityScore: finalSysIntegrity,
-      codexMastered: newCodexMastered
+      codexMastered: newCodexMastered,
+      shadowRegression: newShadowRegression,
+      soulLink: newSoulLink,
+      charismaDungeons: newCharismaDungeons,
+      ...(charismaTitle ? { selectedTitle: charismaTitle } : {}),
+      seasons: {
+        ...(state.seasons || {}),
+        seasonalCompletions: quest.isSeasonal
+          ? [...(state.seasons?.seasonalCompletions || []), quest.id]
+          : (state.seasons?.seasonalCompletions || [])
+      }
     };
+    // Fix stats: avoid double-counting cha
+    if (quest.category === "cha") {
+      next.stats = {
+        ...next.stats,
+        cha: (state.stats.cha || 0) + Math.ceil(xpGain / 40) + codexStatBonus + charismaChaBonus
+      };
+    } else {
+      next.stats = {
+        ...state.stats,
+        [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) + codexStatBonus,
+        cha: (state.stats.cha || 0) + charismaChaBonus
+      };
+    }
     // Check hidden quest triggers after state update
     const newlyDiscoveredHQ = checkHiddenQuestTriggers(next);
     if (newlyDiscoveredHQ.length > 0) {
@@ -488,6 +698,19 @@ export function useGameState(initialHunterName, onLogout) {
       });
     }
     next = processAchievements(next);
+    // Check Charisma Dungeon unlocks based on new CHA stat
+    const newCha = next.stats?.cha || 0;
+    const currentUnlocked = next.charismaDungeons?.unlockedChains || ["social_exposure"];
+    const newlyUnlockedChains = CHARISMA_CHAINS.filter(c => newCha >= c.chaThreshold && !currentUnlocked.includes(c.id));
+    if (newlyUnlockedChains.length > 0) {
+      next.charismaDungeons = {
+        ...next.charismaDungeons,
+        unlockedChains: [...currentUnlocked, ...newlyUnlockedChains.map(c => c.id)]
+      };
+      newlyUnlockedChains.forEach(c => {
+        setTimeout(() => notify(`🎭 Charisma-Dungeon freigeschaltet: ${c.icon} ${c.name}!`, "success"), 800);
+      });
+    }
     persist(next);
     if (didLevelUp) {
       setPrevRank(oldRank);
@@ -874,6 +1097,167 @@ export function useGameState(initialHunterName, onLogout) {
     persist(s); setShowSetup(false);
   };
 
+  // ─── DAWN/DUSK PROTOCOL ───────────────────────────────────────
+  const startDawnDuskRun = useCallback((type) => {
+    if (!state) return;
+    const tasks = type === "dawn" ? (state.dawnDusk?.morningTasks || []) : (state.dawnDusk?.eveningTasks || []);
+    if (!tasks.length) { notify("Konfiguriere zuerst deine Routine-Aufgaben.", "warning"); return; }
+    const timerSeconds = type === "dawn" ? 5400 : 3600;
+    const run = {
+      type,
+      startedAt: Date.now(),
+      timerSeconds,
+      floors: tasks.map((t, i) => ({ ...t, id: t.id || genId(), completed: false, completedAt: null, order: i + 1 })),
+      totalFloors: tasks.length,
+      floorsCompleted: 0,
+      isPerfectPossible: true
+    };
+    persist({ ...state, dawnDusk: { ...state.dawnDusk, currentRun: run } });
+    triggerSystemMessage(type === "dawn" ? "DAWN PROTOCOL AKTIVIERT" : "DUSK PROTOCOL AKTIVIERT", [
+      type === "dawn" ? "Die Morgendämmerung beginnt." : "Das Dunkel fällt herab.",
+      `${tasks.length} Etagen stehen vor dir.`,
+      `Timer: ${type === "dawn" ? "90" : "60"} Minuten.`,
+      "Vollständiger Abschluss = PERFECT RUN Belohnung."
+    ]);
+  }, [state, persist, notify, triggerSystemMessage]);
+
+  const completeProtocolFloor = useCallback((floorId) => {
+    if (!state?.dawnDusk?.currentRun) return;
+    const run = state.dawnDusk.currentRun;
+    const elapsed = (Date.now() - run.startedAt) / 1000;
+    const timedOut = elapsed > run.timerSeconds;
+    const newFloors = run.floors.map(f => f.id === floorId ? { ...f, completed: true, completedAt: Date.now() } : f);
+    const newCompleted = newFloors.filter(f => f.completed).length;
+    const allDone = newCompleted >= run.totalFloors;
+    const isPerfect = allDone && !timedOut;
+
+    let nextState = { ...state };
+    if (allDone) {
+      const xpGain = calculateProtocolXp({ ...run, floorsCompleted: newCompleted, isPerfect }, state.level || 1);
+      nextState = calculateLevelUp(nextState, xpGain);
+      const historyEntry = {
+        type: run.type, date: getToday(),
+        floorsCompleted: newCompleted, totalFloors: run.totalFloors,
+        isPerfect, duration: Math.round(elapsed)
+      };
+      nextState.dawnDusk = {
+        ...state.dawnDusk,
+        currentRun: null,
+        [run.type === "dawn" ? "lastMorningRun" : "lastEveningRun"]: getToday(),
+        perfectRuns: isPerfect ? (state.dawnDusk.perfectRuns || 0) + 1 : (state.dawnDusk.perfectRuns || 0),
+        runHistory: [...(state.dawnDusk.runHistory || []), historyEntry]
+      };
+      if (isPerfect) {
+        notify(`⭐ PERFECT RUN! Alle Etagen rechtzeitig bezwungen. +${xpGain} XP Bonus!`, "named");
+        setTimeout(() => triggerSystemMessage("PERFECT RUN BESTÄTIGT", [
+          run.type === "dawn" ? "Morgendämmerung vollständig bezwungen." : "Dunkelheit vollständig bezwungen.",
+          `${newCompleted}/${run.totalFloors} Etagen abgeschlossen.`,
+          `Zeit: ${Math.floor(elapsed / 60)} Minuten.`,
+          `+${xpGain} XP Bonus erhalten. Tadellos, Hunter.`
+        ]), 500);
+      } else {
+        notify(`✅ Protokoll abgeschlossen! +${xpGain} XP`, "success");
+      }
+    } else {
+      nextState.dawnDusk = {
+        ...state.dawnDusk,
+        currentRun: { ...run, floors: newFloors, floorsCompleted: newCompleted, isPerfectPossible: !timedOut }
+      };
+    }
+    persist(nextState);
+  }, [state, persist, notify, triggerSystemMessage]);
+
+  const configureProtocolTasks = useCallback((type, tasks) => {
+    if (!state) return;
+    const key = type === "dawn" ? "morningTasks" : "eveningTasks";
+    persist({ ...state, dawnDusk: { ...state.dawnDusk, [key]: tasks } });
+    notify(`${type === "dawn" ? "Morgen" : "Abend"}-Routine konfiguriert: ${tasks.length} Etagen.`, "success");
+  }, [state, persist, notify]);
+
+  const abandonProtocolRun = useCallback(() => {
+    if (!state?.dawnDusk?.currentRun) return;
+    persist({ ...state, dawnDusk: { ...state.dawnDusk, currentRun: null } });
+    notify("Protokoll abgebrochen.", "warning");
+  }, [state, persist, notify]);
+
+  // ─── CHARISMA DUNGEONS ────────────────────────────────────────
+  const startCharismaChain = useCallback((chainId) => {
+    if (!state) return;
+    const chain = CHARISMA_CHAINS.find(c => c.id === chainId);
+    if (!chain) return;
+    const unlocked = state.charismaDungeons?.unlockedChains || ["social_exposure"];
+    if (!unlocked.includes(chainId)) { notify("Charisma-Dungeon noch nicht freigeschaltet.", "warning"); return; }
+    if (state.charismaDungeons?.activeChains?.[chainId]) { notify("Diese Kette ist bereits aktiv.", "info"); return; }
+    if (state.charismaDungeons?.completedChains?.includes(chainId)) { notify("Diese Kette wurde bereits abgeschlossen.", "info"); return; }
+    const step = chain.steps[0];
+    const quest = {
+      id: genId(),
+      title: `[${chain.name}] Etage 1: ${step.title}`,
+      category: "cha",
+      difficulty: step.difficulty,
+      type: "side",
+      isSystem: true,
+      isCharismaQuest: true,
+      charismaChainId: chainId,
+      charismaStep: 1,
+      xpMult: step.xpMult,
+      createdAt: getToday(),
+      createdAtMs: Date.now(),
+    };
+    persist({
+      ...state,
+      quests: [...state.quests, quest],
+      charismaDungeons: {
+        ...state.charismaDungeons,
+        activeChains: { ...(state.charismaDungeons?.activeChains || {}), [chainId]: { currentStep: 1, startedAt: getToday() } }
+      }
+    });
+    notify(`🎭 ${chain.name} gestartet! Etage 1 von ${chain.steps.length}: ${step.title}`, "info");
+  }, [state, persist, notify]);
+
+  // ─── SOUL LINK (Firestore-backed) ─────────────────────────────
+  const createSoulLinkCode = useCallback(async () => {
+    if (!state) return;
+    try {
+      const { createSoulLink } = await import('../multiplayer/soulLinkFirebase.js');
+      const { linkCode } = await createSoulLink(state, auth.currentUser);
+      persist({ ...state, soulLink: { ...(state.soulLink || {}), linkCode, linkedAt: getToday() } });
+      notify(`🔗 Soul Link erstellt! Dein Code: ${linkCode}`, "success");
+      return linkCode;
+    } catch (e) { notify("Soul Link konnte nicht erstellt werden.", "warning"); }
+  }, [state, persist, notify]);
+
+  const joinSoulLinkCode = useCallback(async (code) => {
+    if (!state) return;
+    try {
+      const { joinSoulLink } = await import('../multiplayer/soulLinkFirebase.js');
+      const result = await joinSoulLink(code.toUpperCase(), state, auth.currentUser);
+      if (!result) { notify("Code nicht gefunden oder bereits voll.", "warning"); return; }
+      persist({ ...state, soulLink: { ...(state.soulLink || {}), ...result, linkCode: code.toUpperCase(), linkedAt: getToday() } });
+      notify(`🔗 Soul Link verbunden mit ${result.partnerName}!`, "success");
+    } catch (e) { notify("Verbindung fehlgeschlagen.", "warning"); }
+  }, [state, persist, notify]);
+
+  const breakSoulLinkCode = useCallback(async () => {
+    if (!state?.soulLink?.linkCode) return;
+    try {
+      const { breakSoulLink } = await import('../multiplayer/soulLinkFirebase.js');
+      await breakSoulLink(state.soulLink.linkCode, auth.currentUser?.uid);
+    } catch (_) {}
+    persist({ ...state, soulLink: { ...DEFAULT_STATE.soulLink } });
+    notify("Soul Link getrennt.", "info");
+  }, [state, persist, notify]);
+
+  const sendReviveToPartner = useCallback(async () => {
+    if (!state?.soulLink?.linkCode || !auth.currentUser) return;
+    try {
+      const { sendRevive } = await import('../multiplayer/soulLinkFirebase.js');
+      await sendRevive(state.soulLink.linkCode, auth.currentUser.uid, state.soulLink.partnerUid);
+      persist({ ...state, soulLink: { ...state.soulLink, revivesLeft: Math.max(0, (state.soulLink.revivesLeft || 0) - 1) } });
+      notify(`💓 Streak-Revive an ${state.soulLink.partnerName} gesendet!`, "success");
+    } catch (_) { notify("Revive fehlgeschlagen.", "warning"); }
+  }, [state, persist, notify]);
+
   const theme = useMemo(() => THEMES[state?.selectedTheme || "default"], [state?.selectedTheme]);
   const modifier = state?.todayModifier || getDailyModifier();
 
@@ -938,6 +1322,10 @@ export function useGameState(initialHunterName, onLogout) {
     setIsMultiplayerMode,
     portalTransitioning,
     setPortalTransitioning,
+    showShadowRegression,
+    setShowShadowRegression,
+    showDawnDusk,
+    setShowDawnDusk,
     notify,
     persist,
     triggerSystemMessage,
@@ -960,6 +1348,20 @@ export function useGameState(initialHunterName, onLogout) {
     switchJob,
     activateJobAbility,
     increaseStat,
-    finishSetup
+    finishSetup,
+    startDawnDuskRun,
+    completeProtocolFloor,
+    configureProtocolTasks,
+    abandonProtocolRun,
+    startCharismaChain,
+    createSoulLinkCode,
+    joinSoulLinkCode,
+    breakSoulLinkCode,
+    sendReviveToPartner,
+    isDawnWindow,
+    isDuskWindow,
+    SEASONS,
+    WORLD_EVENTS,
+    CHARISMA_CHAINS,
   };
 }

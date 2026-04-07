@@ -721,6 +721,50 @@ const DEFAULT_STATE = {
     guild: null,
     social: null,
     publicStats: { totalXp: 0, dungeonsCleared: 0 }
+  },
+  shadowRegression: {
+    active: false,
+    previousStreak: 0,
+    redemptionQuests: [],
+    questsCompleted: 0,
+    completedAt: null,
+    regressionHistory: []
+  },
+  soulLink: {
+    linkCode: null,
+    partnerUid: null,
+    partnerName: null,
+    partnerStreak: 0,
+    partnerLevel: 0,
+    partnerQuestsToday: 0,
+    partnerLastActive: null,
+    bothActive: false,
+    revivesLeft: 3,
+    revivesReceived: 0,
+    linkedAt: null
+  },
+  seasons: {
+    currentSeason: null,
+    currentWorldEvent: null,
+    worldEventExpires: null,
+    seasonalCompletions: [],
+    seasonStartDate: null,
+    earnedSeasonalTitles: []
+  },
+  dawnDusk: {
+    morningTasks: [],
+    eveningTasks: [],
+    currentRun: null,
+    lastMorningRun: null,
+    lastEveningRun: null,
+    perfectRuns: 0,
+    runHistory: []
+  },
+  charismaDungeons: {
+    unlockedChains: ["social_exposure"],
+    activeChains: {},
+    completedChains: [],
+    stepHistory: []
   }
 };
 
@@ -1210,6 +1254,80 @@ function hoursUntilMidnight() {
   return Math.floor((midnight - now) / 3600000);
 }
 
+// ─── SHADOW REGRESSION HELPERS ────────────────────────────────
+function generateRedemptionQuests(playerLevel) {
+  const templates = [
+    { title: "Schattenrückforderung I: Körperliche Buße", category: "str", desc: "Überwinde die Schwäche des Körpers. Der Schatten wartet." },
+    { title: "Schattenrückforderung II: Mentale Prüfung", category: "int", desc: "Überwinde die Schwäche des Geistes. Beweise deine Disziplin." },
+    { title: "Schattenrückforderung III: Die Rückkehr", category: "vit", desc: "Der letzte Schritt. Beweise, dass du zurückgekehrt bist." },
+  ];
+  return templates.map((t, i) => ({
+    id: genId(),
+    title: t.title,
+    category: t.category,
+    difficulty: "hard",
+    type: "redemption",
+    isSystem: true,
+    isRedemption: true,
+    createdAt: getToday(),
+    createdAtMs: Date.now(),
+    xpMult: 1.5,
+    regressionStep: i + 1,
+  }));
+}
+
+// ─── DAWN/DUSK PROTOCOL HELPERS ───────────────────────────────
+function isDawnWindow() {
+  const h = new Date().getHours();
+  return h >= 5 && h < 11;
+}
+function isDuskWindow() {
+  const h = new Date().getHours();
+  return h >= 18 && h < 23;
+}
+function calculateProtocolXp(run, playerLevel) {
+  const base = run.type === "dawn" ? 80 : 60;
+  const floorBonus = (run.floorsCompleted || 0) * 20;
+  const perfectBonus = run.isPerfect ? Math.round((base + floorBonus) * 0.5) : 0;
+  const levelBonus = Math.floor((playerLevel || 1) / 10) * 10;
+  return base + floorBonus + perfectBonus + levelBonus;
+}
+
+// ─── SEASON HELPERS ───────────────────────────────────────────
+function generateSeasonalQuests(seasonKey) {
+  // Import from data/seasons.js is done at runtime – fall back to inline if needed
+  const SEASON_MAP = {
+    frost: [
+      { title: "Eisige Morgenroutine: Kaltdusche 3 Tage in Folge", difficulty: "hard", category: "vit" },
+      { title: "Frost-Training: 30 Min Outdoor-Sport im Winter", difficulty: "normal", category: "str" },
+    ],
+    spring: [
+      { title: "Frühlingserwachen: 7-Tage Morgenroutine starten", difficulty: "boss", category: "vit" },
+      { title: "Neue Fähigkeit beginnen – 5 Tage täglich üben", difficulty: "hard", category: "int" },
+    ],
+    inferno: [
+      { title: "Inferno-Challenge: 100 Liegestütze in 5 Tagen", difficulty: "boss", category: "str" },
+      { title: "Hitzewelle: Maximale Trainingsintensität 3 Tage", difficulty: "hard", category: "str" },
+    ],
+    redgate: [
+      { title: "Rotes Tor: 1 Stunde täglich lernen – 7 Tage", difficulty: "hard", category: "int" },
+      { title: "Herbst-Offensive: Finanzielle Planung abschließen", difficulty: "normal", category: "int" },
+    ],
+  };
+  const templates = SEASON_MAP[seasonKey] || SEASON_MAP.frost;
+  return templates.map((t) => ({
+    id: genId(),
+    title: t.title,
+    category: t.category,
+    difficulty: t.difficulty,
+    type: "weekly",
+    isSystem: true,
+    isSeasonal: true,
+    createdAt: getToday(),
+    createdAtMs: Date.now(),
+  }));
+}
+
 // ─── DATA MIGRATION ───────────────────────────────────────────
 function migrateState(oldState) {
   if (!oldState) return null;
@@ -1235,6 +1353,18 @@ function migrateState(oldState) {
   s.achievements = { ...DEFAULT_STATE.achievements, ...(oldState.achievements || {}) };
   s.hiddenQuests = { ...DEFAULT_STATE.hiddenQuests, ...(oldState.hiddenQuests || {}) };
   s.story = { ...DEFAULT_STATE.story, ...(oldState.story || {}) };
+  s.shadowRegression = { ...DEFAULT_STATE.shadowRegression, ...(oldState.shadowRegression || {}) };
+  s.soulLink = { ...DEFAULT_STATE.soulLink, ...(oldState.soulLink || {}) };
+  s.seasons = { ...DEFAULT_STATE.seasons, ...(oldState.seasons || {}) };
+  s.dawnDusk = { ...DEFAULT_STATE.dawnDusk, ...(oldState.dawnDusk || {}) };
+  s.charismaDungeons = {
+    ...DEFAULT_STATE.charismaDungeons,
+    ...(oldState.charismaDungeons || {}),
+    unlockedChains: oldState.charismaDungeons?.unlockedChains ?? ["social_exposure"],
+    activeChains: oldState.charismaDungeons?.activeChains ?? {},
+    completedChains: oldState.charismaDungeons?.completedChains ?? [],
+    stepHistory: oldState.charismaDungeons?.stepHistory ?? [],
+  };
 
   // V4 → V5 Legacy: convert shadows to shadowArmy
   if (!oldState.shadowArmy && oldState.shadows) {
@@ -3073,6 +3203,7 @@ export {
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,
   awardJobXp, calculateLevelUp,
   saveState, loadState, migrateState,
+  generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests,
   CSS, ParticleField, MusicPlayer, SystemNotification, AchievementToast, XpFloat, LevelUpCinematic, AriseCinematic,
   ShadowCard, ShadowDetailModal, FormationEditor, StatRadar, QuestTimer, QuestTypeBadge,
   EmergencyQuestCard, ChainedQuestProgress, QuestCard, DungeonGate, FloorProgressBar, BossPhaseUI, DungeonBattle,

@@ -21,6 +21,12 @@ import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
 import LifeDomainsOnboarding from "./components/LifeDomainsOnboarding.jsx";
 import InnerSanctum from "./components/InnerSanctum.jsx";
 import { HUNTER_CODEX } from "./data/hunterCodex.js";
+import ShadowRegressionCinematic from "./components/ShadowRegressionCinematic.jsx";
+import SoulLinkView from "./components/SoulLinkView.jsx";
+import SeasonView from "./components/SeasonView.jsx";
+import DawnDuskProtocol from "./components/DawnDuskProtocol.jsx";
+import CharismaDungeonsView from "./components/CharismaDungeonsView.jsx";
+import { SEASONS, WORLD_EVENTS } from "./data/seasons.js";
 
 // ─── RANKS ────────────────────────────────────────────────────
 import {
@@ -139,6 +145,10 @@ function App({ initialHunterName, onLogout }) {
     setIsMultiplayerMode,
     portalTransitioning,
     setPortalTransitioning,
+    showShadowRegression,
+    setShowShadowRegression,
+    showDawnDusk,
+    setShowDawnDusk,
     notify,
     persist,
     triggerSystemMessage,
@@ -159,8 +169,20 @@ function App({ initialHunterName, onLogout }) {
     unequipItem,
     switchJob,
     activateJobAbility,
-    increaseStat
+    increaseStat,
+    startDawnDuskRun,
+    completeProtocolFloor,
+    configureProtocolTasks,
+    abandonProtocolRun,
+    startCharismaChain,
+    createSoulLinkCode,
+    joinSoulLinkCode,
+    breakSoulLinkCode,
+    sendReviveToPartner,
   } = gameState;
+  const [showSoulLink, setShowSoulLink] = React.useState(false);
+  const [showSeasonView, setShowSeasonView] = React.useState(false);
+  const [showCharismaView, setShowCharismaView] = React.useState(false);
   const modifier = useMemo(() => getDailyModifier(), []);
   const [showFocusMode, setShowFocusMode] = React.useState(false);
   const [isCreatingEntry, setIsCreatingEntry] = React.useState(false);
@@ -200,6 +222,7 @@ function App({ initialHunterName, onLogout }) {
       <DoubleDungeonTutorial
         hunterName={state.hunterName}
         onComplete={() => {
+          console.log("System: Persisting tutorial completion...");
           persist({ ...state, tutorialCompleted: true });
         }}
       />
@@ -207,9 +230,23 @@ function App({ initialHunterName, onLogout }) {
   }
 
   if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><div style={{ fontSize: 40, animation: "float 2s ease-in-out infinite" }}>⚔️</div><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
-  if (showSetup) return <SetupScreen onFinish={gameState.finishSetup} theme={gameState.theme || "default"} />;
+  if (showSetup) return <SetupScreen onFinish={gameState.finishSetup} theme={THEMES[state?.selectedTheme] || THEMES["default"]} />;
+
+  const theme = (state?.selectedTheme === "custom" && state?.customThemeData)
+    ? state.customThemeData
+    : (THEMES[state?.selectedTheme] || THEMES["default"]);
+
   if (state?.hunterName && (!state.lifeDomains || state.lifeDomains.length < 3)) {
-    return <LifeDomainsOnboarding theme={gameState.theme || {}} onComplete={(domains) => persist({ ...state, lifeDomains: domains })} />;
+    console.log("System: Entering LifeDomainsOnboarding");
+    return (
+      <>
+        <style>{CSS(theme)}</style>
+        <LifeDomainsOnboarding theme={theme} onComplete={(domains) => {
+          console.log("System: Life Domains confirmed:", domains);
+          persist({ ...state, lifeDomains: domains });
+        }} />
+      </>
+    );
   }
 
   // Portal transition handler
@@ -290,9 +327,7 @@ function App({ initialHunterName, onLogout }) {
   const namedShadows = shadowArmy.shadows.filter(s => s.isNamed);
   const totalShadows = shadowArmy.shadows.length;
 
-  const theme = (state?.selectedTheme === "custom" && state?.customThemeData)
-    ? state.customThemeData
-    : (THEMES[state?.selectedTheme] || THEMES["default"]);
+  // Theme already defined above
 
 
   return (
@@ -328,6 +363,49 @@ function App({ initialHunterName, onLogout }) {
 
       {/* FOCUS MODE */}
       {showFocusMode && <FocusMode state={state} persist={persist} notify={notify} onExit={() => setShowFocusMode(false)} theme={theme} />}
+
+      {/* SHADOW REGRESSION CINEMATIC */}
+      {showShadowRegression && state?.shadowRegression?.active && (
+        <ShadowRegressionCinematic state={state} theme={theme} onClose={() => setShowShadowRegression(false)} />
+      )}
+
+      {/* DAWN/DUSK PROTOCOL */}
+      {(showDawnDusk || state?.dawnDusk?.currentRun) && (
+        <DawnDuskProtocol
+          state={state} theme={theme}
+          startDawnDuskRun={startDawnDuskRun}
+          completeProtocolFloor={completeProtocolFloor}
+          configureProtocolTasks={configureProtocolTasks}
+          abandonProtocolRun={abandonProtocolRun}
+          onClose={() => setShowDawnDusk(false)}
+        />
+      )}
+
+      {/* SOUL LINK VIEW */}
+      {showSoulLink && (
+        <SoulLinkView
+          state={state} theme={theme}
+          createSoulLinkCode={createSoulLinkCode}
+          joinSoulLinkCode={joinSoulLinkCode}
+          breakSoulLinkCode={breakSoulLinkCode}
+          sendReviveToPartner={sendReviveToPartner}
+          onClose={() => setShowSoulLink(false)}
+        />
+      )}
+
+      {/* SEASON VIEW */}
+      {showSeasonView && (
+        <SeasonView state={state} theme={theme} onClose={() => setShowSeasonView(false)} />
+      )}
+
+      {/* CHARISMA DUNGEONS VIEW */}
+      {showCharismaView && (
+        <CharismaDungeonsView
+          state={state} theme={theme}
+          startCharismaChain={startCharismaChain}
+          onClose={() => setShowCharismaView(false)}
+        />
+      )}
 
       {/* HIDDEN QUEST DISCOVERY MODAL */}
       {showHiddenQuestModal && (
@@ -387,6 +465,31 @@ function App({ initialHunterName, onLogout }) {
                   <span style={{ animation: state.streak >= 3 ? "pulse 1.5s infinite" : "none" }}>🔥</span>{state.streak}
                 </div>
               </div>
+              {/* Soul Link Pill */}
+              {state.soulLink?.linkCode && (
+                <button onClick={() => setShowSoulLink(true)} style={{
+                  display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
+                  borderRadius: 8, background: state.soulLink.bothActive ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${state.soulLink.bothActive ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.1)"}`,
+                  color: state.soulLink.bothActive ? "#22d3ee" : "#6b7280",
+                  cursor: "pointer", fontSize: 10, fontWeight: 700,
+                  animation: state.soulLink.bothActive ? "pulse 2s infinite" : "none"
+                }}>
+                  🔗 {state.soulLink.partnerName ? state.soulLink.partnerName.slice(0, 6) : "…"}
+                  {state.soulLink.partnerStreak > 0 && <span>🔥{state.soulLink.partnerStreak}</span>}
+                </button>
+              )}
+              {/* Season Indicator */}
+              {state.seasons?.currentSeason && (
+                <button onClick={() => setShowSeasonView(true)} style={{
+                  display: "flex", alignItems: "center", gap: 3, padding: "4px 8px",
+                  borderRadius: 8, background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "#9ca3af", cursor: "pointer", fontSize: 12
+                }} title={SEASONS[state.seasons.currentSeason]?.name}>
+                  {SEASONS[state.seasons.currentSeason]?.icon || "🌐"}
+                </button>
+              )}
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -419,6 +522,27 @@ function App({ initialHunterName, onLogout }) {
                 title="Focus Mode starten"
               >
                 <span style={{ fontSize: 13 }}>⚡</span> <span className="hide-on-mobile">FOCUS</span>
+              </button>
+              <button
+                onClick={() => setShowDawnDusk(true)}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
+                  height: 32, borderRadius: 10,
+                  background: state?.dawnDusk?.currentRun
+                    ? "linear-gradient(135deg, rgba(251,191,36,0.25), rgba(251,191,36,0.05))"
+                    : "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.02))",
+                  border: `1px solid ${state?.dawnDusk?.currentRun ? "rgba(251,191,36,0.7)" : "rgba(251,191,36,0.25)"}`,
+                  color: state?.dawnDusk?.currentRun ? "#fbbf24" : "#78716c",
+                  cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
+                  transition: "all 0.3s", letterSpacing: 1,
+                  animation: state?.dawnDusk?.currentRun ? "pulse 2s infinite" : "none"
+                }}
+                title="Dawn/Dusk Protocol"
+              >
+                <span style={{ fontSize: 13 }}>
+                  {new Date().getHours() >= 5 && new Date().getHours() < 11 ? "☀️" : "🌙"}
+                </span>
+                <span className="hide-on-mobile">PROTOCOL</span>
               </button>
               <button
                 onClick={() => setIsMusicPlaying(prev => {
@@ -462,14 +586,81 @@ function App({ initialHunterName, onLogout }) {
       {/* MAIN */}
       <main style={{ position: "relative", zIndex: 1, padding: "16px", maxWidth: 480, margin: "0 auto", paddingBottom: 92 }}>
 
-        {/* PENALTY BANNER */}
-        {penaltyActive && (
+        {/* SHADOW REGRESSION BANNER (replaces plain penalty banner) */}
+        {penaltyActive && state.shadowRegression?.active ? (
+          <div
+            onClick={() => setShowShadowRegression(true)}
+            style={{
+              background: "linear-gradient(135deg, rgba(30,0,10,0.95), rgba(10,0,5,0.9))",
+              border: "1px solid rgba(220,38,38,0.5)", borderLeft: "3px solid #dc2626",
+              borderRadius: 14, padding: "14px 16px", marginBottom: 14,
+              backdropFilter: "blur(8px)", cursor: "pointer",
+              animation: "glitch 4s ease-in-out infinite"
+            }}
+          >
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
+              ⚔ SHADOW REGRESSION AKTIV
+            </div>
+            <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: 600, marginBottom: 4 }}>
+              Streak-Comeback: {state.shadowRegression.questsCompleted || 0}/3 Rückforderungsquests
+            </div>
+            {/* Progress dots */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+              {[1, 2, 3].map(i => (
+                <div key={i} style={{
+                  width: 24, height: 6, borderRadius: 3,
+                  background: (state.shadowRegression.questsCompleted || 0) >= i
+                    ? "#dc2626" : "rgba(220,38,38,0.2)",
+                  border: "1px solid rgba(220,38,38,0.4)"
+                }} />
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: "#a855f7", fontFamily: "'JetBrains Mono',monospace" }}>
+              Abschluss → 🔥{Math.floor((state.shadowRegression.previousStreak || 0) * 0.5)} Tage Streak wiederhergestellt
+            </div>
+          </div>
+        ) : penaltyActive ? (
           <div style={{ background: "rgba(20,4,4,0.9)", border: "1px solid #ef444433", borderLeft: "3px solid #ef4444", borderRadius: 14, padding: "14px 16px", marginBottom: 14, backdropFilter: "blur(8px)", animation: "glitch 4s ease-in-out infinite" }}>
             <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>⚠ PENALTY ZONE AKTIV</div>
             <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: 500 }}>Das System bestraft Inaktivität. Schließe {Math.max(0, (state.penaltyZone?.redemptionLeft || 3) - (state.penaltyZone?.questsCompletedInPenalty || 0))} weitere Quests ab.</div>
             <div style={{ fontSize: 10, color: "#ef4444", marginTop: 6, fontFamily: "'JetBrains Mono',monospace" }}>-20% XP aus allen Quests</div>
           </div>
-        )}
+        ) : null}
+
+        {/* SEASON / WORLD EVENT BANNER */}
+        {state.seasons?.currentSeason && (() => {
+          const season = SEASONS[state.seasons.currentSeason];
+          const worldEvent = WORLD_EVENTS.find(e => e.key === state.seasons.currentWorldEvent);
+          if (!season) return null;
+          return (
+            <div
+              onClick={() => setShowSeasonView(true)}
+              style={{
+                background: `linear-gradient(135deg, ${season.colors.bg || "#06060e"} 0%, rgba(6,6,14,0.9) 100%)`,
+                border: `1px solid ${season.colors.primary}30`,
+                borderLeft: `3px solid ${season.colors.primary}`,
+                borderRadius: 12, padding: "10px 14px", marginBottom: 12,
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 10
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{season.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: season.colors.primary, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
+                  {season.name.toUpperCase()}
+                </div>
+                {worldEvent && (
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>
+                    {worldEvent.icon} {worldEvent.name}: {worldEvent.desc.split(" ").slice(0, 5).join(" ")}…
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
+                DETAILS ▸
+              </div>
+            </div>
+          );
+        })()}
+
         {/* MODIFIER BANNER */}
         {modifier && modifier.id !== "none" && (
           <div style={{ background: `linear-gradient(135deg,${modifier.color}10,transparent)`, border: `1px solid ${modifier.color}25`, borderLeft: `3px solid ${modifier.color}`, borderRadius: 12, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
@@ -1175,8 +1366,18 @@ function App({ initialHunterName, onLogout }) {
       {/* BOTTOM NAV */}
       < nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
-          {[{ key: "dashboard", icon: "📋", label: "Heute" }, { key: "training", icon: "🎯", label: "Ziele" }, { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length }, { key: "story", icon: "📖", label: "Story" }, { key: "system", icon: "⚙️", label: "System" }].map(tab => (
-            <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
+          {[
+            { key: "dashboard", icon: "📋", label: "Heute" },
+            { key: "training", icon: "🎯", label: "Ziele" },
+            { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length },
+            { key: "story", icon: "📖", label: "Story" },
+            {
+              key: "season_overlay", icon: state.seasons?.currentSeason ? SEASONS[state.seasons.currentSeason]?.icon || "🌐" : "🌐",
+              label: "Season", isOverlay: true, action: () => setShowSeasonView(true)
+            },
+            { key: "system", icon: "⚙️", label: "System" }
+          ].map(tab => (
+            <button key={tab.key} onClick={() => tab.isOverlay ? tab.action?.() : setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: tab.isOverlay ? "#9ca3af" : view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
               {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
               <div style={{ position: "relative" }}>
                 <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
@@ -1275,6 +1476,12 @@ function App({ initialHunterName, onLogout }) {
                   { key: "shop", icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` },
                 ]
               }, {
+                title: "SOCIAL & SPECIAL", icon: "🔗", color: "#a855f7",
+                items: [
+                  { key: "soullink_overlay", icon: "🔗", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) },
+                  { key: "charisma_overlay", icon: "🎭", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) },
+                ]
+              }, {
                 title: "SYSTEM", icon: "⚙️", color: "#64748b",
                 items: [
                   { key: "settings", icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
@@ -1289,7 +1496,7 @@ function App({ initialHunterName, onLogout }) {
                   {/* Section items */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {section.items.map((item, ii) => (
-                      <button key={item.key} onClick={() => setView(item.key)} style={{
+                      <button key={item.key} onClick={() => item.isOverlay ? item.action?.() : setView(item.key)} style={{
                         width: "100%", padding: "14px 16px", borderRadius: 14,
                         background: theme.card, border: `1px solid ${section.color}15`,
                         display: "flex", alignItems: "center", gap: 12, textAlign: "left",
