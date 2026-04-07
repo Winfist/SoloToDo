@@ -97,7 +97,7 @@ export function useScrollCamera(
       if (!scrollContainerRef?.current) return;
       e.preventDefault();
       const mult = getZoneMultiplier(state.z);
-      currentTargetZ -= e.deltaY * 0.15 * mult;
+      currentTargetZ -= e.deltaY * 0.05 * mult;
       currentTargetZ = Math.max(Z_END, Math.min(Z_START, currentTargetZ));
       moveTo(currentTargetZ);
     }
@@ -113,7 +113,7 @@ export function useScrollCamera(
       const dy = touchY - e.touches[0].clientY;
       touchY = e.touches[0].clientY;
       const mult = getZoneMultiplier(state.z);
-      currentTargetZ -= dy * 0.3 * mult;
+      currentTargetZ -= dy * 0.1 * mult;
       currentTargetZ = Math.max(Z_END, Math.min(Z_START, currentTargetZ));
       moveTo(currentTargetZ);
     }
