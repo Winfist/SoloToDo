@@ -17,6 +17,7 @@ import FocusMode from "./components/FocusMode.jsx";
 import ChallengesSystem from "./components/ChallengesSystem.jsx";
 import SettingsView from "./components/SettingsView.jsx";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
 
 // ─── RANKS ────────────────────────────────────────────────────
 import {
@@ -160,6 +161,7 @@ function App({ initialHunterName, onLogout }) {
   const modifier = useMemo(() => getDailyModifier(), []);
   const [showFocusMode, setShowFocusMode] = React.useState(false);
   const [isCreatingEntry, setIsCreatingEntry] = React.useState(false);
+  const [preview3DDungeon, setPreview3DDungeon] = React.useState(null);
 
 
 
@@ -303,6 +305,13 @@ function App({ initialHunterName, onLogout }) {
       {state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
       {state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
       {activeDungeon && <DungeonBattle dungeon={activeDungeon} playerStats={state.stats} theme={theme} onResult={r => finishDungeon(activeDungeon, r)} onClose={() => setActiveDungeon(null)} skillBonuses={getSkillBonuses(null, state.stats)} modifier={modifier} formationBonus={formationBonus} state={state} persist={persist} notify={notify} />}
+      {preview3DDungeon && (
+        <DungeonGatesPage
+          dungeon={preview3DDungeon}
+          onEnterGate={(dungeon) => { setPreview3DDungeon(null); setActiveDungeon(dungeon); }}
+          onClose={() => setPreview3DDungeon(null)}
+        />
+      )}
       {selectedShadow && <ShadowDetailModal shadow={selectedShadow} theme={theme} gold={state.gold} onClose={() => setSelectedShadow(null)} onDeploy={deployShadow} onUndeploy={undeployShadow} onEvolve={evolveShadow} />}
       {systemMessage && <SystemCLI message={systemMessage} onClose={() => setSystemMessage(null)} />}
 
@@ -549,7 +558,7 @@ function App({ initialHunterName, onLogout }) {
               <div style={{ fontSize: 12, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>Reset in {hoursUntilMidnight()}h · {modifier?.id !== "none" ? `${modifier?.icon} ${modifier?.name}` : "Stable Gates"}</div>
             </div>
             {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ fontSize: 36, marginBottom: 10 }}>🌀</div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
-            {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} modifier={modifier} /></div>)}
+            {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} onPreview={setPreview3DDungeon} modifier={modifier} /></div>)}
             {(state.dungeons || []).filter(d => d.cleared).length > 0 && (
               <div style={{ marginTop: 20 }}>
                 <div style={{ fontSize: 10, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>HEUTE ABSOLVIERT</div>

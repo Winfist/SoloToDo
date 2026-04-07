@@ -123,10 +123,11 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
     const [fadeOut, setFadeOut] = useState(false);
 
     const step = STEPS[stepIndex];
-    if (!step) return null;
-    const isLastLine = lineIndex >= step.lines.length - 1;
-    const hasHighlight = step.highlight && step.highlight.length > 0;
+    // Derived values — safe to compute before useCallback (step may be undefined when unmounting)
+    const isLastLine = step ? lineIndex >= step.lines.length - 1 : true;
+    const hasHighlight = !!(step?.highlight && step.highlight.length > 0);
 
+    // useCallback MUST be declared before any early return (Rules of Hooks)
     const advance = useCallback(() => {
         if (!isLastLine) {
             setLineIndex(prev => prev + 1);
@@ -159,6 +160,9 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
             setTimeout(() => onComplete(), 800);
         }
     }, [isLastLine, showSystem, showHighlight, hasHighlight, stepIndex, onComplete]);
+
+    // Early return AFTER all hooks
+    if (!step) return null;
 
     return (
         <div

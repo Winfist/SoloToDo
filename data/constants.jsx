@@ -2146,75 +2146,146 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
   );
 }
 // ─── DUNGEON GATE ─────────────────────────────────────────────
-function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier }) {
+function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview }) {
   const [hover, setHover] = useState(false);
   const rankData = RANKS.find(r => r.name === dungeon.rank) || RANKS[0];
   const reqs = Object.entries(dungeon.requirements);
   const timeLeft = Math.max(0, new Date(dungeon.expiresAt) - new Date());
   const hoursLeft = Math.floor(timeLeft / 3600000);
   const minsLeft = Math.floor((timeLeft % 3600000) / 60000);
+  const rc = rankData.color;
+  const isHighRank = dungeon.rank === "S" || dungeon.rank === "SSS";
+  const isMidRank  = dungeon.rank === "A" || dungeon.rank === "B";
+  const threatLabel = isHighRank ? "⚠ EXTREME THREAT" : isMidRank ? "◆ HIGH THREAT" : "◇ STANDARD";
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{
-      background: dungeon.cleared ? "rgba(6,6,14,0.4)" : theme.card,
-      border: `1px solid ${dungeon.cleared ? "#1e293b" : hover ? rankData.color + "66" : rankData.color + "25"}`,
-      borderRadius: 20, padding: 0, position: "relative", overflow: "hidden", opacity: dungeon.cleared ? 0.4 : 1,
-      backdropFilter: "blur(16px)", transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)",
-      transform: hover && !dungeon.cleared ? "translateY(-4px)" : "none",
-      boxShadow: hover && !dungeon.cleared ? `0 12px 40px rgba(0,0,0,0.5),0 0 30px ${rankData.color}18` : "0 4px 20px rgba(0,0,0,0.2)"
+      position: "relative", overflow: "hidden",
+      background: dungeon.cleared
+        ? "rgba(6,6,14,0.4)"
+        : `linear-gradient(155deg,#0c0c1e 0%,#07071a 55%,#0a0814 100%)`,
+      border: `1px solid ${dungeon.cleared ? "#1e293b" : hover ? rc + "55" : rc + "22"}`,
+      borderRadius: 4,
+      opacity: dungeon.cleared ? 0.45 : 1,
+      backdropFilter: "blur(12px)",
+      transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
+      transform: hover && !dungeon.cleared ? "translateY(-3px)" : "none",
+      boxShadow: hover && !dungeon.cleared
+        ? `0 16px 48px rgba(0,0,0,0.6), 0 0 40px ${rc}18, inset 0 1px 0 ${rc}15`
+        : `0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 ${rc}08`,
+      clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
     }}>
-      <div style={{ position: "absolute", top: 14, right: 14, zIndex: 2, padding: "4px 12px", borderRadius: 8, background: rankData.color + "18", border: `1.5px solid ${rankData.color}44`, fontSize: 10, fontWeight: 900, color: rankData.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, boxShadow: `0 0 10px ${rankData.color}15` }}>{dungeon.rank}-RANK</div>
-      <div style={{ padding: "18px 18px 14px", display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 58, height: 58, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative", background: `radial-gradient(circle,${rankData.color}15,transparent)`, border: `2px solid ${rankData.color}33` }}>
-          {!dungeon.cleared && <>
-            <div style={{ position: "absolute", inset: 4, borderRadius: "50%", border: `1.5px solid ${rankData.color}30`, borderTopColor: rankData.color + "88", animation: "portalSwirl 3s linear infinite" }} />
-            <div style={{ position: "absolute", inset: 10, borderRadius: "50%", border: `1px solid ${rankData.color}20`, borderBottomColor: rankData.color + "55", animation: "portalSwirl 5s linear infinite reverse" }} />
-          </>}
-          <span style={{ fontSize: 28, position: "relative", zIndex: 1, filter: !dungeon.cleared ? `drop-shadow(0 0 8px ${rankData.color}88)` : "none", animation: !dungeon.cleared ? "gateFloat 3s ease-in-out infinite" : "none" }}>{dungeon.cleared ? "✓" : dungeon.icon}</span>
-          <div style={{ position: "absolute", top: 2, left: 2, width: 8, height: 8, borderTop: `2px solid ${rankData.color}55`, borderLeft: `2px solid ${rankData.color}55` }} />
-          <div style={{ position: "absolute", top: 2, right: 2, width: 8, height: 8, borderTop: `2px solid ${rankData.color}55`, borderRight: `2px solid ${rankData.color}55` }} />
-          <div style={{ position: "absolute", bottom: 2, left: 2, width: 8, height: 8, borderBottom: `2px solid ${rankData.color}55`, borderLeft: `2px solid ${rankData.color}55` }} />
-          <div style={{ position: "absolute", bottom: 2, right: 2, width: 8, height: 8, borderBottom: `2px solid ${rankData.color}55`, borderRight: `2px solid ${rankData.color}55` }} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: dungeon.cleared ? "#475569" : "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 1 }}>{dungeon.name}</div>
-          <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, lineHeight: 1.4 }}>{dungeon.desc}</div>
-          <div style={{ display: "flex", gap: 6, marginTop: 5, alignItems: "center" }}>
-            <span style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace", padding: "2px 7px", borderRadius: 5, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>🏛 {dungeon.floors} Floors</span>
-            {!dungeon.cleared && timeLeft > 0 && <span style={{ fontSize: 10, color: hoursLeft < 2 ? "#ef4444" : "#475569", fontFamily: "'JetBrains Mono',monospace", padding: "2px 7px", borderRadius: 5, background: hoursLeft < 2 ? "#ef444410" : "rgba(255,255,255,0.03)", border: `1px solid ${hoursLeft < 2 ? "#ef444420" : "rgba(255,255,255,0.06)"}` }}>⏱ {hoursLeft}h {minsLeft}m</span>}
+      {/* Top rank-color energy bar */}
+      <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${rc}66, ${rc}cc, ${rc}66, transparent)`, opacity: hover ? 1 : 0.55, transition: "opacity 0.3s" }} />
+
+      {/* Hover scan beam */}
+      {hover && !dungeon.cleared && (
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "100%", pointerEvents: "none", zIndex: 0, background: `linear-gradient(180deg, transparent 0%, ${rc}06 50%, transparent 100%)`, animation: "rankShine 1.8s ease-in-out infinite" }} />
+      )}
+
+      {/* Corner accent — top-right cut */}
+      <div style={{ position: "absolute", top: 0, right: 0, width: 16, height: 16, pointerEvents: "none", zIndex: 3,
+        background: `linear-gradient(225deg, ${rc}44 0%, transparent 60%)`,
+        clipPath: "polygon(0 0, 100% 0, 100% 100%)" }} />
+
+      {/* Body */}
+      <div style={{ padding: "15px 18px 0", position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+
+          {/* Gate icon — 3 spinning rings + strong glow */}
+          <div style={{ width: 68, height: 68, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: `radial-gradient(circle, ${rc}18 0%, transparent 68%)` }} />
+            {!dungeon.cleared && <>
+              <div style={{ position: "absolute", inset: 3, borderRadius: "50%", border: `1.5px solid transparent`, borderTopColor: rc + "bb", borderRightColor: rc + "55", animation: "portalSwirl 2.2s linear infinite" }} />
+              <div style={{ position: "absolute", inset: 9, borderRadius: "50%", border: `1px solid transparent`, borderBottomColor: rc + "88", borderLeftColor: rc + "33", animation: "portalSwirl 3.8s linear infinite reverse" }} />
+              <div style={{ position: "absolute", inset: 16, borderRadius: "50%", border: `1px solid transparent`, borderTopColor: rc + "55", animation: "portalSwirl 6s linear infinite" }} />
+            </>}
+            <span style={{ fontSize: 30, position: "relative", zIndex: 1, filter: !dungeon.cleared ? `drop-shadow(0 0 10px ${rc}cc) drop-shadow(0 0 22px ${rc}66)` : "none", animation: !dungeon.cleared ? "gateFloat 3s ease-in-out infinite" : "none" }}>{dungeon.cleared ? "✓" : dungeon.icon}</span>
+            <div style={{ position: "absolute", top: 2, left: 2, width: 10, height: 10, borderTop: `2px solid ${rc}66`, borderLeft: `2px solid ${rc}66` }} />
+            <div style={{ position: "absolute", top: 2, right: 2, width: 10, height: 10, borderTop: `2px solid ${rc}66`, borderRight: `2px solid ${rc}66` }} />
+            <div style={{ position: "absolute", bottom: 2, left: 2, width: 10, height: 10, borderBottom: `2px solid ${rc}66`, borderLeft: `2px solid ${rc}66` }} />
+            <div style={{ position: "absolute", bottom: 2, right: 2, width: 10, height: 10, borderBottom: `2px solid ${rc}66`, borderRight: `2px solid ${rc}66` }} />
+          </div>
+
+          {/* Gate info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 8, color: rc, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2.5, fontWeight: 700, opacity: 0.85, marginBottom: 4, textShadow: `0 0 8px ${rc}` }}>◈ GATE ANOMALY DETECTED</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: dungeon.cleared ? "#475569" : "#f1f5f9", fontFamily: "'Cinzel',serif", letterSpacing: 1.5, lineHeight: 1.2, marginBottom: 5, textShadow: dungeon.cleared ? "none" : "0 0 24px rgba(255,255,255,0.12)" }}>{dungeon.name}</div>
+            <div style={{ fontSize: 10, color: "#4a5568", lineHeight: 1.45 }}>{dungeon.desc}</div>
+          </div>
+
+          {/* Rank badge — angular clip-path */}
+          <div style={{ flexShrink: 0, textAlign: "center", padding: "6px 14px 8px",
+            background: `linear-gradient(145deg,${rc}22,${rc}0a)`,
+            border: `1px solid ${rc}44`,
+            clipPath: "polygon(0 0, 100% 0, 100% 65%, 80% 100%, 0 100%)",
+            fontSize: 15, fontWeight: 900, color: rc, fontFamily: "'JetBrains Mono',monospace",
+            letterSpacing: 0.5, lineHeight: 1,
+            textShadow: `0 0 14px ${rc}`,
+            boxShadow: hover ? `0 0 20px ${rc}33` : "none",
+            transition: "box-shadow 0.3s" }}>
+            {dungeon.rank}
+            <div style={{ fontSize: 7, opacity: 0.65, letterSpacing: 1.5, marginTop: 2 }}>RANK</div>
           </div>
         </div>
+
+        {/* Meta row */}
+        <div style={{ display: "flex", gap: 5, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", letterSpacing: 0.8 }}>🏛 {dungeon.floors} FLOORS</span>
+          {!dungeon.cleared && timeLeft > 0 && (
+            <span style={{ fontSize: 9, color: hoursLeft < 2 ? "#ef4444" : "#475569", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: hoursLeft < 2 ? "#ef444412" : "rgba(255,255,255,0.03)", border: `1px solid ${hoursLeft < 2 ? "#ef444430" : "rgba(255,255,255,0.07)"}`, letterSpacing: 0.8 }}>⏱ {hoursLeft}h {minsLeft}m</span>
+          )}
+          <span style={{ fontSize: 9, color: rc, fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: rc + "10", border: `1px solid ${rc}25`, letterSpacing: 0.8, fontWeight: 700 }}>{threatLabel}</span>
+        </div>
+
+        {/* Requirements */}
+        {reqs.length > 0 && (
+          <div style={{ display: "flex", gap: 5, marginTop: 8, flexWrap: "wrap" }}>
+            {reqs.map(([stat, val]) => {
+              const cat = CATEGORIES.find(c => c.key === stat);
+              const met = (playerStats[stat] || 0) >= val;
+              return (
+                <div key={stat} style={{ padding: "3px 9px", fontSize: 9, background: met ? cat.color + "12" : "#ef444408", color: met ? cat.color : "#ef4444", border: `1px solid ${met ? cat.color + "30" : "#ef444422"}`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                  <span>{cat.icon}</span> {cat.stat} {val} {met ? "✓" : `(${playerStats[stat] || 0})`}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-      <div style={{ padding: "0 18px", display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-        {reqs.map(([stat, val]) => {
-          const cat = CATEGORIES.find(c => c.key === stat); const met = (playerStats[stat] || 0) >= val; return (
-            <div key={stat} style={{ padding: "4px 10px", borderRadius: 8, fontSize: 10, background: met ? cat.color + "12" : "#ef444408", color: met ? cat.color : "#ef4444", border: `1px solid ${met ? cat.color + "33" : "#ef444425"}`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
-              <span>{cat.icon}</span> {cat.stat} {val} {met ? "✓" : `(${playerStats[stat] || 0})`}
-            </div>
-          );
-        })}
-      </div>
-      <div style={{ padding: "12px 18px 16px", borderTop: `1px solid ${rankData.color}12`, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(180deg,transparent,${rankData.color}06)` }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 8, background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.12)" }}>
+
+      {/* Rank-color gradient divider */}
+      <div style={{ margin: "13px 0 0", height: 1, background: `linear-gradient(90deg, transparent, ${rc}22, ${rc}55, ${rc}22, transparent)` }} />
+
+      {/* Footer */}
+      <div style={{ padding: "11px 18px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(180deg, transparent, ${rc}07)`, position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", gap: 7 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.15)", clipPath: "polygon(0 0, 100% 0, 100% 55%, 92% 100%, 0 100%)" }}>
             <span style={{ fontSize: 10 }}>💎</span>
             <span style={{ fontSize: 11, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>+{modifier?.xpMult ? Math.round(dungeon.xp * modifier.xpMult) : dungeon.xp}</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 8, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.12)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)", clipPath: "polygon(0 0, 100% 0, 100% 55%, 92% 100%, 0 100%)" }}>
             <span style={{ fontSize: 10 }}>🪙</span>
             <span style={{ fontSize: 11, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>+{modifier?.goldMult ? Math.round(dungeon.gold * modifier.goldMult) : dungeon.gold}</span>
           </div>
         </div>
         {dungeon.cleared
           ? <div style={{ fontSize: 11, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, fontWeight: 700 }}>CLEARED ✓</div>
-          : <button onClick={() => onEnter(dungeon)} style={{
-            padding: "10px 24px", borderRadius: 12, fontSize: 12, fontWeight: 900,
-            background: `linear-gradient(135deg,${rankData.color}30,${rankData.color}15)`,
-            color: rankData.color, border: `1.5px solid ${rankData.color}55`,
-            fontFamily: "'Cinzel',serif", letterSpacing: 3,
-            transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-            transform: hover ? "scale(1.06)" : "scale(1)",
-            boxShadow: hover ? `0 0 24px ${rankData.color}33,0 4px 16px rgba(0,0,0,0.3)` : "none",
-          }}>ENTER ▶</button>
+          : <button
+              onClick={() => onPreview ? onPreview(dungeon) : onEnter(dungeon)}
+              style={{
+                padding: "10px 26px",
+                fontSize: 12, fontWeight: 900,
+                background: hover ? `linear-gradient(135deg,${rc}45,${rc}22)` : `linear-gradient(135deg,${rc}28,${rc}12)`,
+                color: rc,
+                border: `1px solid ${rc}${hover ? "88" : "44"}`,
+                fontFamily: "'Cinzel',serif", letterSpacing: 3,
+                transition: "all 0.22s ease",
+                boxShadow: hover ? `0 0 22px ${rc}44, 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 ${rc}25` : `inset 0 1px 0 ${rc}12`,
+                cursor: "pointer",
+                clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+                textShadow: hover ? `0 0 12px ${rc}` : "none",
+              }}
+            >ENTER ▶</button>
         }
       </div>
     </div>

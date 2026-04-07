@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -242,12 +242,14 @@ function UserList({ users, searchQuery, setSearchQuery, onUserSelect, onRefresh 
 function UserDetail({ user, onBack, onUpdate }) {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const stats = user.stats || {str: 0, vit: 0, agi: 0, int: 0, cha: 0};
-  
-  const [editData, setEditData] = useState({ 
-    gold: user.gold || 0, 
-    level: user.level || 1, 
+
+  const [editData, setEditData] = useState({
+    gold: user.gold || 0,
+    xp: user.xp || 0,
+    level: user.level || 1,
     statPoints: user.statPoints || 0,
     str: stats.str || 0,
     agi: stats.agi || 0,
@@ -330,6 +332,7 @@ function UserDetail({ user, onBack, onUpdate }) {
       const userRef = doc(db, 'users', user.id);
       await updateDoc(userRef, {
         gold: Number(editData.gold),
+        xp: Number(editData.xp),
         level: Number(editData.level),
         statPoints: Number(editData.statPoints),
         "stats.str": Number(editData.str),
@@ -343,6 +346,18 @@ function UserDetail({ user, onBack, onUpdate }) {
       onBack();
     } catch (e) {
       alert('Fehler beim Speichern: ' + e.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteDoc(doc(db, 'users', user.id));
+      alert('Spieler erfolgreich gelöscht!');
+      setShowDeleteModal(false);
+      onUpdate();
+      onBack();
+    } catch (e) {
+      alert('Fehler beim Löschen: ' + e.message);
     }
   };
 
@@ -534,8 +549,12 @@ function UserDetail({ user, onBack, onUpdate }) {
               <Edit3 size={18} /> Stats bearbeiten
             </button>
 
-            <button onClick={() => setShowResetModal(true)} className="btn-danger" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-              <Trash2 size={18} /> Spieler Reset
+            <button onClick={() => setShowResetModal(true)} className="btn-danger" style={{ width: '100%', marginBottom: '12px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+              <RefreshCw size={18} /> Spieler Reset
+            </button>
+
+            <button onClick={() => setShowDeleteModal(true)} className="btn-danger" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px', background: '#7f1d1d', boxShadow: '0 4px 15px rgba(220,38,38,0.4)' }}>
+              <Trash2 size={18} /> Spieler löschen
             </button>
 
             <div className="alert-box" style={{ marginTop: '30px' }}>
@@ -545,6 +564,24 @@ function UserDetail({ user, onBack, onUpdate }) {
           </div>
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="glass-panel modal-content animate-fade-in">
+            <div className="modal-header">
+              <h3>Spieler löschen</h3>
+              <button onClick={() => setShowDeleteModal(false)} className="btn-icon" style={{ border: 'none' }}><X size={20}/></button>
+            </div>
+            <p>Bist du sicher, dass du <strong style={{ color: '#fff' }}>{user.displayName || user.hunterName || user.name || user.id}</strong> komplett aus der Datenbank löschen willst? Diese Aktion kann nicht rückgängig gemacht werden!</p>
+            <div className="modal-footer">
+              <button className="btn-danger" onClick={() => setShowDeleteModal(false)} style={{ background: 'transparent', border: 'none' }}>Abbrechen</button>
+              <button onClick={handleDelete} style={{ background: '#7f1d1d', color: '#fff', border: '1px solid #ef4444', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Trash2 size={18} /> Endgültig löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showResetModal && (
         <div className="modal-overlay">
@@ -574,20 +611,29 @@ function UserDetail({ user, onBack, onUpdate }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="input-group">
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Level</label>
-                  <input 
-                    type="number" 
-                    className="input-glass" 
-                    value={editData.level} 
-                    onChange={e => setEditData({...editData, level: e.target.value})} 
+                  <input
+                    type="number"
+                    className="input-glass"
+                    value={editData.level}
+                    onChange={e => setEditData({...editData, level: e.target.value})}
                   />
                 </div>
                 <div className="input-group">
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Gold</label>
-                  <input 
-                    type="number" 
-                    className="input-glass" 
-                    value={editData.gold} 
-                    onChange={e => setEditData({...editData, gold: e.target.value})} 
+                  <input
+                    type="number"
+                    className="input-glass"
+                    value={editData.gold}
+                    onChange={e => setEditData({...editData, gold: e.target.value})}
+                  />
+                </div>
+                <div className="input-group">
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>XP</label>
+                  <input
+                    type="number"
+                    className="input-glass"
+                    value={editData.xp}
+                    onChange={e => setEditData({...editData, xp: e.target.value})}
                   />
                 </div>
               </div>
