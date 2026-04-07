@@ -109,9 +109,10 @@ export function useAuthScrollCamera(
       const dy = touchY - e.touches[0].clientY;
       touchY = e.touches[0].clientY;
       const mult = getZoneMultiplier(state.z);
-      currentTargetZ += dy * 0.22 * mult;
+      // 0.07 instead of 0.22 → ~3× slower on mobile for a controlled approach
+      currentTargetZ += dy * 0.07 * mult;
       currentTargetZ = Math.max(Z_END, Math.min(Z_START, currentTargetZ));
-      moveTo(currentTargetZ);
+      moveTo(currentTargetZ, 1.1); // slightly longer ease for smoother glide
     }
 
     window.addEventListener("wheel", handleWheel, { passive: false });
