@@ -5,38 +5,67 @@ import * as THREE from "three";
 import { portalGlowVert, portalGlowFrag } from "../shaders/portalGlow";
 
 const PortalMaterial = shaderMaterial(
-  { rankColor: new THREE.Color("#22d3ee"), time: 0, pulseSpeed: 2.0 },
+  { rankColor: new THREE.Color("#22d3ee"), time: 0, pulseSpeed: 2.0, progress: 0 },
   portalGlowVert,
   portalGlowFrag
 );
 extend({ PortalMaterial });
 
 const RANK_CFG = {
-  E:   { pulseSpeed: 1.2, emissive: 0.8,  lights: [2,0],    numCracks: 6,  numDebris: 12, numOrbs: 0 },
-  D:   { pulseSpeed: 1.8, emissive: 1.1,  lights: [3,0],    numCracks: 8,  numDebris: 16, numOrbs: 3 },
-  C:   { pulseSpeed: 2.0, emissive: 1.3,  lights: [3.5,0],  numCracks: 9,  numDebris: 18, numOrbs: 4 },
-  B:   { pulseSpeed: 2.5, emissive: 1.6,  lights: [5,1.5],  numCracks: 11, numDebris: 20, numOrbs: 5 },
-  A:   { pulseSpeed: 3.0, emissive: 2.0,  lights: [7,2.5],  numCracks: 12, numDebris: 22, numOrbs: 6 },
-  S:   { pulseSpeed: 4.0, emissive: 3.0,  lights: [10,5],   numCracks: 14, numDebris: 28, numOrbs: 8 },
-  SSS: { pulseSpeed: 5.5, emissive: 4.0,  lights: [14,7],   numCracks: 16, numDebris: 32, numOrbs: 10 },
+  E: { pulseSpeed: 1.2, emissive: 1.2, lights: [3, 0], numCracks: 8, numDebris: 16, numOrbs: 0 },
+  D: { pulseSpeed: 1.8, emissive: 1.6, lights: [4, 0], numCracks: 10, numDebris: 20, numOrbs: 3 },
+  C: { pulseSpeed: 2.0, emissive: 2.0, lights: [5, 0], numCracks: 11, numDebris: 24, numOrbs: 4 },
+  B: { pulseSpeed: 2.5, emissive: 2.5, lights: [6, 2], numCracks: 13, numDebris: 28, numOrbs: 6 },
+  A: { pulseSpeed: 3.0, emissive: 3.2, lights: [8, 3.5], numCracks: 14, numDebris: 32, numOrbs: 8 },
+  S: { pulseSpeed: 4.0, emissive: 4.5, lights: [12, 6], numCracks: 16, numDebris: 40, numOrbs: 10 },
+  SSS: { pulseSpeed: 5.5, emissive: 6.0, lights: [16, 8], numCracks: 20, numDebris: 50, numOrbs: 14 },
 };
 
+// ── Milestone beat system: intensity spikes at progress thresholds ────────────
+const MILESTONES = [0.15, 0.30, 0.50, 0.65, 0.80, 0.95];
+
+function useMilestoneBeat(progressRef) {
+  const beatRef = useRef(0);       // current beat intensity (0–1)
+  const lastMSRef = useRef(-1);      // last triggered milestone index
+
+  useFrame((_, delta) => {
+    const p = progressRef.current;
+    // Check for milestone crossings
+    for (let i = 0; i < MILESTONES.length; i++) {
+      if (i > lastMSRef.current && p >= MILESTONES[i]) {
+        lastMSRef.current = i;
+        beatRef.current = 1.0;  // spike
+        break;
+      }
+    }
+    // Decay beat (fast ease-out: ~0.15s to zero)
+    if (beatRef.current > 0.001) {
+      beatRef.current *= Math.max(0, 1 - delta * 8);
+    } else {
+      beatRef.current = 0;
+    }
+  });
+
+  return beatRef;
+}
+
 // ── Pulse rings: expand and fade outward from gate ───────────────────────────
-function PulseRings({ rankColor, progressRef }) {
+function PulseRings({ rankColor, progressRef, beatRef }) {
   const r0 = useRef(), r1 = useRef(), r2 = useRef();
 
   useFrame(({ clock }) => {
-    const p    = progressRef.current;
-    const t    = clock.getElapsedTime();
+    const p = progressRef.current;
+    const t = clock.getElapsedTime();
     const speed = 0.35 + p * 1.8;
     const maxOp = Math.min(0.55, p * 0.75);
+    const beat = beatRef.current;
 
     [[r0, 0], [r1, 0.333], [r2, 0.666]].forEach(([ref, phase]) => {
       if (!ref.current) return;
-      if (p < 0.06) { ref.current.material.opacity = 0; return; }
+      if (p < 0.06 && beat < 0.01) { ref.current.material.opacity = 0; return; }
       const pv = ((t * speed + phase) % 1);
-      ref.current.scale.setScalar(1 + pv * 3.2);
-      ref.current.material.opacity = maxOp * Math.pow(1 - pv, 2);
+      ref.current.scale.setScalar(1 + pv * 3.2 + beat * 1.5);
+      ref.current.material.opacity = (maxOp + beat * 0.4) * Math.pow(1 - pv, 2);
     });
   });
 
@@ -57,16 +86,16 @@ function PulseRings({ rankColor, progressRef }) {
 
 // ── Crack arms ───────────────────────────────────────────────────────────────
 function CrackArms({ rankColor, rank, mobile, progressRef }) {
-  const cfg     = RANK_CFG[rank] ?? RANK_CFG.E;
+  const cfg = RANK_CFG[rank] ?? RANK_CFG.E;
   const numArms = mobile ? Math.floor(cfg.numCracks * 0.6) : cfg.numCracks;
 
   const arms = useMemo(() => {
     const color = new THREE.Color(rankColor);
     return Array.from({ length: numArms }, (_, i) => {
-      const baseAngle   = (i / numArms) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      const armLength   = 0.7 + Math.random() * 1.8;
+      const baseAngle = (i / numArms) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const armLength = 0.7 + Math.random() * 1.8;
       const numSegments = 7 + Math.floor(Math.random() * 5);
-      const points      = [];
+      const points = [];
       let angle = baseAngle;
       for (let j = 0; j <= numSegments; j++) {
         const t = j / numSegments;
@@ -84,7 +113,7 @@ function CrackArms({ rankColor, rank, mobile, progressRef }) {
   }, [numArms, rankColor]);
 
   useFrame(({ clock }) => {
-    const t  = clock.getElapsedTime();
+    const t = clock.getElapsedTime();
     const aw = Math.min(1, Math.sqrt(progressRef.current * 1.3));
     arms.forEach(({ line, phaseOffset }) => {
       line.material.opacity = aw * (0.25 + Math.random() * 0.6)
@@ -97,28 +126,27 @@ function CrackArms({ rankColor, rank, mobile, progressRef }) {
 
 // ── Debris ring ───────────────────────────────────────────────────────────────
 function DebrisRing({ rankColor, rank, mobile, progressRef }) {
-  const cfg   = RANK_CFG[rank] ?? RANK_CFG.E;
+  const cfg = RANK_CFG[rank] ?? RANK_CFG.E;
   const count = mobile ? Math.floor(cfg.numDebris * 0.5) : cfg.numDebris;
 
   const debris = useMemo(() =>
     Array.from({ length: count }, (_, i) => ({
       startAngle: (i / count) * Math.PI * 2,
-      radius:     3.2 + (Math.random() - 0.5) * 1.1,
-      sizeX:      0.05 + Math.random() * 0.15,
-      speed:      (0.15 + Math.random() * 0.25) * (Math.random() > 0.5 ? 1 : -1),
-      zWave:      Math.random() * Math.PI * 2,
-      zAmp:       0.15 + Math.random() * 0.5,
+      radius: 3.2 + (Math.random() - 0.5) * 1.1,
+      sizeX: 0.05 + Math.random() * 0.15,
+      speed: (0.15 + Math.random() * 0.25) * (Math.random() > 0.5 ? 1 : -1),
+      zWave: Math.random() * Math.PI * 2,
+      zAmp: 0.15 + Math.random() * 0.5,
     }))
-  , [count]);
+    , [count]);
 
   const meshRef = useRef();
-  const dummy   = useMemo(() => new THREE.Object3D(), []);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
-    const t  = clock.getElapsedTime();
+    const t = clock.getElapsedTime();
     const aw = Math.min(1, Math.sqrt(progressRef.current * 1.3));
-    // Orbit speed scales with awakening
     debris.forEach((d, i) => {
       const a = d.startAngle + t * d.speed * aw;
       dummy.position.set(Math.cos(a) * d.radius, Math.sin(a) * d.radius, Math.sin(t * 0.7 + d.zWave) * d.zAmp);
@@ -143,21 +171,21 @@ function DebrisRing({ rankColor, rank, mobile, progressRef }) {
 
 // ── Energy orbs ───────────────────────────────────────────────────────────────
 function EnergyOrbs({ rankColor, rank, mobile, progressRef }) {
-  const cfg   = RANK_CFG[rank] ?? RANK_CFG.E;
+  const cfg = RANK_CFG[rank] ?? RANK_CFG.E;
   const count = mobile ? 0 : cfg.numOrbs;
 
-  const orbs    = useMemo(() => Array.from({ length: count }, (_, i) => ({
+  const orbs = useMemo(() => Array.from({ length: count }, (_, i) => ({
     startAngle: (i / count) * Math.PI * 2,
-    radius:     2.9 + Math.random() * 0.8,
-    speed:      0.4 + Math.random() * 0.6,
-    zPhase:     Math.random() * Math.PI * 2,
-    size:       0.06 + Math.random() * 0.1,
+    radius: 2.9 + Math.random() * 0.8,
+    speed: 0.4 + Math.random() * 0.6,
+    zPhase: Math.random() * Math.PI * 2,
+    size: 0.06 + Math.random() * 0.1,
   })), [count]);
 
   const orbRefs = useRef([]);
 
   useFrame(({ clock }) => {
-    const t  = clock.getElapsedTime();
+    const t = clock.getElapsedTime();
     const aw = Math.min(1, progressRef.current * 1.5);
     orbs.forEach((o, i) => {
       const ref = orbRefs.current[i];
@@ -187,7 +215,7 @@ function EnergyOrbs({ rankColor, rank, mobile, progressRef }) {
 // ── Bloom glow discs that fade in with awakening ─────────────────────────────
 function GlowDiscs({ rankColor, isHighRank, progressRef }) {
   const refs = [useRef(), useRef(), useRef(), useRef()];
-  const radii   = [8, 5.5, 4, 3];
+  const radii = [8, 5.5, 4, 3];
   const baseOps = isHighRank
     ? [0.022, 0.019, 0.016, 0.013]
     : [0.014, 0.012, 0.010, 0.008];
@@ -222,34 +250,46 @@ export default function DungeonGate3D({
   mobile = false,
   progressRef,
 }) {
-  const _dummyRef = useRef(0); // fallback if no progressRef
+  const _dummyRef = useRef(0);
   const pRef = progressRef ?? _dummyRef;
 
   const portalMatRef = useRef();
-  const ring1Ref     = useRef();
-  const ring2Ref     = useRef();
-  const ring3Ref     = useRef();
-  const ring4Ref     = useRef();
-  const lightRef     = useRef();
-  const light2Ref    = useRef();
+  const ring1Ref = useRef();
+  const ring2Ref = useRef();
+  const ring3Ref = useRef();
+  const ring4Ref = useRef();
+  const lightRef = useRef();
+  const light2Ref = useRef();
+  const groupRef = useRef();
 
-  const cfg        = RANK_CFG[rank] ?? RANK_CFG.E;
+  const cfg = RANK_CFG[rank] ?? RANK_CFG.E;
   const threeColor = useMemo(() => new THREE.Color(rankColor), [rankColor]);
   const isHighRank = rank === "S" || rank === "SSS";
-  const isMidRank  = rank === "A" || rank === "B";
+  const isMidRank = rank === "A" || rank === "B";
+
+  const beatRef = useMilestoneBeat(pRef);
 
   useFrame(({ clock }) => {
-    const t  = clock.getElapsedTime();
-    const p  = pRef.current;
-    // Awakening: square-root ramp for fast initial reveal, gentle finish
+    const t = clock.getElapsedTime();
+    const p = pRef.current;
     const aw = Math.min(1, Math.sqrt(p * 1.25));
+    const beat = beatRef.current;
 
-    // Portal shader
-    if (portalMatRef.current) portalMatRef.current.time = t;
+    // Portal shader – pass time and progress
+    if (portalMatRef.current) {
+      portalMatRef.current.time = t;
+      portalMatRef.current.progress = p;
+    }
+
+    // ── Gate breathing – subtle scale oscillation ──────────────────────────
+    if (groupRef.current) {
+      const breath = 1 + Math.sin(t * 1.88 * cfg.pulseSpeed * 0.3) * 0.005 * aw;
+      const beatScale = 1 + beat * 0.03;
+      groupRef.current.scale.setScalar(breath * beatScale);
+    }
 
     // Ring 1: slow clockwise, scale pulse at high rank
     if (ring1Ref.current) {
-      // Ring spin speed also wakes up with approach
       ring1Ref.current.rotation.z = t * 0.18 * (0.1 + 0.9 * aw);
       if (isHighRank && aw > 0.5) {
         const pulse = 1 + Math.sin(t * cfg.pulseSpeed) * 0.04;
@@ -257,7 +297,7 @@ export default function DungeonGate3D({
       }
     }
 
-    // Ring 2: counter-clockwise, faster as awakening grows
+    // Ring 2: counter-clockwise
     if (ring2Ref.current) ring2Ref.current.rotation.z = -t * 0.32 * (0.1 + 0.9 * aw);
 
     // Ring 3: wobble on x-axis
@@ -272,33 +312,31 @@ export default function DungeonGate3D({
       ring4Ref.current.rotation.y = Math.sin(t * 0.6) * 0.2;
     }
 
-    // Emissive on rings scales with awakening (handled via material refs below)
-
     // Gate main light
     if (lightRef.current) {
       const flicker = (isHighRank || isMidRank)
         ? (0.7 + 0.3 * Math.sin(t * cfg.pulseSpeed * 2.1))
         : 1;
-      lightRef.current.intensity = cfg.lights[0] * aw * flicker;
+      lightRef.current.intensity = cfg.lights[0] * aw * flicker + beat * 5;
     }
 
     // Secondary accent light
     if (light2Ref.current) {
       light2Ref.current.intensity = cfg.lights[1] * aw
-        * (0.5 + 0.5 * Math.abs(Math.sin(t * 11.3 + 1.2)));
+        * (0.5 + 0.5 * Math.abs(Math.sin(t * 11.3 + 1.2))) + beat * 3;
     }
   });
 
-  const emIntensity = cfg.emissive; // static base; scaled visually by awakening on lights
+  const emIntensity = cfg.emissive;
 
   return (
-    <group position={[0, 0, 0]}>
+    <group ref={groupRef} position={[0, 0, 0]}>
 
-      {/* Glow bloom discs — fade in with awakening */}
+      {/* Glow bloom discs */}
       <GlowDiscs rankColor={rankColor} isHighRank={isHighRank} progressRef={pRef} />
 
-      {/* Pulse rings — expand outward from gate */}
-      <PulseRings rankColor={rankColor} progressRef={pRef} />
+      {/* Pulse rings with milestone beats */}
+      <PulseRings rankColor={rankColor} progressRef={pRef} beatRef={beatRef} />
 
       {/* Portal void disc */}
       <mesh position={[0, 0, 0.01]}>
@@ -308,6 +346,7 @@ export default function DungeonGate3D({
           rankColor={threeColor}
           time={0}
           pulseSpeed={cfg.pulseSpeed}
+          progress={0}
           transparent
           blending={THREE.AdditiveBlending}
           depthWrite={false}
@@ -375,7 +414,7 @@ export default function DungeonGate3D({
         />
       )}
 
-      {/* Deep void light – always subtle */}
+      {/* Deep void light */}
       <pointLight color="#0022ff" intensity={0.35} distance={6} decay={2} position={[0, 0, -1]} />
     </group>
   );

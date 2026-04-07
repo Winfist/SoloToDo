@@ -2155,7 +2155,7 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
   const minsLeft = Math.floor((timeLeft % 3600000) / 60000);
   const rc = rankData.color;
   const isHighRank = dungeon.rank === "S" || dungeon.rank === "SSS";
-  const isMidRank  = dungeon.rank === "A" || dungeon.rank === "B";
+  const isMidRank = dungeon.rank === "A" || dungeon.rank === "B";
   const threatLabel = isHighRank ? "⚠ EXTREME THREAT" : isMidRank ? "◆ HIGH THREAT" : "◇ STANDARD";
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{
@@ -2183,9 +2183,11 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
       )}
 
       {/* Corner accent — top-right cut */}
-      <div style={{ position: "absolute", top: 0, right: 0, width: 16, height: 16, pointerEvents: "none", zIndex: 3,
+      <div style={{
+        position: "absolute", top: 0, right: 0, width: 16, height: 16, pointerEvents: "none", zIndex: 3,
         background: `linear-gradient(225deg, ${rc}44 0%, transparent 60%)`,
-        clipPath: "polygon(0 0, 100% 0, 100% 100%)" }} />
+        clipPath: "polygon(0 0, 100% 0, 100% 100%)"
+      }} />
 
       {/* Body */}
       <div style={{ padding: "15px 18px 0", position: "relative", zIndex: 1 }}>
@@ -2214,7 +2216,8 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
           </div>
 
           {/* Rank badge — angular clip-path */}
-          <div style={{ flexShrink: 0, textAlign: "center", padding: "6px 14px 8px",
+          <div style={{
+            flexShrink: 0, textAlign: "center", padding: "6px 14px 8px",
             background: `linear-gradient(145deg,${rc}22,${rc}0a)`,
             border: `1px solid ${rc}44`,
             clipPath: "polygon(0 0, 100% 0, 100% 65%, 80% 100%, 0 100%)",
@@ -2222,7 +2225,8 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
             letterSpacing: 0.5, lineHeight: 1,
             textShadow: `0 0 14px ${rc}`,
             boxShadow: hover ? `0 0 20px ${rc}33` : "none",
-            transition: "box-shadow 0.3s" }}>
+            transition: "box-shadow 0.3s"
+          }}>
             {dungeon.rank}
             <div style={{ fontSize: 7, opacity: 0.65, letterSpacing: 1.5, marginTop: 2 }}>RANK</div>
           </div>
@@ -2271,21 +2275,21 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
         {dungeon.cleared
           ? <div style={{ fontSize: 11, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, fontWeight: 700 }}>CLEARED ✓</div>
           : <button
-              onClick={() => onPreview ? onPreview(dungeon) : onEnter(dungeon)}
-              style={{
-                padding: "10px 26px",
-                fontSize: 12, fontWeight: 900,
-                background: hover ? `linear-gradient(135deg,${rc}45,${rc}22)` : `linear-gradient(135deg,${rc}28,${rc}12)`,
-                color: rc,
-                border: `1px solid ${rc}${hover ? "88" : "44"}`,
-                fontFamily: "'Cinzel',serif", letterSpacing: 3,
-                transition: "all 0.22s ease",
-                boxShadow: hover ? `0 0 22px ${rc}44, 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 ${rc}25` : `inset 0 1px 0 ${rc}12`,
-                cursor: "pointer",
-                clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
-                textShadow: hover ? `0 0 12px ${rc}` : "none",
-              }}
-            >ENTER ▶</button>
+            onClick={() => onPreview ? onPreview(dungeon) : onEnter(dungeon)}
+            style={{
+              padding: "10px 26px",
+              fontSize: 12, fontWeight: 900,
+              background: hover ? `linear-gradient(135deg,${rc}45,${rc}22)` : `linear-gradient(135deg,${rc}28,${rc}12)`,
+              color: rc,
+              border: `1px solid ${rc}${hover ? "88" : "44"}`,
+              fontFamily: "'Cinzel',serif", letterSpacing: 3,
+              transition: "all 0.22s ease",
+              boxShadow: hover ? `0 0 22px ${rc}44, 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 ${rc}25` : `inset 0 1px 0 ${rc}12`,
+              cursor: "pointer",
+              clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+              textShadow: hover ? `0 0 12px ${rc}` : "none",
+            }}
+          >ENTER ▶</button>
         }
       </div>
     </div>
@@ -2388,7 +2392,7 @@ function BossPhaseUI({ rank, bossHp, bossMaxHp, currentPhase, phases }) {
 }
 
 // ─── SPRINT 3: DUNGEON BATTLE ─────────────────────────────────
-function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBonuses, modifier, formationBonus, state, persist, notify }) {
+function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBonuses, modifier, formationBonus, state, persist, notify, onTrigger3D, startAutomatically, onClearStartAuto }) {
   const [phase, setPhase] = useState("strategy");
   const [strategy, setStrategy] = useState(STRATEGIES[0]);
   const [battleLog, setBattleLog] = useState([]);
@@ -2428,6 +2432,18 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
   }, [phase]);
 
   const addLog = (log) => setBattleLog(prev => [...prev, log]);
+
+  useEffect(() => {
+    if (startAutomatically && phase === "strategy") {
+      if (onClearStartAuto) onClearStartAuto();
+      startBattle();
+    }
+  }, [startAutomatically, phase, onClearStartAuto]);
+
+  const handleEnterClick = () => {
+    if (onTrigger3D) onTrigger3D();
+    else startBattle();
+  };
 
   const startBattle = () => {
     setPhase("entering");
@@ -2643,7 +2659,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={onClose} style={{ flex: 1, padding: 14, borderRadius: 12, fontSize: 12, background: "transparent", color: "#475569", border: "1px solid #1e2940", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>ABBRECHEN</button>
-            <button onClick={startBattle} style={{ flex: 2, padding: 14, borderRadius: 12, fontSize: 13, fontWeight: 700, background: `linear-gradient(135deg,${rankData.color}28,${rankData.color}10)`, color: rankData.color, border: `1px solid ${rankData.color}55`, fontFamily: "'Cinzel',serif", letterSpacing: 2, boxShadow: `0 4px 20px ${rankData.color}18` }}>⚔️ BETRETEN</button>
+            <button onClick={handleEnterClick} style={{ flex: 2, padding: 14, borderRadius: 12, fontSize: 13, fontWeight: 700, background: `linear-gradient(135deg,${rankData.color}28,${rankData.color}10)`, color: rankData.color, border: `1px solid ${rankData.color}55`, fontFamily: "'Cinzel',serif", letterSpacing: 2, boxShadow: `0 4px 20px ${rankData.color}18` }}>⚔️ BETRETEN</button>
           </div>
         </div>
       )}
