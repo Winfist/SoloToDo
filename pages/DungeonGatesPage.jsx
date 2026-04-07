@@ -522,7 +522,7 @@ export default function DungeonGatesPage({ dungeon, onEnterGate, onClose }) {
       ref={scrollContainerRef}
       style={{
         position: "fixed", inset: 0, zIndex: 9999, background: "#04040a",
-        animation: "dgFadeIn 0.4s ease", userSelect: "none"
+        animation: "dgFadeIn 0.4s ease", userSelect: "none", touchAction: "none"
       }}
     >
       <style>{CSS}</style>
