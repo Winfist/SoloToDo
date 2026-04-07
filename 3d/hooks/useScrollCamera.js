@@ -95,7 +95,7 @@ export function useScrollCamera(
       if (!scrollContainerRef?.current) return;
       e.preventDefault();
       const mult = getZoneMultiplier(state.z);
-      moveTo(state.z + e.deltaY * 0.03 * mult);
+      moveTo(state.z + e.deltaY * 0.09 * mult);
     }
 
     let touchY = 0;
@@ -109,7 +109,7 @@ export function useScrollCamera(
       const dy = touchY - e.touches[0].clientY;
       touchY = e.touches[0].clientY;
       const mult = getZoneMultiplier(state.z);
-      moveTo(state.z + dy * 0.07 * mult);
+      moveTo(state.z + dy * 0.21 * mult);
     }
 
     window.addEventListener("wheel", handleWheel, { passive: false });

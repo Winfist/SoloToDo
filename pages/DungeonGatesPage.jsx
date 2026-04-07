@@ -669,6 +669,10 @@ export default function DungeonGatesPage({ dungeon, onEnterGate, onClose }) {
           {/* Exit */}
           <button onClick={onClose} style={{
             pointerEvents: "all",
+            position: "absolute",
+            top: "calc(8vh + 14px)",
+            right: "22px",
+            zIndex: 100,
             background: "rgba(0,0,0,0.7)", border: "1px solid #0f172a",
             color: "#334155", padding: "8px 18px", clipPath: clip(6),
             fontSize: 9, fontFamily: "'JetBrains Mono',monospace",
