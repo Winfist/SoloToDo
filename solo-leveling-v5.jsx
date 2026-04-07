@@ -1480,6 +1480,7 @@ function App({ initialHunterName, onLogout }) {
                 items: [
                   { key: "soullink_overlay", icon: "🔗", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) },
                   { key: "charisma_overlay", icon: "🎭", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) },
+                  { key: "protocol_overlay", icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) },
                 ]
               }, {
                 title: "SYSTEM", icon: "⚙️", color: "#64748b",
@@ -1802,6 +1803,19 @@ function App({ initialHunterName, onLogout }) {
           </div>
         )
       }
+
+      {/* DAWN / DUSK PROTOCOL */}
+      {showDawnDusk && (
+        <DawnDuskProtocol
+          state={state}
+          theme={theme}
+          startDawnDuskRun={startDawnDuskRun}
+          completeProtocolFloor={completeProtocolFloor}
+          configureProtocolTasks={configureProtocolTasks}
+          abandonProtocolRun={abandonProtocolRun}
+          onClose={() => setShowDawnDusk(false)}
+        />
+      )}
     </div >
   );
 }
