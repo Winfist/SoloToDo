@@ -19,6 +19,10 @@ export default function InnerSanctum({ state, persist, notify, theme }) {
     const manifestations = state.manifestations || [];
     const [inputText, setInputText] = useState("");
 
+    const remainingManifestations = PREMIUM_MANIFESTATIONS.filter(pm =>
+        !manifestations.some(m => m.text === pm)
+    );
+
     const handleAddVision = (e) => {
         e.preventDefault();
         const text = inputText.trim();
@@ -44,7 +48,9 @@ export default function InnerSanctum({ state, persist, notify, theme }) {
             return;
         }
 
-        const randomItem = PREMIUM_MANIFESTATIONS[Math.floor(Math.random() * PREMIUM_MANIFESTATIONS.length)];
+        if (remainingManifestations.length === 0) return;
+
+        const randomItem = remainingManifestations[Math.floor(Math.random() * remainingManifestations.length)];
         setInputText(randomItem);
 
         persist({
@@ -102,31 +108,33 @@ export default function InnerSanctum({ state, persist, notify, theme }) {
                         placeholder="Neue Manifestation oder Ziel..."
                         style={{ flex: 1, background: "rgba(10,10,22,0.8)", border: `1px solid ${theme.primary}33`, color: "#fff", padding: "14px 16px", borderRadius: 12, fontSize: 14, outline: "none", transition: "all 0.2s" }}
                     />
-                    <button
-                        type="button"
-                        onClick={rollPremiumManifestation}
-                        title="Premium Manifestation (20G)"
-                        disabled={(state.gold || 0) < 20}
-                        style={{
-                            padding: "6px 14px",
-                            background: (state.gold || 0) >= 20 ? "rgba(245,158,11,0.15)" : "rgba(15,15,30,0.5)",
-                            border: `1px solid ${(state.gold || 0) >= 20 ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.05)"}`,
-                            borderRadius: 12,
-                            color: (state.gold || 0) >= 20 ? "#f59e0b" : "#475569",
-                            cursor: (state.gold || 0) >= 20 ? "pointer" : "not-allowed",
-                            transition: "all 0.2s",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 2
-                        }}
-                        onMouseEnter={e => { if ((state.gold || 0) >= 20) { e.currentTarget.style.background = "rgba(245,158,11,0.25)"; e.currentTarget.style.transform = "scale(1.05)"; } }}
-                        onMouseLeave={e => { if ((state.gold || 0) >= 20) { e.currentTarget.style.background = "rgba(245,158,11,0.15)"; e.currentTarget.style.transform = "none"; } }}
-                    >
-                        <span style={{ fontSize: 20 }}>🎲</span>
-                        <span style={{ fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>20G</span>
-                    </button>
+                    {remainingManifestations.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={rollPremiumManifestation}
+                            title="Premium Manifestation (20G)"
+                            disabled={(state.gold || 0) < 20}
+                            style={{
+                                padding: "6px 14px",
+                                background: (state.gold || 0) >= 20 ? "rgba(245,158,11,0.15)" : "rgba(15,15,30,0.5)",
+                                border: `1px solid ${(state.gold || 0) >= 20 ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.05)"}`,
+                                borderRadius: 12,
+                                color: (state.gold || 0) >= 20 ? "#f59e0b" : "#475569",
+                                cursor: (state.gold || 0) >= 20 ? "pointer" : "not-allowed",
+                                transition: "all 0.2s",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 2
+                            }}
+                            onMouseEnter={e => { if ((state.gold || 0) >= 20) { e.currentTarget.style.background = "rgba(245,158,11,0.25)"; e.currentTarget.style.transform = "scale(1.05)"; } }}
+                            onMouseLeave={e => { if ((state.gold || 0) >= 20) { e.currentTarget.style.background = "rgba(245,158,11,0.15)"; e.currentTarget.style.transform = "none"; } }}
+                        >
+                            <span style={{ fontSize: 20 }}>🎲</span>
+                            <span style={{ fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>20G</span>
+                        </button>
+                    )}
                     <button type="submit" disabled={!inputText.trim()} style={{ padding: "0 22px", background: inputText.trim() ? `linear-gradient(135deg, ${theme.secondary}, ${theme.primary})` : "rgba(255,255,255,0.05)", border: "none", borderRadius: 12, color: inputText.trim() ? "#fff" : "#475569", fontWeight: 800, cursor: inputText.trim() ? "pointer" : "not-allowed", fontSize: 20, transition: "all 0.3s" }}>+</button>
                 </form>
 
