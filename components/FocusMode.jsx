@@ -8,8 +8,22 @@ import { calculateLevelUp } from "../data/constants";
 const FOCUS_MODES = {
     pomodoro: { id: "pomodoro", name: "Pomodoro", work: 25, break: 5, color: "#ef4444" },
     deepWork: { id: "deepWork", name: "Deep Work", work: 90, break: 15, color: "#a855f7" },
-    sprint: { id: "sprint", name: "Sprint", work: 45, break: 10, color: "#3b82f6" }
+    sprint: { id: "sprint", name: "Sprint", work: 45, break: 10, color: "#3b82f6" },
+    meditation: { id: "meditation", name: "Inner Sanctum", work: 10, break: 0, color: "#22c55e", isSanctum: true }
 };
+
+const AFFIRMATIONS = [
+    "Ich bin der Architekt meines eigenen Schicksals.",
+    "Kein Hindernis ist zu groß für meine Entschlossenheit.",
+    "Jeden Tag werde ich stärker, klüger und widerstandsfähiger.",
+    "Mein Fokus ist unerschütterlich wie Stahl.",
+    "Durch jede Niederlage lerne ich, durch jeden Sieg wachse ich.",
+    "Disziplin ist meine Klinge, Geduld mein Schild.",
+    "Mein Potenzial kennt keine Limitierungen.",
+    "Ich ziehe Erfolg und Fülle wie magische Drops an.",
+    "Meine Shadow Army bekämpft meine Ausreden in meinem Rücken.",
+    "Das System belohnt jene, die niemals aufgeben."
+];
 
 export default function FocusMode({ state, persist, notify, onExit, theme }) {
     const [activeMode, setActiveMode] = useState(FOCUS_MODES.pomodoro);
@@ -18,8 +32,19 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
     const [timeLeft, setTimeLeft] = useState(activeMode.work * 60);
     const [sessionStreak, setSessionStreak] = useState(0);
     const [totalWorkMinutes, setTotalWorkMinutes] = useState(0);
+    const [affirmationIdx, setAffirmationIdx] = useState(0);
 
     const timerRef = useRef(null);
+
+    // Affirmation Rotator
+    useEffect(() => {
+        if (running && phase === "work") {
+            const interval = setInterval(() => {
+                setAffirmationIdx(prev => (prev + 1) % AFFIRMATIONS.length);
+            }, 8000);
+            return () => clearInterval(interval);
+        }
+    }, [running, phase]);
 
     // Handle mode switches when not running
     useEffect(() => {
@@ -43,11 +68,23 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
                 const minutesCompleted = activeMode.work;
                 setTotalWorkMinutes(prev => prev + minutesCompleted);
                 const streakBonus = sessionStreak * 5;
-                const xpGain = Math.floor(minutesCompleted * 2) + streakBonus; // 2 XP per minute + run bonus
+                let xpGain = Math.floor(minutesCompleted * 2) + streakBonus; // 2 XP per minute + run bonus
 
-                persist(calculateLevelUp(state, xpGain));
+                let nextState = calculateLevelUp(state, xpGain);
 
-                notify(`Session komplett! +${xpGain} XP (inkl. +${streakBonus} Streak-Bonus) ⚡`, "success");
+                if (activeMode.isSanctum) {
+                    const vitGain = Math.floor(minutesCompleted / 10);
+                    if (vitGain > 0) {
+                        nextState.stats = { ...nextState.stats, vit: (nextState.stats.vit || 0) + vitGain };
+                        notify(`Sanctum Meditation komplett! +${xpGain} XP & +${vitGain} VIT 🧘‍♂️`, "success");
+                    } else {
+                        notify(`Sanctum Meditation komplett! +${xpGain} XP 🧘‍♂️`, "success");
+                    }
+                } else {
+                    notify(`Session komplett! +${xpGain} XP (inkl. +${streakBonus} Streak-Bonus) ⚡`, "success");
+                }
+
+                persist(nextState);
                 setSessionStreak(prev => prev + 1);
 
                 try {
@@ -143,6 +180,20 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
                         }}>
                             {getFormatTime(timeLeft)}
                         </div>
+                    </div>
+
+                    {/* Rotating Affirmations during Work Phase */}
+                    <div style={{ height: 60, marginTop: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {running && phase === "work" && (
+                            <div key={affirmationIdx} style={{
+                                fontSize: 16, color: "#e2e8f0", fontFamily: "'Cinzel',serif",
+                                fontStyle: "italic", textAlign: "center", maxWidth: "80%",
+                                animation: "fadeIn 1s ease",
+                                textShadow: `0 0 16px ${activeMode.color}44`
+                            }}>
+                                "{AFFIRMATIONS[affirmationIdx]}"
+                            </div>
+                        )}
                     </div>
 
                     {/* Progress Bar */}

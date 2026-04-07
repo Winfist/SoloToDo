@@ -5,7 +5,7 @@ export const JOBS = {
     icon: "⚔️",
     color: "#ef4444",
     statFocus: "str",
-    unlockRequirement: { level: 50 },
+    unlockRequirement: { level: 15 },
     passives: {
       base: "+30% Speed für STR-Quests",
       level3: "+10% XP aus STR",
@@ -28,7 +28,7 @@ export const JOBS = {
     icon: "📖",
     color: "#3b82f6",
     statFocus: "int",
-    unlockRequirement: { level: 50 },
+    unlockRequirement: { level: 15 },
     passives: {
       base: "+30% XP für INT",
       level3: "+1% Shop-Discount pro 5 INT",
@@ -51,7 +51,7 @@ export const JOBS = {
     icon: "🛡️",
     color: "#10b981",
     statFocus: "vit",
-    unlockRequirement: { level: 50 },
+    unlockRequirement: { level: 15 },
     passives: {
       base: "Streak Shield +3",
       level3: "+10% Vit Stats Bonus",
@@ -74,7 +74,7 @@ export const JOBS = {
     icon: "🗡️",
     color: "#14b8a6",
     statFocus: "agi",
-    unlockRequirement: { level: 50 },
+    unlockRequirement: { level: 15 },
     passives: {
       base: "Gold Bonus +50%",
       level3: "+10% AGI Quests XP",
@@ -97,7 +97,7 @@ export const JOBS = {
     icon: "👑",
     color: "#f59e0b",
     statFocus: "cha",
-    unlockRequirement: { level: 50 },
+    unlockRequirement: { level: 15 },
     passives: {
       base: "Alle XP +15%",
       level3: "Shadow Capacity +10",
@@ -120,7 +120,7 @@ export const JOBS = {
     icon: "💀",
     color: "#a855f7",
     statFocus: "cha",
-    unlockRequirement: { level: 50 },
+    unlockRequirement: { level: 15 },
     passives: {
       base: "Shadow XP +30%",
       level3: "Shadow Evolution Cost -20%",

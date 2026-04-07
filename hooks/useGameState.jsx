@@ -51,8 +51,10 @@ export function useGameState(initialHunterName, onLogout) {
 
   const notify = useCallback((msg, type = "info") => setNotifications(prev => [...prev, { id: genId(), msg, type }]), []);
   const persist = useCallback(s => {
-    setState(s);
-    saveState(s);
+    const next = { ...s, lastInteractionTimeMs: Date.now() };
+    setState(next);
+    stateRef.current = next;
+    saveState(next);
   }, []);
 
   // Real-time Cloud Sync
@@ -90,6 +92,16 @@ export function useGameState(initialHunterName, onLogout) {
         if (s) {
           const today = getToday();
 
+          // Rest-State Mechanics
+          if (s.lastInteractionTimeMs && (Date.now() - s.lastInteractionTimeMs >= 8 * 3600 * 1000)) {
+            s.restBuff = { active: true, date: today };
+            setTimeout(() => notify("Inner Sanctum Buff: +10% XP für heute (8h offline)", "success"), 2500);
+          }
+          if (s.restBuff?.active && s.restBuff.date !== today) {
+            s.restBuff = { active: false, date: null };
+          }
+          s.lastInteractionTimeMs = Date.now();
+
           // Local state belongs to this user — preserve it as-is.
 
           if (s.lastActiveDate && s.lastActiveDate !== today) {
@@ -115,6 +127,8 @@ export function useGameState(initialHunterName, onLogout) {
             }
             s.dailyUserQuestsCreated = 0;
             s.extraDailySlots = 0;
+            s.dailyUserXP = 0;
+            s.integrityScore = Math.min(100, (s.integrityScore !== undefined ? s.integrityScore : 100) + 20);
           }
           s.lastActiveDate = today;
           if (!s.emergencyQuest || !s.emergencyQuest.id.endsWith(today)) {
@@ -190,7 +204,31 @@ export function useGameState(initialHunterName, onLogout) {
       );
 
       if (availablePool.length > 0) {
-        const randTask = availablePool[Math.floor(Math.random() * availablePool.length)];
+        let poolToUse = availablePool;
+
+        // FOCUS-WEIGHTED LOGIC
+        if (currentState.lifeDomains && currentState.lifeDomains.length > 0) {
+          const DOMAIN_TO_STATS = {
+            fitness: ["str", "vit", "agi"], knowledge: ["int"], health: ["vit"], career: ["int", "cha"],
+            social: ["cha"], dating: ["cha", "int"], finance: ["int"], mindset: ["vit", "int"]
+          };
+
+          let focusStats = [];
+          currentState.lifeDomains.forEach(d => {
+            if (DOMAIN_TO_STATS[d]) focusStats.push(...DOMAIN_TO_STATS[d]);
+          });
+
+          const roll = Math.random();
+          if (roll < 0.6) {
+            const focusPool = availablePool.filter(q => focusStats.includes(q.category));
+            if (focusPool.length > 0) poolToUse = focusPool;
+          } else if (roll < 0.9) {
+            const compPool = availablePool.filter(q => !focusStats.includes(q.category));
+            if (compPool.length > 0) poolToUse = compPool;
+          }
+        }
+
+        const randTask = poolToUse[Math.floor(Math.random() * poolToUse.length)];
         const newQuest = {
           id: genId(), title: randTask.title, difficulty: randTask.difficulty || "normal",
           category: randTask.category || "str", desc: randTask.desc || "",
@@ -290,7 +328,30 @@ export function useGameState(initialHunterName, onLogout) {
     const jobBonuses = getJobBonuses(state);
     const formBonus = calcFormationBonus(state.shadowArmy, jobBonuses.allShadowsActive);
     const penaltyActive = state.penaltyZone?.active;
-    const xpGain = computeXpGain(quest, streakBonusPct, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses);
+    let xpGain = computeXpGain(quest, streakBonusPct, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses);
+
+    if (state.restBuff?.active) {
+      xpGain = Math.round(xpGain * 1.1);
+    }
+
+    let finalSysIntegrity = state.integrityScore !== undefined ? state.integrityScore : 100;
+
+    if (!quest.isSystem) {
+      if ((state.dailyUserXP || 0) > 200 + state.level * 5) {
+        xpGain = Math.round(xpGain * 0.5);
+      } else if ((state.dailyUserXP || 0) + xpGain > 200 + state.level * 5) {
+        notify("Tägliches XP Soft-Cap erreicht. Künftige eigene Quests geben -50%.", "warning");
+      }
+
+      const actualElapsedHours = (Date.now() - (quest.createdAtMs || Date.now())) / 3600000;
+      if (actualElapsedHours < 0.1) finalSysIntegrity = Math.max(0, finalSysIntegrity - 5);
+
+      if (finalSysIntegrity < 50) {
+        xpGain = Math.round(xpGain * (finalSysIntegrity / 100));
+        if (Math.random() < 0.3) notify("System-Integrität niedrig. XP für eigene Quests verringert.", "warning");
+      }
+    }
+
     const diff = DIFFICULTIES.find(d => d.key === quest.difficulty);
     const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
     let goldMult = (1 + (equipBonuses.goldBonus || 0) + (skillBonuses.goldBonus || 0) + (formBonus?.goldBonus || 0)) * (typeCfg.goldMult || 1) * (quest.chainMultiplier || 1);
@@ -368,14 +429,28 @@ export function useGameState(initialHunterName, onLogout) {
       });
     }
 
+    // Codex Quest handling
+    let newCodexMastered = state.codexMastered || [];
+    let codexStatBonus = 0;
+    if (quest.isCodexQuest && quest.codexId) {
+      if (!newCodexMastered.includes(quest.codexId)) {
+        newCodexMastered = [...newCodexMastered, quest.codexId];
+        codexStatBonus = 1; // +1 permanenter stat bonus
+        notify(`📜 CODEX GEMEISTERT! Permanente Weisheit erlangt. +1 ${quest.rewardStat?.toUpperCase() || quest.category.toUpperCase()}`, "success");
+      }
+    }
+
     next = {
       ...next,
-      stats: { ...state.stats, [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) },
+      stats: { ...state.stats, [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) + codexStatBonus },
       quests: updatedQuests, completedQuests: [...(state.completedQuests || []), { ...quest, completedAt: today }],
       habits: newHabits,
       streak: newStreak, lastActiveDate: today, shadowArmy: newShadowArmy,
       totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1,
-      penaltyZone: newPenalty, hiddenQuests: newHiddenQuests
+      penaltyZone: newPenalty, hiddenQuests: newHiddenQuests,
+      dailyUserXP: (state.dailyUserXP || 0) + (!quest.isSystem ? xpGain : 0),
+      integrityScore: finalSysIntegrity,
+      codexMastered: newCodexMastered
     };
     // Check hidden quest triggers after state update
     const newlyDiscoveredHQ = checkHiddenQuestTriggers(next);
@@ -474,7 +549,17 @@ export function useGameState(initialHunterName, onLogout) {
       timeLimit = d.toISOString();
     }
     const habitId = ((qType === "daily" || qType === "weekly") && qSyncHabit) ? genId() : null;
-    const quest = { id: genId(), title: qTitle.trim(), difficulty: qDiff, category: qCat, type: qType, createdAt: getToday(), createdAtMs: Date.now(), ...(timeLimit ? { timeLimit } : {}), ...(habitId ? { linkedHabitId: habitId } : {}) };
+    let finalDiff = qDiff;
+    if (finalDiff === "boss") finalDiff = "hard";
+
+    const tLower = qTitle.trim().toLowerCase();
+    const isSimple = tLower.includes("liegestütz") || tLower.includes("situp") || tLower.includes("kniebeuge") || tLower.includes("wasser") || tLower.includes("kurz");
+    const numMatch = tLower.match(/\d+/);
+    if (isSimple || (numMatch && parseInt(numMatch[0], 10) <= 20)) {
+      finalDiff = "easy";
+    }
+
+    const quest = { id: genId(), title: qTitle.trim(), difficulty: finalDiff, category: qCat, type: qType, createdAt: getToday(), createdAtMs: Date.now(), ...(timeLimit ? { timeLimit } : {}), ...(habitId ? { linkedHabitId: habitId } : {}) };
 
     let nextState = { ...state, quests: [...state.quests, quest], dailyUserQuestsCreated: createdCount + 1 };
 

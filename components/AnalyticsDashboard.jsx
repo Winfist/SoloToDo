@@ -63,6 +63,14 @@ export default function AnalyticsDashboard({ state, theme }) {
     const dungeonsTotal = dungeonHistory.length;
     const dungeonWinRate = dungeonsTotal > 0 ? Math.round((dungeonsWon / dungeonsTotal) * 100) : 0;
 
+    // ── Hunter's Path Report ───────────────────────────────────
+    const last7DaysStr = [...Array(7)].map((_, i) => {
+        const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().slice(0, 10);
+    });
+    const recentQuests = completedQuests.filter(q => last7DaysStr.includes(q.completedAt));
+    const recentCatStats = { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
+    recentQuests.forEach(q => { if (recentCatStats[q.category] !== undefined) recentCatStats[q.category]++; });
+
     // ── Streak info ────────────────────────────────────────────
     const currentStreak = state?.streak || 0;
     const shadowCount = state?.shadowArmy?.shadows?.length || 0;
@@ -112,6 +120,49 @@ export default function AnalyticsDashboard({ state, theme }) {
                     </div>
                 </div>
             </div>
+
+            {/* ── HUNTER'S PATH REPORT ── */}
+            {state?.lifeDomains && state.lifeDomains.length > 0 && (
+                <div style={{
+                    background: theme?.card || "rgba(10,10,22,0.88)",
+                    border: `1px solid ${theme?.primary || "#22d3ee"}33`,
+                    borderLeft: `3px solid ${theme?.primary || "#22d3ee"}`,
+                    borderRadius: 16, padding: "16px", marginBottom: 14,
+                    boxShadow: `0 4px 20px ${theme?.primary || "#22d3ee"}15`
+                }}>
+                    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <div style={{ fontSize: 24, animation: "float 3s ease-in-out infinite" }}>🧭</div>
+                        <div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", fontFamily: "'Cinzel',serif", marginBottom: 4 }}>Weekly Path Report</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5 }}>
+                                {(() => {
+                                    const DOMAIN_TO_STATS_MAP = {
+                                        "fitness": ["str", "vit", "agi"], "knowledge": ["int"],
+                                        "health": ["vit"], "career": ["int", "cha"], "social": ["cha"],
+                                        "dating": ["cha", "int"], "finance": ["int"], "mindset": ["vit", "int"]
+                                    };
+                                    let focusStats = [];
+                                    state.lifeDomains.forEach(d => { if (DOMAIN_TO_STATS_MAP[d]) focusStats.push(...DOMAIN_TO_STATS_MAP[d]); });
+
+                                    let bestFocus = { stat: "str", count: -1 };
+                                    let worstFocus = { stat: "str", count: 999 };
+
+                                    focusStats.forEach(stat => {
+                                        if (recentCatStats[stat] > bestFocus.count) bestFocus = { stat, count: recentCatStats[stat] };
+                                        if (recentCatStats[stat] < worstFocus.count) worstFocus = { stat, count: recentCatStats[stat] };
+                                    });
+
+                                    if (bestFocus.count === 0 && worstFocus.count === 0) {
+                                        return "Du hast diese Woche noch keine Fokus-Quests abgeschlossen. Es ist Zeit, deinen Pfad zu betreten.";
+                                    }
+                                    const statNames = { str: "Stärke", int: "Intelligenz", vit: "Vitalität", agi: "Agilität", cha: "Charisma" };
+                                    return `Du hast ${bestFocus.count} Fokus-Quests im Bereich ${statNames[bestFocus.stat] || bestFocus.stat.toUpperCase()} beendet. Aber Bereiche bezüglich ${statNames[worstFocus.stat] || worstFocus.stat.toUpperCase()} brauchen deutlich mehr Aufmerksamkeit, Hunter.`;
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── 30-DAY ACTIVITY HEATMAP ── */}
             <div style={{

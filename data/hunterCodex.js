@@ -1,0 +1,128 @@
+export const HUNTER_CODEX = [
+    // STR
+    { id: "codex_str_1", stat: "str", tier: 1, cost: 50, rule: "Regel #1: Wer den Morgen gewinnt, gewinnt den Tag.", desc: "Führe deine härtesten Aufgaben aus, bevor die Welt erwacht." },
+    { id: "codex_str_2", stat: "str", tier: 2, cost: 150, rule: "Regel #2: Disziplin schlägt Motivation.", desc: "Warte nicht auf das richtige Gefühl. Handle, und das Gefühl folgt." },
+    { id: "codex_str_3", stat: "str", tier: 3, cost: 400, rule: "Regel #3: Schmerz ist Schwäche, die den Körper verlässt.", desc: "Meistere deine physische Grenze." },
+
+    // INT
+    { id: "codex_int_1", stat: "int", tier: 1, cost: 50, rule: "Regel #4: Lernen ist der einzige Skillbaum ohne Level-Cap.", desc: "Investiere in unendliches Wissen." },
+    { id: "codex_int_2", stat: "int", tier: 2, cost: 150, rule: "Regel #5: Fail fast, learn faster.", desc: "Jeder Fehler im Dungeon ist XP." },
+    { id: "codex_int_3", stat: "int", tier: 3, cost: 400, rule: "Regel #6: 80/20-Regel anwenden.", desc: "Finde die 20% deiner Quests, die 80% deiner Stats ausmachen." },
+
+    // VIT
+    { id: "codex_vit_1", stat: "vit", tier: 1, cost: 50, rule: "Regel #7: Bewegung ist Medizin.", desc: "Ein wacher Körper beherbergt einen wachen Geist." },
+    { id: "codex_vit_2", stat: "vit", tier: 2, cost: 150, rule: "Regel #8: Trinke Wasser wie ein Heiltrank.", desc: "Hydration ist der einfachste Buff." },
+    { id: "codex_vit_3", stat: "vit", tier: 3, cost: 400, rule: "Regel #9: Schlaf ist eine Waffe.", desc: "Ein müder Jäger ist ein toter Jäger." },
+
+    // AGI
+    { id: "codex_agi_1", stat: "agi", tier: 1, cost: 50, rule: "Regel #10: Consistency ist King.", desc: "Ein Tropfen Wasser höhlt den Stein durch stetes Fallen." },
+    { id: "codex_agi_2", stat: "agi", tier: 2, cost: 150, rule: "Regel #11: Meistere die Langeweile.", desc: "Fortschritt geschieht in der Stille der Wiederholung." },
+    { id: "codex_agi_3", stat: "agi", tier: 3, cost: 400, rule: "Regel #12: Zeit ist deine wertvollste Währung.", desc: "Gold kannst du farmen, Zeit nicht." },
+
+    // CHA
+    { id: "codex_cha_1", stat: "cha", tier: 1, cost: 50, rule: "Regel #13: Vergleiche dich nur mit deinem gestrigen Ich.", desc: "Jeder Hunter startet auf Level 1." },
+    { id: "codex_cha_2", stat: "cha", tier: 2, cost: 150, rule: "Regel #14: Deine Umgebung ist dein Schicksal.", desc: "Hängst du mit 5 Gewinnern ab, wirst du der sechste." },
+    { id: "codex_cha_3", stat: "cha", tier: 3, cost: 400, rule: "Regel #15: Schweig und arbeite.", desc: "Ziele teilt man nicht mit, man beweist sie durch Taten." },
+
+    // ── STR Extended ──
+    { id: "codex_str_4", stat: "str", tier: 1, cost: 50, rule: "Regel #16: Starte jeden Tag mit Bewegung.", desc: "Schon 10 Minuten Morgensport setzen den Ton für den ganzen Tag." },
+    { id: "codex_str_5", stat: "str", tier: 1, cost: 50, rule: "Regel #17: Geh immer die Treppe.", desc: "Jede Treppe ist ein Mini-Dungeon für deinen Körper." },
+    { id: "codex_str_6", stat: "str", tier: 1, cost: 50, rule: "Regel #18: Dehne dich täglich.", desc: "Flexibilität ist die unsichtbare Rüstung des Körpers." },
+    { id: "codex_str_7", stat: "str", tier: 1, cost: 50, rule: "Regel #19: Trainiere nie zwei Tage hintereinander nicht.", desc: "Ein Ruhetag ist Regeneration. Zwei sind der Anfang vom Ende." },
+    { id: "codex_str_8", stat: "str", tier: 1, cost: 50, rule: "Regel #20: Lerne eine Kampfkunst.", desc: "Kampfsport lehrt Respekt, Kontrolle und innere Stärke." },
+    { id: "codex_str_9", stat: "str", tier: 2, cost: 150, rule: "Regel #21: Progressive Überlastung ist Gesetz.", desc: "Wenn es leicht wird, erhöhe die Last. Stagnation ist der Feind." },
+    { id: "codex_str_10", stat: "str", tier: 2, cost: 150, rule: "Regel #22: Kenne deinen Körper.", desc: "Lerne den Unterschied zwischen Schmerz und Verletzung." },
+    { id: "codex_str_11", stat: "str", tier: 2, cost: 150, rule: "Regel #23: Iss wie ein Athlet.", desc: "Protein ist dein Baumaterial. Ohne es baust du nichts." },
+    { id: "codex_str_12", stat: "str", tier: 2, cost: 150, rule: "Regel #24: Setze dir messbare Fitness-Ziele.", desc: "Nicht 'fitter werden', sondern '10 Klimmzüge in 8 Wochen'." },
+    { id: "codex_str_13", stat: "str", tier: 2, cost: 150, rule: "Regel #25: Trainiere auch bei schlechter Laune.", desc: "Die besten Workouts passieren an den Tagen, an denen du nicht willst." },
+    { id: "codex_str_14", stat: "str", tier: 2, cost: 150, rule: "Regel #26: Cold Exposure härtet ab.", desc: "Kalte Duschen trainieren deinen Willen mehr als deinen Körper." },
+    { id: "codex_str_15", stat: "str", tier: 3, cost: 400, rule: "Regel #27: Dein Körper ist deine erste Waffe.", desc: "Meistere Bodyweight-Training, bevor du Gewichte anfasst." },
+    { id: "codex_str_16", stat: "str", tier: 3, cost: 400, rule: "Regel #28: Laufe einen Marathon.", desc: "Nicht für die Zeit. Für den Beweis, dass du es kannst." },
+    { id: "codex_str_17", stat: "str", tier: 3, cost: 400, rule: "Regel #29: Erholung ist Training.", desc: "Muskeln wachsen nicht im Gym, sondern im Schlaf." },
+    { id: "codex_str_18", stat: "str", tier: 3, cost: 400, rule: "Regel #30: Sei das Vorbild.", desc: "Trainiere so, dass andere dich sehen und anfangen wollen." },
+
+    // ── INT Extended ──
+    { id: "codex_int_4", stat: "int", tier: 1, cost: 50, rule: "Regel #31: Lies jeden Tag mindestens 10 Seiten.", desc: "In einem Jahr sind das über 3.600 Seiten – mehr als 12 Bücher." },
+    { id: "codex_int_5", stat: "int", tier: 1, cost: 50, rule: "Regel #32: Schreibe auf, was du lernst.", desc: "Wissen, das nicht festgehalten wird, verflüchtigt sich." },
+    { id: "codex_int_6", stat: "int", tier: 1, cost: 50, rule: "Regel #33: Stelle dumme Fragen.", desc: "Wer nicht fragt, bleibt dumm. Ego ist der Feind des Lernens." },
+    { id: "codex_int_7", stat: "int", tier: 1, cost: 50, rule: "Regel #34: Lerne eine neue Fähigkeit pro Quartal.", desc: "Vielseitigkeit macht dich antifragil." },
+    { id: "codex_int_8", stat: "int", tier: 1, cost: 50, rule: "Regel #35: Konsum ohne Reflexion ist Zeitverschwendung.", desc: "Jedes Video, jeder Podcast – frag dich: Was nehme ich mit?" },
+    { id: "codex_int_9", stat: "int", tier: 2, cost: 150, rule: "Regel #36: Lehre, was du gelernt hast.", desc: "Wer anderen erklärt, versteht es selbst erst richtig." },
+    { id: "codex_int_10", stat: "int", tier: 2, cost: 150, rule: "Regel #37: Baue ein Second Brain.", desc: "Vertraue deinem Notizsystem mehr als deinem Gedächtnis." },
+    { id: "codex_int_11", stat: "int", tier: 2, cost: 150, rule: "Regel #38: Deep Work über allem.", desc: "2 Stunden fokussierter Arbeit schlagen 8 Stunden Multitasking." },
+    { id: "codex_int_12", stat: "int", tier: 2, cost: 150, rule: "Regel #39: Lies Biographien.", desc: "Lerne aus 100 Leben statt nur aus deinem." },
+    { id: "codex_int_13", stat: "int", tier: 2, cost: 150, rule: "Regel #40: Investiere in Kurse, nicht in Konsum.", desc: "Ein 50€-Kurs kann dein Leben mehr verändern als 500€ Shopping." },
+    { id: "codex_int_14", stat: "int", tier: 2, cost: 150, rule: "Regel #41: Hinterfrage alles.", desc: "Die gefährlichsten Überzeugungen sind die, die du nie geprüft hast." },
+    { id: "codex_int_15", stat: "int", tier: 3, cost: 400, rule: "Regel #42: Meistere mentale Modelle.", desc: "First Principles, Pareto, Feedback-Loops – dein Arsenal." },
+    { id: "codex_int_16", stat: "int", tier: 3, cost: 400, rule: "Regel #43: Schreibe einen Essay pro Monat.", desc: "Schreiben zwingt zum klaren Denken." },
+    { id: "codex_int_17", stat: "int", tier: 3, cost: 400, rule: "Regel #44: Lerne eine Programmiersprache.", desc: "Code ist die Sprache der Zukunft. Auch für Nicht-Entwickler." },
+    { id: "codex_int_18", stat: "int", tier: 3, cost: 400, rule: "Regel #45: Werde T-Shaped.", desc: "Breites Wissen in vielem, tiefes Wissen in einem. Das ist Macht." },
+
+    // ── VIT Extended ──
+    { id: "codex_vit_4", stat: "vit", tier: 1, cost: 50, rule: "Regel #46: Trinke ein Glas Wasser direkt nach dem Aufwachen.", desc: "Dein Körper ist nach 8h Schlaf dehydriert. Starte optimal." },
+    { id: "codex_vit_5", stat: "vit", tier: 1, cost: 50, rule: "Regel #47: Keine Bildschirme 1h vor dem Schlaf.", desc: "Blaues Licht zerstört deinen Melatonin-Spiegel." },
+    { id: "codex_vit_6", stat: "vit", tier: 1, cost: 50, rule: "Regel #48: Iss mehr Gemüse als alles andere.", desc: "Gemüse ist der Heiltrank, den niemand trinken will." },
+    { id: "codex_vit_7", stat: "vit", tier: 1, cost: 50, rule: "Regel #49: Geh in die Sonne.", desc: "Vitamin D ist kein Luxus, sondern Überlebensnotwendigkeit." },
+    { id: "codex_vit_8", stat: "vit", tier: 1, cost: 50, rule: "Regel #50: Atme bewusst.", desc: "5 Minuten Box Breathing senkt Cortisol messbar." },
+    { id: "codex_vit_9", stat: "vit", tier: 2, cost: 150, rule: "Regel #51: Faste regelmäßig.", desc: "Intermittent Fasting gibt deinem Körper Zeit zur Selbstrepareatur." },
+    { id: "codex_vit_10", stat: "vit", tier: 2, cost: 150, rule: "Regel #52: Kenne deine Blutwerte.", desc: "Ein jährlicher Bluttest ist die beste Investition in dich selbst." },
+    { id: "codex_vit_11", stat: "vit", tier: 2, cost: 150, rule: "Regel #53: Eliminiere Zucker schrittweise.", desc: "Zucker ist die legale Droge. Reduziere ihn wie einen Endboss." },
+    { id: "codex_vit_12", stat: "vit", tier: 2, cost: 150, rule: "Regel #54: Meditiere täglich.", desc: "Meditation ist Krafttraining für den Geist." },
+    { id: "codex_vit_13", stat: "vit", tier: 2, cost: 150, rule: "Regel #55: Schlafe und wache zur gleichen Zeit auf.", desc: "Dein Körper liebt Rhythmus mehr als du denkst." },
+    { id: "codex_vit_14", stat: "vit", tier: 2, cost: 150, rule: "Regel #56: Mache Digital Detox.", desc: "Einen Tag pro Woche ohne Smartphone regeneriert dein Gehirn." },
+    { id: "codex_vit_15", stat: "vit", tier: 3, cost: 400, rule: "Regel #57: Meistere deinen Schlaf.", desc: "7-9 Stunden in einem kühlen, dunklen Raum. Nicht verhandelbar." },
+    { id: "codex_vit_16", stat: "vit", tier: 3, cost: 400, rule: "Regel #58: Lerne zu kochen.", desc: "Wer seine Ernährung kontrolliert, kontrolliert seine Energie." },
+    { id: "codex_vit_17", stat: "vit", tier: 3, cost: 400, rule: "Regel #59: Stress ist Gift, Erholung ist Medizin.", desc: "Chronischer Stress altert dich schneller als alles andere." },
+    { id: "codex_vit_18", stat: "vit", tier: 3, cost: 400, rule: "Regel #60: Nature Therapy.", desc: "2 Stunden pro Woche in der Natur senkt Blutdruck und Angst." },
+
+    // ── AGI Extended ──
+    { id: "codex_agi_4", stat: "agi", tier: 1, cost: 50, rule: "Regel #61: Eat the Frog.", desc: "Erledige die schwerste Aufgabe zuerst. Danach fühlt sich alles leicht an." },
+    { id: "codex_agi_5", stat: "agi", tier: 1, cost: 50, rule: "Regel #62: Plane deinen Tag am Vorabend.", desc: "Wer morgens erst plant, verliert die erste goldene Stunde." },
+    { id: "codex_agi_6", stat: "agi", tier: 1, cost: 50, rule: "Regel #63: Nutze Timeboxing.", desc: "Gib jeder Aufgabe ein Zeitfenster. Parkinson's Law ist real." },
+    { id: "codex_agi_7", stat: "agi", tier: 1, cost: 50, rule: "Regel #64: Räume auf, bevor du arbeitest.", desc: "Äußere Ordnung schafft innere Klarheit." },
+    { id: "codex_agi_8", stat: "agi", tier: 1, cost: 50, rule: "Regel #65: Die 2-Minuten-Regel.", desc: "Dauert es unter 2 Minuten? Tu es sofort." },
+    { id: "codex_agi_9", stat: "agi", tier: 2, cost: 150, rule: "Regel #66: Batching ist Effizienz.", desc: "Gruppiere ähnliche Aufgaben. Kontextwechsel kosten Energie." },
+    { id: "codex_agi_10", stat: "agi", tier: 2, cost: 150, rule: "Regel #67: Automatisiere Wiederkehrendes.", desc: "Jede Aufgabe, die du öfter als 3x machst, sollte ein System haben." },
+    { id: "codex_agi_11", stat: "agi", tier: 2, cost: 150, rule: "Regel #68: Sage Nein zu allem, was nicht Prio 1 ist.", desc: "Jedes Ja zu etwas Unwichtigem ist ein Nein zu etwas Wichtigem." },
+    { id: "codex_agi_12", stat: "agi", tier: 2, cost: 150, rule: "Regel #69: Deadline-Druck ist ein Feature.", desc: "Setze dir künstliche Deadlines. Druck erzeugt Diamanten." },
+    { id: "codex_agi_13", stat: "agi", tier: 2, cost: 150, rule: "Regel #70: Eliminiere bevor du optimierst.", desc: "Die beste Optimierung ist es, unnötige Aufgaben zu streichen." },
+    { id: "codex_agi_14", stat: "agi", tier: 2, cost: 150, rule: "Regel #71: Weekly Review ist Pflicht.", desc: "Jeden Sonntag: Was lief? Was nicht? Was ändere ich?" },
+    { id: "codex_agi_15", stat: "agi", tier: 3, cost: 400, rule: "Regel #72: Meistere das Multitasking-Vermeiden.", desc: "Fokus auf eine Sache. Singletasking ist dein stärkstes Item." },
+    { id: "codex_agi_16", stat: "agi", tier: 3, cost: 400, rule: "Regel #73: Baue Systeme, nicht Ziele.", desc: "Ziele geben Richtung. Systeme geben Ergebnisse." },
+    { id: "codex_agi_17", stat: "agi", tier: 3, cost: 400, rule: "Regel #74: Delegiere alles unter deinem Stundensatz.", desc: "Deine Zeit hat einen Wert. Handle danach." },
+    { id: "codex_agi_18", stat: "agi", tier: 3, cost: 400, rule: "Regel #75: Werde ein Meister der Gewohnheiten.", desc: "Deine Routinen bestimmen 90% deines Erfolgs. Designe sie." },
+
+    // ── CHA Extended ──
+    { id: "codex_cha_4", stat: "cha", tier: 1, cost: 50, rule: "Regel #76: Höre mehr zu als du redest.", desc: "Die mächtigsten Menschen im Raum sind oft die stillsten." },
+    { id: "codex_cha_5", stat: "cha", tier: 1, cost: 50, rule: "Regel #77: Blickkontakt ist Macht.", desc: "Wer wegschaut, signalisiert Unsicherheit." },
+    { id: "codex_cha_6", stat: "cha", tier: 1, cost: 50, rule: "Regel #78: Merke dir Namen.", desc: "Der Name einer Person ist ihr liebstes Wort." },
+    { id: "codex_cha_7", stat: "cha", tier: 1, cost: 50, rule: "Regel #79: Lächle bewusst.", desc: "Ein echtes Lächeln öffnet mehr Türen als jeder Schlüssel." },
+    { id: "codex_cha_8", stat: "cha", tier: 1, cost: 50, rule: "Regel #80: Sei pünktlich.", desc: "Unpünktlichkeit sagt: Meine Zeit ist wichtiger als deine." },
+    { id: "codex_cha_9", stat: "cha", tier: 2, cost: 150, rule: "Regel #81: Gib ohne Erwartung.", desc: "Wer gibt, um zu bekommen, ist kein Geber, sondern ein Händler." },
+    { id: "codex_cha_10", stat: "cha", tier: 2, cost: 150, rule: "Regel #82: Lerne Storytelling.", desc: "Fakten informieren. Geschichten bewegen." },
+    { id: "codex_cha_11", stat: "cha", tier: 2, cost: 150, rule: "Regel #83: Dein Netzwerk ist dein Net-Worth.", desc: "Pflege Beziehungen wie Investments – langfristig und konstant." },
+    { id: "codex_cha_12", stat: "cha", tier: 2, cost: 150, rule: "Regel #84: Übe konstruktive Konfrontation.", desc: "Schwierige Gespräche vermeiden ist der Weg in die Mittelmäßigkeit." },
+    { id: "codex_cha_13", stat: "cha", tier: 2, cost: 150, rule: "Regel #85: Dress for the job you want.", desc: "Kleidung ist die erste Nachricht, die du sendest." },
+    { id: "codex_cha_14", stat: "cha", tier: 2, cost: 150, rule: "Regel #86: Zeige echte Verletzlichkeit.", desc: "Stärke zeigt sich nicht durch Mauern, sondern durch Offenheit." },
+    { id: "codex_cha_15", stat: "cha", tier: 3, cost: 400, rule: "Regel #87: Werde ein Leader, kein Boss.", desc: "Führ durch Vorbild, nicht durch Autorität." },
+    { id: "codex_cha_16", stat: "cha", tier: 3, cost: 400, rule: "Regel #88: Meistere öffentliches Sprechen.", desc: "Die Fähigkeit vor Gruppen zu reden ist der ultimative CHA-Buff." },
+    { id: "codex_cha_17", stat: "cha", tier: 3, cost: 400, rule: "Regel #89: Baue deine Personal Brand.", desc: "Online wie offline – werde zur Marke, die man nicht ignorieren kann." },
+    { id: "codex_cha_18", stat: "cha", tier: 3, cost: 400, rule: "Regel #90: Umgib dich mit besseren Menschen.", desc: "Du bist der Durchschnitt der 5 Menschen, mit denen du die meiste Zeit verbringst." },
+
+    // ── Bonus Tier (Mixed Advanced) ──
+    { id: "codex_mix_1", stat: "str", tier: 2, cost: 150, rule: "Regel #91: Mach Sport zu deiner Identität.", desc: "Sag nicht 'ich trainiere'. Sag 'ich bin ein Athlet'." },
+    { id: "codex_mix_2", stat: "int", tier: 2, cost: 150, rule: "Regel #92: Sprich mit Experten.", desc: "30 Minuten mit einem Meister sparen Monate des Suchens." },
+    { id: "codex_mix_3", stat: "vit", tier: 1, cost: 50, rule: "Regel #93: Lache jeden Tag.", desc: "Lachen senkt Cortisol und stärkt das Immunsystem." },
+    { id: "codex_mix_4", stat: "agi", tier: 1, cost: 50, rule: "Regel #94: Starte bevor du bereit bist.", desc: "Perfektion ist Prokrastination im Smoking." },
+    { id: "codex_mix_5", stat: "cha", tier: 1, cost: 50, rule: "Regel #95: Entschuldige dich schnell.", desc: "Ein schnelles 'Es tut mir leid' ist stärker als tagelange Stille." },
+    { id: "codex_mix_6", stat: "str", tier: 3, cost: 400, rule: "Regel #96: Mach Unmögliches möglich.", desc: "Die Grenze ist nur da, wo du aufhörst zu pushen." },
+    { id: "codex_mix_7", stat: "int", tier: 3, cost: 400, rule: "Regel #97: Werde zum Polymathist.", desc: "Verbinde Wissen aus verschiedenen Disziplinen für neue Einsichten." },
+    { id: "codex_mix_8", stat: "vit", tier: 3, cost: 400, rule: "Regel #98: Höre auf deinen Körper.", desc: "Symptome sind Nachrichten. Ignoranz ist keine Strategie." },
+    { id: "codex_mix_9", stat: "agi", tier: 3, cost: 400, rule: "Regel #99: Sei adaptiv.", desc: "Pläne ändern sich. Wer sich nicht anpasst, wird vom System gefressen." },
+    { id: "codex_mix_10", stat: "cha", tier: 3, cost: 400, rule: "Regel #100: Hinterlasse ein Vermächtnis.", desc: "Lebe so, dass man sich an deinen Impact erinnert, nicht an dein Ego." },
+    { id: "codex_mix_11", stat: "str", tier: 1, cost: 50, rule: "Regel #101: Mache Liegestütze zwischen den Aufgaben.", desc: "Micro-Workouts über den Tag verteilt summieren sich enorm." },
+    { id: "codex_mix_12", stat: "int", tier: 1, cost: 50, rule: "Regel #102: Höre Podcasts beim Pendeln.", desc: "Verwandle tote Zeit in Lernzeit." },
+    { id: "codex_mix_13", stat: "vit", tier: 2, cost: 150, rule: "Regel #103: Führe ein Dankbarkeits-Tagebuch.", desc: "3 Dinge pro Tag. Dankbarkeit rewired dein Gehirn auf Glück." },
+    { id: "codex_mix_14", stat: "agi", tier: 2, cost: 150, rule: "Regel #104: Visualisiere deinen Erfolg.", desc: "Mentales Training ist Training. Dein Gehirn kennt keinen Unterschied." },
+    { id: "codex_mix_15", stat: "cha", tier: 2, cost: 150, rule: "Regel #105: Sei authentisch.", desc: "Masken sind anstrengend. Authentizität ist das ultimative Charisma." }
+];

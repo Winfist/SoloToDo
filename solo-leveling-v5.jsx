@@ -18,6 +18,9 @@ import ChallengesSystem from "./components/ChallengesSystem.jsx";
 import SettingsView from "./components/SettingsView.jsx";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
+import LifeDomainsOnboarding from "./components/LifeDomainsOnboarding.jsx";
+import InnerSanctum from "./components/InnerSanctum.jsx";
+import { HUNTER_CODEX } from "./data/hunterCodex.js";
 
 // ─── RANKS ────────────────────────────────────────────────────
 import {
@@ -205,6 +208,9 @@ function App({ initialHunterName, onLogout }) {
 
   if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><div style={{ fontSize: 40, animation: "float 2s ease-in-out infinite" }}>⚔️</div><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
   if (showSetup) return <SetupScreen onFinish={gameState.finishSetup} theme={gameState.theme || "default"} />;
+  if (state?.hunterName && (!state.lifeDomains || state.lifeDomains.length < 3)) {
+    return <LifeDomainsOnboarding theme={gameState.theme || {}} onComplete={(domains) => persist({ ...state, lifeDomains: domains })} />;
+  }
 
   // Portal transition handler
   const enterPortal = () => {
@@ -500,6 +506,25 @@ function App({ initialHunterName, onLogout }) {
               ))}
             </div>
 
+            {/* ── VISION BOARD ── */}
+            <div style={{ marginBottom: 24, padding: "18px", borderRadius: 16, background: "linear-gradient(135deg,rgba(168,85,247,0.05),rgba(124,58,237,0.08))", border: "1px solid #7c3aed33", position: "relative", overflow: "hidden", backdropFilter: "blur(4px)" }}>
+              <div style={{ position: "absolute", right: -20, top: -20, fontSize: 80, opacity: 0.05, pointerEvents: "none", animation: "float 4s ease-in-out infinite" }}>🔮</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span style={{ fontSize: 20 }}>🔮</span>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: "#a855f7", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>VISION BOARD</div>
+                  <div style={{ fontSize: 9, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>MANIFESTIERE DEIN SCHICKSAL</div>
+                </div>
+              </div>
+              <ul style={{ margin: 0, padding: "0 0 0 20px", color: "#e2e8f0", fontSize: 13, lineHeight: 1.8, fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
+                <li style={{ paddingBottom: 4 }}>Ich levele jeden Tag auf – körperlich, geistig und finanziell.</li>
+                <li style={{ paddingBottom: 4 }}>Mein Disziplin-Stat wächst mit jeder abgeschlossenen Quest.</li>
+                <li style={{ paddingBottom: 4 }}>Ich ziehe Erfolg und Fülle wie magische Drops an.</li>
+                <li style={{ paddingBottom: 4 }}>Meine Shadow Army bekämpft meine Ausreden in meinem Rücken.</li>
+                <li>Ich bin der Architekt meines eigenen Systems.</li>
+              </ul>
+            </div>
+
             {/* ── HABITS & DAILY ROUTINE ── */}
             <div style={{ marginBottom: 24 }}>
               <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
@@ -512,15 +537,17 @@ function App({ initialHunterName, onLogout }) {
             </div>
 
             {/* ── EMERGENCY QUEST ── */}
-            {state.emergencyQuest && (
-              <EmergencyQuestCard
-                quest={state.emergencyQuest}
-                done={state.emergencyDone}
-                failed={state.emergencyFailed}
-                onComplete={completeEmergencyQuest}
-                theme={theme}
-              />
-            )}
+            {
+              state.emergencyQuest && (
+                <EmergencyQuestCard
+                  quest={state.emergencyQuest}
+                  done={state.emergencyDone}
+                  failed={state.emergencyFailed}
+                  onComplete={completeEmergencyQuest}
+                  theme={theme}
+                />
+              )
+            }
 
             {/* ── QUEST FILTERS + ADD ── */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 6, flexWrap: "wrap" }}>
@@ -545,477 +572,591 @@ function App({ initialHunterName, onLogout }) {
               <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 12, fontSize: 11, fontWeight: 900, background: `linear-gradient(135deg,${theme.primary},${theme.secondary})`, color: "#fff", border: "none", boxShadow: `0 4px 16px ${theme.glow}`, textShadow: "0 1px 4px rgba(0,0,0,0.4)", fontFamily: "'Cinzel',serif", letterSpacing: 1.5, display: "flex", alignItems: "center", gap: 6, flexShrink: 0, transition: "all 0.3s", transform: "translateY(-1px)", animation: "float 3s ease-in-out infinite" }}>+ QUEST</button>
             </div>
 
-            {filteredQuests.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}>
-                <div style={{ fontSize: 36, marginBottom: 10, animation: "float 3s ease-in-out infinite" }}>⚔️</div>
-                <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
-                <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
-              </div>
-            ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}
-          </div>
-        )}
+            {
+              filteredQuests.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}>
+                  <div style={{ fontSize: 36, marginBottom: 10, animation: "float 3s ease-in-out infinite" }}>⚔️</div>
+                  <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
+                  <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
+                </div>
+              ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)
+            }
+          </div >
+        )
+        }
 
         {/* ═══ DUNGEONS ═══ */}
-        {view === "dungeon" && (
-          <div style={{ animation: "fadeIn 0.35s ease" }}>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>DUNGEON GATES</div>
-              <div style={{ fontSize: 12, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>Reset in {hoursUntilMidnight()}h · {modifier?.id !== "none" ? `${modifier?.icon} ${modifier?.name}` : "Stable Gates"}</div>
-            </div>
-            {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ fontSize: 36, marginBottom: 10 }}>🌀</div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
-            {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} modifier={modifier} /></div>)}
-            {(state.dungeons || []).filter(d => d.cleared).length > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 10, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>HEUTE ABSOLVIERT</div>
-                {(state.dungeons || []).filter(d => d.cleared).map((d, i) => <div key={d.instanceId} style={{ marginBottom: 8, opacity: 0.4 }}><DungeonGate dungeon={d} playerStats={state.stats} theme={theme} onEnter={() => { }} modifier={modifier} /></div>)}
+        {
+          view === "dungeon" && (
+            <div style={{ animation: "fadeIn 0.35s ease" }}>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>DUNGEON GATES</div>
+                <div style={{ fontSize: 12, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>Reset in {hoursUntilMidnight()}h · {modifier?.id !== "none" ? `${modifier?.icon} ${modifier?.name}` : "Stable Gates"}</div>
               </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ STATS ═══ */}
-        {view === "stats" && (
-          <div style={{ animation: "fadeIn 0.35s ease" }}>
-            <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "20px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", backdropFilter: "blur(12px)", position: "relative" }}>
-              {state.statPoints > 0 && (
-                <div style={{ position: "absolute", top: 12, right: 12, background: "#f59e0b22", border: "1px solid #f59e0b44", padding: "4px 10px", borderRadius: 20, fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, animation: "pulse 1.5s infinite" }}>
-                  {state.statPoints} PUNKTE VERFÜGBAR
+              {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ fontSize: 36, marginBottom: 10 }}>🌀</div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
+              {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} modifier={modifier} /></div>)}
+              {(state.dungeons || []).filter(d => d.cleared).length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>HEUTE ABSOLVIERT</div>
+                  {(state.dungeons || []).filter(d => d.cleared).map((d, i) => <div key={d.instanceId} style={{ marginBottom: 8, opacity: 0.4 }}><DungeonGate dungeon={d} playerStats={state.stats} theme={theme} onEnter={() => { }} modifier={modifier} /></div>)}
                 </div>
               )}
-              <StatRadar stats={state.stats} theme={theme} size={200} />
-              <div style={{ display: "flex", gap: 0, flexWrap: "wrap", justifyContent: "center", marginTop: 4, width: "100%", background: "rgba(0,0,0,0.2)", borderRadius: 12, overflow: "hidden" }}>
-                {[{ label: "TOTAL XP", value: (state.totalXpEarned || 0).toLocaleString(), color: theme.accent }, { label: "QUESTS", value: state.totalQuestsCompleted || 0, color: theme.accent }, { label: "STREAK", value: `${state.streak}d`, color: "#f59e0b" }, { label: "PWR LVL", value: powerLevel, color: "#e879f9" }, { label: "CLEARED", value: (state.dungeonHistory || []).filter(d => d.won).length, color: "#22d3ee" }].map((s, i) => (
-                  <div key={i} style={{ textAlign: "center", padding: "8px 10px", flex: "1 0 33%" }}>
-                    <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3, letterSpacing: 1 }}>{s.label}</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: s.color, fontFamily: "'Cinzel',serif" }}>{s.value}</div>
-                  </div>
-                ))}
-              </div>
             </div>
-            {CATEGORIES.map((cat, i) => {
-              const val = (state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0); const base = state.stats[cat.key] || 0; const maxD = Math.max(val, 50); return (
-                <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}12`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.06}s both`, transition: "border-color 0.3s" }} onMouseEnter={e => e.currentTarget.style.borderColor = cat.color + "33"} onMouseLeave={e => e.currentTarget.style.borderColor = cat.color + "12"}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 22 }}>{cat.icon}</span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{cat.label}</div>
-                        <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>{cat.full}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      {state.statPoints > 0 && (
-                        <button onClick={() => increaseStat(cat.key)} style={{ width: 26, height: 26, borderRadius: 6, background: cat.color + "22", border: `1px solid ${cat.color}44`, color: cat.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 16, cursor: "pointer", transition: "all 0.2s" }}>+</button>
-                      )}
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: 28, fontWeight: 900, color: cat.color, fontFamily: "'Cinzel',serif" }}>{val}</div>
-                        {equipBonuses[cat.key + "Bonus"] > 0 && <div style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace" }}>({base}+{equipBonuses[cat.key + "Bonus"]})</div>}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ width: `${Math.min((val / maxD) * 100, 100)}%`, height: "100%", borderRadius: 3, background: `linear-gradient(90deg,${cat.color}aa,${cat.color})`, boxShadow: `0 0 8px ${cat.color}44`, animation: "statBarFill 1s ease-out" }} />
-                  </div>
-                </div>
-              );
-            })}
-            {unlockedSkills.length > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>UNLOCKED SKILLS ({unlockedSkills.length})</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {unlockedSkills.map((sk, i) => {
-                    const cat = CATEGORIES.find(c => c.key === sk.stat); return (
-                      <div key={sk.id} style={{ background: theme.card, border: `1px solid ${cat.color}22`, borderRadius: 12, padding: "12px", animation: `scaleIn 0.4s ease ${i * 0.07}s both` }}>
-                        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                          <span style={{ fontSize: 20 }}>{sk.icon}</span>
-                          <div>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: cat.color, fontFamily: "'Cinzel',serif" }}>{sk.name}</div>
-                            <div style={{ fontSize: 10, color: "#475569", marginTop: 2, lineHeight: 1.4 }}>{sk.desc}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          )
+        }
 
-        {/* ═══ SHADOW ARMY ═══ */}
-        {view === "shadows" && (
-          <div style={{ animation: "fadeIn 0.35s ease" }}>
-            {/* Monarch's Banner */}
-            <div style={{ position: "relative", background: "linear-gradient(160deg,rgba(4,3,12,0.99) 0%,rgba(16,6,32,0.97) 100%)", border: "1px solid #7c3aed44", borderRadius: 20, padding: "22px 20px 16px", marginBottom: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(124,58,237,0.12), inset 0 1px 0 rgba(167,139,250,0.06)" }}>
-              {/* Rotating monarch rays */}
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 340, height: 340, background: "conic-gradient(from 0deg,transparent 0%,#7c3aed04 8%,transparent 16%)", animation: "monarchRays 25s linear infinite", pointerEvents: "none" }} />
-              {/* Central glow */}
-              <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)", width: 200, height: 200, background: "radial-gradient(circle,#7c3aed0d 0%,transparent 70%)", pointerEvents: "none" }} />
-
-              <div style={{ position: "relative" }}>
-                {/* Crown header */}
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                      <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,transparent,#7c3aed66)" }} />
-                      <div style={{ fontSize: 7, letterSpacing: 5, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>SHADOW MONARCHIE</div>
-                      <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,#7c3aed66,transparent)" }} />
-                    </div>
-                    <div style={{ fontSize: 26, fontWeight: 900, color: "#e2e8f0", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 30px #7c3aed55, 0 2px 4px rgba(0,0,0,0.8)" }}>Schattenarmee</div>
-                    {namedShadows.length > 0 && (
-                      <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ animation: "namedGlow 2s ease-in-out infinite", filter: "drop-shadow(0 0 4px #f59e0b88)", fontSize: 10 }}>★</span>
-                        {namedShadows.length} Named Shadow{namedShadows.length > 1 ? "s" : ""}
-                      </div>
-                    )}
+        {/* ═══ STATS ═══ */}
+        {
+          view === "stats" && (
+            <div style={{ animation: "fadeIn 0.35s ease" }}>
+              <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "20px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", backdropFilter: "blur(12px)", position: "relative" }}>
+                {state.statPoints > 0 && (
+                  <div style={{ position: "absolute", top: 12, right: 12, background: "#f59e0b22", border: "1px solid #f59e0b44", padding: "4px 10px", borderRadius: 20, fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, animation: "pulse 1.5s infinite" }}>
+                    {state.statPoints} PUNKTE VERFÜGBAR
                   </div>
-                  <div style={{ textAlign: "center", padding: "10px 16px", background: "rgba(124,58,237,0.08)", border: "1px solid #7c3aed33", borderRadius: 14 }}>
-                    <div style={{ fontSize: 36, fontWeight: 900, color: "#a78bfa", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 20px #7c3aed88" }}>{totalShadows}</div>
-                    <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 2 }}>/{shadowArmy.capacity} KAPAZITÄT</div>
-                  </div>
-                </div>
-
-                {/* Stats orbs */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-                  {[
-                    { label: "Stationiert", value: shadowArmy.shadows.filter(s => s.isDeployed).length, color: "#22c55e", icon: "🌑" },
-                    { label: "Dungeon-Boost", value: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", icon: "⚔️" },
-                    { label: "XP-Boost", value: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", icon: "✦" }
-                  ].map(({ label, value, color, icon }) => (
-                    <div key={label} style={{ padding: "10px 6px", background: `radial-gradient(circle at 50% 0%,${color}14,${color}04)`, borderRadius: 12, border: `1px solid ${color}25`, textAlign: "center" }}>
-                      <div style={{ fontSize: 13, marginBottom: 4 }}>{icon}</div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color, fontFamily: "'Cinzel',serif", lineHeight: 1 }}>{value}</div>
-                      <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 3, letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
+                )}
+                <StatRadar stats={state.stats} theme={theme} size={200} />
+                <div style={{ display: "flex", gap: 0, flexWrap: "wrap", justifyContent: "center", marginTop: 4, width: "100%", background: "rgba(0,0,0,0.2)", borderRadius: 12, overflow: "hidden" }}>
+                  {[{ label: "TOTAL XP", value: (state.totalXpEarned || 0).toLocaleString(), color: theme.accent }, { label: "QUESTS", value: state.totalQuestsCompleted || 0, color: theme.accent }, { label: "STREAK", value: `${state.streak}d`, color: "#f59e0b" }, { label: "PWR LVL", value: powerLevel, color: "#e879f9" }, { label: "CLEARED", value: (state.dungeonHistory || []).filter(d => d.won).length, color: "#22d3ee" }].map((s, i) => (
+                    <div key={i} style={{ textAlign: "center", padding: "8px 10px", flex: "1 0 33%" }}>
+                      <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3, letterSpacing: 1 }}>{s.label}</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: s.color, fontFamily: "'Cinzel',serif" }}>{s.value}</div>
                     </div>
                   ))}
                 </div>
-
-                {/* Capacity bar */}
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ height: 3, background: "rgba(6,4,16,0.9)", borderRadius: 2, overflow: "hidden" }}>
-                    <div style={{ width: `${(totalShadows / shadowArmy.capacity) * 100}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#7c3aed,#a78bfa)", transition: "width 0.6s ease", boxShadow: "0 0 8px #7c3aed88" }} />
-                  </div>
-                </div>
-
-                {/* Sub nav */}
-                <div style={{ display: "flex", gap: 6 }}>
-                  {[{ key: "army", label: "Armee", icon: "🌑" }, { key: "formation", label: "Formation", icon: "⚔️" }, { key: "named", label: "Named", icon: "★" }].map(sv => (
-                    <button key={sv.key} onClick={() => setShadowSubView(sv.key)} style={{ flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: shadowSubView === sv.key ? "linear-gradient(135deg,#7c3aed22,#a78bfa08)" : "transparent", color: shadowSubView === sv.key ? "#a78bfa" : "#334155", border: `1px solid ${shadowSubView === sv.key ? "#7c3aed55" : "#1a1e30"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "all 0.2s", boxShadow: shadowSubView === sv.key ? "0 0 14px #7c3aed20" : "none", cursor: "pointer" }}>
-                      <span style={{ fontSize: 11 }}>{sv.icon}</span>
-                      <span>{sv.label.toUpperCase()}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
-            </div>
-
-            {/* ARMY sub-view */}
-            {shadowSubView === "army" && (
-              totalShadows === 0 ? (
-                <div style={{ textAlign: "center", padding: "52px 24px", background: "linear-gradient(160deg,rgba(4,3,12,0.98),rgba(12,6,24,0.95))", borderRadius: 18, border: "1px dashed #7c3aed28", position: "relative", overflow: "hidden" }}>
-                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 180, height: 180, background: "radial-gradient(circle,#7c3aed08,transparent 70%)", pointerEvents: "none" }} />
-                  <div style={{ fontSize: 56, marginBottom: 16, opacity: 0.2, animation: "float 3s ease-in-out infinite", filter: "drop-shadow(0 0 20px #7c3aed)" }}>🌑</div>
-                  <div style={{ fontSize: 14, color: "#334155", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>Keine Schatten erweckt</div>
-                  <div style={{ fontSize: 11, color: "#1e293b", lineHeight: 1.7 }}>Schließe <span style={{ color: "#7c3aed88" }}>Boss-Quests</span> ab,<br />um Schatten zu beschwören</div>
-                </div>
-              ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {shadowArmy.shadows.map((s, i) => <ShadowCard key={s.id} shadow={s} theme={theme} index={i} onClick={() => setSelectedShadow(s)} />)}
-                </div>
-              )
-            )}
-
-            {/* FORMATION sub-view */}
-            {shadowSubView === "formation" && (
-              <FormationEditor shadowArmy={shadowArmy} theme={theme} onDeploy={deployShadow} onUndeploy={undeployShadow} formationBonus={formationBonus} />
-            )}
-
-            {/* NAMED sub-view */}
-            {shadowSubView === "named" && (
-              <div>
-                <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 14 }}>NAMED SHADOWS – FREISCHALTBAR</div>
-                {Object.values(NAMED_SHADOWS).map((ns, i) => {
-                  const isOwned = shadowArmy.shadows.some(s => s.namedId === ns.id || s.id === ns.id);
-                  const cls = SHADOW_CLASSES[ns.class] || SHADOW_CLASSES.soldier;
-                  const tierData = SHADOW_TIERS[ns.tier] || SHADOW_TIERS[4];
-                  return (
-                    <div key={ns.id} style={{ background: isOwned ? "rgba(8,8,20,0.9)" : theme.card, border: `1px solid ${isOwned ? ns.glowColor + "44" : "#1e2940"}`, borderRadius: 16, padding: "16px", marginBottom: 10, opacity: isOwned ? 1 : 0.65, animation: `cardEnter 0.4s ease ${i * 0.08}s both`, boxShadow: isOwned ? `0 0 16px ${ns.glowColor}18` : "none" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                        <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: isOwned ? ns.glowColor + "18" : "rgba(255,255,255,0.03)", border: `2px solid ${isOwned ? ns.glowColor + "66" : "#1e2940"}`, fontSize: 28 }}>
-                          {isOwned ? ns.icon : <span style={{ opacity: 0.2 }}>?</span>}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: isOwned ? ns.glowColor : "#475569", fontFamily: "'Cinzel',serif" }}>{isOwned ? ns.name : "???"}</div>
-                          <div style={{ fontSize: 10, color: isOwned ? ns.glowColor + "99" : "#334155", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginTop: 2 }}>{isOwned ? ns.title : "Unbekannt"}</div>
-                          <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
-                            <span style={{ fontSize: 9, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: cls.color + "15" }}>{cls.icon} {ns.class.toUpperCase()}</span>
-                            <span style={{ fontSize: 9, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: tierData.color + "15" }}>TIER {ns.tier}</span>
-                          </div>
-                        </div>
-                        {isOwned && <div style={{ fontSize: 9, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", borderRadius: 6, background: "#22c55e12", border: "1px solid #22c55e33" }}>OWNED</div>}
-                      </div>
-                      <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-                        <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>FREISCHALTBEDINGUNG</div>
-                        <div style={{ fontSize: 11, color: isOwned ? "#22c55e" : "#94a3b8", display: "flex", alignItems: "center", gap: 6 }}>
-                          {isOwned ? <span>✓</span> : <span style={{ opacity: 0.5 }}>○</span>}
-                          {ns.unlockCondition.desc}
+              {CATEGORIES.map((cat, i) => {
+                const val = (state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0); const base = state.stats[cat.key] || 0; const maxD = Math.max(val, 50); return (
+                  <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}12`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.06}s both`, transition: "border-color 0.3s" }} onMouseEnter={e => e.currentTarget.style.borderColor = cat.color + "33"} onMouseLeave={e => e.currentTarget.style.borderColor = cat.color + "12"}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 22 }}>{cat.icon}</span>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{cat.label}</div>
+                          <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>{cat.full}</div>
                         </div>
                       </div>
-                      {isOwned && ns.uniqueAbility && (
-                        <div style={{ background: `${ns.glowColor}0a`, border: `1px solid ${ns.glowColor}22`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-                          <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>UNIQUE ABILITY</div>
-                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                            <span style={{ fontSize: 18 }}>{ns.uniqueAbility.icon}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        {state.statPoints > 0 && (
+                          <button onClick={() => increaseStat(cat.key)} style={{ width: 26, height: 26, borderRadius: 6, background: cat.color + "22", border: `1px solid ${cat.color}44`, color: cat.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 16, cursor: "pointer", transition: "all 0.2s" }}>+</button>
+                        )}
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 28, fontWeight: 900, color: cat.color, fontFamily: "'Cinzel',serif" }}>{val}</div>
+                          {equipBonuses[cat.key + "Bonus"] > 0 && <div style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace" }}>({base}+{equipBonuses[cat.key + "Bonus"]})</div>}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.min((val / maxD) * 100, 100)}%`, height: "100%", borderRadius: 3, background: `linear-gradient(90deg,${cat.color}aa,${cat.color})`, boxShadow: `0 0 8px ${cat.color}44`, animation: "statBarFill 1s ease-out" }} />
+                    </div>
+                  </div>
+                );
+              })}
+              {unlockedSkills.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>UNLOCKED SKILLS ({unlockedSkills.length})</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {unlockedSkills.map((sk, i) => {
+                      const cat = CATEGORIES.find(c => c.key === sk.stat); return (
+                        <div key={sk.id} style={{ background: theme.card, border: `1px solid ${cat.color}22`, borderRadius: 12, padding: "12px", animation: `scaleIn 0.4s ease ${i * 0.07}s both` }}>
+                          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                            <span style={{ fontSize: 20 }}>{sk.icon}</span>
                             <div>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: ns.glowColor, fontFamily: "'Cinzel',serif" }}>{ns.uniqueAbility.name}</div>
-                              <div style={{ fontSize: 10, color: "#64748b", marginTop: 1 }}>{ns.uniqueAbility.effect}</div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: cat.color, fontFamily: "'Cinzel',serif" }}>{sk.name}</div>
+                              <div style={{ fontSize: 10, color: "#475569", marginTop: 2, lineHeight: 1.4 }}>{sk.desc}</div>
                             </div>
                           </div>
                         </div>
-                      )}
-                      {isOwned && <div style={{ fontStyle: "italic", fontSize: 11, color: "#475569", lineHeight: 1.6, borderLeft: `2px solid ${ns.glowColor}33`, paddingLeft: 10 }}>"{ns.lore}"</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ STORY ═══ */}
-        {view === "story" && state && (
-          <StoryView
-            gameState={state}
-            theme={theme}
-            onChapterComplete={(chapter) => {
-              const prev = state;
-              const completedChapters = [...(prev.story?.completedChapters || [])];
-
-              // Abuse Protection: Only give XP and Gold if chapter isn't already completed
-              if (!completedChapters.includes(chapter.id)) {
-                completedChapters.push(chapter.id);
-
-                // XP und Gold vergeben
-                const xpGain = chapter.rewards?.xp || 0;
-                const goldGain = chapter.rewards?.gold || 0;
-                let next = calculateLevelUp(prev, xpGain);
-
-                // Titel vergeben falls vorhanden
-                let newTitle = next.selectedTitle;
-                if (chapter.rewards?.title) {
-                  newTitle = chapter.rewards.title;
-                }
-
-                notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
-
-                persist({
-                  ...next,
-                  gold: (prev.gold || 0) + goldGain,
-                  totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
-                  selectedTitle: newTitle,
-                  story: {
-                    ...prev.story,
-                    completedChapters,
-                    totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
-                  },
-                });
-              } else {
-                notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
-              }
-            }}
-          />
-        )}
-
-        {/* ═══ JOBS ═══ */}
-        {view === "jobs" && state && (
-          <JobsView
-            state={state}
-            onSwitch={switchJob}
-            onActivate={activateJobAbility}
-            theme={theme}
-          />
-        )}
-
-        {/* ═══ EQUIPMENT ═══ */}
-        {view === "equipment" && (
-          <div style={{ animation: "fadeIn 0.35s ease" }}>
-            <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px", marginBottom: 16, backdropFilter: "blur(12px)" }}>
-              <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 14 }}>AUSGERÜSTET</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[{ slot: "weapon", label: "WAFFE", icon: "🗡️" }, { slot: "armor", label: "RÜSTUNG", icon: "🛡️" }, { slot: "ring1", label: "RING 1", icon: "💍" }, { slot: "ring2", label: "RING 2", icon: "💍" }].map(({ slot, label, icon }) => {
-                  const equipped = state.equipment?.slots?.[slot];
-                  return (
-                    <div key={slot} style={{ background: equipped ? `linear-gradient(135deg,${RARITY_COLORS[equipped.rarity]}10,transparent)` : theme.surface, border: `1px solid ${equipped ? RARITY_COLORS[equipped.rarity] + "33" : theme.primary + "12"}`, borderRadius: 12, padding: "12px", minHeight: 90 }}>
-                      <div style={{ fontSize: 8, letterSpacing: 2, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>{label}</div>
-                      {equipped ? (
-                        <div>
-                          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}><span style={{ fontSize: 22 }}>{equipped.icon}</span><div><div style={{ fontSize: 12, fontWeight: 700, color: RARITY_COLORS[equipped.rarity], fontFamily: "'Cinzel',serif" }}>{equipped.name}</div><div style={{ fontSize: 9, color: "#475569", marginTop: 1 }}>{equipped.desc}</div></div></div>
-                          <button onClick={() => unequipItem(slot)} style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "transparent", color: "#475569", border: "1px solid #1e2940", fontFamily: "'JetBrains Mono',monospace" }}>ABLEGEN</button>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 50, opacity: 0.2 }}>
-                          <span style={{ fontSize: 28 }}>{icon}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {Object.values(state.equipment?.slots || {}).some(v => v) && (
-                <div style={{ marginTop: 14, padding: "10px 12px", background: theme.surface, borderRadius: 10, fontSize: 10, fontFamily: "'JetBrains Mono',monospace", color: "#64748b" }}>
-                  <div style={{ marginBottom: 4, color: theme.accent, fontWeight: 700 }}>AKTIVE BONI</div>
-                  {equipBonuses.xpBonus > 0 && <div>+{Math.round(equipBonuses.xpBonus * 100)}% XP</div>}
-                  {equipBonuses.goldBonus > 0 && <div>+{Math.round(equipBonuses.goldBonus * 100)}% Gold</div>}
-                  {equipBonuses.dungeonBonus > 0 && <div>+{equipBonuses.dungeonBonus}% Dungeon Erfolg</div>}
-                  {equipBonuses.streakShield > 0 && <div>+{equipBonuses.streakShield} Streak-Schutz-Tage</div>}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
-            <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>INVENTAR ({(state.equipment?.inventory || []).length})</div>
-            {(state.equipment?.inventory || []).length === 0 ? (
-              <div style={{ textAlign: "center", padding: "32px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}>
-                <div style={{ fontSize: 32, marginBottom: 8, animation: "float 3s ease-in-out infinite" }}>🗡️</div>
-                <div style={{ fontSize: 13, color: "#475569" }}>Kein Equipment</div>
-                <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Bezwinge Dungeons für Item-Drops (40% Chance)</div>
-              </div>
-            ) : (state.equipment?.inventory || []).map((item, i) => {
-              const rc = RARITY_COLORS[item.rarity];
-              const isEquipped = Object.values(state.equipment?.slots || {}).some(e => e?.instanceId === item.instanceId);
-              return (
-                <div key={item.instanceId} style={{ background: theme.card, border: `1px solid ${rc}22`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.05}s both` }}>
-                  <span style={{ fontSize: 26 }}>{item.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: rc, fontFamily: "'Cinzel',serif" }}>{item.name}</div>
-                      <div style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: rc + "18", color: rc, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, border: `1px solid ${rc}33` }}>{RARITY_LABELS[item.rarity].toUpperCase()}</div>
-                    </div>
-                    <div style={{ fontSize: 10, color: "#64748b", marginBottom: 2 }}>{item.desc}</div>
-                  </div>
-                  {isEquipped ? <div style={{ fontSize: 10, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", padding: "4px 10px", borderRadius: 6, background: "#22c55e12", border: "1px solid #22c55e33" }}>EQUIPPED</div>
-                    : <button onClick={() => equipItem(item, item.slot === "ring" ? "ring1" : item.slot)} style={{ fontSize: 10, padding: "6px 14px", borderRadius: 8, background: `linear-gradient(135deg,${rc}18,transparent)`, color: rc, border: `1px solid ${rc}33`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>EQUIP</button>}
-                </div>
-              );
-            })}
-          </div>
-        )}
+          )
+        }
 
-        {/* ═══ ACHIEVEMENTS ═══ */}
-        {view === "achievements" && (
-          <div style={{ animation: "fadeIn 0.35s ease" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div>
-                <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>ACHIEVEMENTS</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>{achUnlocked.length}/{ACHIEVEMENTS.length} freigeschaltet</div>
-              </div>
-              <div style={{ padding: "8px 14px", borderRadius: 10, background: "#f59e0b12", border: "1px solid #f59e0b22", textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>PUNKTE</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b", fontFamily: "'Cinzel',serif" }}>{achUnlocked.reduce((sum, id) => { const a = ACHIEVEMENTS.find(ac => ac.id === id); return sum + (a?.reward?.xp || 0); }, 0)}</div>
-              </div>
-            </div>
-            <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden", marginBottom: 20 }}>
-              <div style={{ width: `${(achUnlocked.length / ACHIEVEMENTS.length) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg,#f59e0b88,#f59e0b)", transition: "width 0.8s ease" }} />
-            </div>
-            {["quests", "dungeons", "story", "streaks", "stats", "shadows", "misc"].map(cat => {
-              const catAchs = ACHIEVEMENTS.filter(a => a.cat === cat);
-              const catLabels = { quests: "⚔️ Quests", dungeons: "🌀 Dungeons", story: "📖 Story", streaks: "🔥 Streaks", stats: "📊 Stats", shadows: "🌑 Army", misc: "🎲 Sonstiges" };
-              return (
-                <div key={cat} style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{catLabels[cat]}</div>
-                  {catAchs.map((ach, i) => {
-                    const unlocked = achUnlocked.includes(ach.id);
-                    return (
-                      <div key={ach.id} style={{ background: theme.card, border: `1px solid ${unlocked ? "#f59e0b22" : theme.primary + "12"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 6, display: "flex", alignItems: "center", gap: 12, opacity: unlocked ? 1 : 0.45, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.06}s both` }}>
-                        <span style={{ fontSize: 24, filter: unlocked ? "none" : "grayscale(100%)" }}>{ach.icon}</span>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: unlocked ? "#fde68a" : "#475569", fontFamily: "'Cinzel',serif" }}>{ach.name}</div>
-                          <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{ach.desc}</div>
-                          {unlocked && ach.reward.title && <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 3, fontFamily: "'JetBrains Mono',monospace" }}>🏷 "{ach.reward.title}" freigeschaltet</div>}
+        {/* ═══ SHADOW ARMY ═══ */}
+        {
+          view === "shadows" && (
+            <div style={{ animation: "fadeIn 0.35s ease" }}>
+              {/* Monarch's Banner */}
+              <div style={{ position: "relative", background: "linear-gradient(160deg,rgba(4,3,12,0.99) 0%,rgba(16,6,32,0.97) 100%)", border: "1px solid #7c3aed44", borderRadius: 20, padding: "22px 20px 16px", marginBottom: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(124,58,237,0.12), inset 0 1px 0 rgba(167,139,250,0.06)" }}>
+                {/* Rotating monarch rays */}
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 340, height: 340, background: "conic-gradient(from 0deg,transparent 0%,#7c3aed04 8%,transparent 16%)", animation: "monarchRays 25s linear infinite", pointerEvents: "none" }} />
+                {/* Central glow */}
+                <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)", width: 200, height: 200, background: "radial-gradient(circle,#7c3aed0d 0%,transparent 70%)", pointerEvents: "none" }} />
+
+                <div style={{ position: "relative" }}>
+                  {/* Crown header */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                        <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,transparent,#7c3aed66)" }} />
+                        <div style={{ fontSize: 7, letterSpacing: 5, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>SHADOW MONARCHIE</div>
+                        <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,#7c3aed66,transparent)" }} />
+                      </div>
+                      <div style={{ fontSize: 26, fontWeight: 900, color: "#e2e8f0", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 30px #7c3aed55, 0 2px 4px rgba(0,0,0,0.8)" }}>Schattenarmee</div>
+                      {namedShadows.length > 0 && (
+                        <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>
+                          <span style={{ animation: "namedGlow 2s ease-in-out infinite", filter: "drop-shadow(0 0 4px #f59e0b88)", fontSize: 10 }}>★</span>
+                          {namedShadows.length} Named Shadow{namedShadows.length > 1 ? "s" : ""}
                         </div>
-                        {unlocked ? <div style={{ fontSize: 12, color: "#f59e0b" }}>✓</div> : <div style={{ textAlign: "right", fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}><div>+{ach.reward.xp} XP</div><div>{ach.reward.gold > 0 ? `+${ach.reward.gold}G` : ""}</div></div>}
+                      )}
+                    </div>
+                    <div style={{ textAlign: "center", padding: "10px 16px", background: "rgba(124,58,237,0.08)", border: "1px solid #7c3aed33", borderRadius: 14 }}>
+                      <div style={{ fontSize: 36, fontWeight: 900, color: "#a78bfa", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 20px #7c3aed88" }}>{totalShadows}</div>
+                      <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 2 }}>/{shadowArmy.capacity} KAPAZITÄT</div>
+                    </div>
+                  </div>
+
+                  {/* Stats orbs */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+                    {[
+                      { label: "Stationiert", value: shadowArmy.shadows.filter(s => s.isDeployed).length, color: "#22c55e", icon: "🌑" },
+                      { label: "Dungeon-Boost", value: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", icon: "⚔️" },
+                      { label: "XP-Boost", value: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", icon: "✦" }
+                    ].map(({ label, value, color, icon }) => (
+                      <div key={label} style={{ padding: "10px 6px", background: `radial-gradient(circle at 50% 0%,${color}14,${color}04)`, borderRadius: 12, border: `1px solid ${color}25`, textAlign: "center" }}>
+                        <div style={{ fontSize: 13, marginBottom: 4 }}>{icon}</div>
+                        <div style={{ fontSize: 14, fontWeight: 900, color, fontFamily: "'Cinzel',serif", lineHeight: 1 }}>{value}</div>
+                        <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 3, letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Capacity bar */}
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ height: 3, background: "rgba(6,4,16,0.9)", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ width: `${(totalShadows / shadowArmy.capacity) * 100}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#7c3aed,#a78bfa)", transition: "width 0.6s ease", boxShadow: "0 0 8px #7c3aed88" }} />
+                    </div>
+                  </div>
+
+                  {/* Sub nav */}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {[{ key: "army", label: "Armee", icon: "🌑" }, { key: "formation", label: "Formation", icon: "⚔️" }, { key: "named", label: "Named", icon: "★" }].map(sv => (
+                      <button key={sv.key} onClick={() => setShadowSubView(sv.key)} style={{ flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: shadowSubView === sv.key ? "linear-gradient(135deg,#7c3aed22,#a78bfa08)" : "transparent", color: shadowSubView === sv.key ? "#a78bfa" : "#334155", border: `1px solid ${shadowSubView === sv.key ? "#7c3aed55" : "#1a1e30"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "all 0.2s", boxShadow: shadowSubView === sv.key ? "0 0 14px #7c3aed20" : "none", cursor: "pointer" }}>
+                        <span style={{ fontSize: 11 }}>{sv.icon}</span>
+                        <span>{sv.label.toUpperCase()}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* ARMY sub-view */}
+              {shadowSubView === "army" && (
+                totalShadows === 0 ? (
+                  <div style={{ textAlign: "center", padding: "52px 24px", background: "linear-gradient(160deg,rgba(4,3,12,0.98),rgba(12,6,24,0.95))", borderRadius: 18, border: "1px dashed #7c3aed28", position: "relative", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 180, height: 180, background: "radial-gradient(circle,#7c3aed08,transparent 70%)", pointerEvents: "none" }} />
+                    <div style={{ fontSize: 56, marginBottom: 16, opacity: 0.2, animation: "float 3s ease-in-out infinite", filter: "drop-shadow(0 0 20px #7c3aed)" }}>🌑</div>
+                    <div style={{ fontSize: 14, color: "#334155", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>Keine Schatten erweckt</div>
+                    <div style={{ fontSize: 11, color: "#1e293b", lineHeight: 1.7 }}>Schließe <span style={{ color: "#7c3aed88" }}>Boss-Quests</span> ab,<br />um Schatten zu beschwören</div>
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    {shadowArmy.shadows.map((s, i) => <ShadowCard key={s.id} shadow={s} theme={theme} index={i} onClick={() => setSelectedShadow(s)} />)}
+                  </div>
+                )
+              )}
+
+              {/* FORMATION sub-view */}
+              {shadowSubView === "formation" && (
+                <FormationEditor shadowArmy={shadowArmy} theme={theme} onDeploy={deployShadow} onUndeploy={undeployShadow} formationBonus={formationBonus} />
+              )}
+
+              {/* NAMED sub-view */}
+              {shadowSubView === "named" && (
+                <div>
+                  <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 14 }}>NAMED SHADOWS – FREISCHALTBAR</div>
+                  {Object.values(NAMED_SHADOWS).map((ns, i) => {
+                    const isOwned = shadowArmy.shadows.some(s => s.namedId === ns.id || s.id === ns.id);
+                    const cls = SHADOW_CLASSES[ns.class] || SHADOW_CLASSES.soldier;
+                    const tierData = SHADOW_TIERS[ns.tier] || SHADOW_TIERS[4];
+                    return (
+                      <div key={ns.id} style={{ background: isOwned ? "rgba(8,8,20,0.9)" : theme.card, border: `1px solid ${isOwned ? ns.glowColor + "44" : "#1e2940"}`, borderRadius: 16, padding: "16px", marginBottom: 10, opacity: isOwned ? 1 : 0.65, animation: `cardEnter 0.4s ease ${i * 0.08}s both`, boxShadow: isOwned ? `0 0 16px ${ns.glowColor}18` : "none" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                          <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: isOwned ? ns.glowColor + "18" : "rgba(255,255,255,0.03)", border: `2px solid ${isOwned ? ns.glowColor + "66" : "#1e2940"}`, fontSize: 28 }}>
+                            {isOwned ? ns.icon : <span style={{ opacity: 0.2 }}>?</span>}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: isOwned ? ns.glowColor : "#475569", fontFamily: "'Cinzel',serif" }}>{isOwned ? ns.name : "???"}</div>
+                            <div style={{ fontSize: 10, color: isOwned ? ns.glowColor + "99" : "#334155", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginTop: 2 }}>{isOwned ? ns.title : "Unbekannt"}</div>
+                            <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
+                              <span style={{ fontSize: 9, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: cls.color + "15" }}>{cls.icon} {ns.class.toUpperCase()}</span>
+                              <span style={{ fontSize: 9, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: tierData.color + "15" }}>TIER {ns.tier}</span>
+                            </div>
+                          </div>
+                          {isOwned && <div style={{ fontSize: 9, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", borderRadius: 6, background: "#22c55e12", border: "1px solid #22c55e33" }}>OWNED</div>}
+                        </div>
+                        <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+                          <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>FREISCHALTBEDINGUNG</div>
+                          <div style={{ fontSize: 11, color: isOwned ? "#22c55e" : "#94a3b8", display: "flex", alignItems: "center", gap: 6 }}>
+                            {isOwned ? <span>✓</span> : <span style={{ opacity: 0.5 }}>○</span>}
+                            {ns.unlockCondition.desc}
+                          </div>
+                        </div>
+                        {isOwned && ns.uniqueAbility && (
+                          <div style={{ background: `${ns.glowColor}0a`, border: `1px solid ${ns.glowColor}22`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+                            <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>UNIQUE ABILITY</div>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                              <span style={{ fontSize: 18 }}>{ns.uniqueAbility.icon}</span>
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: ns.glowColor, fontFamily: "'Cinzel',serif" }}>{ns.uniqueAbility.name}</div>
+                                <div style={{ fontSize: 10, color: "#64748b", marginTop: 1 }}>{ns.uniqueAbility.effect}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {isOwned && <div style={{ fontStyle: "italic", fontSize: 11, color: "#475569", lineHeight: 1.6, borderLeft: `2px solid ${ns.glowColor}33`, paddingLeft: 10 }}>"{ns.lore}"</div>}
                       </div>
                     );
                   })}
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+            </div>
+          )
+        }
+
+        {/* ═══ STORY ═══ */}
+        {
+          view === "story" && state && (
+            <StoryView
+              gameState={state}
+              theme={theme}
+              onChapterComplete={(chapter) => {
+                const prev = state;
+                const completedChapters = [...(prev.story?.completedChapters || [])];
+
+                // Abuse Protection: Only give XP and Gold if chapter isn't already completed
+                if (!completedChapters.includes(chapter.id)) {
+                  completedChapters.push(chapter.id);
+
+                  // XP und Gold vergeben
+                  const xpGain = chapter.rewards?.xp || 0;
+                  const goldGain = chapter.rewards?.gold || 0;
+                  let next = calculateLevelUp(prev, xpGain);
+
+                  // Titel vergeben falls vorhanden
+                  let newTitle = next.selectedTitle;
+                  if (chapter.rewards?.title) {
+                    newTitle = chapter.rewards.title;
+                  }
+
+                  notify(`📖 Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
+
+                  persist({
+                    ...next,
+                    gold: (prev.gold || 0) + goldGain,
+                    totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
+                    selectedTitle: newTitle,
+                    story: {
+                      ...prev.story,
+                      completedChapters,
+                      totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
+                    },
+                  });
+                } else {
+                  notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
+                }
+              }}
+            />
+          )
+        }
+
+        {/* ═══ JOBS ═══ */}
+        {
+          view === "jobs" && state && (
+            <JobsView
+              state={state}
+              onSwitch={switchJob}
+              onActivate={activateJobAbility}
+              theme={theme}
+            />
+          )
+        }
+
+        {/* ═══ EQUIPMENT ═══ */}
+        {
+          view === "equipment" && (
+            <div style={{ animation: "fadeIn 0.35s ease" }}>
+              <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px", marginBottom: 16, backdropFilter: "blur(12px)" }}>
+                <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 14 }}>AUSGERÜSTET</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {[{ slot: "weapon", label: "WAFFE", icon: "🗡️" }, { slot: "armor", label: "RÜSTUNG", icon: "🛡️" }, { slot: "ring1", label: "RING 1", icon: "💍" }, { slot: "ring2", label: "RING 2", icon: "💍" }].map(({ slot, label, icon }) => {
+                    const equipped = state.equipment?.slots?.[slot];
+                    return (
+                      <div key={slot} style={{ background: equipped ? `linear-gradient(135deg,${RARITY_COLORS[equipped.rarity]}10,transparent)` : theme.surface, border: `1px solid ${equipped ? RARITY_COLORS[equipped.rarity] + "33" : theme.primary + "12"}`, borderRadius: 12, padding: "12px", minHeight: 90 }}>
+                        <div style={{ fontSize: 8, letterSpacing: 2, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>{label}</div>
+                        {equipped ? (
+                          <div>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}><span style={{ fontSize: 22 }}>{equipped.icon}</span><div><div style={{ fontSize: 12, fontWeight: 700, color: RARITY_COLORS[equipped.rarity], fontFamily: "'Cinzel',serif" }}>{equipped.name}</div><div style={{ fontSize: 9, color: "#475569", marginTop: 1 }}>{equipped.desc}</div></div></div>
+                            <button onClick={() => unequipItem(slot)} style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "transparent", color: "#475569", border: "1px solid #1e2940", fontFamily: "'JetBrains Mono',monospace" }}>ABLEGEN</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 50, opacity: 0.2 }}>
+                            <span style={{ fontSize: 28 }}>{icon}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {Object.values(state.equipment?.slots || {}).some(v => v) && (
+                  <div style={{ marginTop: 14, padding: "10px 12px", background: theme.surface, borderRadius: 10, fontSize: 10, fontFamily: "'JetBrains Mono',monospace", color: "#64748b" }}>
+                    <div style={{ marginBottom: 4, color: theme.accent, fontWeight: 700 }}>AKTIVE BONI</div>
+                    {equipBonuses.xpBonus > 0 && <div>+{Math.round(equipBonuses.xpBonus * 100)}% XP</div>}
+                    {equipBonuses.goldBonus > 0 && <div>+{Math.round(equipBonuses.goldBonus * 100)}% Gold</div>}
+                    {equipBonuses.dungeonBonus > 0 && <div>+{equipBonuses.dungeonBonus}% Dungeon Erfolg</div>}
+                    {equipBonuses.streakShield > 0 && <div>+{equipBonuses.streakShield} Streak-Schutz-Tage</div>}
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>INVENTAR ({(state.equipment?.inventory || []).length})</div>
+              {(state.equipment?.inventory || []).length === 0 ? (
+                <div style={{ textAlign: "center", padding: "32px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}>
+                  <div style={{ fontSize: 32, marginBottom: 8, animation: "float 3s ease-in-out infinite" }}>🗡️</div>
+                  <div style={{ fontSize: 13, color: "#475569" }}>Kein Equipment</div>
+                  <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Bezwinge Dungeons für Item-Drops (40% Chance)</div>
+                </div>
+              ) : (state.equipment?.inventory || []).map((item, i) => {
+                const rc = RARITY_COLORS[item.rarity];
+                const isEquipped = Object.values(state.equipment?.slots || {}).some(e => e?.instanceId === item.instanceId);
+                return (
+                  <div key={item.instanceId} style={{ background: theme.card, border: `1px solid ${rc}22`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.05}s both` }}>
+                    <span style={{ fontSize: 26 }}>{item.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: rc, fontFamily: "'Cinzel',serif" }}>{item.name}</div>
+                        <div style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: rc + "18", color: rc, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, border: `1px solid ${rc}33` }}>{RARITY_LABELS[item.rarity].toUpperCase()}</div>
+                      </div>
+                      <div style={{ fontSize: 10, color: "#64748b", marginBottom: 2 }}>{item.desc}</div>
+                    </div>
+                    {isEquipped ? <div style={{ fontSize: 10, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", padding: "4px 10px", borderRadius: 6, background: "#22c55e12", border: "1px solid #22c55e33" }}>EQUIPPED</div>
+                      : <button onClick={() => equipItem(item, item.slot === "ring" ? "ring1" : item.slot)} style={{ fontSize: 10, padding: "6px 14px", borderRadius: 8, background: `linear-gradient(135deg,${rc}18,transparent)`, color: rc, border: `1px solid ${rc}33`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>EQUIP</button>}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        }
+
+        {/* ═══ ACHIEVEMENTS ═══ */}
+        {
+          view === "achievements" && (
+            <div style={{ animation: "fadeIn 0.35s ease" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>ACHIEVEMENTS</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>{achUnlocked.length}/{ACHIEVEMENTS.length} freigeschaltet</div>
+                </div>
+                <div style={{ padding: "8px 14px", borderRadius: 10, background: "#f59e0b12", border: "1px solid #f59e0b22", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>PUNKTE</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b", fontFamily: "'Cinzel',serif" }}>{achUnlocked.reduce((sum, id) => { const a = ACHIEVEMENTS.find(ac => ac.id === id); return sum + (a?.reward?.xp || 0); }, 0)}</div>
+                </div>
+              </div>
+              <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden", marginBottom: 20 }}>
+                <div style={{ width: `${(achUnlocked.length / ACHIEVEMENTS.length) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg,#f59e0b88,#f59e0b)", transition: "width 0.8s ease" }} />
+              </div>
+              {["quests", "dungeons", "story", "streaks", "stats", "shadows", "misc"].map(cat => {
+                const catAchs = ACHIEVEMENTS.filter(a => a.cat === cat);
+                const catLabels = { quests: "⚔️ Quests", dungeons: "🌀 Dungeons", story: "📖 Story", streaks: "🔥 Streaks", stats: "📊 Stats", shadows: "🌑 Army", misc: "🎲 Sonstiges" };
+                return (
+                  <div key={cat} style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 10, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{catLabels[cat]}</div>
+                    {catAchs.map((ach, i) => {
+                      const unlocked = achUnlocked.includes(ach.id);
+                      return (
+                        <div key={ach.id} style={{ background: theme.card, border: `1px solid ${unlocked ? "#f59e0b22" : theme.primary + "12"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 6, display: "flex", alignItems: "center", gap: 12, opacity: unlocked ? 1 : 0.45, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.06}s both` }}>
+                          <span style={{ fontSize: 24, filter: unlocked ? "none" : "grayscale(100%)" }}>{ach.icon}</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: unlocked ? "#fde68a" : "#475569", fontFamily: "'Cinzel',serif" }}>{ach.name}</div>
+                            <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{ach.desc}</div>
+                            {unlocked && ach.reward.title && <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 3, fontFamily: "'JetBrains Mono',monospace" }}>🏷 "{ach.reward.title}" freigeschaltet</div>}
+                          </div>
+                          {unlocked ? <div style={{ fontSize: 12, color: "#f59e0b" }}>✓</div> : <div style={{ textAlign: "right", fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}><div>+{ach.reward.xp} XP</div><div>{ach.reward.gold > 0 ? `+${ach.reward.gold}G` : ""}</div></div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        }
 
         {/* ═══ SHOP ═══ */}
-        {view === "shop" && (
-          <div style={{ animation: "fadeIn 0.35s ease" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div>
-                <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>SYSTEM SHOP</div>
-                <div style={{ fontSize: 13, color: "#475569" }}>Kaufe Titel und Themes</div>
+        {
+          view === "shop" && (
+            <div style={{ animation: "fadeIn 0.35s ease" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>SYSTEM SHOP</div>
+                  <div style={{ fontSize: 13, color: "#475569" }}>Kaufe Titel und Themes</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: "#fbbf2412", border: "1px solid #fbbf2422" }}>
+                  <span style={{ fontSize: 16 }}>💰</span>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: "#fbbf24", fontFamily: "'Cinzel',serif" }}>{state.gold.toLocaleString()}</span>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: "#fbbf2412", border: "1px solid #fbbf2422" }}>
-                <span style={{ fontSize: 16 }}>💰</span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: "#fbbf24", fontFamily: "'Cinzel',serif" }}>{state.gold.toLocaleString()}</span>
-              </div>
-            </div>
-            {!shopUnlocked && <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid #ef444422", borderRadius: 14, padding: "16px", marginBottom: 16, textAlign: "center", fontSize: 12, color: "#ef4444" }}>⚠ Shop ab D-Rang verfügbar</div>}
-            {["consumable", "title", "theme"].map(type => (
-              <div key={type} style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 10, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>{type === "title" ? "TITEL" : type === "theme" ? "THEMES" : "VERBRAUCHSGÜTER"}</div>
-                {SHOP_ITEMS.filter(i => i.type === type).map((item, idx) => {
-                  const owned = state.shopPurchases.includes(item.id);
-                  const canAfford = state.gold >= item.cost;
-                  const rankOk = getRankIndex(rank.name) >= getRankIndex(item.minRank);
-                  const isActive = (item.type === "theme" && state.selectedTheme === item.themeKey) || (item.type === "title" && state.selectedTitle === item.name);
-                  return (
-                    <div key={item.id} style={{ background: isActive ? `linear-gradient(135deg,${theme.primary}15,transparent)` : theme.card, border: `1px solid ${isActive ? theme.primary + "44" : theme.primary + "12"}`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${idx * 0.07}s both` }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? theme.accent : "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.name}</div>
-                          {isActive && <div style={{ fontSize: 8, color: theme.accent, padding: "1px 5px", borderRadius: 3, background: theme.primary + "22", fontFamily: "'JetBrains Mono',monospace" }}>AKTIV</div>}
+              {!shopUnlocked && <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid #ef444422", borderRadius: 14, padding: "16px", marginBottom: 16, textAlign: "center", fontSize: 12, color: "#ef4444" }}>⚠ Shop ab D-Rang verfügbar</div>}
+              {["consumable", "title", "theme"].map(type => (
+                <div key={type} style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>{type === "title" ? "TITEL" : type === "theme" ? "THEMES" : "VERBRAUCHSGÜTER"}</div>
+                  {SHOP_ITEMS.filter(i => i.type === type).map((item, idx) => {
+                    const owned = state.shopPurchases.includes(item.id);
+                    const canAfford = state.gold >= item.cost;
+                    const rankOk = getRankIndex(rank.name) >= getRankIndex(item.minRank);
+                    const isActive = (item.type === "theme" && state.selectedTheme === item.themeKey) || (item.type === "title" && state.selectedTitle === item.name);
+                    return (
+                      <div key={item.id} style={{ background: isActive ? `linear-gradient(135deg,${theme.primary}15,transparent)` : theme.card, border: `1px solid ${isActive ? theme.primary + "44" : theme.primary + "12"}`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${idx * 0.07}s both` }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? theme.accent : "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.name}</div>
+                            {isActive && <div style={{ fontSize: 8, color: theme.accent, padding: "1px 5px", borderRadius: 3, background: theme.primary + "22", fontFamily: "'JetBrains Mono',monospace" }}>AKTIV</div>}
+                          </div>
+                          <div style={{ fontSize: 10, color: "#64748b" }}>{item.desc}</div>
+                          <div style={{ fontSize: 9, color: "#334155", marginTop: 3, fontFamily: "'JetBrains Mono',monospace" }}>Ab {item.minRank}-Rang</div>
                         </div>
-                        <div style={{ fontSize: 10, color: "#64748b" }}>{item.desc}</div>
-                        <div style={{ fontSize: 9, color: "#334155", marginTop: 3, fontFamily: "'JetBrains Mono',monospace" }}>Ab {item.minRank}-Rang</div>
+                        {owned ? (
+                          <button onClick={() => { if (item.type === "theme") persist({ ...state, selectedTheme: item.themeKey }); else persist({ ...state, selectedTitle: item.name }); }} style={{ padding: "8px 16px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: isActive ? theme.primary + "22" : "transparent", color: isActive ? theme.accent : "#475569", border: `1px solid ${isActive ? theme.primary + "44" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{isActive ? "AKTIV" : "NUTZEN"}</button>
+                        ) : (
+                          <button onClick={() => buyItem(item)} disabled={!canAfford || !rankOk || !shopUnlocked} style={{ padding: "8px 16px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: canAfford && rankOk && shopUnlocked ? `linear-gradient(135deg,#fbbf2422,#fbbf2408)` : "transparent", color: canAfford && rankOk && shopUnlocked ? "#fbbf24" : "#334155", border: `1px solid ${canAfford && rankOk && shopUnlocked ? "#fbbf2444" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, cursor: canAfford && rankOk && shopUnlocked ? "pointer" : "not-allowed" }}>
+                            {item.cost}G
+                          </button>
+                        )}
                       </div>
-                      {owned ? (
-                        <button onClick={() => { if (item.type === "theme") persist({ ...state, selectedTheme: item.themeKey }); else persist({ ...state, selectedTitle: item.name }); }} style={{ padding: "8px 16px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: isActive ? theme.primary + "22" : "transparent", color: isActive ? theme.accent : "#475569", border: `1px solid ${isActive ? theme.primary + "44" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{isActive ? "AKTIV" : "NUTZEN"}</button>
-                      ) : (
-                        <button onClick={() => buyItem(item)} disabled={!canAfford || !rankOk || !shopUnlocked} style={{ padding: "8px 16px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: canAfford && rankOk && shopUnlocked ? `linear-gradient(135deg,#fbbf2422,#fbbf2408)` : "transparent", color: canAfford && rankOk && shopUnlocked ? "#fbbf24" : "#334155", border: `1px solid ${canAfford && rankOk && shopUnlocked ? "#fbbf2444" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, cursor: canAfford && rankOk && shopUnlocked ? "pointer" : "not-allowed" }}>
-                          {item.cost}G
-                        </button>
-                      )}
+                    );
+                  })}
+                </div>
+              ))}
+
+              {/* HUNTER'S CODEX */}
+              {shopUnlocked && (
+                <div style={{ marginTop: 32, padding: "20px", borderRadius: 16, background: "linear-gradient(135deg,rgba(168,85,247,0.05),rgba(124,58,237,0.1))", border: "1px solid #7c3aed44" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: "#a855f7", fontFamily: "'Cinzel',serif" }}>HUNTER'S CODEX</div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>VERLORENE WEISHEITEN</div>
                     </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        )}
+                    <div style={{ fontSize: 24, animation: "float 3s ease-in-out infinite" }}>📜</div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#cbd5e1", marginBottom: 20, lineHeight: 1.5 }}>
+                    Entschlüssele Fragmente antiker Einsicht. Verleiht permanente Weisheit und einen massiven Gold-/XP-Schub.
+                  </div>
+
+                  {/* Available to Buy */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 24 }}>
+                    {HUNTER_CODEX.filter(c => !(state.codex || []).includes(c.id)).slice(0, 4).map((item) => {
+                      const canAfford = state.gold >= item.cost;
+                      const rqLv = item.tier === 1 ? 5 : item.tier === 2 ? 15 : 30;
+                      const myStat = (state.stats[item.stat] || 0);
+                      const rankOk = myStat >= rqLv;
+
+                      return (
+                        <div key={item.id} style={{ background: theme.card, border: "1px solid #7c3aed44", borderRadius: 12, padding: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#c084fc", fontFamily: "'Cinzel',serif", marginBottom: 4 }}>Unbekanntes Fragment {item.id.replace(/codex_|_gen_/g, "")}</div>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}>
+                              <span style={{ color: "#94a3b8" }}>{item.stat.toUpperCase()}-Pfad</span>
+                              <span style={{ color: rankOk ? "#22c55e" : "#ef4444" }}>Braucht {rqLv} {item.stat.toUpperCase()}</span>
+                            </div>
+                          </div>
+                          <button onClick={() => {
+                            const newQuest = {
+                              id: genId(), title: `Codex meistern: ${item.rule}`,
+                              category: item.stat, difficulty: item.tier === 1 ? "easy" : item.tier === 2 ? "normal" : "hard",
+                              type: "side", isCodexQuest: true, codexId: item.id, rewardStat: item.stat, createdAt: new Date().toISOString()
+                            };
+                            const nextState = {
+                              ...state,
+                              gold: state.gold - item.cost,
+                              codex: [...(state.codex || []), item.id],
+                              quests: [...state.quests, newQuest]
+                            };
+                            persist(nextState);
+                            notify(`Codex gekauft! Schließe die neue Quest ab, um die Weisheit zu meistern.`, "success");
+                          }}
+                            disabled={!canAfford || !rankOk}
+                            style={{ padding: "8px 14px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: (canAfford && rankOk) ? "linear-gradient(135deg,#a855f722,#a855f70a)" : "transparent", color: (canAfford && rankOk) ? "#a855f7" : "#475569", border: `1px solid ${(canAfford && rankOk) ? "#a855f766" : "#1e2940"}`, cursor: (canAfford && rankOk) ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
+                            {item.cost}G
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {HUNTER_CODEX.filter(c => !(state.codex || []).includes(c.id)).length === 0 && (
+                      <div style={{ fontSize: 11, color: "#a855f7", textAlign: "center", padding: "12px", border: "1px dashed #a855f744", borderRadius: 10 }}>Alle verfügbaren Fragmente des Codex entschlüsselt.</div>
+                    )}
+                  </div>
+
+                  {/* Unlocked */}
+                  {state.codex && state.codex.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 9, letterSpacing: 2, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12, paddingTop: 16, borderTop: "1px solid #7c3aed33" }}>DEIN CODEX ({state.codex.length}/{HUNTER_CODEX.length})</div>
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {state.codex.map(id => {
+                          const item = HUNTER_CODEX.find(c => c.id === id);
+                          if (!item) return null;
+                          const isMastered = (state.codexMastered || []).includes(item.id);
+                          return (
+                            <div key={id} style={{ padding: "12px", borderRadius: 10, background: isMastered ? "rgba(34,197,94,0.06)" : "rgba(124,58,237,0.06)", borderLeft: `3px solid ${isMastered ? "#22c55e" : "#7c3aed"}` }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: isMastered ? "#86efac" : "#e2e8f0", marginBottom: 4, fontFamily: "'Cinzel',serif" }}>{item.rule}</div>
+                              <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.4 }}>{item.desc}</div>
+                              {isMastered ? (
+                                <div style={{ fontSize: 9, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", marginTop: 6 }}>✓ GEMEISTERT (+1 {item.stat.toUpperCase()})</div>
+                              ) : (
+                                <div style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", marginTop: 6 }}>⚙️ Quest aktiv...</div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        }
 
         {/* ═══ ANALYTICS ═══ */}
-        {view === "analytics" && (
-          <AnalyticsDashboard state={state} theme={theme} />
-        )}
+        {
+          view === "analytics" && (
+            <AnalyticsDashboard state={state} theme={theme} />
+          )
+        }
 
         {/* ═══ GOALS ═══ */}
-        {view === "goals" && (
-          <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
-        )}
+        {
+          view === "goals" && (
+            <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
+          )
+        }
 
         {/* ═══ CALENDAR ═══ */}
-        {view === "calendar" && (
-          <CalendarSchedule state={state} persist={persist} notify={notify} theme={theme} />
-        )}
+        {
+          view === "calendar" && (
+            <CalendarSchedule state={state} persist={persist} notify={notify} theme={theme} />
+          )
+        }
 
         {/* ═══ CHALLENGES ═══ */}
-        {view === "challenges" && (
-          <ChallengesSystem state={state} persist={persist} notify={notify} theme={theme} />
-        )}
+        {
+          view === "challenges" && (
+            <ChallengesSystem state={state} persist={persist} notify={notify} theme={theme} />
+          )
+        }
 
         {/* ═══ SETTINGS ═══ */}
-        {view === "settings" && (
-          <SettingsView state={state} persist={persist} theme={theme} />
-        )}
-      </main>
+        {
+          view === "settings" && (
+            <SettingsView state={state} persist={persist} theme={theme} />
+          )
+        }
+      </main >
 
       {/* BOTTOM NAV */}
-      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
+      < nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
           {[{ key: "dashboard", icon: "📋", label: "Heute" }, { key: "training", icon: "🎯", label: "Ziele" }, { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length }, { key: "story", icon: "📖", label: "Story" }, { key: "system", icon: "⚙️", label: "System" }].map(tab => (
             <button key={tab.key} onClick={() => setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
@@ -1028,393 +1169,408 @@ function App({ initialHunterName, onLogout }) {
             </button>
           ))}
         </div>
-      </nav>
+      </nav >
 
       {/* TRAINING HUB — unified view for habits/goals/calendar */}
-      {view === "training" && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
-          <div style={{ maxWidth: 480, margin: "0 auto" }}>
-            {/* Training header */}
-            <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px 20px", marginBottom: 16, backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, right: 0, width: "50%", height: "100%", background: `radial-gradient(circle at 100% 30%, ${theme.primary}0c, transparent 70%)`, pointerEvents: "none" }} />
-              <div style={{ fontSize: 9, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>PATH OF THE HUNTER</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>Ziele & Fortschritt</div>
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>Langzeit-Ziele und Quest-Kalender</div>
-            </div>
-
-            {/* Training modules combined */}
-            <div style={{ marginBottom: 32 }}>
-              <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
-              <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
-              <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>TÄGLICHES TRAINING</div>
-              <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
-            </div>
-
-            <div style={{ marginBottom: 32 }}>
-              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
-              <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
-              <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
-              <button onClick={() => setShowCreate(true)} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 9, fontWeight: 700, background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.28)", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.2)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
-              >⚔️ QUEST</button>
-              <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
-            </div>
-
-            {filteredQuests.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}>
-                <div style={{ fontSize: 36, marginBottom: 10, animation: "float 3s ease-in-out infinite" }}>⚔️</div>
-                <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
-                <div style={{ fontSize: 11, color: "#334155" }}>Erstelle Quests auf dem Heute-Tab.</div>
+      {
+        view === "training" && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+            <div style={{ maxWidth: 480, margin: "0 auto" }}>
+              {/* Training header */}
+              <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px 20px", marginBottom: 16, backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: 0, right: 0, width: "50%", height: "100%", background: `radial-gradient(circle at 100% 30%, ${theme.primary}0c, transparent 70%)`, pointerEvents: "none" }} />
+                <div style={{ fontSize: 9, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>PATH OF THE HUNTER</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>Ziele & Fortschritt</div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>Langzeit-Ziele und Quest-Kalender</div>
+                  </div>
+                  <button onClick={() => setShowFocusMode(true)} style={{ padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #a855f722, #7c3aed11)", color: "#a855f7", border: "1px solid #a855f744", fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px #a855f722", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 16px #a855f744"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 12px #a855f722"; }}>
+                    🧘 SANCTUM
+                  </button>
+                </div>
               </div>
-            ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}
+
+              {/* Training modules combined */}
+              <div style={{ marginBottom: 32 }}>
+                <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
+                <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
+                <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>TÄGLICHES TRAINING</div>
+                <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
+              </div>
+
+              <div style={{ marginBottom: 32 }}>
+                <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
+                <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
+                <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
+                <button onClick={() => setShowCreate(true)} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 9, fontWeight: 700, background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.28)", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.2)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+                >⚔️ QUEST</button>
+                <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
+              </div>
+
+              {filteredQuests.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}>
+                  <div style={{ fontSize: 36, marginBottom: 10, animation: "float 3s ease-in-out infinite" }}>⚔️</div>
+                  <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
+                  <div style={{ fontSize: 11, color: "#334155" }}>Erstelle Quests auf dem Heute-Tab.</div>
+                </div>
+              ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* SYSTEM MENU — themed module hub */}
-      {view === "system" && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
-          <div style={{ maxWidth: 480, margin: "0 auto" }}>
-            {/* System header */}
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ fontSize: 9, letterSpacing: 5, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, animation: "pulse 3s infinite" }}>&gt; SYSTEM INTERFACE ACTIVE</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>System</div>
-              <div style={{ width: 60, height: 2, background: `linear-gradient(90deg, transparent, ${theme.primary}, transparent)`, margin: "10px auto 0" }} />
-            </div>
-
-            {/* HUNTER PROFILE SECTION */}
-            {[{
-              title: "HUNTER INTEL", icon: "📊", color: theme.accent,
-              items: [
-                { key: "stats", icon: "📊", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
-                { key: "analytics", icon: "📈", label: "Analytics", desc: "Fortschritt & Trends" },
-                { key: "achievements", icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length },
-                { key: "challenges", icon: "🎖️", label: "Events", desc: "Challenges & Missionen" },
-              ]
-            }, {
-              title: "ARSENAL", icon: "🗡️", color: "#f59e0b",
-              items: [
-                { key: "shadows", icon: "🌑", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 },
-                { key: "equipment", icon: "🗡️", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 },
-                { key: "jobs", icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" },
-                { key: "shop", icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` },
-              ]
-            }, {
-              title: "SYSTEM", icon: "⚙️", color: "#64748b",
-              items: [
-                { key: "settings", icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
-              ]
-            }].map((section, si) => (
-              <div key={section.title} style={{ marginBottom: 20, animation: `slideUp 0.3s ease ${si * 0.08}s both` }}>
-                {/* Section header */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingLeft: 4 }}>
-                  <div style={{ width: 3, height: 16, borderRadius: 2, background: section.color, boxShadow: `0 0 8px ${section.color}44` }} />
-                  <span style={{ fontSize: 10, letterSpacing: 3, color: section.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{section.icon} {section.title}</span>
-                </div>
-                {/* Section items */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {section.items.map((item, ii) => (
-                    <button key={item.key} onClick={() => setView(item.key)} style={{
-                      width: "100%", padding: "14px 16px", borderRadius: 14,
-                      background: theme.card, border: `1px solid ${section.color}15`,
-                      display: "flex", alignItems: "center", gap: 12, textAlign: "left",
-                      transition: "all 0.2s", cursor: "pointer", backdropFilter: "blur(8px)",
-                      animation: `cardEnter 0.3s ease ${(si * 0.08) + (ii * 0.04)}s both`
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = section.color + "44"; e.currentTarget.style.transform = "translateX(4px)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = section.color + "15"; e.currentTarget.style.transform = "none"; }}
-                    >
-                      <div style={{ fontSize: 20, position: "relative", flexShrink: 0 }}>
-                        {item.icon}
-                        {item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -6, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.label}</div>
-                        <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{item.desc}</div>
-                      </div>
-                      <div style={{ fontSize: 12, color: "#334155", opacity: 0.5 }}>›</div>
-                    </button>
-                  ))}
-                </div>
+      {
+        view === "system" && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+            <div style={{ maxWidth: 480, margin: "0 auto" }}>
+              {/* System header */}
+              <div style={{ textAlign: "center", marginBottom: 20 }}>
+                <div style={{ fontSize: 9, letterSpacing: 5, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, animation: "pulse 3s infinite" }}>&gt; SYSTEM INTERFACE ACTIVE</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>System</div>
+                <div style={{ width: 60, height: 2, background: `linear-gradient(90deg, transparent, ${theme.primary}, transparent)`, margin: "10px auto 0" }} />
               </div>
-            ))}
 
-            {/* Multiplayer Portal */}
-            <div style={{ marginBottom: 20, animation: `slideUp 0.3s ease 0.4s both` }}>
-              <button onClick={enterPortal} style={{
-                width: "100%", padding: "16px 20px", borderRadius: 16,
-                background: `linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03))`,
-                border: `1px solid #f59e0b33`, borderLeft: `3px solid #f59e0b66`,
-                display: "flex", alignItems: "center", gap: 14, textAlign: "left",
-                transition: "all 0.3s", cursor: "pointer"
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b88"; e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(245,158,11,0.1)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#f59e0b33"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
-              >
-                <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b44", fontSize: 22, flexShrink: 0 }}>🌐</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fcd34d", fontFamily: "'Cinzel',serif" }}>Hunter Association</div>
-                  <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>Multiplayer Portal betreten</div>
-                </div>
-                <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>⟶</div>
-              </button>
-            </div>
-
-            {/* Version footer */}
-            <div style={{ textAlign: "center", padding: "12px 0", fontSize: 9, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 3 }}>
-              ARISE SYSTEM v1.3.7
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QUEST CREATE MODAL */}
-      {showCreate && (
-        <div onClick={() => { setShowCreate(false); setShowTemplates(false); }} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(2,2,10,0.9)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)", padding: "16px 12px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, maxHeight: "92vh", background: `linear-gradient(180deg,${theme.card},rgba(6,6,16,0.99))`, border: `1px solid ${theme.primary}44`, borderTop: `2px solid ${theme.primary}`, borderRadius: 24, display: "flex", flexDirection: "column", animation: "slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)", boxShadow: `0 24px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 40px ${theme.glow}` }}>
-            {/* Header */}
-            <div style={{ padding: "20px 24px 0", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div>
-                  <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>SYSTEM: {editingQuestId ? "QUEST ÄNDERN" : "NEUE QUEST"}</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{editingQuestId ? "Quest anpassen" : "Quest erstellen"}</div>
-                </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {/* RANDOMIZER BUTTON */}
-                  <button
-                    title="Zufällige Quest-Idee"
-                    onClick={() => {
-                      const pool = QUEST_TEMPLATES;
-                      const pick = pool[Math.floor(Math.random() * pool.length)];
-                      setRandomizing(true);
-                      setQTitle(pick.t); setQCat(pick.c); setQDiff(pick.d); setQType(pick.tp);
-                      setShowTemplates(false);
-                      setTimeout(() => setRandomizing(false), 600);
-                    }}
-                    style={{ width: 38, height: 38, borderRadius: 12, background: randomizing ? "rgba(245,158,11,0.25)" : "rgba(245,158,11,0.1)", border: `1px solid ${randomizing ? "#f59e0b88" : "#f59e0b33"}`, color: "#f59e0b", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s", cursor: "pointer", animation: randomizing ? "spin 0.5s ease" : "none" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.2)"; e.currentTarget.style.borderColor = "#f59e0b66"; }}
-                    onMouseLeave={e => { if (!randomizing) { e.currentTarget.style.background = "rgba(245,158,11,0.1)"; e.currentTarget.style.borderColor = "#f59e0b33"; } }}
-                  >🎲</button>
-                  <button onClick={() => { setShowCreate(false); setShowTemplates(false); }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#64748b", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", cursor: "pointer" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.borderColor = "#ef444444"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#64748b"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}>&#x2715;</button>
-                </div>
-              </div>
-              {/* Mode tabs */}
-              <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-                {[{ key: false, label: "✏️ Erstellen" }, { key: true, label: "💡 Ideen-Bibliothek" }].map(tab => (
-                  <button key={String(tab.key)} onClick={() => setShowTemplates(tab.key)} style={{ flex: 1, padding: "8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: showTemplates === tab.key ? theme.primary + "22" : "transparent", color: showTemplates === tab.key ? theme.accent : "#475569", border: `1px solid ${showTemplates === tab.key ? theme.primary + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, transition: "all 0.25s", cursor: "pointer" }}>{tab.label}</button>
-                ))}
-              </div>
-              <div style={{ height: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55,transparent)` }} />
-            </div>
-
-            {/* Scrollable Content */}
-            <div style={{ overflowY: "auto", padding: "0 24px", flex: 1 }}>
-
-              {/* ══ IDEEN-BIBLIOTHEK ══ */}
-              {showTemplates && (
-                <div style={{ paddingTop: 16, paddingBottom: 8 }}>
-                  {/* Randomizer big button */}
-                  <button
-                    onClick={() => {
-                      const pool = QUEST_TEMPLATES;
-                      const pick = pool[Math.floor(Math.random() * pool.length)];
-                      setRandomizing(true);
-                      setQTitle(pick.t); setQCat(pick.c); setQDiff(pick.d); setQType(pick.tp);
-                      setShowTemplates(false);
-                      setTimeout(() => setRandomizing(false), 600);
-                    }}
-                    style={{ width: "100%", padding: "14px", borderRadius: 16, fontSize: 13, fontWeight: 900, background: "linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))", color: "#f59e0b", border: "1px solid #f59e0b44", fontFamily: "'Cinzel',serif", letterSpacing: 2, marginBottom: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "all 0.3s", boxShadow: "0 4px 20px rgba(245,158,11,0.15)" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg,rgba(245,158,11,0.3),rgba(245,158,11,0.12))"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))"; e.currentTarget.style.transform = "none"; }}
-                  ><span style={{ fontSize: 22 }}>🎲</span> ZUFÄLLIGE QUEST WÜRFELN</button>
-
-                  {/* Category filter */}
-                  <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
-                    {[{ key: "all", label: "Alle", color: theme.accent }, ...CATEGORIES.map(c => ({ key: c.key, label: `${c.icon} ${c.stat}`, color: c.color }))].map(f => (
-                      <button key={f.key} onClick={() => setTemplateFilter(f.key)} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 10, fontWeight: 700, flexShrink: 0, background: templateFilter === f.key ? f.color + "22" : "transparent", color: templateFilter === f.key ? f.color : "#475569", border: `1px solid ${templateFilter === f.key ? f.color + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", transition: "all 0.2s", cursor: "pointer" }}>{f.label}</button>
+              {/* HUNTER PROFILE SECTION */}
+              {[{
+                title: "HUNTER INTEL", icon: "📊", color: theme.accent,
+                items: [
+                  { key: "stats", icon: "📊", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
+                  { key: "analytics", icon: "📈", label: "Analytics", desc: "Fortschritt & Trends" },
+                  { key: "achievements", icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length },
+                  { key: "challenges", icon: "🎖️", label: "Events", desc: "Challenges & Missionen" },
+                ]
+              }, {
+                title: "ARSENAL", icon: "🗡️", color: "#f59e0b",
+                items: [
+                  { key: "shadows", icon: "🌑", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 },
+                  { key: "equipment", icon: "🗡️", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 },
+                  { key: "jobs", icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" },
+                  { key: "shop", icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` },
+                ]
+              }, {
+                title: "SYSTEM", icon: "⚙️", color: "#64748b",
+                items: [
+                  { key: "settings", icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
+                ]
+              }].map((section, si) => (
+                <div key={section.title} style={{ marginBottom: 20, animation: `slideUp 0.3s ease ${si * 0.08}s both` }}>
+                  {/* Section header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingLeft: 4 }}>
+                    <div style={{ width: 3, height: 16, borderRadius: 2, background: section.color, boxShadow: `0 0 8px ${section.color}44` }} />
+                    <span style={{ fontSize: 10, letterSpacing: 3, color: section.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{section.icon} {section.title}</span>
+                  </div>
+                  {/* Section items */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {section.items.map((item, ii) => (
+                      <button key={item.key} onClick={() => setView(item.key)} style={{
+                        width: "100%", padding: "14px 16px", borderRadius: 14,
+                        background: theme.card, border: `1px solid ${section.color}15`,
+                        display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+                        transition: "all 0.2s", cursor: "pointer", backdropFilter: "blur(8px)",
+                        animation: `cardEnter 0.3s ease ${(si * 0.08) + (ii * 0.04)}s both`
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = section.color + "44"; e.currentTarget.style.transform = "translateX(4px)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = section.color + "15"; e.currentTarget.style.transform = "none"; }}
+                      >
+                        <div style={{ fontSize: 20, position: "relative", flexShrink: 0 }}>
+                          {item.icon}
+                          {item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -6, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.label}</div>
+                          <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{item.desc}</div>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#334155", opacity: 0.5 }}>›</div>
+                      </button>
                     ))}
                   </div>
+                </div>
+              ))}
 
-                  {/* Template grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, paddingBottom: 16 }}>
-                    {QUEST_TEMPLATES.filter(tmpl => templateFilter === "all" || tmpl.c === templateFilter).map((tmpl, i) => {
-                      const cat = CATEGORIES.find(c => c.key === tmpl.c) || CATEGORIES[0];
-                      const diff = DIFFICULTIES.find(d => d.key === tmpl.d) || DIFFICULTIES[1];
-                      return (
-                        <button key={i} onClick={() => { setQTitle(tmpl.t); setQCat(tmpl.c); setQDiff(tmpl.d); setQType(tmpl.tp); setShowTemplates(false); }} style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(10,10,24,0.8)", border: `1px solid ${cat.color}22`, textAlign: "left", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 5 }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.background = cat.color + "0d"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "22"; e.currentTarget.style.background = "rgba(10,10,24,0.8)"; e.currentTarget.style.transform = "none"; }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.3 }}>{tmpl.t}</div>
-                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "15", fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon}{cat.stat}</span>
-                            <span style={{ fontSize: 8, color: diff.color, padding: "1px 5px", borderRadius: 4, background: diff.color + "15", fontFamily: "'JetBrains Mono',monospace" }}>{diff.icon}{diff.label}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
+              {/* Multiplayer Portal */}
+              <div style={{ marginBottom: 20, animation: `slideUp 0.3s ease 0.4s both` }}>
+                <button onClick={enterPortal} style={{
+                  width: "100%", padding: "16px 20px", borderRadius: 16,
+                  background: `linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03))`,
+                  border: `1px solid #f59e0b33`, borderLeft: `3px solid #f59e0b66`,
+                  display: "flex", alignItems: "center", gap: 14, textAlign: "left",
+                  transition: "all 0.3s", cursor: "pointer"
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b88"; e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(245,158,11,0.1)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#f59e0b33"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
+                >
+                  <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b44", fontSize: 22, flexShrink: 0 }}>🌐</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fcd34d", fontFamily: "'Cinzel',serif" }}>Hunter Association</div>
+                    <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>Multiplayer Portal betreten</div>
                   </div>
+                  <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>⟶</div>
+                </button>
+              </div>
+
+              {/* Version footer */}
+              <div style={{ textAlign: "center", padding: "12px 0", fontSize: 9, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 3 }}>
+                ARISE SYSTEM v1.3.7
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* INNER SANCTUM MODAL */}
+      {showFocusMode && <InnerSanctum onClose={() => setShowFocusMode(false)} theme={theme} state={state} persist={persist} notify={notify} />}
+
+      {/* QUEST CREATE MODAL */}
+      {
+        showCreate && (
+          <div onClick={() => { setShowCreate(false); setShowTemplates(false); }} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(2,2,10,0.9)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)", padding: "16px 12px" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, maxHeight: "92vh", background: `linear-gradient(180deg,${theme.card},rgba(6,6,16,0.99))`, border: `1px solid ${theme.primary}44`, borderTop: `2px solid ${theme.primary}`, borderRadius: 24, display: "flex", flexDirection: "column", animation: "slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)", boxShadow: `0 24px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 40px ${theme.glow}` }}>
+              {/* Header */}
+              <div style={{ padding: "20px 24px 0", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>SYSTEM: {editingQuestId ? "QUEST ÄNDERN" : "NEUE QUEST"}</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{editingQuestId ? "Quest anpassen" : "Quest erstellen"}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {/* RANDOMIZER BUTTON */}
+                    <button
+                      title="Zufällige Quest-Idee"
+                      onClick={() => {
+                        const pool = QUEST_TEMPLATES;
+                        const pick = pool[Math.floor(Math.random() * pool.length)];
+                        setRandomizing(true);
+                        setQTitle(pick.t); setQCat(pick.c); setQDiff(pick.d); setQType(pick.tp);
+                        setShowTemplates(false);
+                        setTimeout(() => setRandomizing(false), 600);
+                      }}
+                      style={{ width: 38, height: 38, borderRadius: 12, background: randomizing ? "rgba(245,158,11,0.25)" : "rgba(245,158,11,0.1)", border: `1px solid ${randomizing ? "#f59e0b88" : "#f59e0b33"}`, color: "#f59e0b", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s", cursor: "pointer", animation: randomizing ? "spin 0.5s ease" : "none" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.2)"; e.currentTarget.style.borderColor = "#f59e0b66"; }}
+                      onMouseLeave={e => { if (!randomizing) { e.currentTarget.style.background = "rgba(245,158,11,0.1)"; e.currentTarget.style.borderColor = "#f59e0b33"; } }}
+                    >🎲</button>
+                    <button onClick={() => { setShowCreate(false); setShowTemplates(false); }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#64748b", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", cursor: "pointer" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.borderColor = "#ef444444"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#64748b"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}>&#x2715;</button>
+                  </div>
+                </div>
+                {/* Mode tabs */}
+                <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
+                  {[{ key: false, label: "✏️ Erstellen" }, { key: true, label: "💡 Ideen-Bibliothek" }].map(tab => (
+                    <button key={String(tab.key)} onClick={() => setShowTemplates(tab.key)} style={{ flex: 1, padding: "8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: showTemplates === tab.key ? theme.primary + "22" : "transparent", color: showTemplates === tab.key ? theme.accent : "#475569", border: `1px solid ${showTemplates === tab.key ? theme.primary + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, transition: "all 0.25s", cursor: "pointer" }}>{tab.label}</button>
+                  ))}
+                </div>
+                <div style={{ height: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55,transparent)` }} />
+              </div>
+
+              {/* Scrollable Content */}
+              <div style={{ overflowY: "auto", padding: "0 24px", flex: 1 }}>
+
+                {/* ══ IDEEN-BIBLIOTHEK ══ */}
+                {showTemplates && (
+                  <div style={{ paddingTop: 16, paddingBottom: 8 }}>
+                    {/* Randomizer big button */}
+                    <button
+                      onClick={() => {
+                        const pool = QUEST_TEMPLATES;
+                        const pick = pool[Math.floor(Math.random() * pool.length)];
+                        setRandomizing(true);
+                        setQTitle(pick.t); setQCat(pick.c); setQDiff(pick.d); setQType(pick.tp);
+                        setShowTemplates(false);
+                        setTimeout(() => setRandomizing(false), 600);
+                      }}
+                      style={{ width: "100%", padding: "14px", borderRadius: 16, fontSize: 13, fontWeight: 900, background: "linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))", color: "#f59e0b", border: "1px solid #f59e0b44", fontFamily: "'Cinzel',serif", letterSpacing: 2, marginBottom: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "all 0.3s", boxShadow: "0 4px 20px rgba(245,158,11,0.15)" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg,rgba(245,158,11,0.3),rgba(245,158,11,0.12))"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))"; e.currentTarget.style.transform = "none"; }}
+                    ><span style={{ fontSize: 22 }}>🎲</span> ZUFÄLLIGE QUEST WÜRFELN</button>
+
+                    {/* Category filter */}
+                    <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
+                      {[{ key: "all", label: "Alle", color: theme.accent }, ...CATEGORIES.map(c => ({ key: c.key, label: `${c.icon} ${c.stat}`, color: c.color }))].map(f => (
+                        <button key={f.key} onClick={() => setTemplateFilter(f.key)} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 10, fontWeight: 700, flexShrink: 0, background: templateFilter === f.key ? f.color + "22" : "transparent", color: templateFilter === f.key ? f.color : "#475569", border: `1px solid ${templateFilter === f.key ? f.color + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", transition: "all 0.2s", cursor: "pointer" }}>{f.label}</button>
+                      ))}
+                    </div>
+
+                    {/* Template grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, paddingBottom: 16 }}>
+                      {QUEST_TEMPLATES.filter(tmpl => templateFilter === "all" || tmpl.c === templateFilter).map((tmpl, i) => {
+                        const cat = CATEGORIES.find(c => c.key === tmpl.c) || CATEGORIES[0];
+                        const diff = DIFFICULTIES.find(d => d.key === tmpl.d) || DIFFICULTIES[1];
+                        return (
+                          <button key={i} onClick={() => { setQTitle(tmpl.t); setQCat(tmpl.c); setQDiff(tmpl.d); setQType(tmpl.tp); setShowTemplates(false); }} style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(10,10,24,0.8)", border: `1px solid ${cat.color}22`, textAlign: "left", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 5 }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.background = cat.color + "0d"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "22"; e.currentTarget.style.background = "rgba(10,10,24,0.8)"; e.currentTarget.style.transform = "none"; }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.3 }}>{tmpl.t}</div>
+                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "15", fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon}{cat.stat}</span>
+                              <span style={{ fontSize: 8, color: diff.color, padding: "1px 5px", borderRadius: 4, background: diff.color + "15", fontFamily: "'JetBrains Mono',monospace" }}>{diff.icon}{diff.label}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ══ ERSTELLEN-MODUS ══ */}
+                {!showTemplates && <>
+
+                  {/* Quest Title */}
+                  <div style={{ marginTop: 16, marginBottom: 18 }}>
+                    <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>QUEST TITEL</label>
+                    <input value={qTitle} onChange={e => setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..." autoFocus
+                      style={{ width: "100%", padding: "14px 18px", borderRadius: 14, fontSize: 15, background: "rgba(4,4,12,0.9)", border: `1px solid ${randomizing ? "#f59e0b88" : theme.primary + "44"}`, color: "#fff", outline: "none", fontFamily: "'Outfit',sans-serif", letterSpacing: 0.5, transition: "all 0.3s", boxShadow: randomizing ? `0 0 20px rgba(245,158,11,0.25)` : `inset 0 2px 10px rgba(0,0,0,0.5)`, boxSizing: "border-box" }}
+                      onFocus={e => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `inset 0 2px 10px rgba(0,0,0,0.5), 0 0 20px ${theme.glow}, 0 0 0 1px ${theme.primary}`; e.target.style.outline = "none"; }}
+                      onBlur={e => { e.target.style.borderColor = `${theme.primary}44`; e.target.style.boxShadow = `inset 0 2px 10px rgba(0,0,0,0.5)`; e.target.style.outline = "none"; }}
+                      onKeyDown={e => e.key === "Enter" && qTitle.trim() && createQuest()} />
+                  </div>
+
+                  {/* Quest Type */}
+                  <div style={{ marginBottom: 18 }}>
+                    <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>QUEST TYP</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      {[
+                        { key: "side", icon: "📋", label: "Side Quest", color: "#a78bfa", desc: "Kein Zeitlimit" },
+                        { key: "daily", icon: "📅", label: "Daily Quest", color: "#22d3ee", desc: "Täglich zurückgesetzt" },
+                        { key: "weekly", icon: "📆", label: "Weekly Quest", color: "#8b5cf6", desc: "2× XP & Gold" },
+                        { key: "chained", icon: "⛓️", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" },
+                      ].map(t => {
+                        const active = qType === t.key;
+                        return (
+                          <button key={t.key} onClick={() => setQType(t.key)} style={{
+                            padding: "11px 12px", borderRadius: 14, fontSize: 12, fontWeight: 700,
+                            background: active ? `linear-gradient(135deg,${t.color}22,${t.color}0d)` : "rgba(12,12,26,0.6)",
+                            color: active ? t.color : "#475569",
+                            border: `1px solid ${active ? t.color + "55" : "#1e2940"}`,
+                            transition: "all 0.25s", fontFamily: "'Outfit',sans-serif",
+                            display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3,
+                            boxShadow: active ? `0 4px 16px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.05)` : "none",
+                            cursor: "pointer", textAlign: "left"
+                          }}
+                            onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = t.color + "33"; e.currentTarget.style.color = t.color + "cc"; } }}
+                            onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
+                          >
+                            <span style={{ fontSize: 13 }}>{t.icon} {t.label}</span>
+                            <span style={{ fontSize: 9, opacity: active ? 0.8 : 0.45, fontWeight: 400, fontFamily: "'JetBrains Mono',monospace" }}>{t.desc}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Difficulty */}
+                  <div style={{ marginBottom: 18 }}>
+                    <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>SCHWIERIGKEIT</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                      {DIFFICULTIES.map(d => {
+                        const active = qDiff === d.key;
+                        const typeCfg = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
+                        const xpVal = Math.round(d.xp * (typeCfg.xpMult || 1));
+                        return (
+                          <button key={d.key} onClick={() => setQDiff(d.key)} style={{
+                            padding: "12px 4px", borderRadius: 14, fontSize: 13,
+                            background: active ? `linear-gradient(135deg,${d.color}22,${d.color}0d)` : "rgba(12,12,26,0.6)",
+                            color: active ? d.color : "#475569",
+                            border: `1px solid ${active ? d.color + "55" : "#1e2940"}`,
+                            transition: "all 0.25s", display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                            boxShadow: active ? `0 4px 12px ${d.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : "none",
+                            cursor: "pointer"
+                          }}
+                            onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = d.color + "44"; e.currentTarget.style.color = d.color + "cc"; } }}
+                            onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
+                          >
+                            <span style={{ fontSize: 18, lineHeight: 1 }}>{d.icon}</span>
+                            <span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{d.label.toUpperCase()}</span>
+                            <span style={{ fontSize: 9, opacity: 0.75, fontFamily: "'JetBrains Mono',monospace" }}>+{xpVal} XP</span>
+                            <span style={{ fontSize: 8, opacity: 0.5, fontFamily: "'JetBrains Mono',monospace" }}>{d.waitHours}h Timer</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Category */}
+                  <div style={{ marginBottom: 18 }}>
+                    <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>STATS KATEGORIE</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                      {CATEGORIES.map(c => { const active = qCat === c.key; return (<button key={c.key} onClick={() => setQCat(c.key)} style={{ padding: "11px 6px", borderRadius: 14, fontSize: 12, background: active ? `linear-gradient(135deg,${c.color}22,${c.color}0d)` : "rgba(12,12,26,0.6)", color: active ? c.color : "#475569", border: `1px solid ${active ? c.color + "55" : "#1e2940"}`, transition: "all 0.25s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, boxShadow: active ? `0 4px 12px ${c.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : "none", cursor: "pointer" }} onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = c.color + "44"; e.currentTarget.style.color = c.color + "cc"; } }} onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}>  <span style={{ fontSize: 18, lineHeight: 1 }}>{c.icon}</span><span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{c.stat}</span><span style={{ fontSize: 9, opacity: active ? 0.8 : 0.4, fontFamily: "'Outfit',sans-serif", textAlign: "center", lineHeight: 1.2 }}>{c.label}</span></button>); })}
+                    </div>
+                  </div>
+
+                  {/* Reward Preview */}
+                  {(() => {
+                    const typeCfg = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
+                    const diff = DIFFICULTIES.find(d => d.key === qDiff);
+                    const cat = CATEGORIES.find(c => c.key === qCat);
+                    const baseXp = Math.round(diff.xp * (typeCfg.xpMult || 1));
+                    const baseGold = Math.round(diff.gold * (typeCfg.goldMult || 1));
+                    return (
+                      <div style={{ background: "rgba(8,8,20,0.95)", borderRadius: 16, padding: "14px 16px", marginBottom: 16, border: `1px solid ${theme.primary}1a`, borderLeft: `3px solid ${diff.color}`, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03)` }}>
+                        <div style={{ fontSize: 9, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>VORSCHAU BELOHNUNG</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr auto 1fr", gap: 0, alignItems: "center" }}>
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>SCHWIERIG</div>
+                            <div style={{ fontSize: 12, color: diff.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{diff.icon} {diff.label}</div>
+                          </div>
+                          <div style={{ width: 1, height: 28, background: "#1e2940", margin: "0 8px" }} />
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>BELOHNUNG</div>
+                            <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", gap: 6, justifyContent: "center" }}>
+                              <span style={{ color: "#67e8f9" }}>+{baseXp} XP</span>
+                              <span style={{ color: "#fbbf24" }}>+{baseGold}G</span>
+                            </div>
+                          </div>
+                          <div style={{ width: 1, height: 28, background: "#1e2940", margin: "0 8px" }} />
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>KATEGORIE</div>
+                            <div style={{ fontSize: 12, color: cat.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon} {cat.stat}</div>
+                          </div>
+                        </div>
+                        {qDiff === "boss" && <div style={{ marginTop: 10, padding: "5px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid #ef444433", fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", textAlign: "center", animation: "pulse 2s infinite" }}>⚠ 🌑 SCHATTEN BESCHWÖRUNGSCHANCE</div>}
+                        {qType === "chained" && <div style={{ marginTop: 6, padding: "5px 10px", background: "rgba(245,158,11,0.06)", borderRadius: 8, border: "1px solid #f59e0b22", fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>⛓️ 3-Schritte Kette · +25% XP pro Schritt</div>}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Habit Sync Toggle */}
+                  {(qType === "daily" || qType === "weekly") && (
+                    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: "rgba(10,10,24,0.6)", padding: "12px 14px", borderRadius: 12, border: `1px solid ${qSyncHabit ? theme.primary + "55" : "#1e2940"}`, transition: "all 0.2s", marginBottom: 16 }}>
+                      <input type="checkbox" checked={qSyncHabit} onChange={e => setQSyncHabit(e.target.checked)} style={{ accentColor: theme.primary, width: 16, height: 16, cursor: "pointer" }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>Mit Habit-Tracker verknüpfen</div>
+                        <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Erstellt automatisch eine Routine zum Tracken des Streaks.</div>
+                      </div>
+                    </label>
+                  )}
+
+                </>}
+              </div>
+
+              {!showTemplates && (
+                <div style={{ padding: "14px 24px 20px", flexShrink: 0, borderTop: `1px solid ${theme.primary}1a` }}>
+                  <button onClick={() => {
+                    if (qType === "chained") addChainedQuest(qTitle, qCat, qDiff);
+                    else createQuest();
+                    setQTitle(""); setShowCreate(false); setShowTemplates(false);
+                  }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(15,15,30,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)` : "none", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid #1e2940" }}
+                    onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.filter = "brightness(1.1)"; } }}
+                    onMouseLeave={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "none"; e.currentTarget.style.filter = "none"; } }}
+                  >{qTitle.trim() ? (editingQuestId ? "✦ SPEICHERN ✦" : "✦ QUEST ANNEHMEN ✦") : "Quest-Titel eingeben..."}</button>
                 </div>
               )}
 
-              {/* ══ ERSTELLEN-MODUS ══ */}
-              {!showTemplates && <>
-
-                {/* Quest Title */}
-                <div style={{ marginTop: 16, marginBottom: 18 }}>
-                  <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>QUEST TITEL</label>
-                  <input value={qTitle} onChange={e => setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..." autoFocus
-                    style={{ width: "100%", padding: "14px 18px", borderRadius: 14, fontSize: 15, background: "rgba(4,4,12,0.9)", border: `1px solid ${randomizing ? "#f59e0b88" : theme.primary + "44"}`, color: "#fff", outline: "none", fontFamily: "'Outfit',sans-serif", letterSpacing: 0.5, transition: "all 0.3s", boxShadow: randomizing ? `0 0 20px rgba(245,158,11,0.25)` : `inset 0 2px 10px rgba(0,0,0,0.5)`, boxSizing: "border-box" }}
-                    onFocus={e => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `inset 0 2px 10px rgba(0,0,0,0.5), 0 0 20px ${theme.glow}, 0 0 0 1px ${theme.primary}`; e.target.style.outline = "none"; }}
-                    onBlur={e => { e.target.style.borderColor = `${theme.primary}44`; e.target.style.boxShadow = `inset 0 2px 10px rgba(0,0,0,0.5)`; e.target.style.outline = "none"; }}
-                    onKeyDown={e => e.key === "Enter" && qTitle.trim() && createQuest()} />
-                </div>
-
-                {/* Quest Type */}
-                <div style={{ marginBottom: 18 }}>
-                  <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>QUEST TYP</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {[
-                      { key: "side", icon: "📋", label: "Side Quest", color: "#a78bfa", desc: "Kein Zeitlimit" },
-                      { key: "daily", icon: "📅", label: "Daily Quest", color: "#22d3ee", desc: "Täglich zurückgesetzt" },
-                      { key: "weekly", icon: "📆", label: "Weekly Quest", color: "#8b5cf6", desc: "2× XP & Gold" },
-                      { key: "chained", icon: "⛓️", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" },
-                    ].map(t => {
-                      const active = qType === t.key;
-                      return (
-                        <button key={t.key} onClick={() => setQType(t.key)} style={{
-                          padding: "11px 12px", borderRadius: 14, fontSize: 12, fontWeight: 700,
-                          background: active ? `linear-gradient(135deg,${t.color}22,${t.color}0d)` : "rgba(12,12,26,0.6)",
-                          color: active ? t.color : "#475569",
-                          border: `1px solid ${active ? t.color + "55" : "#1e2940"}`,
-                          transition: "all 0.25s", fontFamily: "'Outfit',sans-serif",
-                          display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3,
-                          boxShadow: active ? `0 4px 16px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.05)` : "none",
-                          cursor: "pointer", textAlign: "left"
-                        }}
-                          onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = t.color + "33"; e.currentTarget.style.color = t.color + "cc"; } }}
-                          onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
-                        >
-                          <span style={{ fontSize: 13 }}>{t.icon} {t.label}</span>
-                          <span style={{ fontSize: 9, opacity: active ? 0.8 : 0.45, fontWeight: 400, fontFamily: "'JetBrains Mono',monospace" }}>{t.desc}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Difficulty */}
-                <div style={{ marginBottom: 18 }}>
-                  <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>SCHWIERIGKEIT</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-                    {DIFFICULTIES.map(d => {
-                      const active = qDiff === d.key;
-                      const typeCfg = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
-                      const xpVal = Math.round(d.xp * (typeCfg.xpMult || 1));
-                      return (
-                        <button key={d.key} onClick={() => setQDiff(d.key)} style={{
-                          padding: "12px 4px", borderRadius: 14, fontSize: 13,
-                          background: active ? `linear-gradient(135deg,${d.color}22,${d.color}0d)` : "rgba(12,12,26,0.6)",
-                          color: active ? d.color : "#475569",
-                          border: `1px solid ${active ? d.color + "55" : "#1e2940"}`,
-                          transition: "all 0.25s", display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                          boxShadow: active ? `0 4px 12px ${d.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : "none",
-                          cursor: "pointer"
-                        }}
-                          onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = d.color + "44"; e.currentTarget.style.color = d.color + "cc"; } }}
-                          onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
-                        >
-                          <span style={{ fontSize: 18, lineHeight: 1 }}>{d.icon}</span>
-                          <span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{d.label.toUpperCase()}</span>
-                          <span style={{ fontSize: 9, opacity: 0.75, fontFamily: "'JetBrains Mono',monospace" }}>+{xpVal} XP</span>
-                          <span style={{ fontSize: 8, opacity: 0.5, fontFamily: "'JetBrains Mono',monospace" }}>{d.waitHours}h Timer</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Category */}
-                <div style={{ marginBottom: 18 }}>
-                  <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>STATS KATEGORIE</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                    {CATEGORIES.map(c => { const active = qCat === c.key; return (<button key={c.key} onClick={() => setQCat(c.key)} style={{ padding: "11px 6px", borderRadius: 14, fontSize: 12, background: active ? `linear-gradient(135deg,${c.color}22,${c.color}0d)` : "rgba(12,12,26,0.6)", color: active ? c.color : "#475569", border: `1px solid ${active ? c.color + "55" : "#1e2940"}`, transition: "all 0.25s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, boxShadow: active ? `0 4px 12px ${c.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : "none", cursor: "pointer" }} onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = c.color + "44"; e.currentTarget.style.color = c.color + "cc"; } }} onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}>  <span style={{ fontSize: 18, lineHeight: 1 }}>{c.icon}</span><span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{c.stat}</span><span style={{ fontSize: 9, opacity: active ? 0.8 : 0.4, fontFamily: "'Outfit',sans-serif", textAlign: "center", lineHeight: 1.2 }}>{c.label}</span></button>); })}
-                  </div>
-                </div>
-
-                {/* Reward Preview */}
-                {(() => {
-                  const typeCfg = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
-                  const diff = DIFFICULTIES.find(d => d.key === qDiff);
-                  const cat = CATEGORIES.find(c => c.key === qCat);
-                  const baseXp = Math.round(diff.xp * (typeCfg.xpMult || 1));
-                  const baseGold = Math.round(diff.gold * (typeCfg.goldMult || 1));
-                  return (
-                    <div style={{ background: "rgba(8,8,20,0.95)", borderRadius: 16, padding: "14px 16px", marginBottom: 16, border: `1px solid ${theme.primary}1a`, borderLeft: `3px solid ${diff.color}`, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03)` }}>
-                      <div style={{ fontSize: 9, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>VORSCHAU BELOHNUNG</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr auto 1fr", gap: 0, alignItems: "center" }}>
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>SCHWIERIG</div>
-                          <div style={{ fontSize: 12, color: diff.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{diff.icon} {diff.label}</div>
-                        </div>
-                        <div style={{ width: 1, height: 28, background: "#1e2940", margin: "0 8px" }} />
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>BELOHNUNG</div>
-                          <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", gap: 6, justifyContent: "center" }}>
-                            <span style={{ color: "#67e8f9" }}>+{baseXp} XP</span>
-                            <span style={{ color: "#fbbf24" }}>+{baseGold}G</span>
-                          </div>
-                        </div>
-                        <div style={{ width: 1, height: 28, background: "#1e2940", margin: "0 8px" }} />
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>KATEGORIE</div>
-                          <div style={{ fontSize: 12, color: cat.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon} {cat.stat}</div>
-                        </div>
-                      </div>
-                      {qDiff === "boss" && <div style={{ marginTop: 10, padding: "5px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid #ef444433", fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", textAlign: "center", animation: "pulse 2s infinite" }}>⚠ 🌑 SCHATTEN BESCHWÖRUNGSCHANCE</div>}
-                      {qType === "chained" && <div style={{ marginTop: 6, padding: "5px 10px", background: "rgba(245,158,11,0.06)", borderRadius: 8, border: "1px solid #f59e0b22", fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>⛓️ 3-Schritte Kette · +25% XP pro Schritt</div>}
-                    </div>
-                  );
-                })()}
-
-                {/* Habit Sync Toggle */}
-                {(qType === "daily" || qType === "weekly") && (
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: "rgba(10,10,24,0.6)", padding: "12px 14px", borderRadius: 12, border: `1px solid ${qSyncHabit ? theme.primary + "55" : "#1e2940"}`, transition: "all 0.2s", marginBottom: 16 }}>
-                    <input type="checkbox" checked={qSyncHabit} onChange={e => setQSyncHabit(e.target.checked)} style={{ accentColor: theme.primary, width: 16, height: 16, cursor: "pointer" }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>Mit Habit-Tracker verknüpfen</div>
-                      <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Erstellt automatisch eine Routine zum Tracken des Streaks.</div>
-                    </div>
-                  </label>
-                )}
-
-              </>}
             </div>
-
-            {!showTemplates && (
-              <div style={{ padding: "14px 24px 20px", flexShrink: 0, borderTop: `1px solid ${theme.primary}1a` }}>
-                <button onClick={() => {
-                  if (qType === "chained") addChainedQuest(qTitle, qCat, qDiff);
-                  else createQuest();
-                  setQTitle(""); setShowCreate(false); setShowTemplates(false);
-                }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(15,15,30,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)` : "none", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid #1e2940" }}
-                  onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.filter = "brightness(1.1)"; } }}
-                  onMouseLeave={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "none"; e.currentTarget.style.filter = "none"; } }}
-                >{qTitle.trim() ? (editingQuestId ? "✦ SPEICHERN ✦" : "✦ QUEST ANNEHMEN ✦") : "Quest-Titel eingeben..."}</button>
-              </div>
-            )}
-
           </div>
-        </div>
-      )
+        )
       }
     </div >
   );

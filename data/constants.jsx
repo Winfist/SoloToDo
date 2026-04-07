@@ -15,10 +15,10 @@ const RANKS = [
 ];
 
 const DIFFICULTIES = [
-  { key: "easy", label: "Easy", xp: 5, gold: 10, color: "#6b7280", icon: "◇", waitHours: 1 },
-  { key: "normal", label: "Normal", xp: 15, gold: 25, color: "#22d3ee", icon: "◆", waitHours: 2 },
-  { key: "hard", label: "Hard", xp: 40, gold: 60, color: "#a78bfa", icon: "★", waitHours: 4 },
-  { key: "boss", label: "Boss", xp: 100, gold: 150, color: "#ef4444", icon: "♛", waitHours: 8 },
+  { key: "easy", label: "Easy", xp: 5, gold: 10, color: "#6b7280", icon: "◇", waitHours: 0 },
+  { key: "normal", label: "Normal", xp: 15, gold: 25, color: "#22d3ee", icon: "◆", waitHours: 0.5 },
+  { key: "hard", label: "Hard", xp: 40, gold: 60, color: "#a78bfa", icon: "★", waitHours: 2 },
+  { key: "boss", label: "Boss", xp: 100, gold: 150, color: "#ef4444", icon: "♛", waitHours: 3 },
 ];
 
 const CATEGORIES = [
@@ -668,7 +668,7 @@ const DEFAULT_STATE = {
   shopPurchases: [], selectedTheme: "default", selectedTitle: "",
   shadowArmy: { shadows: [], capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 },
   totalXpEarned: 0, totalQuestsCompleted: 0,
-  dailyUserQuestsCreated: 0, extraDailySlots: 0,
+  dailyUserQuestsCreated: 0, extraDailySlots: 0, dailyUserXP: 0, integrityScore: 100,
   dungeons: [], lastDungeonRefresh: null, dungeonHistory: [],
   achievements: { unlocked: [], notified: [] },
   skills: { unlocked: [] },
@@ -709,6 +709,7 @@ const DEFAULT_STATE = {
     completedArcs: [],       // Array von arc IDs z.B. ["arc1"]
     totalStoryXp: 0,
   },
+  lifeDomains: [],
   multiplayer: {
     activeRaid: null,
     guild: null,
@@ -2897,13 +2898,13 @@ function JobsView({ state, onSwitch, onActivate, theme }) {
           <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🎭</div>
           <h2 style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 4 }}>JOB SYSTEM</h2>
         </div>
-        <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>Wähle eine Spezialisierung ab Level 50 um deine Macht als Hunter zu perfektionieren. Jeder Job bietet einzigartige Synergien mit deinem Shadow-System.</p>
+        <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>Wähle eine Spezialisierung ab Level 15 um deine Macht als Hunter zu perfektionieren. Jeder Job bietet einzigartige Synergien mit deinem Shadow-System.</p>
       </div>
 
-      {state.level < 50 && (
+      {state.level < 15 && (
         <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.2)", borderLeft: "4px solid #ef4444", borderRadius: 14, padding: "18px", marginBottom: 24, backdropFilter: "blur(8px)" }}>
           <div style={{ fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, marginBottom: 6, letterSpacing: 2 }}>ZUGRIFF VERWEIGERT</div>
-          <div style={{ fontSize: 13, color: "#fca5a5", lineHeight: 1.5 }}>Das Job-System wird erst ab Level 50 freigeschaltet. Trainiere härter, Hunter. <br /><span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>Aktuelles Level: {state.level} / 50</span></div>
+          <div style={{ fontSize: 13, color: "#fca5a5", lineHeight: 1.5 }}>Das Job-System wird erst ab Level 15 freigeschaltet. Trainiere härter, Hunter. <br /><span style={{ fontSize: 11, color: "#ef4444", fontWeight: 700 }}>Aktuelles Level: {state.level} / 15</span></div>
         </div>
       )}
 

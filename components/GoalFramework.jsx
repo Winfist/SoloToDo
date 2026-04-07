@@ -16,7 +16,7 @@ const GOAL_CATEGORIES = [
 function getToday() { return new Date().toISOString().slice(0, 10); }
 
 // ── Goal Card ────────────────────────────────────────────────
-function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, theme }) {
+function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, onGenerateQuest, theme }) {
     const [expanded, setExpanded] = useState(false);
     const cat = GOAL_CATEGORIES.find(c => c.key === goal.category) || GOAL_CATEGORIES[0];
 
@@ -141,6 +141,11 @@ function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, theme }) {
                                         <div style={{ display: "flex", gap: 8, marginTop: 3 }}>
                                             <span style={{ fontSize: 9, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace" }}>+{Math.min(m.xpBonus || 50, 50)} XP</span>
                                             {m.titleReward && <span style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace" }}>🏆 {m.titleReward}</span>}
+                                            {(!m.completed && onGenerateQuest) && (
+                                                <button onClick={(e) => { e.stopPropagation(); onGenerateQuest(goal, m); }} style={{ fontSize: 9, color: theme?.accent || "#67e8f9", background: "transparent", border: `1px dashed ${theme?.accent || "#67e8f9"}55`, borderRadius: 4, padding: "1px 6px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                                                    <span>⚔️</span> Quest Erstellen
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -393,6 +398,25 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
     const activeGoals = goals.filter(g => !g.milestones.every(m => m.completed));
     const completedGoals = goals.filter(g => g.milestones.every(m => m.completed));
 
+    const handleGenerateQuest = useCallback((goal, milestone) => {
+        // Find out if already generated
+        const existingQuest = state?.quests?.find(q => q.linkedMilestoneId === milestone.id);
+        if (existingQuest) {
+            notify("Quest für diesen Meilenstein existiert bereits!", "warning");
+            return;
+        }
+
+        const newQuest = {
+            id: genId(), title: `[${goal.title}] ${milestone.title}`, difficulty: "normal",
+            category: goal.category === "fitness" || goal.category === "health" ? "str" : goal.category === "learning" || goal.category === "productivity" ? "int" : "cha",
+            type: "side", createdAt: getToday(),
+            linkedGoalId: goal.id, linkedMilestoneId: milestone.id, isSystem: true,
+            xpMult: 2, goldMult: 1.5 // Goals give bonus xp
+        };
+        persist({ ...state, quests: [...(state.quests || []), newQuest] });
+        notify(`Quest generiert: ${newQuest.title}`, "success");
+    }, [state, persist, notify]);
+
     return (
         <div style={{ animation: "fadeIn 0.35s ease" }}>
             {showCreate && <CreateGoalModal onClose={closeCreate} onSave={handleCreate} theme={theme} />}
@@ -408,7 +432,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
             {activeGoals.length > 0 && (
                 <div style={{ marginBottom: 24 }}>
                     {activeGoals.map(goal => (
-                        <GoalCard key={goal.id} goal={goal} onUpdateMilestone={handleUpdateMilestone} onEdit={openEdit} onDelete={handleDelete} theme={theme} />
+                        <GoalCard key={goal.id} goal={goal} onUpdateMilestone={handleUpdateMilestone} onEdit={openEdit} onDelete={handleDelete} onGenerateQuest={handleGenerateQuest} theme={theme} />
                     ))}
                 </div>
             )}

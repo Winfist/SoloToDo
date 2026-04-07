@@ -191,6 +191,66 @@ export function detectBestTime(state) {
     };
 }
 
+// ── Weekly Path Report ───────────────────────────────────────
+
+export function checkWeeklyPathReport(state) {
+    // Only fire on Mondays, once per week
+    const now = new Date();
+    if (now.getDay() !== 1) return null; // 1 = Monday
+    const today = getToday();
+    if (state.lastWeeklyPathReport === today) return null;
+
+    const completed = state.completedQuests || [];
+    if (completed.length < 5) return null;
+
+    // Count quests from last 7 days by category
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const threshold = sevenDaysAgo.toISOString().slice(0, 10);
+    const recent = completed.filter(q => q.completedAt >= threshold);
+
+    const statNames = { str: "STR", int: "INT", vit: "VIT", agi: "AGI", cha: "CHA" };
+    const counts = { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
+    recent.forEach(q => { if (q.category && counts[q.category] !== undefined) counts[q.category]++; });
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    if (total === 0) return null;
+
+    // Find strongest and weakest
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const strongest = sorted[0];
+    const weakest = sorted[sorted.length - 1];
+
+    // Check focus domains for mismatch
+    const focusDomains = state.lifeDomains || [];
+    const domainToStat = { fitness: "str", wissen: "int", gesundheit: "vit", karriere: "agi", soziales: "cha", dating: "cha", finanzen: "agi", mindset: "int" };
+    let focusWarning = "";
+    if (focusDomains.length > 0) {
+        const focusStats = [...new Set(focusDomains.map(d => domainToStat[d.toLowerCase()] || d))];
+        const neglectedFocus = focusStats.filter(s => counts[s] <= 1);
+        if (neglectedFocus.length > 0) {
+            focusWarning = ` Deine Fokus-Domänen (${neglectedFocus.map(s => statNames[s]).join(", ")}) brauchen mehr Aufmerksamkeit!`;
+        }
+    }
+
+    const lines = [
+        `Wochenanalyse: ${total} Quests in 7 Tagen.`,
+        sorted.map(([s, c]) => `${statNames[s]}: ${c}`).join(" · "),
+        `Stärkster Bereich: ${statNames[strongest[0]]} (${strongest[1]}x). Schwächster: ${statNames[weakest[0]]} (${weakest[1]}x).`,
+    ];
+    if (focusWarning) lines.push(focusWarning);
+    lines.push(`Empfehlung: Fokussiere diese Woche auf ${statNames[weakest[0]]}-Quests.`);
+
+    return {
+        type: "coaching",
+        icon: "📊",
+        title: "WEEKLY PATH REPORT",
+        lines,
+        priority: 2,
+        _setLastWeeklyPathReport: today, // Flag for caller to persist
+    };
+}
+
 // ── Run all checks (called periodically) ────────────────────
 
 export function runCoachChecks(state, prevState) {
@@ -202,6 +262,7 @@ export function runCoachChecks(state, prevState) {
         checkInactivity,
         checkOverexertion,
         checkImbalance,
+        checkWeeklyPathReport,
     ];
 
     for (const check of checks) {
