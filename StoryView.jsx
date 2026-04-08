@@ -366,18 +366,132 @@ function getChapterOutro(ch) {
   return outros[ch.id] || "Das Kapitel schließt sich. Neue Herausforderungen warten.";
 }
 
+// ─── BOSS FIGHT PANEL ────────────────────────────────────────
+function BossFightPanel({ arc, boss, onClose, onComplete, isDefeated }) {
+  const [phase, setPhase] = useState(0); // 0=approach 1=battle 2=victory
+  const [textVisible, setTextVisible] = useState(false);
+
+  const bossPhases = [
+    {
+      icon: boss.icon,
+      dramatic: null,
+      narration: `${boss.name}. ${arc.rank}-Rank Boss. Du hast alle Etagen überwunden – jetzt wartet die finale Prüfung. Kein Rückzug mehr.`,
+      systemMsg: `SYSTEM: BOSS-GEGNER DETEKTIERT — ${boss.name.toUpperCase()}`,
+    },
+    {
+      icon: "⚔️",
+      dramatic: "BOSS FIGHT",
+      narration: `Die Welt scheint sich zu verlangsamen. Deine Schatten sammeln sich um dich. Du kennst diesen Kampf – du wirst gewinnen.`,
+      systemMsg: `SYSTEM: KAMPFBEREITSCHAFT MAXIMIERT — ALLE FÄHIGKEITEN AKTIV`,
+    },
+    {
+      icon: "🏆",
+      dramatic: "VICTORY",
+      narration: `${boss.name} ist gefallen. Deine Macht wächst. Ein neuer Weg öffnet sich – dunkel, unbekannt und dein.`,
+      systemMsg: `SYSTEM: BOGEN-BOSS ÜBERWUNDEN — BELOHNUNGEN WERDEN GEWÄHRT`,
+    },
+  ];
+
+  useEffect(() => {
+    setTextVisible(false);
+    const t = setTimeout(() => setTextVisible(true), 300);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  if (phase === 3) {
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(10,0,0,0.98)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontSize: 72, marginBottom: 16, animation: "successPulse 0.6s ease" }}>⚔️</div>
+        <div style={{ fontSize: 11, letterSpacing: 6, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12 }}>BOSS BESIEGT</div>
+        <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 3, textShadow: "0 0 40px #ef4444", marginBottom: 8, textAlign: "center", padding: "0 1rem" }}>{boss.name}</div>
+        <div style={{ fontSize: 12, color: "#ef4444aa", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2, marginBottom: 24 }}>{arc.rank}-RANK BOSS — ÜBERWUNDEN</div>
+        {!isDefeated ? (
+          <div style={{ display: "flex", gap: 16, padding: "16px 24px", borderRadius: 16, background: "rgba(239,68,68,0.1)", border: "1px solid #ef444433", marginBottom: 24, flexWrap: "wrap", justifyContent: "center" }}>
+            {boss.rewards?.xp && <span style={{ color: "#f59e0b", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>+{boss.rewards.xp} XP</span>}
+            {boss.rewards?.gold && <span style={{ color: "#fbbf24", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>+{boss.rewards.gold} Gold</span>}
+            {boss.rewards?.title && <span style={{ color: "#a78bfa", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>Titel: "{boss.rewards.title}"</span>}
+            {boss.rewards?.namedShadow && <span style={{ color: "#22d3ee", fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>Shadow: {boss.rewards.namedShadow}</span>}
+          </div>
+        ) : (
+          <div style={{ color: "#475569", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", marginBottom: 24 }}>Dieser Boss wurde bereits besiegt.</div>
+        )}
+        <button onClick={() => onComplete(boss)} style={{ padding: "16px 40px", borderRadius: 14, background: "linear-gradient(135deg,#ef4444,#b91c1c)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "'Cinzel', serif", letterSpacing: 3, cursor: "pointer" }}>
+          WEITER ⚔️
+        </button>
+      </div>
+    );
+  }
+
+  const current = bossPhases[phase];
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "radial-gradient(ellipse at center, #1a0000 0%, #0a0004 60%, #000 100%)", display: "flex", flexDirection: "column" }}
+      onClick={() => setPhase(p => p + 1)}
+    >
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", padding: 24 }}>
+        <div style={{ position: "absolute", top: 20, left: 20, display: "flex", gap: 8 }}>
+          <div style={{ padding: "6px 12px", borderRadius: 8, background: "#ef444422", border: "1px solid #ef444444", color: "#ef4444", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2 }}>
+            {arc.rank}-RANK BOSS
+          </div>
+          <div style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(239,68,68,0.1)", border: "1px solid #ef444433", color: "#fca5a5", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+            ⚔️ {boss.name}
+          </div>
+        </div>
+
+        <div style={{ fontSize: phase === 1 ? 120 : 80, marginBottom: 24, filter: "drop-shadow(0 0 60px #ef4444)", animation: "float 3s ease-in-out infinite" }}>
+          {current.icon}
+        </div>
+
+        <div style={{ maxWidth: 520, textAlign: "center", transition: "opacity 0.4s ease", opacity: textVisible ? 1 : 0 }}>
+          {current.systemMsg && (
+            <div style={{ marginBottom: 16, padding: "12px 20px", borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "1px solid #ef444444", color: "#fca5a5", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2 }}>
+              ▶ {current.systemMsg}
+            </div>
+          )}
+          {current.dramatic && (
+            <div style={{ fontSize: 52, fontWeight: 900, color: "#ef4444", fontFamily: "'Cinzel', serif", letterSpacing: 8, textShadow: "0 0 60px #ef4444", marginBottom: 16 }}>
+              {current.dramatic}
+            </div>
+          )}
+          <p style={{ fontSize: 18, color: "#fca5a5", fontFamily: "'Outfit', sans-serif", lineHeight: 1.7 }}>
+            {current.narration}
+          </p>
+        </div>
+
+        <div style={{ position: "absolute", bottom: 20, display: "flex", gap: 8 }}>
+          {bossPhases.map((_, i) => (
+            <div key={i} style={{ width: i === phase ? 20 : 6, height: 6, borderRadius: 3, background: i <= phase ? "#ef4444" : "#1e1e3f", transition: "all 0.3s ease" }} />
+          ))}
+        </div>
+
+        <div style={{ position: "absolute", bottom: 48, right: 24, fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2, animation: "pulse 2s ease-in-out infinite" }}>
+          TIPPEN UM FORTZUFAHREN ›
+        </div>
+      </div>
+
+      <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ position: "absolute", top: 16, right: 16, width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid #334155", color: "#64748b", cursor: "pointer", fontSize: 16 }}>
+        ✕
+      </button>
+    </div>
+  );
+}
+
 // ─── STORY VIEW COMPONENT ────────────────────────────────────
-export default function StoryView({ gameState, onChapterComplete, theme }) {
+export default function StoryView({ gameState, onChapterComplete, onBossComplete, theme }) {
   const [selectedArc, setSelectedArc] = useState(null);
   const [activeChapter, setActiveChapter] = useState(null);
   const [activeArcForChapter, setActiveArcForChapter] = useState(null);
+  const [activeBoss, setActiveBoss] = useState(null);
+  const [activeBossArc, setActiveBossArc] = useState(null);
 
   const playerLevel = gameState?.level || 1;
   const completedChapters = gameState?.story?.completedChapters || [];
+  const defeatedBosses = gameState?.story?.defeatedBosses || [];
   const T = theme || { primary: "#4f6ef7", secondary: "#7c3aed", accent: "#93b4fd", card: "rgba(12,12,24,0.85)", surface: "rgba(20,20,40,0.6)" };
 
   const isChapterUnlocked = (chapter) => playerLevel >= chapter.unlockLevel;
   const isChapterCompleted = (chapterId) => completedChapters.includes(chapterId);
+  const isBossDefeated = (arcId) => defeatedBosses.includes(arcId);
 
   const getArcProgress = (arc) => {
     const total = arc.chapters.length;
@@ -394,6 +508,26 @@ export default function StoryView({ gameState, onChapterComplete, theme }) {
       onChapterComplete(chapter);
     }
   };
+
+  const handleBossComplete = (boss) => {
+    const arcId = activeBossArc?.id;
+    setActiveBoss(null);
+    setActiveBossArc(null);
+    if (onBossComplete) onBossComplete(boss, arcId);
+    else if (onChapterComplete) onChapterComplete({ ...boss, id: `boss_${arcId}`, isBoss: true });
+  };
+
+  if (activeBoss && activeBossArc) {
+    return (
+      <BossFightPanel
+        arc={activeBossArc}
+        boss={activeBoss}
+        onClose={() => { setActiveBoss(null); setActiveBossArc(null); }}
+        onComplete={handleBossComplete}
+        isDefeated={isBossDefeated(activeBossArc.id)}
+      />
+    );
+  }
 
   if (activeChapter && activeArcForChapter) {
     return (
@@ -501,15 +635,38 @@ export default function StoryView({ gameState, onChapterComplete, theme }) {
                   {(arc.arcBoss || arc.finalBoss) && (() => {
                     const boss = arc.arcBoss || arc.finalBoss;
                     const allChaptersDone = arc.chapters.every(ch => isChapterCompleted(ch.id));
+                    const bossDefeated = isBossDefeated(arc.id);
                     return (
-                      <div style={{ marginTop: 8, padding: "14px 16px", borderRadius: 12, background: allChaptersDone ? "#ef444415" : "rgba(15,15,30,0.3)", border: `1px solid ${allChaptersDone ? "#ef444433" : "#0f172a"}`, opacity: allChaptersDone ? 1 : 0.4, display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={{ width: 38, height: 38, borderRadius: 10, background: "#ef444422", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{boss.icon}</div>
+                      <div
+                        onClick={() => allChaptersDone && (setActiveBoss(boss), setActiveBossArc(arc))}
+                        style={{
+                          marginTop: 8, padding: "14px 16px", borderRadius: 12,
+                          background: bossDefeated ? "#22c55e12" : allChaptersDone ? "#ef444415" : "rgba(15,15,30,0.3)",
+                          border: `1px solid ${bossDefeated ? "#22c55e30" : allChaptersDone ? "#ef444444" : "#0f172a"}`,
+                          opacity: allChaptersDone ? 1 : 0.4,
+                          display: "flex", alignItems: "center", gap: 14,
+                          cursor: allChaptersDone && !bossDefeated ? "pointer" : bossDefeated ? "default" : "not-allowed",
+                          transition: "all 0.2s ease",
+                          boxShadow: allChaptersDone && !bossDefeated ? "0 0 0 0 rgba(239,68,68,0)" : "none",
+                          animation: allChaptersDone && !bossDefeated ? "bossGlow 2s ease-in-out infinite" : "none",
+                        }}
+                      >
+                        <div style={{ width: 38, height: 38, borderRadius: 10, background: bossDefeated ? "#22c55e22" : "#ef444422", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{bossDefeated ? "✅" : boss.icon}</div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 12, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1, marginBottom: 2 }}>BOSS</div>
+                          <div style={{ fontSize: 12, color: bossDefeated ? "#22c55e" : "#ef4444", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1, marginBottom: 2 }}>
+                            {bossDefeated ? "BOSS BESIEGT" : "BOSS"}
+                          </div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "'Cinzel', serif" }}>{boss.name}</div>
-                          <div style={{ fontSize: 10, color: "#ef4444aa", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{boss.rank}-RANK • +{boss.rewards?.xp} XP{boss.rewards?.namedShadow ? ` • Shadow: ${boss.rewards.namedShadow}` : ""}</div>
+                          <div style={{ fontSize: 10, color: bossDefeated ? "#22c55eaa" : "#ef4444aa", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                            {boss.rank}-RANK • +{boss.rewards?.xp} XP{boss.rewards?.namedShadow ? ` • Shadow: ${boss.rewards.namedShadow}` : ""}
+                          </div>
                         </div>
                         {!allChaptersDone && <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono', monospace" }}>Alle Kapitel<br />abschließen</div>}
+                        {allChaptersDone && !bossDefeated && (
+                          <div style={{ padding: "6px 12px", borderRadius: 8, background: "#ef444422", color: "#ef4444", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1, flexShrink: 0 }}>
+                            KÄMPFEN ›
+                          </div>
+                        )}
                       </div>
                     );
                   })()}

@@ -24,7 +24,8 @@ export default function SeasonView({ state, theme, onClose }) {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#06060e",
+      position: "fixed", inset: 0, zIndex: 9100,
+      background: "#06060e",
       fontFamily: "'Courier New', monospace", overflowY: "auto"
     }}>
       {/* Season Hero Banner */}

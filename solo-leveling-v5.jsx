@@ -1068,6 +1068,30 @@ function App({ initialHunterName, onLogout }) {
                   notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
                 }
               }}
+              onBossComplete={(boss, arcId) => {
+                const prev = state;
+                const defeatedBosses = [...(prev.story?.defeatedBosses || [])];
+                if (defeatedBosses.includes(arcId)) {
+                  notify("Dieser Boss wurde bereits besiegt.", "info");
+                  return;
+                }
+                defeatedBosses.push(arcId);
+                const xpGain = boss.rewards?.xp || 0;
+                const goldGain = boss.rewards?.gold || 0;
+                let next = calculateLevelUp(prev, xpGain);
+                if (boss.rewards?.title) next.selectedTitle = boss.rewards.title;
+                notify(`⚔️ Boss "${boss.name}" besiegt! +${xpGain} XP +${goldGain} Gold`, "levelup");
+                persist({
+                  ...next,
+                  gold: (prev.gold || 0) + goldGain,
+                  totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
+                  story: {
+                    ...prev.story,
+                    defeatedBosses,
+                    totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
+                  },
+                });
+              }}
             />
           )
         }
@@ -1371,13 +1395,12 @@ function App({ initialHunterName, onLogout }) {
             { key: "training", icon: "🎯", label: "Ziele" },
             { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length },
             { key: "story", icon: "📖", label: "Story" },
-            {
-              key: "season_overlay", icon: state.seasons?.currentSeason ? SEASONS[state.seasons.currentSeason]?.icon || "🌐" : "🌐",
-              label: "Season", isOverlay: true, action: () => setShowSeasonView(true)
-            },
             { key: "system", icon: "⚙️", label: "System" }
           ].map(tab => (
-            <button key={tab.key} onClick={() => tab.isOverlay ? tab.action?.() : setView(tab.key)} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: tab.isOverlay ? "#9ca3af" : view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
+            <button key={tab.key} onClick={() => {
+              setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
+              tab.isOverlay ? tab.action?.() : setView(tab.key);
+            }} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: tab.isOverlay ? "#9ca3af" : view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
               {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
               <div style={{ position: "relative" }}>
                 <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
@@ -1827,7 +1850,7 @@ function SetupScreen({ onFinish, theme }) {
   useEffect(() => { const t1 = setTimeout(() => setPhase(1), 600); const t2 = setTimeout(() => setPhase(2), 1400); const t3 = setTimeout(() => setPhase(3), 2200); return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); }; }, []);
   return (
     <div style={{ minHeight: "100vh", background: "#060610", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes glow{0%,100%{text-shadow:0 0 20px #7c3aed88}50%{text-shadow:0 0 40px #7c3aed,0 0 80px #a78bfa}}@keyframes bGlow{0%,100%{border-color:#4f6ef744}50%{border-color:#4f6ef788}}button{cursor:pointer;border:none;font-family:inherit}input{font-family:inherit}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes glow{0%,100%{text-shadow:0 0 20px #7c3aed88}50%{text-shadow:0 0 40px #7c3aed,0 0 80px #a78bfa}}@keyframes bGlow{0%,100%{border-color:#4f6ef744}50%{border-color:#4f6ef788}}@keyframes bossGlow{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.3)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}@keyframes successPulse{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}button{cursor:pointer;border:none;font-family:inherit}input{font-family:inherit}`}</style>
       <div style={{ textAlign: "center", maxWidth: 380, width: "100%" }}>
         <div style={{ fontSize: 56, marginBottom: 20, animation: "float 3s ease-in-out infinite", filter: "drop-shadow(0 0 20px rgba(124,58,237,0.6))" }}>⚔️</div>
         {phase >= 1 && <div style={{ animation: "fadeIn 0.8s ease", fontSize: 9, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>SYSTEM ACTIVATED</div>}

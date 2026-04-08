@@ -707,6 +707,7 @@ const DEFAULT_STATE = {
   story: {
     completedChapters: [],  // Array von chapter IDs z.B. ["ch1", "ch2"]
     completedArcs: [],       // Array von arc IDs z.B. ["arc1"]
+    defeatedBosses: [],      // Array von arc IDs deren Boss besiegt wurde
     totalStoryXp: 0,
   },
   lifeDomains: [],
