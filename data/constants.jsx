@@ -1061,15 +1061,10 @@ function recalculateLevelFromTotalXp(state) {
     levelsGained++;
   }
 
-  // Available stat points = earned (one per level) minus already spent on stats.
-  const spentStatPoints = Object.values(state.stats || {}).reduce((a, b) => a + b, 0);
-  const statPoints = Math.max(0, levelsGained - spentStatPoints);
-
   return {
     ...state,
     level,
     xp: remainingXp,
-    statPoints,
     totalXpEarned: totalXp
   };
 }
@@ -1387,8 +1382,8 @@ function migrateState(oldState) {
   const evaluated = recalculateLevelFromTotalXp(s);
   s.level = evaluated.level;
   s.xp = evaluated.xp;
-  s.statPoints = evaluated.statPoints;
   s.totalXpEarned = evaluated.totalXpEarned;
+  // statPoints bleibt unverändert – der gespeicherte Wert ist korrekt
 
   return s;
 }
