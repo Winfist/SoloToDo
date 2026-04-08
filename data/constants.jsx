@@ -1061,10 +1061,9 @@ function recalculateLevelFromTotalXp(state) {
     levelsGained++;
   }
 
-  // Preserve stat points: at minimum the points from leveling, but keep
-  // any extra that were already assigned (e.g. from achievements/events)
+  // Available stat points = earned (one per level) minus already spent on stats.
   const spentStatPoints = Object.values(state.stats || {}).reduce((a, b) => a + b, 0);
-  const statPoints = Math.max(levelsGained, spentStatPoints);
+  const statPoints = Math.max(0, levelsGained - spentStatPoints);
 
   return {
     ...state,
