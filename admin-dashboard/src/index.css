@@ -7,21 +7,21 @@
   --surface-hover: rgba(255, 255, 255, 0.08);
   --border: rgba(255, 255, 255, 0.1);
   --border-highlight: rgba(138, 43, 226, 0.5);
-  
+
   --text-main: #f8f8f8;
   --text-muted: #a0a0b0;
-  
+
   --accent: #8a2be2;
   --accent-hover: #9d4edd;
   --accent-glow: rgba(138, 43, 226, 0.4);
-  
+
   --danger: #ff4757;
   --danger-hover: #ff6b81;
   --danger-glow: rgba(255, 71, 87, 0.4);
-  
+
   --success: #2ed573;
   --warning: #ffa502;
-  
+
   --glass-bg: rgba(20, 20, 30, 0.6);
   --glass-blur: blur(12px);
   --glass-border: 1px solid rgba(255, 255, 255, 0.05);
@@ -42,7 +42,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: 'Outfit', sans-serif;
   margin-bottom: 0.5rem;
 }
@@ -61,10 +64,21 @@ input {
 }
 
 /* Utilities */
-.text-accent { color: var(--accent); }
-.text-muted { color: var(--text-muted); }
-.text-danger { color: var(--danger); }
-.text-success { color: var(--success); }
+.text-accent {
+  color: var(--accent);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-danger {
+  color: var(--danger);
+}
+
+.text-success {
+  color: var(--success);
+}
 
 /* Glass Panel */
 .glass-panel {
@@ -402,8 +416,15 @@ input {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
