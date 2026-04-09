@@ -188,7 +188,16 @@ function App({ initialHunterName, onLogout }) {
   const [isCreatingEntry, setIsCreatingEntry] = React.useState(false);
   const [preview3DDungeon, setPreview3DDungeon] = React.useState(null);
   const [battlePendingStart, setBattlePendingStart] = React.useState(false);
-  const [showDashboardStats, setShowDashboardStats] = React.useState(true);
+  const [showDashboardStats, setShowDashboardStats] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem("sl_dashboard_stats_hidden");
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch { return true; }
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("sl_dashboard_stats_hidden", JSON.stringify(showDashboardStats));
+  }, [showDashboardStats]);
 
 
 
@@ -1466,7 +1475,7 @@ function App({ initialHunterName, onLogout }) {
           {[
             { key: "dashboard", icon: "📋", label: "Heute" },
             { key: "training", icon: "🎯", label: "Ziele" },
-            { key: "dungeon", icon: <img src="/icons/gate_normal.png" style={{ width: 26, height: 26, objectFit: "contain", display: "block", borderRadius: "50%", margin: "0 auto", mixBlendMode: "screen", filter: "drop-shadow(0 0 6px #a78bfa88) brightness(1.2)", background: "rgba(167,139,250,0.1)", border: "1px solid #a78bfa33" }} alt="Gate" />, label: "Gates", badge: activeDungeons.length },
+            { key: "dungeon", icon: <div style={{ width: 38, height: 38, margin: "-6px auto 2px auto", borderRadius: "50%", border: "1.5px solid #a78bfa", boxShadow: "0 0 10px #a78bfa, inset 0 0 8px #a78bfa", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0814", position: "relative" }}><img src="/icons/gate_normal.png" style={{ width: "160%", height: "160%", objectFit: "cover", mixBlendMode: "screen", filter: "brightness(1.5) contrast(1.2)" }} alt="Gate" /></div>, label: "Gates", badge: activeDungeons.length },
             { key: "story", icon: "📖", label: "Story" },
             { key: "system", icon: "⚙️", label: "System" }
           ].map(tab => (
@@ -1722,7 +1731,7 @@ function App({ initialHunterName, onLogout }) {
 
                     {/* Category filter */}
                     <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
-                      {[{ key: "all", label: "Alle", color: theme.accent }, ...CATEGORIES.map(c => ({ key: c.key, label: `${c.icon} ${c.stat}`, color: c.color }))].map(f => (
+                      {[{ key: "all", label: "Alle", color: theme.accent }, ...CATEGORIES.map(c => ({ key: c.key, label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{c.iconSrc ? <img src={c.iconSrc} alt={c.stat} style={{ width: 12, height: 12, mixBlendMode: "screen" }} /> : c.icon} {c.stat}</span>, color: c.color }))].map(f => (
                         <button key={f.key} onClick={() => setTemplateFilter(f.key)} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 10, fontWeight: 700, flexShrink: 0, background: templateFilter === f.key ? f.color + "22" : "transparent", color: templateFilter === f.key ? f.color : "#475569", border: `1px solid ${templateFilter === f.key ? f.color + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", transition: "all 0.2s", cursor: "pointer" }}>{f.label}</button>
                       ))}
                     </div>
@@ -1738,7 +1747,7 @@ function App({ initialHunterName, onLogout }) {
                             onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "22"; e.currentTarget.style.background = "rgba(10,10,24,0.8)"; e.currentTarget.style.transform = "none"; }}>
                             <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.3 }}>{tmpl.t}</div>
                             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                              <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "15", fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon}{cat.stat}</span>
+                              <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "15", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 10, height: 10, mixBlendMode: "screen" }} /> : cat.icon}<span>{cat.stat}</span></span>
                               <span style={{ fontSize: 8, color: diff.color, padding: "1px 5px", borderRadius: 4, background: diff.color + "15", fontFamily: "'JetBrains Mono',monospace" }}>{diff.icon}{diff.label}</span>
                             </div>
                           </button>
@@ -1863,7 +1872,7 @@ function App({ initialHunterName, onLogout }) {
                           <div style={{ textAlign: "center" }}>
                             <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>KATEGORIE</div>
                             <div style={{ fontSize: 12, color: cat.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                              {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 16, height: 16, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} {cat.stat}
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 16, height: 16, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} <span>{cat.stat}</span></span>
                             </div>
                           </div>
                         </div>

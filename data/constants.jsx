@@ -2211,7 +2211,7 @@ function EmergencyQuestCard({ quest, done, failed, onComplete, theme }) {
       <div style={{ fontSize: 10, color: "#64748b", marginBottom: 10, lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>{quest.desc}</div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>
-          <span style={{ color: cat.color }}>{cat.icon} {cat.stat}</span>
+          <span style={{ color: cat.color }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 12, height: 12, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)`, verticalAlign: "middle", marginTop: -2 }} /> : cat.icon} {cat.stat}</span>
           <span style={{ color: "#334155", margin: "0 6px" }}>·</span>
           <span style={{ color: "#a78bfa" }}>+{diff.xp * 2.5 | 0} XP</span>
           <span style={{ color: "#334155", margin: "0 6px" }}>·</span>
@@ -2303,7 +2303,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
           <QuestTypeBadge type={quest.type} />
           <span style={{ color: diff.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: diff.color + "15", fontSize: 9 }}>{diff.icon} {diff.label}</span>
-          <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: cat.color + "15", color: cat.color, fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon} {cat.stat}</span>
+          <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: cat.color + "15", color: cat.color, fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 10, height: 10, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} <span>{cat.stat}</span></span>
           {quest.type === "weekly" && quest.timeLimit && <QuestTimer expiresAt={quest.timeLimit} color="#8b5cf6" />}
         </div>
         <div style={{ fontSize: 14, fontWeight: 600, color: completing ? "#64748b" : "#e2e8f0", textDecoration: completing ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>{quest.title}</div>
@@ -2384,11 +2384,11 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
 
           {/* Gate icon — pure image */}
-          <div style={{ width: 96, height: 96, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 18, background: `radial-gradient(circle, ${rc}1a 0%, transparent 70%)` }}>
+          <div style={{ width: 96, height: 96, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#0a0814", border: `2px solid ${rc}`, boxShadow: `0 0 16px ${rc}66, inset 0 0 12px ${rc}44`, overflow: "hidden" }}>
             {dungeon.cleared ? (
               <span style={{ fontSize: 36, color: "#fff", fontWeight: "bold", textShadow: `0 0 20px ${rc}` }}>✓</span>
             ) : (
-              <img src={getDungeonGateImage(dungeon)} style={{ width: "95%", height: "95%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 16px ${rc}44)`, animation: "gateFloat 4s ease-in-out infinite" }} alt="Gate" />
+              <img src={getDungeonGateImage(dungeon)} style={{ width: "160%", height: "160%", objectFit: "cover", mixBlendMode: "screen", filter: `brightness(1.5) contrast(1.2)`, animation: "gateFloat 4s ease-in-out infinite" }} alt="Gate" />
             )}
           </div>
 
@@ -2433,7 +2433,7 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
               const met = (playerStats[stat] || 0) >= val;
               return (
                 <div key={stat} style={{ padding: "3px 9px", fontSize: 9, background: met ? cat.color + "12" : "#ef444408", color: met ? cat.color : "#ef4444", border: `1px solid ${met ? cat.color + "30" : "#ef444422"}`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 3, borderRadius: 6 }}>
-                  <span>{cat.icon}</span> {cat.stat} {val} {met ? "✓" : `(${playerStats[stat] || 0})`}
+                  <span style={{ display: "flex", alignItems: "center" }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 12, height: 12, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon}</span> {cat.stat} {val} {met ? "✓" : `(${playerStats[stat] || 0})`}
                 </div>
               );
             })}
@@ -2788,7 +2788,11 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
       {phase === "strategy" && (
         <div style={{ width: "100%", maxWidth: 440, padding: "0 20px", animation: "slideUp 0.4s ease" }}>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <div style={{ marginBottom: 10, filter: `drop-shadow(0 0 20px ${rankData.color})`, animation: "gateFloat 2s ease-in-out infinite", display: "flex", justifyContent: "center" }}><img src={getDungeonGateImage(dungeon)} alt={dungeon.name} style={{ width: 96, height: 96, objectFit: "contain", borderRadius: 14, mixBlendMode: "screen", filter: `brightness(1.1) drop-shadow(0 0 12px ${rankData.color}66)` }} /></div>
+            <div style={{ marginBottom: 10, filter: `drop-shadow(0 0 20px ${rankData.color})`, animation: "gateFloat 2s ease-in-out infinite", display: "flex", justifyContent: "center" }}>
+              <div style={{ width: 96, height: 96, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", border: `2px solid ${rankData.color}`, boxShadow: `0 0 20px ${rankData.color}88, inset 0 0 16px ${rankData.color}66`, overflow: "hidden", background: "#0a0814" }}>
+                <img src={getDungeonGateImage(dungeon)} alt={dungeon.name} style={{ width: "160%", height: "160%", objectFit: "cover", mixBlendMode: "screen", filter: `brightness(1.5) contrast(1.2)` }} />
+              </div>
+            </div>
             <div style={{ fontSize: 10, letterSpacing: 4, color: rankData.color, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{dungeon.rank}-RANK · {dungeon.floors} FLOORS</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif" }}>{dungeon.name}</div>
             {modifier && modifier.id !== "none" && <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: modifier.color + "15", border: `1px solid ${modifier.color}33`, fontSize: 11, color: modifier.color, fontFamily: "'JetBrains Mono',monospace" }}>{modifier.icon} {modifier.name}</div>}
@@ -2854,7 +2858,11 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
             <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `2px solid ${rankData.color}55`, borderTopColor: rankData.color, transform: `rotate(${portalRot}deg)` }} />
             <div style={{ position: "absolute", inset: 14, borderRadius: "50%", border: `1px solid ${rankData.color}33`, borderBottomColor: rankData.color + "88", transform: `rotate(${-portalRot * 1.6}deg)` }} />
             <div style={{ position: "absolute", inset: 28, borderRadius: "50%", border: `1px solid ${rankData.color}22`, borderTopColor: rankData.color + "55", transform: `rotate(${portalRot * 0.8}deg)` }} />
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", filter: `drop-shadow(0 0 18px ${rankData.color})` }}><img src={getDungeonGateImage(dungeon)} alt={dungeon.name} style={{ width: 86, height: 86, objectFit: "contain", borderRadius: 12, mixBlendMode: "screen", filter: `brightness(1.1) drop-shadow(0 0 10px ${rankData.color}66)` }} /></div>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", filter: `drop-shadow(0 0 18px ${rankData.color})` }}>
+              <div style={{ width: 86, height: 86, borderRadius: "50%", border: `2px solid ${rankData.color}`, boxShadow: `0 0 15px ${rankData.color}88, inset 0 0 10px ${rankData.color}66`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0814" }}>
+                <img src={getDungeonGateImage(dungeon)} alt={dungeon.name} style={{ width: "160%", height: "160%", objectFit: "cover", mixBlendMode: "screen", filter: `brightness(1.5) contrast(1.2)` }} />
+              </div>
+            </div>
           </div>
           <div style={{ fontSize: 10, letterSpacing: 6, color: rankData.color, fontFamily: "'JetBrains Mono',monospace", animation: "breathe 0.9s infinite" }}>{dungeon.name}</div>
         </div>
