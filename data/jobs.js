@@ -96,7 +96,7 @@ export const JOBS = {
     name: "Monarch",
     icon: "👑",
     color: "#f59e0b",
-    statFocus: "cha",
+    statFocus: "all",
     unlockRequirement: { level: 15 },
     passives: {
       base: "Alle XP +15%",

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { STAT_ICONS } from "../data/icons.js";
 
 // ═══════════════════════════════════════════════════════════════
 // DAWN/DUSK PROTOCOL — Timed Routine Dungeon Run
@@ -14,11 +15,11 @@ function isDawnWindow() { const h = new Date().getHours(); return h >= 5 && h < 
 function isDuskWindow() { const h = new Date().getHours(); return h >= 18 && h < 23; }
 
 const CATEGORIES = {
-  str: { color: "#ef4444", label: "STR", icon: "⚔️" },
-  int: { color: "#3b82f6", label: "INT", icon: "📚" },
-  vit: { color: "#22c55e", label: "VIT", icon: "❤️" },
-  agi: { color: "#f59e0b", label: "AGI", icon: "⚡" },
-  cha: { color: "#a855f7", label: "CHA", icon: "✨" },
+  str: { color: "#ef4444", label: "STR", icon: "⚔️", iconSrc: STAT_ICONS.str },
+  int: { color: "#3b82f6", label: "INT", icon: "📖", iconSrc: STAT_ICONS.int },
+  vit: { color: "#22c55e", label: "VIT", icon: "❤️", iconSrc: STAT_ICONS.vit },
+  agi: { color: "#f59e0b", label: "AGI", icon: "⚡", iconSrc: STAT_ICONS.agi },
+  cha: { color: "#a855f7", label: "CHA", icon: "✨", iconSrc: STAT_ICONS.cha },
 };
 
 const TUTORIAL_SLIDES = [
@@ -585,8 +586,9 @@ export default function DawnDuskProtocol({
                           <div style={{ color: "#cbd5e1", fontSize: "0.82rem" }}>
                             Etage {i + 1}: {task.title}
                           </div>
-                          <div style={{ color: cat.color, fontSize: "0.62rem", marginTop: "0.1rem", opacity: 0.7 }}>
-                            {cat.icon} {cat.label}
+                          <div style={{ color: cat.color, fontSize: "0.62rem", marginTop: "0.1rem", opacity: 0.7, display: "flex", alignItems: "center", gap: 3 }}>
+                            <img src={cat.iconSrc} alt={cat.label} style={{ width: 10, height: 10, objectFit: "contain" }} />
+                            {cat.label}
                           </div>
                         </div>
                       </div>
@@ -727,7 +729,7 @@ export default function DawnDuskProtocol({
                         fontSize: "0.62rem", fontWeight: 700, fontFamily: "'Courier New', monospace",
                         transition: "all 0.15s"
                       }}>
-                        <div>{icon}</div>
+                        <div>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.label} style={{ width: 14, height: 14, objectFit: "contain" }} /> : cat.icon}</div>
                         <div>{label}</div>
                       </button>
                     ))}

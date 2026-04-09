@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { STAT_ICONS } from "../data/icons.js";
 
 /**
  * AnalyticsDashboard – Progress Analytics showing XP history,
@@ -27,6 +28,20 @@ export default function AnalyticsDashboard({ state, theme }) {
         return days;
     }, [completedQuests, habits]);
 
+    // ── 90-day heatmap data (GitHub-style) ──────────────────────
+    const last90 = useMemo(() => {
+        const days = [];
+        for (let i = 89; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().slice(0, 10);
+            const questsDone = completedQuests.filter(q => q.completedAt === key).length;
+            const habitsDone = habits.filter(h => h.history?.[key]?.completed).length;
+            days.push({ date: key, questsDone, habitsDone, dayOfWeek: d.getDay() });
+        }
+        return days;
+    }, [completedQuests, habits]);
+
     const totalQuests30 = last30.reduce((s, d) => s + d.questsDone, 0);
     const totalHabits30 = last30.reduce((s, d) => s + d.habitsDone, 0);
     const avgQuestsPerDay = (totalQuests30 / 30).toFixed(1);
@@ -44,11 +59,11 @@ export default function AnalyticsDashboard({ state, theme }) {
         completedQuests.forEach(q => { if (cats[q.category] !== undefined) cats[q.category]++; });
         const total = Object.values(cats).reduce((a, b) => a + b, 0) || 1;
         const catInfo = {
-            str: { icon: "⚔️", label: "STR", color: "#ef4444" },
-            int: { icon: "📖", label: "INT", color: "#3b82f6" },
-            vit: { icon: "🛡️", label: "VIT", color: "#22c55e" },
-            agi: { icon: "⚡", label: "AGI", color: "#f59e0b" },
-            cha: { icon: "👥", label: "CHA", color: "#a855f7" },
+            str: { iconSrc: STAT_ICONS.str, label: "STR", color: "#ef4444" },
+            int: { iconSrc: STAT_ICONS.int, label: "INT", color: "#3b82f6" },
+            vit: { iconSrc: STAT_ICONS.vit, label: "VIT", color: "#22c55e" },
+            agi: { iconSrc: STAT_ICONS.agi, label: "AGI", color: "#f59e0b" },
+            cha: { iconSrc: STAT_ICONS.cha, label: "CHA", color: "#a855f7" },
         };
         return Object.entries(cats).map(([key, count]) => ({
             ...catInfo[key], key, count, pct: Math.round((count / total) * 100),
@@ -75,8 +90,8 @@ export default function AnalyticsDashboard({ state, theme }) {
     const currentStreak = state?.streak || 0;
     const shadowCount = state?.shadowArmy?.shadows?.length || 0;
 
-    // ── Activity heatmap (30 days) ─────────────────────────────
-    const maxActivity = Math.max(...last30.map(d => d.questsDone + d.habitsDone), 1);
+    // ── Activity heatmap data ──────────────────────────────────
+    const maxActivity = Math.max(...last90.map(d => d.questsDone + d.habitsDone), 1);
 
     return (
         <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -97,9 +112,10 @@ export default function AnalyticsDashboard({ state, theme }) {
                         { label: "Streak", value: `${currentStreak}d`, color: "#f59e0b", sub: `${shadowCount} Shadows` },
                     ].map(s => (
                         <div key={s.label} style={{
-                            textAlign: "center", padding: "10px 4px",
-                            background: "rgba(255,255,255,0.02)", borderRadius: 10,
-                            border: "1px solid rgba(255,255,255,0.04)",
+                            textAlign: "center", padding: "12px 4px",
+                            background: `linear-gradient(135deg, rgba(255,255,255,0.02), ${s.color}06)`, borderRadius: 14,
+                            border: `1px solid ${s.color}15`,
+                            boxShadow: `0 0 12px ${s.color}08`,
                         }}>
                             <div style={{ fontSize: 20, fontWeight: 900, color: s.color, fontFamily: "'Cinzel',serif" }}>{s.value}</div>
                             <div style={{ fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 2 }}>{s.label}</div>
@@ -164,34 +180,88 @@ export default function AnalyticsDashboard({ state, theme }) {
                 </div>
             )}
 
-            {/* ── 30-DAY ACTIVITY HEATMAP ── */}
+            {/* ── 90-DAY ACTIVITY HEATMAP (GitHub-style) ── */}
             <div style={{
                 background: theme?.card || "rgba(10,10,22,0.88)",
                 border: `1px solid ${theme?.primary || "#22d3ee"}15`,
                 borderRadius: 16, padding: "14px 16px", marginBottom: 14,
             }}>
-                <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>
-                    AKTIVITÄT (30 TAGE)
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(15, 1fr)", gap: 3 }}>
-                    {last30.map((d, i) => {
-                        const activity = d.questsDone + d.habitsDone;
-                        const intensity = activity / maxActivity;
-                        const color = intensity === 0 ? "#0f0f1e" :
-                            intensity < 0.33 ? (theme?.primary || "#22d3ee") + "33" :
-                                intensity < 0.66 ? (theme?.primary || "#22d3ee") + "66" :
-                                    (theme?.primary || "#22d3ee");
-                        return (
-                            <div key={i} title={`${d.date}: ${activity} Aktivitäten`} style={{
-                                aspectRatio: "1", borderRadius: 3,
-                                background: color, border: "1px solid rgba(255,255,255,0.03)",
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>
+                        ACTIVITY GRID (90 TAGE)
+                    </div>
+                    <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+                        <span style={{ fontSize: 7, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>wenig</span>
+                        {["0f0f1e", "22", "55", "99", ""].map((op, i) => (
+                            <div key={i} style={{
+                                width: 8, height: 8, borderRadius: 2,
+                                background: op === "0f0f1e" ? "#0f0f1e" : (theme?.primary || "#22d3ee") + op,
                             }} />
-                        );
-                    })}
+                        ))}
+                        <span style={{ fontSize: 7, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>viel</span>
+                    </div>
                 </div>
+                {/* Day labels */}
+                <div style={{ display: "flex", gap: 0, marginBottom: 2, paddingLeft: 16 }}>
+                    {["Mo", "", "Mi", "", "Fr", "", "So"].map((label, i) => (
+                        <div key={i} style={{
+                            width: "calc((100% - 16px) / 13)", fontSize: 6,
+                            color: label ? "#334155" : "transparent",
+                            fontFamily: "'JetBrains Mono',monospace",
+                            textAlign: "center",
+                        }}>{label || "·"}</div>
+                    ))}
+                </div>
+                {/* Grid: build 7 rows × cols (weeks) */}
+                {(() => {
+                    // Pad start so grid begins on Monday
+                    const firstDay = last90[0]?.dayOfWeek ?? 1;
+                    const padStart = (firstDay === 0 ? 6 : firstDay - 1); // Mon=0
+                    const cells = [
+                        ...Array(padStart).fill(null),
+                        ...last90,
+                    ];
+                    const numCols = Math.ceil(cells.length / 7);
+                    // Transpose: render column by column (weeks)
+                    const columns = Array.from({ length: numCols }, (_, col) =>
+                        cells.slice(col * 7, col * 7 + 7)
+                    );
+                    return (
+                        <div style={{ display: "flex", gap: 3, overflowX: "auto", paddingBottom: 4 }}>
+                            {columns.map((col, ci) => (
+                                <div key={ci} style={{ display: "flex", flexDirection: "column", gap: 3, flexShrink: 0 }}>
+                                    {Array.from({ length: 7 }, (_, ri) => {
+                                        const d = col[ri];
+                                        if (!d) return <div key={ri} style={{ width: 10, height: 10 }} />;
+                                        const activity = d.questsDone + d.habitsDone;
+                                        const intensity = activity / maxActivity;
+                                        const isToday = d.date === getToday();
+                                        const color = intensity === 0 ? "#0f0f1e" :
+                                            intensity < 0.25 ? (theme?.primary || "#22d3ee") + "22" :
+                                                intensity < 0.50 ? (theme?.primary || "#22d3ee") + "55" :
+                                                    intensity < 0.75 ? (theme?.primary || "#22d3ee") + "99" :
+                                                        (theme?.primary || "#22d3ee");
+                                        return (
+                                            <div
+                                                key={ri}
+                                                title={`${d.date}\n${d.questsDone} Quests · ${d.habitsDone} Habits`}
+                                                style={{
+                                                    width: 10, height: 10, borderRadius: 2,
+                                                    background: color,
+                                                    border: isToday ? `1px solid ${theme?.primary || "#22d3ee"}` : "1px solid rgba(255,255,255,0.03)",
+                                                    boxShadow: isToday ? `0 0 6px ${theme?.primary || "#22d3ee"}66` : "none",
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                    );
+                })()}
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                    <span style={{ fontSize: 7, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>vor 30 Tagen</span>
-                    <span style={{ fontSize: 7, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>heute</span>
+                    <span style={{ fontSize: 7, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>vor 90 Tagen</span>
+                    <span style={{ fontSize: 7, color: theme?.accent || "#67e8f9", fontFamily: "'JetBrains Mono',monospace" }}>heute</span>
                 </div>
             </div>
 
@@ -207,11 +277,11 @@ export default function AnalyticsDashboard({ state, theme }) {
                 {catStats.map(c => (
                     <div key={c.key} style={{ marginBottom: 8 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                            <span style={{ fontSize: 10, color: c.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{c.icon} {c.label}</span>
+                            <span style={{ fontSize: 10, color: c.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}><img src={c.iconSrc} alt={c.label} style={{ width: 20, height: 20, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 4px ${c.color}55)` }} /> {c.label}</span>
                             <span style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>{c.count} ({c.pct}%)</span>
                         </div>
-                        <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden" }}>
-                            <div style={{ width: `${c.pct}%`, height: "100%", borderRadius: 3, background: c.color, transition: "width 0.6s ease" }} />
+                        <div style={{ height: 7, background: "#0f0f1e", borderRadius: 4, overflow: "hidden" }}>
+                            <div style={{ width: `${c.pct}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${c.color}88, ${c.color})`, transition: "width 0.6s ease", boxShadow: `0 0 6px ${c.color}33` }} />
                         </div>
                     </div>
                 ))}

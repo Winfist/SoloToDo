@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, Suspense, lazy, useCallback } from "react";
 
 const DungeonCorridor = lazy(() => import("../3d/scenes/DungeonCorridor"));
+import { getDungeonGateImage } from "../data/constants.jsx";
 
 const RANK_COLORS = {
   E: "#6b7280", D: "#22d3ee", C: "#34d399",
@@ -391,10 +392,9 @@ function FallbackGateView({ dungeon, rankColor, onEnter, onClose }) {
         }} />
         <div style={{
           position: "absolute", inset: 0, display: "flex", alignItems: "center",
-          justifyContent: "center", fontSize: 44, color: rankColor,
-          fontFamily: "'Cinzel',serif", fontWeight: 900, textShadow: `0 0 24px ${rankColor}`
+          justifyContent: "center",
         }}>
-          {dungeon?.rank}
+          <img src={getDungeonGateImage(dungeon)} alt={`${dungeon?.rank} Gate`} style={{ width: 96, height: 96, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.1) drop-shadow(0 0 24px ${rankColor})` }} />
         </div>
       </div>
       <div style={{

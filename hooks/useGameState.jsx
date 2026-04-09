@@ -70,7 +70,7 @@ export function useGameState(initialHunterName, onLogout) {
           hunterName: next.hunterName || "Hunter",
           level: next.level || 1
         });
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, []);
 
@@ -103,7 +103,7 @@ export function useGameState(initialHunterName, onLogout) {
     const linkCode = stateRef.current?.soulLink?.linkCode;
     const user = auth.currentUser;
     if (!linkCode || !user) return;
-    let unsub = () => {};
+    let unsub = () => { };
     import('../multiplayer/soulLinkFirebase.js').then(({ subscribeSoulLink }) => {
       unsub = subscribeSoulLink(linkCode, user.uid, (partnerData) => {
         setState(prev => {
@@ -113,7 +113,7 @@ export function useGameState(initialHunterName, onLogout) {
           return { ...prev, soulLink: { ...(prev.soulLink || {}), ...partnerData, bothActive } };
         });
       });
-    }).catch(() => {});
+    }).catch(() => { });
     return () => unsub();
   }, [state?.soulLink?.linkCode]);
 
@@ -144,13 +144,14 @@ export function useGameState(initialHunterName, onLogout) {
           if (s.lastActiveDate && s.lastActiveDate !== today) {
             const diff = Math.floor((new Date(today) - new Date(s.lastActiveDate)) / 86400000);
             if (diff > 1) {
+              // BUG FIX: Store previousStreak BEFORE resetting to 0
+              const previousStreak = s.streak || 0;
               s.streak = 0;
               const hadDailies = s.quests?.some(q => q.type === "daily" && !q.completed);
               if (diff >= 2 && hadDailies && !s.penaltyZone?.active) {
                 s.penaltyZone = { active: true, redemptionLeft: 3, questsCompletedInPenalty: 0 };
                 // Shadow Regression: heroic comeback instead of shameful penalty
                 if (!s.shadowRegression?.active) {
-                  const previousStreak = s.streak || 0;
                   const redemptionQs = generateRedemptionQuests(s.level || 1);
                   s.shadowRegression = {
                     active: true,
@@ -166,7 +167,9 @@ export function useGameState(initialHunterName, onLogout) {
               }
             }
             s.quests = s.quests?.map(q => q.type === "daily" && !q.isSystem ? { ...q, completed: false } : q) || [];
-            s.quests = (s.quests || []).filter(q => !q.isSystem && !q.isSeasonal && !q.isRedemption);
+            // BUG FIX: Keep redemption quests alive if shadow regression is still active
+            const regressionActive = s.shadowRegression?.active;
+            s.quests = (s.quests || []).filter(q => !q.isSystem && !q.isSeasonal && !(q.isRedemption && !regressionActive));
             const newSysQuests = generateDailySystemQuests(3);
             s.quests = [...s.quests, ...newSysQuests];
             s.emergencyQuest = null;
@@ -367,7 +370,7 @@ export function useGameState(initialHunterName, onLogout) {
     xp *= (1 + (equipBonuses.xpBonus || 0));
     xp *= (1 + (skillBonuses.xpCatBonus?.[quest.category] || 0));
     xp *= (1 + (jobBonuses.xpCatBonus?.[quest.category] || 0));
-    if (quest.difficulty === "hard" || quest.difficulty === "boss") xp *= (1 + (skillBonuses.xpHardBonus || 0));
+    if (quest.difficulty === "hard" || quest.difficulty === "boss") xp *= (1 + (skillBonuses.xpHardBonus || 0) + (jobBonuses.hardBossXpBonus || 0));
     xp *= (1 + (skillBonuses.xpGlobal || 0));
     xp *= (1 + (jobBonuses.xpGlobal || 0));
     xp *= (1 + (formBonus?.xpBonus || 0));
@@ -408,11 +411,17 @@ export function useGameState(initialHunterName, onLogout) {
     const jobBonuses = getJobBonuses(state);
     const formBonus = calcFormationBonus(state.shadowArmy, jobBonuses.allShadowsActive);
     const penaltyActive = state.penaltyZone?.active;
+    // BUG FIX: Apply Soul Link bonus BEFORE calculateLevelUp (was applied after, having no effect)
+    const soulLinkActive = state.soulLink?.bothActive;
     let xpGain = computeXpGain(quest, streakBonusPct, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses);
+    if (soulLinkActive) {
+      xpGain = Math.round(xpGain * 1.25);
+    }
 
     if (state.restBuff?.active) {
       xpGain = Math.round(xpGain * 1.1);
     }
+    // BUG FIX: track original xpGain for stats before any further modifications below
 
     let finalSysIntegrity = state.integrityScore !== undefined ? state.integrityScore : 100;
 
@@ -442,6 +451,8 @@ export function useGameState(initialHunterName, onLogout) {
     let next = calculateLevelUp(state, xpGain);
     const didLevelUp = next._didLevelUp;
     const earnedPoints = next._levelsGained;
+    // BUG FIX: newLevel is needed for shadow creation on boss quests
+    const newLevel = next.level;
     // Job XP calculation
     next = awardJobXp({ ...next, gold: state.gold + goldGain, totalGoldEarned: (state.totalGoldEarned || 0) + goldGain }, "quest_complete", {
       category: quest.category,
@@ -462,10 +473,9 @@ export function useGameState(initialHunterName, onLogout) {
       ariseData = newShadow;
       notify(`${quest.title} wurde zu einem ${SHADOW_CLASSES[newShadow.class].name}!`, "shadow");
     }
-    // Soul Link +25% XP bonus when both partners active today
+    // Soul Link notification (bonus already applied above before calculateLevelUp)
     let newSoulLink = { ...(state.soulLink || {}) };
-    if (newSoulLink.bothActive) {
-      xpGain = Math.round(xpGain * 1.25);
+    if (soulLinkActive) {
       notify("🔗 Soul Link aktiv! +25% XP Bonus", "success");
     }
 
@@ -628,7 +638,7 @@ export function useGameState(initialHunterName, onLogout) {
       stats: {
         ...state.stats,
         [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) + codexStatBonus,
-        cha: (state.stats.cha || 0) + (quest.category === "cha" ? 0 : 0) + charismaChaBonus + (quest.category === "cha" ? Math.ceil(xpGain / 40) + codexStatBonus : 0)
+        cha: (state.stats.cha || 0) + charismaChaBonus + (quest.category === "cha" ? Math.ceil(xpGain / 40) + codexStatBonus : 0)
       },
       quests: updatedQuests, completedQuests: [...(state.completedQuests || []), { ...quest, completedAt: today }],
       habits: newHabits,
@@ -649,19 +659,6 @@ export function useGameState(initialHunterName, onLogout) {
           : (state.seasons?.seasonalCompletions || [])
       }
     };
-    // Fix stats: avoid double-counting cha
-    if (quest.category === "cha") {
-      next.stats = {
-        ...next.stats,
-        cha: (state.stats.cha || 0) + Math.ceil(xpGain / 40) + codexStatBonus + charismaChaBonus
-      };
-    } else {
-      next.stats = {
-        ...state.stats,
-        [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) + codexStatBonus,
-        cha: (state.stats.cha || 0) + charismaChaBonus
-      };
-    }
     // Check hidden quest triggers after state update
     const newlyDiscoveredHQ = checkHiddenQuestTriggers(next);
     if (newlyDiscoveredHQ.length > 0) {
@@ -725,7 +722,22 @@ export function useGameState(initialHunterName, onLogout) {
     }
     else if (!ariseData && quest.type !== "hidden" && quest.type !== "chained") notify(`+${xpGain} XP · +${goldGain} Gold`, "success");
     if (ariseData && !newNameds.length) setTimeout(() => setAriseTarget(ariseData), 500);
+
+    // ── Haptic Feedback (Web Vibration API) ──────────────────────
+    try {
+      if (navigator.vibrate) {
+        const diff = quest.difficulty;
+        if (diff === "boss") {
+          navigator.vibrate([100, 50, 200, 50, 300]); // epic boss rumble
+        } else if (diff === "hard") {
+          navigator.vibrate([100, 50, 200]);           // strong double-buzz
+        } else {
+          navigator.vibrate(60);                        // quick tap
+        }
+      }
+    } catch (e) { /* Graceful fallback */ }
   }, [state, persist, processAchievements, computeXpGain, notify]);
+
 
   const deleteQuest = id => persist({ ...state, quests: state.quests.filter(q => q.id !== id) });
 
@@ -773,12 +785,10 @@ export function useGameState(initialHunterName, onLogout) {
     }
     const habitId = ((qType === "daily" || qType === "weekly") && qSyncHabit) ? genId() : null;
     let finalDiff = qDiff;
-    if (finalDiff === "boss") finalDiff = "hard";
-
     const tLower = qTitle.trim().toLowerCase();
-    const isSimple = tLower.includes("liegestütz") || tLower.includes("situp") || tLower.includes("kniebeuge") || tLower.includes("wasser") || tLower.includes("kurz");
+    const isSimple = tLower.includes("liegestütz") || tLower.includes("situp") || tLower.includes("kniebeuge") || tLower.includes("wasser");
     const numMatch = tLower.match(/\d+/);
-    if (isSimple || (numMatch && parseInt(numMatch[0], 10) <= 20)) {
+    if (isSimple && numMatch && parseInt(numMatch[0], 10) <= 20) {
       finalDiff = "easy";
     }
 
@@ -809,6 +819,7 @@ export function useGameState(initialHunterName, onLogout) {
 
   const completeEmergencyQuest = useCallback((eq) => {
     if (!state || state.emergencyDone) return;
+    const oldRank = getRank(state.level); // BUG FIX: was missing, caused crash on level-up
     const diff = DIFFICULTIES.find(d => d.key === eq.difficulty) || DIFFICULTIES[1];
     const xpGain = Math.round(diff.xp * 2.5);
     const goldGain = Math.round(diff.gold * 2.5);
@@ -889,7 +900,8 @@ export function useGameState(initialHunterName, onLogout) {
 
     next = {
       ...next,
-      statPoints: (state.statPoints || 0) + earnedPoints,
+      // BUG FIX: calculateLevelUp already adds earnedPoints to statPoints - don't add again!
+      // statPoints already correct in `next` from calculateLevelUp
       dungeons: state.dungeons.map(d => d.instanceId === dungeon.instanceId ? { ...d, cleared: true } : d),
       dungeonHistory: [...(state.dungeonHistory || []), { dungeonId: dungeon.id, dungeonName: dungeon.name, dungeonRank: dungeon.rank, won: result.won, xp: result.xp, gold: totalGold, floorsCleared: result.floorsCleared || dungeon.floors, date: getToday() }],
       totalXpEarned: (state.totalXpEarned || 0) + result.xp,
@@ -972,15 +984,38 @@ export function useGameState(initialHunterName, onLogout) {
     if (state.gold < finalCost) return;
     if (item.type !== "consumable" && state.shopPurchases.includes(item.id)) return;
     if (getRankIndex(getRank(state.level).name) < getRankIndex(item.minRank)) return;
+
+    let consumableEffects = {};
+    if (item.type === "consumable") {
+      if (item.id === "extra_slot") {
+        consumableEffects = { extraDailySlots: (state.extraDailySlots || 0) + 1 };
+      }
+      if (item.id === "potion_heal") {
+        const recoverStreak = state.shadowRegression?.active ? (state.shadowRegression.previousStreak || 0) : (state.streak + 2);
+        consumableEffects = {
+          streak: recoverStreak,
+          shadowRegression: null,
+          penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 }
+        };
+        setTimeout(() => triggerSystemMessage("SYSTEM RECOVERY", [
+          "Elixir of Recovery konsumiert.",
+          "Verlorene Vitalität vollständig wiederhergestellt.",
+          `Streak auf ${recoverStreak} gesetzt.`,
+          "Strafzonen-Status aufgehoben."
+        ]), 600);
+      }
+    }
+
     let next = {
       ...state, gold: state.gold - finalCost,
       ...(item.type !== "consumable" ? { shopPurchases: [...state.shopPurchases, item.id] } : {}),
-      ...(item.type === "consumable" && item.id === "extra_slot" ? { extraDailySlots: (state.extraDailySlots || 0) + 1 } : {}),
+      ...consumableEffects,
       ...(item.type === "theme" ? { selectedTheme: item.themeKey } : {}),
       ...(item.type === "title" ? { selectedTitle: item.name } : {})
     };
     next = processAchievements(next);
-    persist(next); notify(`${item.name} erworben!`, "gold");
+    persist(next);
+    notify(`${item.name} erworben!`, item.id === "potion_heal" ? "success" : "gold");
   };
 
   const equipItem = (item, slot) => { const newSlots = { ...state.equipment.slots, [slot]: item }; let next = { ...state, equipment: { ...state.equipment, slots: newSlots } }; next = processAchievements(next); persist(next); notify(`${item.name} ausgerüstet!`, "info"); };
@@ -1243,7 +1278,7 @@ export function useGameState(initialHunterName, onLogout) {
     try {
       const { breakSoulLink } = await import('../multiplayer/soulLinkFirebase.js');
       await breakSoulLink(state.soulLink.linkCode, auth.currentUser?.uid);
-    } catch (_) {}
+    } catch (_) { }
     persist({ ...state, soulLink: { ...DEFAULT_STATE.soulLink } });
     notify("Soul Link getrennt.", "info");
   }, [state, persist, notify]);

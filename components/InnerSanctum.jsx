@@ -51,11 +51,19 @@ export default function InnerSanctum({ state, persist, notify, theme }) {
         if (remainingManifestations.length === 0) return;
 
         const randomItem = remainingManifestations[Math.floor(Math.random() * remainingManifestations.length)];
-        setInputText(randomItem);
+
+        // BUG FIX: Save manifestation immediately in the same persist call as gold deduction.
+        // Previously, only the input field was set and gold deducted — navigating away lost 20G with no reward.
+        const newVision = {
+            id: genId(),
+            text: randomItem,
+            createdAt: new Date().toISOString()
+        };
 
         persist({
             ...state,
-            gold: state.gold - 20
+            gold: state.gold - 20,
+            manifestations: [newVision, ...manifestations]
         });
 
         if (notify) notify("Einsicht des Monarchen erlangt! (-20G)", "success");

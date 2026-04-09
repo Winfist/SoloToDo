@@ -188,6 +188,7 @@ function App({ initialHunterName, onLogout }) {
   const [isCreatingEntry, setIsCreatingEntry] = React.useState(false);
   const [preview3DDungeon, setPreview3DDungeon] = React.useState(null);
   const [battlePendingStart, setBattlePendingStart] = React.useState(false);
+  const [showDashboardStats, setShowDashboardStats] = React.useState(true);
 
 
 
@@ -457,7 +458,7 @@ function App({ initialHunterName, onLogout }) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 10px", borderRadius: 8, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.1)", color: "#fbbf24", minWidth: 60 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3 }}>
-                  <span>💰</span>{state.gold.toLocaleString()}
+                  <img src="/icon/coin.png" style={{ width: 14, height: 14 }} alt="G" />{state.gold.toLocaleString()}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 10px", borderRadius: 8, background: state.streak >= 3 ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${state.streak >= 3 ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.06)"}`, color: state.streak >= 5 ? "#f97316" : state.streak >= 3 ? "#fb923c" : "#94a3b8", minWidth: 40 }}>
@@ -587,36 +588,39 @@ function App({ initialHunterName, onLogout }) {
       <main style={{ position: "relative", zIndex: 1, padding: "16px", maxWidth: 480, margin: "0 auto", paddingBottom: 92 }}>
 
         {/* SHADOW REGRESSION BANNER (replaces plain penalty banner) */}
-        {penaltyActive && state.shadowRegression?.active ? (
+        {penaltyActive && state.shadowRegression?.active && (state.shadowRegression.previousStreak || 0) > 0 ? (
           <div
             onClick={() => setShowShadowRegression(true)}
             style={{
               background: "linear-gradient(135deg, rgba(30,0,10,0.95), rgba(10,0,5,0.9))",
               border: "1px solid rgba(220,38,38,0.5)", borderLeft: "3px solid #dc2626",
-              borderRadius: 14, padding: "14px 16px", marginBottom: 14,
+              borderRadius: 16, padding: "16px 18px", marginBottom: 14,
               backdropFilter: "blur(8px)", cursor: "pointer",
-              animation: "glitch 4s ease-in-out infinite"
+              boxShadow: "0 0 30px rgba(220,38,38,0.08), inset 0 1px 0 rgba(220,38,38,0.1)",
+              position: "relative", overflow: "hidden"
             }}
           >
-            <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
-              ⚔ SHADOW REGRESSION AKTIV
+            {/* Animated scan line */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "100%", pointerEvents: "none", background: "linear-gradient(180deg, transparent, rgba(220,38,38,0.04), transparent)", animation: "rankShine 3s ease-in-out infinite" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, position: "relative" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.3)", animation: "pulse 2s infinite" }}>
+                <span style={{ fontSize: 16 }}>⚔</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+                  SHADOW REGRESSION AKTIV
+                </div>
+                <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: 600, marginTop: 1 }}>
+                  Streak-Comeback: {state.shadowRegression.questsCompleted || 0}/3
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: 600, marginBottom: 4 }}>
-              Streak-Comeback: {state.shadowRegression.questsCompleted || 0}/3 Rückforderungsquests
+            {/* Progress bar */}
+            <div style={{ height: 6, background: "rgba(220,38,38,0.1)", borderRadius: 3, overflow: "hidden", marginBottom: 8, border: "1px solid rgba(220,38,38,0.15)", position: "relative" }}>
+              <div style={{ width: `${((state.shadowRegression.questsCompleted || 0) / 3) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #991b1b, #dc2626, #ef4444)", transition: "width 0.6s ease", boxShadow: "0 0 8px rgba(220,38,38,0.4)" }} />
             </div>
-            {/* Progress dots */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-              {[1, 2, 3].map(i => (
-                <div key={i} style={{
-                  width: 24, height: 6, borderRadius: 3,
-                  background: (state.shadowRegression.questsCompleted || 0) >= i
-                    ? "#dc2626" : "rgba(220,38,38,0.2)",
-                  border: "1px solid rgba(220,38,38,0.4)"
-                }} />
-              ))}
-            </div>
-            <div style={{ fontSize: 10, color: "#a855f7", fontFamily: "'JetBrains Mono',monospace" }}>
-              Abschluss → 🔥{Math.floor((state.shadowRegression.previousStreak || 0) * 0.5)} Tage Streak wiederhergestellt
+            <div style={{ fontSize: 10, color: "#a855f7", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4, position: "relative" }}>
+              <span style={{ color: "#475569" }}>Abschluss →</span> 🔥{Math.floor((state.shadowRegression.previousStreak || 0) * 0.5)} Tage Streak wiederhergestellt
             </div>
           </div>
         ) : penaltyActive ? (
@@ -675,70 +679,62 @@ function App({ initialHunterName, onLogout }) {
 
         <NotificationBanner state={state} theme={theme} />
 
-        {/* ═══ MICRO-HABITS WIDGET (on dashboard) ═══ */}
-        {view === "dashboard" && (
-          <MicroHabits state={state} persist={persist} notify={notify} theme={theme} />
-        )}
-
         {/* ═══ DASHBOARD ═══ */}
         {view === "dashboard" && (
           <div style={{ animation: "fadeIn 0.35s ease" }}>
-            <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "24px 22px 20px", marginBottom: 16, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)` }}>
-              <div style={{ position: "absolute", top: 0, right: 0, width: "60%", height: "100%", background: `radial-gradient(circle at 100% 30%,${theme.primary}0a,transparent 70%)`, pointerEvents: "none" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, position: "relative" }}>
-                <div>
-                  <div style={{ fontSize: 9, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10, letterSpacing: 1, animation: "pulse 2s infinite" }}>&gt; SYSTEM ONLINE. WILLKOMMEN, {state.hunterName.toUpperCase()}.</div>
-                  <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 4, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>HUNTER LEVEL</div>
-                  <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 40px ${theme.primary}33` }}>{state.level}</div>
-                  {streakBonus > 0 && <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>🔥 +{streakBonus}% XP</div>}
-                  {formationBonus.dungeonBonus > 0 && <div style={{ fontSize: 10, color: "#a78bfa", marginTop: 3, fontFamily: "'JetBrains Mono',monospace" }}>🌑 +{formationBonus.dungeonBonus}% Dungeon</div>}
-                </div>
-                <StatRadar stats={state.stats} theme={theme} size={110} />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>
-                <span style={{ letterSpacing: 2 }}>EXP</span><span>{state.xp.toLocaleString()} / {xpNeeded.toLocaleString()}</span>
-              </div>
-              <div style={{ height: 10, background: "rgba(15,15,30,0.9)", borderRadius: 5, overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.04)" }}>
-                <div style={{ width: `${xpPercent}%`, height: "100%", borderRadius: 5, background: `linear-gradient(90deg,${theme.primary},${theme.accent})`, boxShadow: `0 0 16px ${theme.glow},0 2px 8px ${theme.primary}44`, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", position: "relative", overflow: "hidden" }}>
-                  <div style={{ position: "absolute", top: 0, left: "-100%", width: "60%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)", animation: "shimmer 2.5s ease-in-out infinite" }} />
-                </div>
-              </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6, marginBottom: 16 }}>
-              {CATEGORIES.map((cat, i) => (
-                <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}15`, borderRadius: 12, padding: "10px 4px", textAlign: "center", backdropFilter: "blur(8px)", animation: `slideUp 0.3s ease ${i * 0.05}s both`, transition: "border-color 0.3s,transform 0.2s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "44"; e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "15"; e.currentTarget.style.transform = "none"; }}>
-                  <div style={{ fontSize: 16 }}>{cat.icon}</div>
-                  <div style={{ fontSize: 9, color: cat.color, marginTop: 3, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, letterSpacing: 1 }}>{cat.stat}</div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 1 }}>{(state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0)}</div>
-                </div>
-              ))}
+
+            {/* ── PLAYER STATS (LEVEL & RADAR) ── */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0 16px" }}>
+              <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
+              <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER STATUS</div>
+              <button
+                onClick={() => setShowDashboardStats(!showDashboardStats)}
+                style={{ background: showDashboardStats ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg,${theme.primary}22,${theme.primary}0a)`, border: `1px solid ${theme.primary}55`, borderRadius: 12, padding: "4px 10px", fontSize: 9, color: showDashboardStats ? "#94a3b8" : theme.primary, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", transition: "all 0.2s" }}
+              >
+                {showDashboardStats ? "VERBERGEN ▲" : "ANZEIGEN ▼"}
+              </button>
+              <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
             </div>
 
-            {/* ── VISION BOARD ── */}
-            <div style={{ marginBottom: 24, padding: "18px", borderRadius: 16, background: "linear-gradient(135deg,rgba(168,85,247,0.05),rgba(124,58,237,0.08))", border: "1px solid #7c3aed33", position: "relative", overflow: "hidden", backdropFilter: "blur(4px)" }}>
-              <div style={{ position: "absolute", right: -20, top: -20, fontSize: 80, opacity: 0.05, pointerEvents: "none", animation: "float 4s ease-in-out infinite" }}>🔮</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <span style={{ fontSize: 20 }}>🔮</span>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: "#a855f7", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>VISION BOARD</div>
-                  <div style={{ fontSize: 9, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>MANIFESTIERE DEIN SCHICKSAL</div>
+            {showDashboardStats && (
+              <div style={{ animation: "slideDown 0.3s ease" }}>
+                <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "24px 22px 20px", marginBottom: 16, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)` }}>
+                  <div style={{ position: "absolute", top: 0, right: 0, width: "60%", height: "100%", background: `radial-gradient(circle at 100% 30%,${theme.primary}0a,transparent 70%)`, pointerEvents: "none" }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, position: "relative" }}>
+                    <div>
+                      <div style={{ fontSize: 9, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10, letterSpacing: 1, animation: "pulse 2s infinite" }}>&gt; SYSTEM ONLINE. WILLKOMMEN, {state.hunterName.toUpperCase()}.</div>
+                      <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 4, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>HUNTER LEVEL</div>
+                      <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 40px ${theme.primary}33` }}>{state.level}</div>
+                      {streakBonus > 0 && <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>🔥 +{streakBonus}% XP</div>}
+                      {formationBonus.dungeonBonus > 0 && <div style={{ fontSize: 10, color: "#a78bfa", marginTop: 3, fontFamily: "'JetBrains Mono',monospace" }}>🌑 +{formationBonus.dungeonBonus}% Dungeon</div>}
+                    </div>
+                    <StatRadar stats={state.stats} theme={theme} size={110} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>
+                    <span style={{ letterSpacing: 2 }}>EXP</span><span>{state.xp.toLocaleString()} / {xpNeeded.toLocaleString()}</span>
+                  </div>
+                  <div style={{ height: 10, background: "rgba(15,15,30,0.9)", borderRadius: 5, overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ width: `${xpPercent}%`, height: "100%", borderRadius: 5, background: `linear-gradient(90deg,${theme.primary},${theme.accent})`, boxShadow: `0 0 16px ${theme.glow},0 2px 8px ${theme.primary}44`, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", top: 0, left: "-100%", width: "60%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)", animation: "shimmer 2.5s ease-in-out infinite" }} />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8, marginBottom: 24 }}>
+                  {CATEGORIES.map((cat, i) => (
+                    <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}20`, borderRadius: 16, padding: "12px 4px 10px", textAlign: "center", backdropFilter: "blur(8px)", animation: `slideUp 0.3s ease ${i * 0.05}s both`, transition: "border-color 0.3s,transform 0.2s,box-shadow 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${cat.color}18`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "20"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
+                      <div style={{ width: 44, height: 44, margin: "0 auto", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "50%", background: `radial-gradient(circle, ${cat.color}18 0%, ${cat.color}08 70%, transparent 100%)`, border: `1.5px solid ${cat.color}30`, overflow: "hidden", boxShadow: `0 0 20px ${cat.color}20, inset 0 0 12px ${cat.color}10` }}>
+                        {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "110%", height: "110%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 6px ${cat.color}66)`, transform: "scale(1.15)" }} /> : <span style={{ fontSize: 20 }}>{cat.icon}</span>}
+                      </div>
+                      <div style={{ fontSize: 9, color: cat.color, marginTop: 5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1.5, textShadow: `0 0 8px ${cat.color}44` }}>{cat.stat}</div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 2, textShadow: "0 0 12px rgba(255,255,255,0.1)" }}>{(state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0)}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <ul style={{ margin: 0, padding: "0 0 0 20px", color: "#e2e8f0", fontSize: 13, lineHeight: 1.8, fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
-                <li style={{ paddingBottom: 4 }}>Ich levele jeden Tag auf – körperlich, geistig und finanziell.</li>
-                <li style={{ paddingBottom: 4 }}>Mein Disziplin-Stat wächst mit jeder abgeschlossenen Quest.</li>
-                <li style={{ paddingBottom: 4 }}>Ich ziehe Erfolg und Fülle wie magische Drops an.</li>
-                <li style={{ paddingBottom: 4 }}>Meine Shadow Army bekämpft meine Ausreden in meinem Rücken.</li>
-                <li>Ich bin der Architekt meines eigenen Systems.</li>
-              </ul>
-            </div>
+            )}
 
-            {/* ── HABITS & DAILY ROUTINE ── */}
-            <div style={{ marginBottom: 24 }}>
-              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
+            {/* ── HUNTER QUESTS ── */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0 16px" }}>
               <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
               <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
               <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
@@ -782,13 +778,42 @@ function App({ initialHunterName, onLogout }) {
 
             {
               filteredQuests.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}>
+                <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)", marginBottom: 24 }}>
                   <div style={{ fontSize: 36, marginBottom: 10, animation: "float 3s ease-in-out infinite" }}>⚔️</div>
                   <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
                   <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
                 </div>
-              ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)
+              ) : <div style={{ marginBottom: 24 }}>{filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}</div>
             }
+
+            {/* ── VISION BOARD ── */}
+            <div style={{ marginBottom: 24, padding: "18px", borderRadius: 16, background: "linear-gradient(135deg,rgba(168,85,247,0.05),rgba(124,58,237,0.08))", border: "1px solid #7c3aed33", position: "relative", overflow: "hidden", backdropFilter: "blur(4px)" }}>
+              <div style={{ position: "absolute", right: -20, top: -20, fontSize: 80, opacity: 0.05, pointerEvents: "none", animation: "float 4s ease-in-out infinite" }}>🔮</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span style={{ fontSize: 20 }}>🔮</span>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: "#a855f7", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>VISION BOARD</div>
+                  <div style={{ fontSize: 9, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>MANIFESTIERE DEIN SCHICKSAL</div>
+                </div>
+              </div>
+              <ul style={{ margin: 0, padding: "0 0 0 20px", color: "#e2e8f0", fontSize: 13, lineHeight: 1.8, fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
+                <li style={{ paddingBottom: 4 }}>Ich levele jeden Tag auf – körperlich, geistig und finanziell.</li>
+                <li style={{ paddingBottom: 4 }}>Mein Disziplin-Stat wächst mit jeder abgeschlossenen Quest.</li>
+                <li style={{ paddingBottom: 4 }}>Ich ziehe Erfolg und Fülle wie magische Drops an.</li>
+                <li style={{ paddingBottom: 4 }}>Meine Shadow Army bekämpft meine Ausreden in meinem Rücken.</li>
+                <li>Ich bin der Architekt meines eigenen Systems.</li>
+              </ul>
+            </div>
+
+            {/* ── HABITS & DAILY ROUTINE ── */}
+            <div style={{ marginBottom: 24 }}>
+              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
+            </div>
+
+            {/* ── MICRO-HABITS ── */}
+            <div style={{ marginBottom: 24 }}>
+              <MicroHabits state={state} persist={persist} notify={notify} theme={theme} />
+            </div>
           </div >
         )
         }
@@ -799,7 +824,9 @@ function App({ initialHunterName, onLogout }) {
             <div style={{ animation: "fadeIn 0.35s ease" }}>
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>DUNGEON GATES</div>
-                <div style={{ fontSize: 12, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>Reset in {hoursUntilMidnight()}h · {modifier?.id !== "none" ? `${modifier?.icon} ${modifier?.name}` : "Stable Gates"}</div>
+                <div style={{ fontSize: 12, color: "#334155", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 5 }}>
+                  Reset in {hoursUntilMidnight()}h · {modifier?.id !== "none" ? <>{modifier?.icon === "💰" ? <img src="/icon/coin.png" style={{ width: 14, height: 14, verticalAlign: "middle", marginTop: -2 }} alt="G" /> : modifier?.icon} {modifier?.name}</> : "Stable Gates"}
+                </div>
               </div>
               {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ fontSize: 36, marginBottom: 10 }}>🌀</div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
               {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} modifier={modifier} /></div>)}
@@ -826,19 +853,21 @@ function App({ initialHunterName, onLogout }) {
                 <StatRadar stats={state.stats} theme={theme} size={200} />
                 <div style={{ display: "flex", gap: 0, flexWrap: "wrap", justifyContent: "center", marginTop: 4, width: "100%", background: "rgba(0,0,0,0.2)", borderRadius: 12, overflow: "hidden" }}>
                   {[{ label: "TOTAL XP", value: (state.totalXpEarned || 0).toLocaleString(), color: theme.accent }, { label: "QUESTS", value: state.totalQuestsCompleted || 0, color: theme.accent }, { label: "STREAK", value: `${state.streak}d`, color: "#f59e0b" }, { label: "PWR LVL", value: powerLevel, color: "#e879f9" }, { label: "CLEARED", value: (state.dungeonHistory || []).filter(d => d.won).length, color: "#22d3ee" }].map((s, i) => (
-                    <div key={i} style={{ textAlign: "center", padding: "8px 10px", flex: "1 0 33%" }}>
-                      <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3, letterSpacing: 1 }}>{s.label}</div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: s.color, fontFamily: "'Cinzel',serif" }}>{s.value}</div>
+                    <div key={i} style={{ textAlign: "center", padding: "10px 10px", flex: "1 0 33%", background: `radial-gradient(135deg, ${s.color}08 0%, transparent 100%)`, border: `1px solid ${s.color}15`, boxShadow: `inset 0 0 10px ${s.color}05` }}>
+                      <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, letterSpacing: 1.5 }}>{s.label}</div>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: s.color, fontFamily: "'Cinzel',serif", textShadow: `0 0 12px ${s.color}66` }}>{s.value}</div>
                     </div>
                   ))}
                 </div>
               </div>
               {CATEGORIES.map((cat, i) => {
                 const val = (state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0); const base = state.stats[cat.key] || 0; const maxD = Math.max(val, 50); return (
-                  <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}12`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.06}s both`, transition: "border-color 0.3s" }} onMouseEnter={e => e.currentTarget.style.borderColor = cat.color + "33"} onMouseLeave={e => e.currentTarget.style.borderColor = cat.color + "12"}>
+                  <div key={cat.key} style={{ background: `radial-gradient(120% 100% at 50% 0%, ${cat.color}15 0%, rgba(10,10,24,0.7) 100%)`, border: `1px solid ${cat.color}25`, borderRadius: 16, padding: "16px", marginBottom: 12, backdropFilter: "blur(12px)", boxShadow: `0 8px 32px ${cat.color}0a, inset 0 1px 0 rgba(255,255,255,0.05)`, animation: `cardEnter 0.4s ease ${i * 0.06}s both`, transition: "all 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.boxShadow = `0 12px 40px ${cat.color}15, inset 0 1px 0 rgba(255,255,255,0.1)`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "25"; e.currentTarget.style.boxShadow = `0 8px 32px ${cat.color}0a, inset 0 1px 0 rgba(255,255,255,0.05)`; }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 22 }}>{cat.icon}</span>
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: `radial-gradient(circle, ${cat.color}18, transparent)`, border: `1px solid ${cat.color}25`, overflow: "hidden", flexShrink: 0 }}>
+                          {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "100%", height: "100%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 4px ${cat.color}55)`, transform: "scale(1.1)" }} /> : <span style={{ fontSize: 22 }}>{cat.icon}</span>}
+                        </div>
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{cat.label}</div>
                           <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>{cat.full}</div>
@@ -880,6 +909,50 @@ function App({ initialHunterName, onLogout }) {
                   </div>
                 </div>
               )}
+
+              {/* ═══ ACHIEVEMENT BROWSER ═══ */}
+              <div style={{ marginTop: 28, animation: "fadeIn 0.6s ease 0.2s both" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>HALL OF RECORDS</div>
+                    <div style={{ fontSize: 13, color: "#e2e8f0", fontFamily: "'Cinzel',serif", fontWeight: 700 }}>Achievements</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", padding: "4px 8px", background: theme.primary + "15", borderRadius: 8, border: `1px solid ${theme.primary}33` }}>
+                    {(state.achievements?.unlocked || []).length} / {ACHIEVEMENTS.length} UNLOCKED
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
+                  {ACHIEVEMENTS.map((ach, i) => {
+                    const isUnlocked = (state.achievements?.unlocked || []).includes(ach.id);
+                    return (
+                      <div key={ach.id} style={{
+                        background: isUnlocked ? theme.card : "rgba(10,10,20,0.4)",
+                        border: `1px solid ${isUnlocked ? theme.primary + "44" : "#1e2940"}`,
+                        borderRadius: 14, padding: "12px 16px",
+                        opacity: isUnlocked ? 1 : 0.45,
+                        display: "flex", alignItems: "center", gap: 14,
+                        boxShadow: isUnlocked ? `0 0 15px ${theme.primary}11` : "none",
+                        transition: "all 0.3s"
+                      }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: isUnlocked ? theme.primary + "15" : "rgba(255,255,255,0.02)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: `1px solid ${isUnlocked ? theme.primary + "44" : "rgba(255,255,255,0.05)"}` }}>
+                          {isUnlocked ? ach.icon : "🔒"}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: isUnlocked ? theme.primary : "#94a3b8", fontFamily: "'Cinzel',serif", marginBottom: 2 }}>{ach.name}</div>
+                          <div style={{ fontSize: 10, color: isUnlocked ? "#cbd5e1" : "#475569", lineHeight: 1.4 }}>{ach.desc}</div>
+                          <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                            {ach.reward.xp && <span style={{ fontSize: 8, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: "#a78bfa15" }}>+{ach.reward.xp} XP</span>}
+                            {ach.reward.gold && <span style={{ fontSize: 8, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: "#fbbf2415" }}>+{ach.reward.gold} Gold</span>}
+                            {ach.reward.title && <span style={{ fontSize: 8, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: theme.accent + "15" }}>👑 {ach.reward.title}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
           )
         }
@@ -1200,7 +1273,7 @@ function App({ initialHunterName, onLogout }) {
                       const unlocked = achUnlocked.includes(ach.id);
                       return (
                         <div key={ach.id} style={{ background: theme.card, border: `1px solid ${unlocked ? "#f59e0b22" : theme.primary + "12"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 6, display: "flex", alignItems: "center", gap: 12, opacity: unlocked ? 1 : 0.45, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.06}s both` }}>
-                          <span style={{ fontSize: 24, filter: unlocked ? "none" : "grayscale(100%)" }}>{ach.icon}</span>
+                          <span style={{ fontSize: 24, filter: unlocked ? "none" : "grayscale(100%)" }}>{ach.icon === "💰" ? <img src="/icon/coin.png" style={{ width: 24, height: 24 }} alt="G" /> : ach.icon}</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 12, fontWeight: 700, color: unlocked ? "#fde68a" : "#475569", fontFamily: "'Cinzel',serif" }}>{ach.name}</div>
                             <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{ach.desc}</div>
@@ -1227,7 +1300,7 @@ function App({ initialHunterName, onLogout }) {
                   <div style={{ fontSize: 13, color: "#475569" }}>Kaufe Titel und Themes</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: "#fbbf2412", border: "1px solid #fbbf2422" }}>
-                  <span style={{ fontSize: 16 }}>💰</span>
+                  <img src="/icon/coin.png" style={{ width: 18, height: 18 }} alt="G" />
                   <span style={{ fontSize: 18, fontWeight: 900, color: "#fbbf24", fontFamily: "'Cinzel',serif" }}>{state.gold.toLocaleString()}</span>
                 </div>
               </div>
@@ -1393,7 +1466,7 @@ function App({ initialHunterName, onLogout }) {
           {[
             { key: "dashboard", icon: "📋", label: "Heute" },
             { key: "training", icon: "🎯", label: "Ziele" },
-            { key: "dungeon", icon: "🌀", label: "Gates", badge: activeDungeons.length },
+            { key: "dungeon", icon: <img src="/icons/gate_normal.png" style={{ width: 26, height: 26, objectFit: "contain", display: "block", borderRadius: "50%", margin: "0 auto", mixBlendMode: "screen", filter: "drop-shadow(0 0 6px #a78bfa88) brightness(1.2)", background: "rgba(167,139,250,0.1)", border: "1px solid #a78bfa33" }} alt="Gate" />, label: "Gates", badge: activeDungeons.length },
             { key: "story", icon: "📖", label: "Story" },
             { key: "system", icon: "⚙️", label: "System" }
           ].map(tab => (
@@ -1693,10 +1766,10 @@ function App({ initialHunterName, onLogout }) {
                     <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>QUEST TYP</label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {[
-                        { key: "side", icon: "📋", label: "Side Quest", color: "#a78bfa", desc: "Kein Zeitlimit" },
-                        { key: "daily", icon: "📅", label: "Daily Quest", color: "#22d3ee", desc: "Täglich zurückgesetzt" },
-                        { key: "weekly", icon: "📆", label: "Weekly Quest", color: "#8b5cf6", desc: "2× XP & Gold" },
-                        { key: "chained", icon: "⛓️", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" },
+                        { key: "side", label: "Side Quest", color: "#a78bfa", desc: "Kein Zeitlimit" },
+                        { key: "daily", label: "Daily Quest", color: "#22d3ee", desc: "Täglich zurückgesetzt" },
+                        { key: "weekly", label: "Weekly Quest", color: "#8b5cf6", desc: "2× XP & Gold" },
+                        { key: "chained", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" },
                       ].map(t => {
                         const active = qType === t.key;
                         return (
@@ -1713,7 +1786,10 @@ function App({ initialHunterName, onLogout }) {
                             onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = t.color + "33"; e.currentTarget.style.color = t.color + "cc"; } }}
                             onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
                           >
-                            <span style={{ fontSize: 13 }}>{t.icon} {t.label}</span>
+                            <span style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                              <div style={{ width: 6, height: 6, borderRadius: "50%", background: active ? t.color : "#475569", boxShadow: active ? `0 0 6px ${t.color}` : "none" }} />
+                              {t.label}
+                            </span>
                             <span style={{ fontSize: 9, opacity: active ? 0.8 : 0.45, fontWeight: 400, fontFamily: "'JetBrains Mono',monospace" }}>{t.desc}</span>
                           </button>
                         );
@@ -1756,7 +1832,7 @@ function App({ initialHunterName, onLogout }) {
                   <div style={{ marginBottom: 18 }}>
                     <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>STATS KATEGORIE</label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                      {CATEGORIES.map(c => { const active = qCat === c.key; return (<button key={c.key} onClick={() => setQCat(c.key)} style={{ padding: "11px 6px", borderRadius: 14, fontSize: 12, background: active ? `linear-gradient(135deg,${c.color}22,${c.color}0d)` : "rgba(12,12,26,0.6)", color: active ? c.color : "#475569", border: `1px solid ${active ? c.color + "55" : "#1e2940"}`, transition: "all 0.25s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, boxShadow: active ? `0 4px 12px ${c.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : "none", cursor: "pointer" }} onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = c.color + "44"; e.currentTarget.style.color = c.color + "cc"; } }} onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}>  <span style={{ fontSize: 18, lineHeight: 1 }}>{c.icon}</span><span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{c.stat}</span><span style={{ fontSize: 9, opacity: active ? 0.8 : 0.4, fontFamily: "'Outfit',sans-serif", textAlign: "center", lineHeight: 1.2 }}>{c.label}</span></button>); })}
+                      {CATEGORIES.map(c => { const active = qCat === c.key; return (<button key={c.key} onClick={() => setQCat(c.key)} style={{ padding: "11px 6px", borderRadius: 14, fontSize: 12, background: active ? `linear-gradient(135deg,${c.color}22,${c.color}0d)` : "rgba(12,12,26,0.6)", color: active ? c.color : "#475569", border: `1px solid ${active ? c.color + "55" : "#1e2940"}`, transition: "all 0.25s", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, boxShadow: active ? `0 4px 12px ${c.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : "none", cursor: "pointer" }} onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = c.color + "44"; e.currentTarget.style.color = c.color + "cc"; } }} onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}>  <div style={{ width: 28, height: 28, borderRadius: "50%", background: `${c.color}15`, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${c.color}33` }}>{c.iconSrc ? <img src={c.iconSrc} alt={c.stat} style={{ width: 20, height: 20, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 4px ${c.color}55)`, transform: "scale(1.1)" }} /> : <span style={{ fontSize: 16 }}>{c.icon}</span>}</div><span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{c.stat}</span><span style={{ fontSize: 9, opacity: active ? 0.8 : 0.4, fontFamily: "'Outfit',sans-serif", textAlign: "center", lineHeight: 1.2 }}>{c.label}</span></button>); })}
                     </div>
                   </div>
 
@@ -1780,13 +1856,15 @@ function App({ initialHunterName, onLogout }) {
                             <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>BELOHNUNG</div>
                             <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", gap: 6, justifyContent: "center" }}>
                               <span style={{ color: "#67e8f9" }}>+{baseXp} XP</span>
-                              <span style={{ color: "#fbbf24" }}>+{baseGold}G</span>
+                              {baseGold > 0 && <span style={{ color: "#fbbf24", display: "flex", alignItems: "center", gap: 3 }}>+{baseGold} <img src="/icon/coin.png" style={{ width: 12, height: 12, opacity: 0.8 }} alt="G" /></span>}
                             </div>
                           </div>
                           <div style={{ width: 1, height: 28, background: "#1e2940", margin: "0 8px" }} />
                           <div style={{ textAlign: "center" }}>
                             <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>KATEGORIE</div>
-                            <div style={{ fontSize: 12, color: cat.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon} {cat.stat}</div>
+                            <div style={{ fontSize: 12, color: cat.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                              {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 16, height: 16, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} {cat.stat}
+                            </div>
                           </div>
                         </div>
                         {qDiff === "boss" && <div style={{ marginTop: 10, padding: "5px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid #ef444433", fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", textAlign: "center", animation: "pulse 2s infinite" }}>⚠ 🌑 SCHATTEN BESCHWÖRUNGSCHANCE</div>}

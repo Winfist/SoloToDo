@@ -108,6 +108,11 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
                     notify(`Session komplett! +${minutesCompleted}m Focus Zeit erfasst. +${xpGain} XP (inkl. +${streakBonus} Streak-Bonus) ⚡`, "success");
                 }
 
+                // Track focus sessions for Achievement system
+                nextState.stats = {
+                    ...nextState.stats,
+                    focusSessions: (nextState.stats?.focusSessions || 0) + 1,
+                };
                 persist(nextState);
                 setSessionStreak(prev => prev + 1);
 

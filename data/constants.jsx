@@ -3,6 +3,7 @@ import { JOBS } from "./jobs.js";
 import { QUEST_POOL } from "./questPool.js";
 import { db, auth } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { STAT_ICONS, SHADOW_ICONS, GATE_ICONS, ITEM_ICONS } from "../data/icons.js";
 
 const RANKS = [
   { name: "E", label: "E-Rank Hunter", minLv: 1, maxLv: 10, xpPerLv: 100, color: "#6b7280", glow: "rgba(107,114,128,0.4)" },
@@ -17,16 +18,16 @@ const RANKS = [
 const DIFFICULTIES = [
   { key: "easy", label: "Easy", xp: 5, gold: 10, color: "#6b7280", icon: "◇", waitHours: 0 },
   { key: "normal", label: "Normal", xp: 15, gold: 25, color: "#22d3ee", icon: "◆", waitHours: 0.5 },
-  { key: "hard", label: "Hard", xp: 40, gold: 60, color: "#a78bfa", icon: "★", waitHours: 2 },
-  { key: "boss", label: "Boss", xp: 100, gold: 150, color: "#ef4444", icon: "♛", waitHours: 3 },
+  { key: "hard", label: "Hard", xp: 40, gold: 60, color: "#a78bfa", icon: "★", waitHours: 1 },
+  { key: "boss", label: "Boss", xp: 100, gold: 150, color: "#ef4444", icon: "♛", waitHours: 2 },
 ];
 
 const CATEGORIES = [
-  { key: "str", label: "Strength", full: "Sport / Fitness", stat: "STR", icon: "⚔️", color: "#ef4444" },
-  { key: "int", label: "Intelligence", full: "Lernen / Lesen", stat: "INT", icon: "📖", color: "#3b82f6" },
-  { key: "vit", label: "Vitality", full: "Erholung", stat: "VIT", icon: "🛡️", color: "#22c55e" },
-  { key: "agi", label: "Agility", full: "Produktivität", stat: "AGI", icon: "⚡", color: "#f59e0b" },
-  { key: "cha", label: "Charisma", full: "Soziales", stat: "CHA", icon: "👥", color: "#a855f7" },
+  { key: "str", label: "Strength", full: "Sport / Fitness", stat: "STR", icon: "⚔️", iconSrc: STAT_ICONS.str, color: "#ef4444" },
+  { key: "int", label: "Intelligence", full: "Lernen / Lesen", stat: "INT", icon: "📖", iconSrc: STAT_ICONS.int, color: "#3b82f6" },
+  { key: "vit", label: "Vitality", full: "Erholung", stat: "VIT", icon: "🛡️", iconSrc: STAT_ICONS.vit, color: "#22c55e" },
+  { key: "agi", label: "Agility", full: "Produktivität", stat: "AGI", icon: "⚡", iconSrc: STAT_ICONS.agi, color: "#f59e0b" },
+  { key: "cha", label: "Charisma", full: "Soziales", stat: "CHA", icon: "👥", iconSrc: STAT_ICONS.cha, color: "#a855f7" },
 ];
 
 const STRATEGIES = [
@@ -110,7 +111,7 @@ const QUEST_TEMPLATES = [
 // ─── SHADOW ARMY DATA ─────────────────────────────────────────
 const SHADOW_CLASSES = {
   soldier: {
-    name: "Shadow Soldier", icon: "⚔️", color: "#64748b",
+    name: "Shadow Soldier", icon: "⚔️", iconSrc: SHADOW_ICONS.soldier, color: "#64748b",
     baseStats: { power: 10, speed: 10, loyalty: 10, presence: 5 },
     passiveEffect: "+2% XP von allen Quests",
     description: "Standard-Schattenkrieger"
@@ -122,7 +123,7 @@ const SHADOW_CLASSES = {
     description: "Gepanzerter Frontline-Kämpfer"
   },
   mage: {
-    name: "Shadow Mage", icon: "🔮", color: "#a855f7",
+    name: "Shadow Mage", icon: "🔮", iconSrc: SHADOW_ICONS.mage, color: "#a855f7",
     baseStats: { power: 8, speed: 12, loyalty: 10, presence: 15 },
     passiveEffect: "+3% XP von INT-Quests",
     description: "Magischer Unterstützer"
@@ -140,7 +141,7 @@ const SHADOW_CLASSES = {
     description: "Beschützer der Armee"
   },
   commander: {
-    name: "Shadow Commander", icon: "👑", color: "#f59e0b",
+    name: "Shadow Commander", icon: "👑", iconSrc: SHADOW_ICONS.commander, color: "#f59e0b",
     baseStats: { power: 15, speed: 12, loyalty: 15, presence: 18 },
     passiveEffect: "Alle Shadows +10% Stats",
     description: "Führt andere Shadows an",
@@ -151,15 +152,15 @@ const SHADOW_CLASSES = {
 const SHADOW_TIERS = {
   1: { name: "Basic", color: "#64748b", maxLevel: 20, statMult: 1.0, abilitySlots: 1, evolutionCost: 0, glowIntensity: 0.2 },
   2: { name: "Elite", color: "#3b82f6", maxLevel: 35, statMult: 1.3, abilitySlots: 2, evolutionCost: 500, glowIntensity: 0.4 },
-  3: { name: "Commander", color: "#a855f7", maxLevel: 50, statMult: 1.6, abilitySlots: 3, evolutionCost: 1500, glowIntensity: 0.6 },
-  4: { name: "Named", color: "#f59e0b", maxLevel: 75, statMult: 2.0, abilitySlots: 4, evolutionCost: 5000, glowIntensity: 0.8 },
-  5: { name: "Monarch", color: "#ef4444", maxLevel: 100, statMult: 3.0, abilitySlots: 5, evolutionCost: 20000, glowIntensity: 1.0 },
+  3: { name: "Commander", color: "#a855f7", maxLevel: 50, statMult: 1.6, abilitySlots: 3, evolutionCost: 800, glowIntensity: 0.6 },
+  4: { name: "Named", color: "#f59e0b", maxLevel: 75, statMult: 2.0, abilitySlots: 4, evolutionCost: 2500, glowIntensity: 0.8 },
+  5: { name: "Monarch", color: "#ef4444", maxLevel: 100, statMult: 3.0, abilitySlots: 5, evolutionCost: 10000, glowIntensity: 1.0 },
 };
 
 const NAMED_SHADOWS = {
   igris: {
     id: "igris", name: "Igris", title: "The Bloodred Commander",
-    class: "knight", tier: 4, icon: "🩸",
+    class: "knight", tier: 4, icon: "🩸", iconSrc: SHADOW_ICONS.igris,
     unlockCondition: { type: "dungeon_rank", dungeonRank: "A", desc: "A-Rank Dungeon besiegen" },
     uniqueAbility: { name: "Crimson Blade", effect: "Critical Strike +50% in Dungeons", icon: "⚔️" },
     lore: "Einst ein loyaler Ritter, nun der treueste Schatten des Monarchen.",
@@ -175,7 +176,7 @@ const NAMED_SHADOWS = {
   },
   beru: {
     id: "beru", name: "Beru", title: "The Ant King",
-    class: "assassin", tier: 4, icon: "🐜",
+    class: "assassin", tier: 4, icon: "🐜", iconSrc: SHADOW_ICONS.beru,
     unlockCondition: { type: "dungeon_rank", dungeonRank: "S", desc: "S-Rank Dungeon besiegen" },
     uniqueAbility: { name: "Consume", effect: "Absorbiert 5% der Boss-Stats permanent", icon: "👅" },
     lore: "Der gefallene König der Ameisen, wiedergeboren als Schatten.",
@@ -254,9 +255,9 @@ function createShadowFromQuest(quest, playerLevel) {
 }
 
 function calcFormationBonus(shadowArmy, allShadowsActive = false) {
-  if (!shadowArmy) return { dungeonBonus: 0, xpBonus: 0, goldBonus: 0 };
+  if (!shadowArmy) return { dungeonBonus: 0, xpBonus: 0, goldBonus: 0, streakShield: 0 };
   const deployed = (shadowArmy.shadows || []).filter(s => allShadowsActive || s.isDeployed);
-  let dungeonBonus = 0, xpBonus = 0, goldBonus = 0;
+  let dungeonBonus = 0, xpBonus = 0, goldBonus = 0, streakShield = 0;
   const vCount = deployed.filter(s => s.deploymentSlot === "vanguard").length;
   const cCount = deployed.filter(s => s.deploymentSlot === "core").length;
   const rCount = deployed.filter(s => s.deploymentSlot === "rearguard").length;
@@ -269,7 +270,10 @@ function calcFormationBonus(shadowArmy, allShadowsActive = false) {
   // Commander bonus
   const hasCommander = deployed.some(s => s.class === "commander");
   if (hasCommander) { dungeonBonus += 5; xpBonus += 5; goldBonus += 5; }
-  return { dungeonBonus, xpBonus: xpBonus / 100, goldBonus: goldBonus / 100 };
+  // Healer passive
+  const healerCount = deployed.filter(s => s.class === "healer").length;
+  if (healerCount > 0) { streakShield += healerCount; }
+  return { dungeonBonus, xpBonus: xpBonus / 100, goldBonus: goldBonus / 100, streakShield };
 }
 
 function checkNamedShadowUnlocks(state) {
@@ -593,6 +597,7 @@ function generateChainedQuest(baseTitle, category, difficulty, step, totalSteps)
     title: baseTitle,
     category, difficulty,
     type: "chained",
+    isSystem: true,
     chainStep: step,
     chainTotal: totalSteps,
     chainMultiplier: 1 + (step - 1) * 0.25,
@@ -602,16 +607,16 @@ function generateChainedQuest(baseTitle, category, difficulty, step, totalSteps)
 
 // ─── EQUIPMENT ────────────────────────────────────────────────
 const EQUIPMENT_POOL = [
-  { id: "iron_dagger", slot: "weapon", name: "Iron Dagger", rarity: "common", icon: "🗡️", ranks: ["E"], bonus: { xpBonus: 0.03 }, desc: "+3% XP" },
-  { id: "hunters_blade", slot: "weapon", name: "Hunter's Blade", rarity: "uncommon", icon: "⚔️", ranks: ["D"], bonus: { xpBonus: 0.06 }, desc: "+6% XP" },
-  { id: "shadow_sword", slot: "weapon", name: "Shadow Sword", rarity: "rare", icon: "🌑", ranks: ["C"], bonus: { xpBonus: 0.10, goldBonus: 0.05 }, desc: "+10% XP, +5% Gold" },
-  { id: "void_blade", slot: "weapon", name: "Void Blade", rarity: "epic", icon: "💜", ranks: ["B"], bonus: { xpBonus: 0.15, strBonus: 5 }, desc: "+15% XP, +5 STR" },
-  { id: "demon_king_blade", slot: "weapon", name: "Demon King's Blade", rarity: "legendary", icon: "🔱", ranks: ["A", "S"], bonus: { xpBonus: 0.25, strBonus: 10, goldBonus: 0.10 }, desc: "+25% XP, +10 STR, +10% Gold" },
-  { id: "leather_armor", slot: "armor", name: "Leather Armor", rarity: "common", icon: "🧥", ranks: ["E"], bonus: { streakShield: 1 }, desc: "+1 Streak-Schutz" },
-  { id: "hunters_coat", slot: "armor", name: "Hunter's Coat", rarity: "uncommon", icon: "🥋", ranks: ["D"], bonus: { streakShield: 1, dungeonBonus: 5 }, desc: "+1 Schutz, +5% Dungeon" },
-  { id: "shadow_armor", slot: "armor", name: "Shadow Armor", rarity: "rare", icon: "🛡️", ranks: ["C"], bonus: { streakShield: 2, dungeonBonus: 8 }, desc: "+2 Schutz, +8% Dungeon" },
-  { id: "void_plate", slot: "armor", name: "Void Plate", rarity: "epic", icon: "💠", ranks: ["B"], bonus: { streakShield: 3, dungeonBonus: 12, vitBonus: 5 }, desc: "+3 Schutz, +12% Dungeon, +5 VIT" },
-  { id: "monarch_robes", slot: "armor", name: "Monarch's Robes", rarity: "legendary", icon: "👑", ranks: ["A", "S"], bonus: { streakShield: 5, dungeonBonus: 20, vitBonus: 10 }, desc: "+5 Schutz, +20% Dungeon, +10 VIT" },
+  { id: "iron_dagger", slot: "weapon", name: "Iron Dagger", rarity: "common", icon: "🗡️", iconSrc: ITEM_ICONS.blade, ranks: ["E"], bonus: { xpBonus: 0.03 }, desc: "+3% XP" },
+  { id: "hunters_blade", slot: "weapon", name: "Hunter's Blade", rarity: "uncommon", icon: "⚔️", iconSrc: ITEM_ICONS.blade, ranks: ["D"], bonus: { xpBonus: 0.06 }, desc: "+6% XP" },
+  { id: "shadow_sword", slot: "weapon", name: "Shadow Sword", rarity: "rare", icon: "🌑", iconSrc: ITEM_ICONS.blade, ranks: ["C"], bonus: { xpBonus: 0.10, goldBonus: 0.05 }, desc: "+10% XP, +5% Gold" },
+  { id: "void_blade", slot: "weapon", name: "Void Blade", rarity: "epic", icon: "💜", iconSrc: ITEM_ICONS.blade, ranks: ["B"], bonus: { xpBonus: 0.15, strBonus: 5 }, desc: "+15% XP, +5 STR" },
+  { id: "demon_king_blade", slot: "weapon", name: "Demon King's Blade", rarity: "legendary", icon: "🔱", iconSrc: ITEM_ICONS.blade, ranks: ["A", "S"], bonus: { xpBonus: 0.25, strBonus: 10, goldBonus: 0.10 }, desc: "+25% XP, +10 STR, +10% Gold" },
+  { id: "leather_armor", slot: "armor", name: "Leather Armor", rarity: "common", icon: "🧥", iconSrc: ITEM_ICONS.armor, ranks: ["E"], bonus: { streakShield: 1 }, desc: "+1 Streak-Schutz" },
+  { id: "hunters_coat", slot: "armor", name: "Hunter's Coat", rarity: "uncommon", icon: "🥋", iconSrc: ITEM_ICONS.armor, ranks: ["D"], bonus: { streakShield: 1, dungeonBonus: 5 }, desc: "+1 Schutz, +5% Dungeon" },
+  { id: "shadow_armor", slot: "armor", name: "Shadow Armor", rarity: "rare", icon: "🛡️", iconSrc: ITEM_ICONS.armor, ranks: ["C"], bonus: { streakShield: 2, dungeonBonus: 8 }, desc: "+2 Schutz, +8% Dungeon" },
+  { id: "void_plate", slot: "armor", name: "Void Plate", rarity: "epic", icon: "💠", iconSrc: ITEM_ICONS.armor, ranks: ["B"], bonus: { streakShield: 3, dungeonBonus: 12, vitBonus: 5 }, desc: "+3 Schutz, +12% Dungeon, +5 VIT" },
+  { id: "monarch_robes", slot: "armor", name: "Monarch's Robes", rarity: "legendary", icon: "👑", iconSrc: ITEM_ICONS.armor, ranks: ["A", "S"], bonus: { streakShield: 5, dungeonBonus: 20, vitBonus: 10 }, desc: "+5 Schutz, +20% Dungeon, +10 VIT" },
   { id: "copper_ring", slot: "ring", name: "Copper Ring", rarity: "common", icon: "💍", ranks: ["E", "D"], bonus: { goldBonus: 0.05 }, desc: "+5% Gold" },
   { id: "mana_ring", slot: "ring", name: "Mana Ring", rarity: "uncommon", icon: "🔮", ranks: ["C"], bonus: { xpBonus: 0.05, intBonus: 3 }, desc: "+5% XP, +3 INT" },
   { id: "shadow_ring", slot: "ring", name: "Shadow Ring", rarity: "rare", icon: "🌀", ranks: ["B"], bonus: { xpBonus: 0.08, goldBonus: 0.08, agiBonus: 3 }, desc: "+8% XP+Gold, +3 AGI" },
@@ -623,23 +628,39 @@ const RARITY_LABELS = { common: "Common", uncommon: "Uncommon", rare: "Rare", ep
 
 // ─── DUNGEONS ─────────────────────────────────────────────────
 const DUNGEON_TEMPLATES = [
-  { id: "goblin_lair", name: "Goblin Lair", desc: "Verseuchte Höhle voller Goblins", rank: "E", requirements: { str: 5 }, primaryStat: "str", xp: 200, gold: 150, icon: "👺", floors: 2 },
-  { id: "cursed_forest", name: "Cursed Forest", desc: "Magische Fallen im dunklen Wald", rank: "E", requirements: { int: 5 }, primaryStat: "int", xp: 180, gold: 140, icon: "🌲", floors: 2 },
-  { id: "dark_cave", name: "Dark Cave", desc: "Untote in verlassenen Minen", rank: "E", requirements: { vit: 5 }, primaryStat: "vit", xp: 190, gold: 145, icon: "🦇", floors: 2 },
-  { id: "rat_den", name: "Rat King's Den", desc: "Riesige Ratten und ihr König", rank: "E", requirements: { agi: 5 }, primaryStat: "agi", xp: 170, gold: 135, icon: "🐀", floors: 2 },
-  { id: "library_ruin", name: "Library Ruin", desc: "Ruinen einer alten Bibliothek", rank: "D", requirements: { int: 15, agi: 8 }, primaryStat: "int", xp: 400, gold: 400, icon: "📚", floors: 3 },
-  { id: "iron_fortress", name: "Iron Fortress", desc: "Stahlharte Festung mit Golem-Wächtern", rank: "D", requirements: { str: 12, vit: 10 }, primaryStat: "str", xp: 420, gold: 450, icon: "⚙️", floors: 3 },
-  { id: "shadow_cave", name: "Shadow Cave", desc: "Schattenwesen lauern im Dunkeln", rank: "D", requirements: { agi: 12, int: 10 }, primaryStat: "agi", xp: 380, gold: 350, icon: "🌑", floors: 3 },
-  { id: "ice_palace", name: "Ice Palace", desc: "Eisiger Palast des Winterkönigs", rank: "C", requirements: { vit: 25, str: 20 }, primaryStat: "vit", xp: 800, gold: 1000, icon: "❄️", floors: 4 },
-  { id: "thunder_gate", name: "Thunder Gate", desc: "Portal durchzogen von Blitzen", rank: "C", requirements: { agi: 25, int: 15 }, primaryStat: "agi", xp: 850, gold: 1200, icon: "⚡", floors: 4 },
-  { id: "blood_altar", name: "Blood Altar", desc: "Verfluchter Altar des Dämonenfürsten", rank: "C", requirements: { str: 30, cha: 15 }, primaryStat: "str", xp: 900, gold: 1500, icon: "🩸", floors: 4 },
-  { id: "dragon_nest", name: "Dragon Nest", desc: "Nest des uralten Drachen Verthaxis", rank: "B", requirements: { str: 40, vit: 35, int: 25 }, primaryStat: "str", xp: 1500, gold: 4000, icon: "🐉", floors: 5 },
-  { id: "void_rift", name: "Void Rift", desc: "Riss in der Realität", rank: "B", requirements: { int: 40, agi: 35 }, primaryStat: "int", xp: 1600, gold: 4500, icon: "🌀", floors: 5 },
-  { id: "shadow_castle", name: "Shadow Castle", desc: "Festung des Schattenkönigs", rank: "A", requirements: { str: 60, int: 55, vit: 50, agi: 45 }, primaryStat: "str", xp: 3000, gold: 10000, icon: "🏰", floors: 7 },
-  { id: "monarchs_domain", name: "Monarch's Domain", desc: "Reich eines ursprünglichen Monarchen", rank: "S", requirements: { str: 90, int: 85, vit: 80, agi: 75, cha: 70 }, primaryStat: "str", xp: 6000, gold: 25000, icon: "👑", floors: 10 },
+  { id: "goblin_lair", name: "Goblin Lair", desc: "Verseuchte Höhle voller Goblins", rank: "E", requirements: { str: 5 }, primaryStat: "str", xp: 200, gold: 150, floors: 2 },
+  { id: "cursed_forest", name: "Cursed Forest", desc: "Magische Fallen im dunklen Wald", rank: "E", requirements: { int: 5 }, primaryStat: "int", xp: 180, gold: 140, floors: 2 },
+  { id: "dark_cave", name: "Dark Cave", desc: "Untote in verlassenen Minen", rank: "E", requirements: { vit: 5 }, primaryStat: "vit", xp: 190, gold: 145, floors: 2 },
+  { id: "rat_den", name: "Rat King's Den", desc: "Riesige Ratten und ihr König", rank: "E", requirements: { agi: 5 }, primaryStat: "agi", xp: 170, gold: 135, floors: 2 },
+  { id: "library_ruin", name: "Library Ruin", desc: "Ruinen einer alten Bibliothek", rank: "D", requirements: { int: 15, agi: 8 }, primaryStat: "int", xp: 400, gold: 400, floors: 3 },
+  { id: "iron_fortress", name: "Iron Fortress", desc: "Stahlharte Festung mit Golem-Wächtern", rank: "D", requirements: { str: 12, vit: 10 }, primaryStat: "str", xp: 420, gold: 450, floors: 3 },
+  { id: "shadow_cave", name: "Shadow Cave", desc: "Schattenwesen lauern im Dunkeln", rank: "D", requirements: { agi: 12, int: 10 }, primaryStat: "agi", xp: 380, gold: 350, floors: 3 },
+  { id: "ice_palace", name: "Ice Palace", desc: "Eisiger Palast des Winterkönigs", rank: "C", requirements: { vit: 25, str: 20 }, primaryStat: "vit", xp: 800, gold: 1000, floors: 4 },
+  { id: "thunder_gate", name: "Thunder Gate", desc: "Portal durchzogen von Blitzen", rank: "C", requirements: { agi: 25, int: 15 }, primaryStat: "agi", xp: 850, gold: 1200, floors: 4 },
+  { id: "blood_altar", name: "Blood Altar", desc: "Verfluchter Altar des Dämonenfürsten", rank: "C", requirements: { str: 30, cha: 15 }, primaryStat: "str", xp: 900, gold: 1500, floors: 4 },
+  { id: "dragon_nest", name: "Dragon Nest", desc: "Nest des uralten Drachen Verthaxis", rank: "B", requirements: { str: 40, vit: 35, int: 25 }, primaryStat: "str", xp: 1500, gold: 4000, floors: 5 },
+  { id: "void_rift", name: "Void Rift", desc: "Riss in der Realität", rank: "B", requirements: { int: 40, agi: 35 }, primaryStat: "int", xp: 1600, gold: 4500, floors: 5 },
+  { id: "shadow_castle", name: "Shadow Castle", desc: "Festung des Schattenkönigs", rank: "A", requirements: { str: 60, int: 55, vit: 50, agi: 45 }, primaryStat: "str", xp: 3000, gold: 10000, floors: 7 },
+  { id: "monarchs_domain", name: "Monarch's Domain", desc: "Reich eines ursprünglichen Monarchen", rank: "S", requirements: { str: 90, int: 85, vit: 80, agi: 75, cha: 70 }, primaryStat: "str", xp: 6000, gold: 25000, floors: 10 },
 ];
 
+// ─── DUNGEON GATE IMAGE RESOLVER ──────────────────────────────
+function getDungeonGateImage(dungeon) {
+  const idMap = {
+    ice_palace: GATE_ICONS.ice,
+    blood_altar: GATE_ICONS.red,
+  };
+  if (idMap[dungeon?.id]) return idMap[dungeon.id];
+
+  const rankMap = {
+    B: GATE_ICONS.red,
+    C: GATE_ICONS.red,
+  };
+  return rankMap[dungeon?.rank] || GATE_ICONS.normal;
+}
+
 const SHOP_ITEMS = [
+  { id: "potion_heal", type: "consumable", name: "Elixir of Recovery", cost: 150, minRank: "E", desc: "Heilt einen gebrochenen Streak sofort (Löscht Shadow Regression)" },
   { id: "extra_slot", type: "consumable", name: "Extra Task Slot", cost: 100, minRank: "E", desc: "+1 Tagesaufgabe heute" },
   { id: "title_shadow_monarch", type: "title", name: "Shadow Monarch", cost: 500, minRank: "D", desc: "Der König der Schatten" },
   { id: "title_arise", type: "title", name: "ARISE!", cost: 300, minRank: "D", desc: "Erwecke deine Armee" },
@@ -1788,7 +1809,11 @@ function ShadowCard({ shadow, theme, onClick, showSlot, index }) {
           animation: shadow.isNamed ? "namedGlow 3s ease-in-out infinite" : "none",
           position: "relative", zIndex: 1,
         }}>
-          {shadow.isNamed ? shadow.icon : cls.icon}
+          {(() => {
+            const namedDef = shadow.isNamed ? NAMED_SHADOWS[shadow.id] || NAMED_SHADOWS[shadow.namedId] : null;
+            const src = shadow.isNamed && namedDef ? namedDef.iconSrc : cls.iconSrc;
+            return src ? <img src={src} alt={shadow.name} style={{ width: 48, height: 48, objectFit: "contain", mixBlendMode: "screen", filter: `drop-shadow(0 0 8px ${glowColor}55)` }} /> : (shadow.isNamed ? shadow.icon : cls.icon);
+          })()}
         </div>
 
         {/* Tier badge top-left */}
@@ -1858,7 +1883,11 @@ function ShadowDetailModal({ shadow, theme, onClose, onDeploy, onUndeploy, onEvo
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", background: `${cls.color}15`, border: `2px solid ${shadow.isNamed ? shadow.glowColor + "66" : cls.color + "44"}`, fontSize: shadow.isNamed ? 36 : 28, boxShadow: shadow.isNamed ? `0 0 20px ${shadow.glowColor}44` : "none" }}>
-            {shadow.isNamed ? shadow.icon : cls.icon}
+            {(() => {
+              const namedDef = shadow.isNamed ? NAMED_SHADOWS[shadow.id] || NAMED_SHADOWS[shadow.namedId] : null;
+              const src = shadow.isNamed && namedDef ? namedDef.iconSrc : cls.iconSrc;
+              return src ? <img src={src} alt={shadow.name} style={{ width: 56, height: 56, objectFit: "contain", mixBlendMode: "screen", filter: `drop-shadow(0 0 12px ${shadow.isNamed ? shadow.glowColor + '55' : cls.color + '55'})` }} /> : (shadow.isNamed ? shadow.icon : cls.icon);
+            })()}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: shadow.isNamed ? shadow.glowColor : "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{shadow.name}</div>
@@ -2079,11 +2108,27 @@ function StatRadar({ stats, theme, size = 160 }) {
   const grid = [0.25, 0.5, 0.75, 1].map(f => keys.map((_, i) => pt(i, f).join(",")).join(" "));
   const data = keys.map((k, i) => { const v = Math.min((stats[k] || 0) / maxStat, 1); return pt(i, Math.max(v, 0.05)).join(","); }).join(" ");
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
       {grid.map((g, i) => <polygon key={i} points={g} fill="none" stroke={theme.primary + "15"} strokeWidth={0.5} />)}
       {keys.map((_, i) => <line key={i} x1={cx} y1={cy} x2={pt(i, 1)[0]} y2={pt(i, 1)[1]} stroke={theme.primary + "15"} strokeWidth={0.5} />)}
       <polygon points={data} fill={theme.primary + "22"} stroke={theme.accent} strokeWidth={1.5} strokeLinejoin="round" />
-      {keys.map((k, i) => { const [px, py] = pt(i, 1.22); const cat = CATEGORIES.find(c => c.key === k); return <text key={k} x={px} y={py} textAnchor="middle" dominantBaseline="central" fill={cat.color} fontSize={9} fontFamily="'JetBrains Mono',monospace" fontWeight="600">{cat.stat}</text>; })}
+      {keys.map((k, i) => {
+        const [px, py] = pt(i, 1.3);
+        const cat = CATEGORIES.find(c => c.key === k);
+        return cat.iconSrc ? (
+          <g key={k}>
+            <defs>
+              <clipPath id={`clip-${k}`}>
+                <circle cx={px} cy={py} r="14" />
+              </clipPath>
+            </defs>
+            <circle cx={px} cy={py} r="16" fill={`${cat.color}15`} stroke={`${cat.color}44`} strokeWidth="1.5" />
+            <image href={cat.iconSrc} x={px - 14} y={py - 14} width="28" height="28" clipPath={`url(#clip-${k})`} style={{ mixBlendMode: "screen", filter: `brightness(1.2)` }} />
+          </g>
+        ) : (
+          <text key={k} x={px} y={py} textAnchor="middle" dominantBaseline="central" fill={cat.color} fontSize={9} fontFamily="'JetBrains Mono',monospace" fontWeight="600">{cat.stat}</text>
+        );
+      })}
     </svg>
   );
 }
@@ -2257,8 +2302,8 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
           <QuestTypeBadge type={quest.type} />
-          <span style={{ color: diff.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: diff.color + "15", fontSize: 9 }}>{diff.icon} {diff.label}</span>
-          <span style={{ padding: "1px 6px", borderRadius: 4, fontSize: 9, background: cat.color + "15", color: cat.color, fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon} {cat.stat}</span>
+          <span style={{ color: diff.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: diff.color + "15", fontSize: 9 }}>{diff.icon} {diff.label}</span>
+          <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: cat.color + "15", color: cat.color, fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon} {cat.stat}</span>
           {quest.type === "weekly" && quest.timeLimit && <QuestTimer expiresAt={quest.timeLimit} color="#8b5cf6" />}
         </div>
         <div style={{ fontSize: 14, fontWeight: 600, color: completing ? "#64748b" : "#e2e8f0", textDecoration: completing ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>{quest.title}</div>
@@ -2277,6 +2322,20 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
     </div>
   );
 }
+// ─── GATE IMAGE HELPER ────────────────────────────────────────
+function getGateImage(dungeon) {
+  const d = (dungeon.name + " " + (dungeon.desc || "")).toLowerCase();
+  if (d.includes("frost") || d.includes("ice") || d.includes("winter") || d.includes("thunder")) return "/Gates/frost_gate.png";
+  if (d.includes("red") || d.includes("blood") || d.includes("crimson")) return "/Gates/red_gate.png";
+  if (d.includes("inferno") || d.includes("fire") || d.includes("dragon") || d.includes("demon") || d.includes("altar") || d.includes("monarch")) return "/Gates/inferno_gate.png";
+  if (d.includes("spring") || d.includes("forest") || d.includes("goblin") || d.includes("rat") || d.includes("cave") || d.includes("ruin") || d.includes("fortress")) return "/Gates/spring_gate.png";
+
+  if (dungeon.rank === "S" || dungeon.rank === "A") return "/Gates/red_gate.png";
+  if (dungeon.rank === "B") return "/Gates/inferno_gate.png";
+  if (dungeon.rank === "C") return "/Gates/frost_gate.png";
+  return "/Gates/spring_gate.png";
+}
+
 // ─── DUNGEON GATE ─────────────────────────────────────────────
 function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview }) {
   const [hover, setHover] = useState(false);
@@ -2296,7 +2355,7 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
         ? "rgba(6,6,14,0.4)"
         : `linear-gradient(155deg,#0c0c1e 0%,#07071a 55%,#0a0814 100%)`,
       border: `1px solid ${dungeon.cleared ? "#1e293b" : hover ? rc + "55" : rc + "22"}`,
-      borderRadius: 4,
+      borderRadius: 18,
       opacity: dungeon.cleared ? 0.45 : 1,
       backdropFilter: "blur(12px)",
       transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)",
@@ -2304,40 +2363,33 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
       boxShadow: hover && !dungeon.cleared
         ? `0 16px 48px rgba(0,0,0,0.6), 0 0 40px ${rc}18, inset 0 1px 0 ${rc}15`
         : `0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 ${rc}08`,
-      clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))",
     }}>
       {/* Top rank-color energy bar */}
-      <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${rc}66, ${rc}cc, ${rc}66, transparent)`, opacity: hover ? 1 : 0.55, transition: "opacity 0.3s" }} />
+      <div style={{ height: 2, borderRadius: "18px 18px 0 0", background: `linear-gradient(90deg, transparent, ${rc}66, ${rc}cc, ${rc}66, transparent)`, opacity: hover ? 1 : 0.55, transition: "opacity 0.3s" }} />
 
       {/* Hover scan beam */}
       {hover && !dungeon.cleared && (
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "100%", pointerEvents: "none", zIndex: 0, background: `linear-gradient(180deg, transparent 0%, ${rc}06 50%, transparent 100%)`, animation: "rankShine 1.8s ease-in-out infinite" }} />
       )}
 
-      {/* Corner accent — top-right cut */}
+      {/* Corner accent glow */}
       <div style={{
-        position: "absolute", top: 0, right: 0, width: 16, height: 16, pointerEvents: "none", zIndex: 3,
-        background: `linear-gradient(225deg, ${rc}44 0%, transparent 60%)`,
-        clipPath: "polygon(0 0, 100% 0, 100% 100%)"
+        position: "absolute", top: 0, right: 0, width: 40, height: 40, pointerEvents: "none", zIndex: 3,
+        background: `radial-gradient(circle at 100% 0%, ${rc}22 0%, transparent 70%)`,
+        borderRadius: "0 18px 0 0"
       }} />
 
       {/* Body */}
       <div style={{ padding: "15px 18px 0", position: "relative", zIndex: 1 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
 
-          {/* Gate icon — 3 spinning rings + strong glow */}
-          <div style={{ width: 68, height: 68, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: `radial-gradient(circle, ${rc}18 0%, transparent 68%)` }} />
-            {!dungeon.cleared && <>
-              <div style={{ position: "absolute", inset: 3, borderRadius: "50%", border: `1.5px solid transparent`, borderTopColor: rc + "bb", borderRightColor: rc + "55", animation: "portalSwirl 2.2s linear infinite" }} />
-              <div style={{ position: "absolute", inset: 9, borderRadius: "50%", border: `1px solid transparent`, borderBottomColor: rc + "88", borderLeftColor: rc + "33", animation: "portalSwirl 3.8s linear infinite reverse" }} />
-              <div style={{ position: "absolute", inset: 16, borderRadius: "50%", border: `1px solid transparent`, borderTopColor: rc + "55", animation: "portalSwirl 6s linear infinite" }} />
-            </>}
-            <span style={{ fontSize: 30, position: "relative", zIndex: 1, filter: !dungeon.cleared ? `drop-shadow(0 0 10px ${rc}cc) drop-shadow(0 0 22px ${rc}66)` : "none", animation: !dungeon.cleared ? "gateFloat 3s ease-in-out infinite" : "none" }}>{dungeon.cleared ? "✓" : dungeon.icon}</span>
-            <div style={{ position: "absolute", top: 2, left: 2, width: 10, height: 10, borderTop: `2px solid ${rc}66`, borderLeft: `2px solid ${rc}66` }} />
-            <div style={{ position: "absolute", top: 2, right: 2, width: 10, height: 10, borderTop: `2px solid ${rc}66`, borderRight: `2px solid ${rc}66` }} />
-            <div style={{ position: "absolute", bottom: 2, left: 2, width: 10, height: 10, borderBottom: `2px solid ${rc}66`, borderLeft: `2px solid ${rc}66` }} />
-            <div style={{ position: "absolute", bottom: 2, right: 2, width: 10, height: 10, borderBottom: `2px solid ${rc}66`, borderRight: `2px solid ${rc}66` }} />
+          {/* Gate icon — pure image */}
+          <div style={{ width: 96, height: 96, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 18, background: `radial-gradient(circle, ${rc}1a 0%, transparent 70%)` }}>
+            {dungeon.cleared ? (
+              <span style={{ fontSize: 36, color: "#fff", fontWeight: "bold", textShadow: `0 0 20px ${rc}` }}>✓</span>
+            ) : (
+              <img src={getDungeonGateImage(dungeon)} style={{ width: "95%", height: "95%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 16px ${rc}44)`, animation: "gateFloat 4s ease-in-out infinite" }} alt="Gate" />
+            )}
           </div>
 
           {/* Gate info */}
@@ -2349,10 +2401,10 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
 
           {/* Rank badge — angular clip-path */}
           <div style={{
-            flexShrink: 0, textAlign: "center", padding: "6px 14px 8px",
+            flexShrink: 0, textAlign: "center", padding: "8px 14px 10px",
             background: `linear-gradient(145deg,${rc}22,${rc}0a)`,
             border: `1px solid ${rc}44`,
-            clipPath: "polygon(0 0, 100% 0, 100% 65%, 80% 100%, 0 100%)",
+            borderRadius: 12,
             fontSize: 15, fontWeight: 900, color: rc, fontFamily: "'JetBrains Mono',monospace",
             letterSpacing: 0.5, lineHeight: 1,
             textShadow: `0 0 14px ${rc}`,
@@ -2360,17 +2412,17 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
             transition: "box-shadow 0.3s"
           }}>
             {dungeon.rank}
-            <div style={{ fontSize: 7, opacity: 0.65, letterSpacing: 1.5, marginTop: 2 }}>RANK</div>
+            <div style={{ fontSize: 7, opacity: 0.65, letterSpacing: 1.5, marginTop: 3 }}>RANK</div>
           </div>
         </div>
 
         {/* Meta row */}
         <div style={{ display: "flex", gap: 5, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <span style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", letterSpacing: 0.8 }}>🏛 {dungeon.floors} FLOORS</span>
+          <span style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", letterSpacing: 0.8, borderRadius: 6 }}>🏛 {dungeon.floors} FLOORS</span>
           {!dungeon.cleared && timeLeft > 0 && (
-            <span style={{ fontSize: 9, color: hoursLeft < 2 ? "#ef4444" : "#475569", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: hoursLeft < 2 ? "#ef444412" : "rgba(255,255,255,0.03)", border: `1px solid ${hoursLeft < 2 ? "#ef444430" : "rgba(255,255,255,0.07)"}`, letterSpacing: 0.8 }}>⏱ {hoursLeft}h {minsLeft}m</span>
+            <span style={{ fontSize: 9, color: hoursLeft < 2 ? "#ef4444" : "#475569", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: hoursLeft < 2 ? "#ef444412" : "rgba(255,255,255,0.03)", border: `1px solid ${hoursLeft < 2 ? "#ef444430" : "rgba(255,255,255,0.07)"}`, letterSpacing: 0.8, borderRadius: 6 }}>⏱ {hoursLeft}h {minsLeft}m</span>
           )}
-          <span style={{ fontSize: 9, color: rc, fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: rc + "10", border: `1px solid ${rc}25`, letterSpacing: 0.8, fontWeight: 700 }}>{threatLabel}</span>
+          <span style={{ fontSize: 9, color: rc, fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", background: rc + "10", border: `1px solid ${rc}25`, letterSpacing: 0.8, fontWeight: 700, borderRadius: 6 }}>{threatLabel}</span>
         </div>
 
         {/* Requirements */}
@@ -2380,7 +2432,7 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
               const cat = CATEGORIES.find(c => c.key === stat);
               const met = (playerStats[stat] || 0) >= val;
               return (
-                <div key={stat} style={{ padding: "3px 9px", fontSize: 9, background: met ? cat.color + "12" : "#ef444408", color: met ? cat.color : "#ef4444", border: `1px solid ${met ? cat.color + "30" : "#ef444422"}`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                <div key={stat} style={{ padding: "3px 9px", fontSize: 9, background: met ? cat.color + "12" : "#ef444408", color: met ? cat.color : "#ef4444", border: `1px solid ${met ? cat.color + "30" : "#ef444422"}`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 3, borderRadius: 6 }}>
                   <span>{cat.icon}</span> {cat.stat} {val} {met ? "✓" : `(${playerStats[stat] || 0})`}
                 </div>
               );
@@ -2394,15 +2446,15 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
 
       {/* Footer */}
       <div style={{ padding: "11px 18px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(180deg, transparent, ${rc}07)`, position: "relative", zIndex: 1 }}>
-        <div style={{ display: "flex", gap: 7 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.15)", clipPath: "polygon(0 0, 100% 0, 100% 55%, 92% 100%, 0 100%)" }}>
-            <span style={{ fontSize: 10 }}>💎</span>
-            <span style={{ fontSize: 11, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>+{modifier?.xpMult ? Math.round(dungeon.xp * modifier.xpMult) : dungeon.xp}</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "linear-gradient(135deg,rgba(192,132,252,0.1),rgba(192,132,252,0.02))", border: "1px solid #c084fc33", borderRadius: 12, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)" }}>
+            <span style={{ color: "#c084fc", fontSize: 13, textShadow: "0 0 8px #c084fc" }}>✦</span> <span style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>+{modifier?.xpMult ? Math.round(dungeon.xp * modifier.xpMult) : dungeon.xp} XP</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)", clipPath: "polygon(0 0, 100% 0, 100% 55%, 92% 100%, 0 100%)" }}>
-            <span style={{ fontSize: 10 }}>🪙</span>
-            <span style={{ fontSize: 11, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>+{modifier?.goldMult ? Math.round(dungeon.gold * modifier.goldMult) : dungeon.gold}</span>
-          </div>
+          {(modifier?.goldMult ? Math.round(dungeon.gold * modifier.goldMult) : dungeon.gold) > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "linear-gradient(135deg,rgba(251,191,36,0.1),rgba(251,191,36,0.02))", border: "1px solid #fcd34d33", borderRadius: 12, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)" }}>
+              <img src="/icon/coin.png" alt="G" style={{ width: 14, height: 14, opacity: 0.9, filter: "drop-shadow(0 0 4px #fbbf2455)" }} /> <span style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>+{modifier?.goldMult ? Math.round(dungeon.gold * modifier.goldMult) : dungeon.gold}</span>
+            </div>
+          )}
         </div>
         {dungeon.cleared
           ? <div style={{ fontSize: 11, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, fontWeight: 700 }}>CLEARED ✓</div>
@@ -2414,11 +2466,11 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
               background: hover ? `linear-gradient(135deg,${rc}45,${rc}22)` : `linear-gradient(135deg,${rc}28,${rc}12)`,
               color: rc,
               border: `1px solid ${rc}${hover ? "88" : "44"}`,
+              borderRadius: 12,
               fontFamily: "'Cinzel',serif", letterSpacing: 3,
               transition: "all 0.22s ease",
               boxShadow: hover ? `0 0 22px ${rc}44, 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 ${rc}25` : `inset 0 1px 0 ${rc}12`,
               cursor: "pointer",
-              clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
               textShadow: hover ? `0 0 12px ${rc}` : "none",
             }}
           >ENTER ▶</button>
@@ -2620,7 +2672,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
       const bonus = Math.floor(dungeon.gold * 0.2);
       setGoldBonus(prev => prev + bonus);
       const tLog = [
-        { text: `▶ FLOOR ${floorNum}/${dungeon.floors} · 💰 SCHATZKAMMER`, type: "gold" },
+        { text: <>▶ FLOOR {floorNum}/{dungeon.floors} · <img src="/icon/coin.png" style={{ width: 14, height: 14, verticalAlign: "middle", marginTop: -2 }} alt="G" /> SCHATZKAMMER</>, type: "gold" },
         { text: `Truhe geöffnet! +${bonus} Gold Bonus geborgen.`, type: "gold" },
       ];
       let delay = 0;
@@ -2736,7 +2788,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
       {phase === "strategy" && (
         <div style={{ width: "100%", maxWidth: 440, padding: "0 20px", animation: "slideUp 0.4s ease" }}>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <div style={{ fontSize: 52, marginBottom: 10, filter: `drop-shadow(0 0 20px ${rankData.color})`, animation: "gateFloat 2s ease-in-out infinite" }}>{dungeon.icon}</div>
+            <div style={{ marginBottom: 10, filter: `drop-shadow(0 0 20px ${rankData.color})`, animation: "gateFloat 2s ease-in-out infinite", display: "flex", justifyContent: "center" }}><img src={getDungeonGateImage(dungeon)} alt={dungeon.name} style={{ width: 96, height: 96, objectFit: "contain", borderRadius: 14, mixBlendMode: "screen", filter: `brightness(1.1) drop-shadow(0 0 12px ${rankData.color}66)` }} /></div>
             <div style={{ fontSize: 10, letterSpacing: 4, color: rankData.color, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{dungeon.rank}-RANK · {dungeon.floors} FLOORS</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif" }}>{dungeon.name}</div>
             {modifier && modifier.id !== "none" && <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: modifier.color + "15", border: `1px solid ${modifier.color}33`, fontSize: 11, color: modifier.color, fontFamily: "'JetBrains Mono',monospace" }}>{modifier.icon} {modifier.name}</div>}
@@ -2802,7 +2854,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
             <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `2px solid ${rankData.color}55`, borderTopColor: rankData.color, transform: `rotate(${portalRot}deg)` }} />
             <div style={{ position: "absolute", inset: 14, borderRadius: "50%", border: `1px solid ${rankData.color}33`, borderBottomColor: rankData.color + "88", transform: `rotate(${-portalRot * 1.6}deg)` }} />
             <div style={{ position: "absolute", inset: 28, borderRadius: "50%", border: `1px solid ${rankData.color}22`, borderTopColor: rankData.color + "55", transform: `rotate(${portalRot * 0.8}deg)` }} />
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 52, filter: `drop-shadow(0 0 18px ${rankData.color})` }}>{dungeon.icon}</div>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", filter: `drop-shadow(0 0 18px ${rankData.color})` }}><img src={getDungeonGateImage(dungeon)} alt={dungeon.name} style={{ width: 86, height: 86, objectFit: "contain", borderRadius: 12, mixBlendMode: "screen", filter: `brightness(1.1) drop-shadow(0 0 10px ${rankData.color}66)` }} /></div>
           </div>
           <div style={{ fontSize: 10, letterSpacing: 6, color: rankData.color, fontFamily: "'JetBrains Mono',monospace", animation: "breathe 0.9s infinite" }}>{dungeon.name}</div>
         </div>
@@ -3199,6 +3251,7 @@ export {
   awardJobXp, calculateLevelUp,
   saveState, loadState, migrateState,
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests,
+  getDungeonGateImage,
   CSS, ParticleField, MusicPlayer, SystemNotification, AchievementToast, XpFloat, LevelUpCinematic, AriseCinematic,
   ShadowCard, ShadowDetailModal, FormationEditor, StatRadar, QuestTimer, QuestTypeBadge,
   EmergencyQuestCard, ChainedQuestProgress, QuestCard, DungeonGate, FloorProgressBar, BossPhaseUI, DungeonBattle,

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from "react";
+import { STAT_ICONS, SHADOW_ICONS } from "../data/icons.js";
 
 /**
  * DoubleDungeonTutorial – Thematisches Onboarding nach Solo Leveling.
@@ -67,11 +68,11 @@ const STEPS = [
             "Durch Level-Ups bekommst du Stat-Punkte, die du frei verteilen kannst.",
         ],
         highlight: [
-            { icon: "⚔️", label: "STR", desc: "Sport & Fitness", color: "#ef4444" },
-            { icon: "📖", label: "INT", desc: "Lernen & Lesen", color: "#3b82f6" },
-            { icon: "🛡️", label: "VIT", desc: "Erholung", color: "#22c55e" },
-            { icon: "⚡", label: "AGI", desc: "Produktivität", color: "#f59e0b" },
-            { icon: "👥", label: "CHA", desc: "Soziales", color: "#a855f7" },
+            { iconSrc: STAT_ICONS.str, label: "STR", desc: "Sport & Fitness", color: "#ef4444" },
+            { iconSrc: STAT_ICONS.int, label: "INT", desc: "Lernen & Lesen", color: "#3b82f6" },
+            { iconSrc: STAT_ICONS.vit, label: "VIT", desc: "Erholung", color: "#22c55e" },
+            { iconSrc: STAT_ICONS.agi, label: "AGI", desc: "Produktivität", color: "#f59e0b" },
+            { iconSrc: STAT_ICONS.cha, label: "CHA", desc: "Soziales", color: "#a855f7" },
         ],
         systemLine: "SYSTEM: Hohe Stats schalten Skills und Named Shadows frei.",
         bg: "radial-gradient(ellipse at 70% 40%, #1a0e0e 0%, #06060e 70%)",
@@ -277,7 +278,11 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
                                 textAlign: "center",
                                 animation: `tutorialFadeIn 0.4s ease ${i * 0.1}s both`,
                             }}>
-                                <div style={{ fontSize: 20, marginBottom: 4 }}>{h.icon}</div>
+                                <div style={{ fontSize: 20, marginBottom: 4, display: "flex", justifyContent: "center" }}>
+                                    {h.iconSrc
+                                        ? <img src={h.iconSrc} alt={h.label} style={{ width: 28, height: 28, objectFit: "contain" }} />
+                                        : h.icon}
+                                </div>
                                 <div style={{
                                     fontSize: 10, fontWeight: 700, color: h.color,
                                     fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1,

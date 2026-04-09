@@ -1,0 +1,54 @@
+﻿[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 76 modules transformed.
+node.exe : [31mx[39m Build failed in 
+889ms
+In C:\Program Files\nodejs\npx.ps1:29 
+Zeichen:3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecifi 
+   ed: ([31mx[39m Build failed in 889  
+  ms:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeComm 
+   andError
+ 
+[31merror during build:
+[31mdata/icons.js (37:8): Expression 
+expected[31m
+file: [36mC:/Users/jwuck/OneDrive/Dokume
+nte/SoloToDo/data/icons.js:37:8[31m
+[33m
+35: export function GameIcon({ src, size 
+= 24, alt = "", style = {} }) {
+36:     return (
+37:         <img
+            ^
+38:             src={src}
+39:             alt={alt}
+[31m
+    at getRollupError (file:///C:/Users/j
+wuck/OneDrive/Dokumente/SoloToDo/node_mod
+ules/rollup/dist/es/shared/parseAst.js:40
+6:41)
+    at ParseError.initialise (file:///C:/
+Users/jwuck/OneDrive/Dokumente/SoloToDo/n
+ode_modules/rollup/dist/es/shared/node-en
+try.js:14798:28)
+    at convertNode (file:///C:/Users/jwuc
+k/OneDrive/Dokumente/SoloToDo/node_module
+s/rollup/dist/es/shared/node-entry.js:167
+74:10)
+    at convertProgram (file:///C:/Users/j
+wuck/OneDrive/Dokumente/SoloToDo/node_mod
+ules/rollup/dist/es/shared/node-entry.js:
+16010:12)
+    at Module.setSource (file:///C:/Users
+/jwuck/OneDrive/Dokumente/SoloToDo/node_m
+odules/rollup/dist/es/shared/node-entry.j
+s:17753:24)
+    at async 
+ModuleLoader.addModuleSource (file:///C:/
+Users/jwuck/OneDrive/Dokumente/SoloToDo/n
+ode_modules/rollup/dist/es/shared/node-en
+try.js:21885:13)[39m

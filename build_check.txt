@@ -1,0 +1,75 @@
+﻿[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 701 modules transformed.
+rendering chunks...
+node.exe : [1m[33m[plugin:vite:reporter][39m[22m [33m[plugin 
+vite:reporter] 
+In C:\Program Files\nodejs\npx.ps1:29 Zeichen:3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([1m[33m[plugi...vit 
+   e:reporter] :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(!) C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/node_modules/firebas
+e/firestore/dist/esm/index.esm.js is dynamically imported by C:/Use
+rs/jwuck/OneDrive/Dokumente/SoloToDo/multiplayer/views/LeaderboardV
+iew.jsx, C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/multiplayer/vie
+ws/LeaderboardView.jsx but also statically imported by 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/data/constants.jsx, 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/firebase.js, 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/hooks/useGameState.jsx, 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/multiplayer/mpFirebase.j
+s, C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/multiplayer/soulLinkF
+irebase.js, 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/solo-leveling-v5.jsx, 
+dynamic import will not move module into another chunk.
+[39m
+[1m[33m[plugin:vite:reporter][39m[22m [33m[plugin 
+vite:reporter] 
+(!) C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/firebase.js is 
+dynamically imported by C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/
+multiplayer/views/LeaderboardView.jsx, C:/Users/jwuck/OneDrive/Doku
+mente/SoloToDo/multiplayer/views/LeaderboardView.jsx but also 
+statically imported by 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/AuthScreen.jsx, 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/data/constants.jsx, 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/hooks/useGameState.jsx, 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/main.jsx, C:/Users/jwuck
+/OneDrive/Dokumente/SoloToDo/multiplayer/mpFirebase.js, C:/Users/jw
+uck/OneDrive/Dokumente/SoloToDo/multiplayer/soulLinkFirebase.js, C:
+/Users/jwuck/OneDrive/Dokumente/SoloToDo/multiplayer/views/GuildVie
+w.jsx, C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/multiplayer/views
+/LeaderboardView.jsx, C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/mu
+ltiplayer/views/SocialView.jsx, 
+C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/solo-leveling-v5.jsx, 
+dynamic import will not move module into another chunk.
+[39m
+[1m[33m[plugin:vite:reporter][39m[22m [33m[plugin 
+vite:reporter] 
+(!) C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/multiplayer/mpFireba
+se.js is dynamically imported by C:/Users/jwuck/OneDrive/Dokumente/
+SoloToDo/multiplayer/views/GuildView.jsx but also statically 
+imported by C:/Users/jwuck/OneDrive/Dokumente/SoloToDo/multiplayer/
+components/GuildBrowser.jsx, C:/Users/jwuck/OneDrive/Dokumente/Solo
+ToDo/multiplayer/views/GuildView.jsx, C:/Users/jwuck/OneDrive/Dokum
+ente/SoloToDo/multiplayer/views/LeaderboardView.jsx, C:/Users/jwuck
+/OneDrive/Dokumente/SoloToDo/multiplayer/views/SocialView.jsx, 
+dynamic import will not move module into another chunk.
+[39m
+computing gzip size...
+[2mdist/[22m[32mindex.html                           [39m[1m[2m    0.79 kB[22m[1m[22m[2m Ôöé gzip:   0.55 kB[22m
+[2mdist/[22m[36massets/soulLinkFirebase-CISR0v_8.js  [39m[1m[2m    2.68 kB[22m[1m[22m[2m Ôöé gzip:   0.98 kB[22m
+[2mdist/[22m[36massets/AuthTunnelScene-Btcj-AkB.js   [39m[1m[2m   13.58 kB[22m[1m[22m[2m Ôöé gzip:   4.67 kB[22m
+[2mdist/[22m[36massets/DungeonCorridor-NuHTdbvh.js   [39m[1m[2m   29.42 kB[22m[1m[22m[2m Ôöé gzip:   8.66 kB[22m
+[2mdist/[22m[36massets/index-DAo0IEb2.js             [39m[1m[33m  884.40 kB[39m[22m[2m Ôöé gzip: 248.53 kB[22m
+[2mdist/[22m[36massets/index-Cn6tcJ1Q.js             [39m[1m[33m1,414.50 kB[39m[22m[2m Ôöé gzip: 359.28 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. 
+Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: 
+https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via 
+build.chunkSizeWarningLimit.[39m
+[32mÔ£ô built in 11.44s[39m
