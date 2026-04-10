@@ -27,6 +27,7 @@ import SeasonView from "./components/SeasonView.jsx";
 import DawnDuskProtocol from "./components/DawnDuskProtocol.jsx";
 import CharismaDungeonsView from "./components/CharismaDungeonsView.jsx";
 import { SEASONS, WORLD_EVENTS } from "./data/seasons.js";
+import PageTransition from "./components/PageTransition.jsx";
 
 // ─── RANKS ────────────────────────────────────────────────────
 import {
@@ -196,6 +197,30 @@ function App({ initialHunterName, onLogout }) {
       return saved !== null ? JSON.parse(saved) : true;
     } catch { return true; }
   });
+
+  // ── Page Transition State ──
+  const [isPageTransitioning, setIsPageTransitioning] = React.useState(false);
+  const [transitionTargetView, setTransitionTargetView] = React.useState(null);
+  const VIEW_LABELS = useMemo(() => ({
+    dashboard: "HEUTE", stats: "HUNTER STATS", shadows: "SHADOW ARMY",
+    dungeon: "DUNGEON GATES", story: "STORY", equipment: "ARSENAL",
+    shop: "HUNTER SHOP", jobs: "HUNTER JOBS", achievements: "ACHIEVEMENTS",
+    analytics: "ANALYTICS", training: "TRAINING", system: "SYSTEM",
+    goals: "ZIELE", calendar: "KALENDER", challenges: "EVENTS",
+    settings: "EINSTELLUNGEN", sanctum: "INNER SANCTUM",
+  }), []);
+  const navigateTo = useCallback((newView) => {
+    if (newView === view || isPageTransitioning) return;
+    setTransitionTargetView(newView);
+    setIsPageTransitioning(true);
+  }, [view, isPageTransitioning]);
+  const onTransitionMid = useCallback(() => {
+    if (transitionTargetView) setView(transitionTargetView);
+  }, [transitionTargetView]);
+  const onTransitionEnd = useCallback(() => {
+    setIsPageTransitioning(false);
+    setTransitionTargetView(null);
+  }, []);
 
   // ── Progressive Feature Unlock System ──
   const { can, nextLevel } = useFeatureUnlocks(state?.level || 1);
@@ -391,6 +416,15 @@ function App({ initialHunterName, onLogout }) {
       {selectedShadow && <ShadowDetailModal shadow={selectedShadow} theme={theme} gold={state.gold} onClose={() => setSelectedShadow(null)} onDeploy={deployShadow} onUndeploy={undeployShadow} onEvolve={evolveShadow} />}
       {systemMessage && <SystemCLI message={systemMessage} onClose={() => setSystemMessage(null)} />}
 
+      {/* SHADOW MONARCH'S GATE – PAGE TRANSITION */}
+      <PageTransition
+        isActive={isPageTransitioning}
+        targetLabel={VIEW_LABELS[transitionTargetView] || (transitionTargetView || "").toUpperCase()}
+        theme={theme}
+        onMidpoint={onTransitionMid}
+        onComplete={onTransitionEnd}
+      />
+
       {/* FOCUS MODE */}
       {showFocusMode && <FocusMode state={state} persist={persist} notify={notify} onExit={() => setShowFocusMode(false)} theme={theme} />}
 
@@ -524,7 +558,7 @@ function App({ initialHunterName, onLogout }) {
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {can('sanctum') && <button
-                onClick={() => setView("sanctum")}
+                onClick={() => navigateTo("sanctum")}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
                   height: 32, borderRadius: 10, background: "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))",
@@ -710,7 +744,7 @@ function App({ initialHunterName, onLogout }) {
 
         {/* ═══ DASHBOARD ═══ */}
         {view === "dashboard" && (
-          <div style={{ animation: "fadeIn 0.35s ease" }}>
+          <div style={{ animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
 
             {/* ── PLAYER STATS (LEVEL & RADAR) ── */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0 16px" }}>
@@ -1534,7 +1568,7 @@ function App({ initialHunterName, onLogout }) {
           ].map(tab => (
             <button key={tab.key} onClick={() => {
               setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
-              tab.isOverlay ? tab.action?.() : setView(tab.key);
+              tab.isOverlay ? tab.action?.() : navigateTo(tab.key);
             }} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: tab.isOverlay ? "#9ca3af" : view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
               {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
               <div style={{ position: "relative" }}>
@@ -1550,7 +1584,7 @@ function App({ initialHunterName, onLogout }) {
       {/* TRAINING HUB — unified view for habits/goals/calendar */}
       {
         view === "training" && (
-          <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+          <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
             <div style={{ maxWidth: 480, margin: "0 auto" }}>
               {/* Training header */}
               <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px 20px", marginBottom: 16, backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
@@ -1562,7 +1596,7 @@ function App({ initialHunterName, onLogout }) {
                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>Langzeit-Ziele und Quest-Kalender</div>
                   </div>
                   {can('sanctum') && (
-                    <button onClick={() => setView("sanctum")} style={{ padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #a855f722, #7c3aed11)", color: "#a855f7", border: "1px solid #a855f744", fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px #a855f722", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 16px #a855f744"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 12px #a855f722"; }}>
+                    <button onClick={() => navigateTo("sanctum")} style={{ padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #a855f722, #7c3aed11)", color: "#a855f7", border: "1px solid #a855f744", fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px #a855f722", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 16px #a855f744"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 12px #a855f722"; }}>
                       🧘 SANCTUM
                     </button>
                   )}
@@ -1609,7 +1643,7 @@ function App({ initialHunterName, onLogout }) {
       {/* SYSTEM MENU — themed module hub */}
       {
         view === "system" && (
-          <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+          <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
             <div style={{ maxWidth: 480, margin: "0 auto" }}>
               {/* System header */}
               <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -1660,7 +1694,7 @@ function App({ initialHunterName, onLogout }) {
                     {section.items.map((item, ii) => (
                       <button key={item.key} onClick={() => {
                         if (item.locked) return;
-                        item.isOverlay ? item.action?.() : setView(item.key);
+                        item.isOverlay ? item.action?.() : navigateTo(item.key);
                       }} style={{
                         width: "100%", padding: "14px 16px", borderRadius: 14,
                         background: item.locked ? "rgba(10,10,22,0.4)" : theme.card,
@@ -1726,7 +1760,7 @@ function App({ initialHunterName, onLogout }) {
 
       {/* INNER SANCTUM VIEW */}
       {view === "sanctum" && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "fadeIn 0.25s ease", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
           <div style={{ maxWidth: 480, margin: "0 auto" }}>
             <InnerSanctum theme={theme} state={state} persist={persist} notify={notify} />
           </div>

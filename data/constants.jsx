@@ -1523,6 +1523,167 @@ input,select{font-family:inherit}
 @keyframes shimmer{0%{left:-100%}100%{left:200%}}
 @keyframes fireGlow{0%,100%{filter:drop-shadow(0 0 4px #f97316) drop-shadow(0 -2px 8px #fbbf24)}50%{filter:drop-shadow(0 0 10px #ef4444) drop-shadow(0 -4px 16px #f97316)}}
 
+/* ── SHADOW MONARCH'S GATE – CINEMA-GRADE PAGE TRANSITIONS ── */
+
+/* Chromatic aberration – reality distortion */
+@keyframes slChromaticAberration{
+  0%{backdrop-filter:blur(0px) brightness(1) saturate(1);opacity:0}
+  30%{backdrop-filter:blur(2px) brightness(0.9) saturate(1.4) hue-rotate(5deg);opacity:0.6}
+  60%{backdrop-filter:blur(4px) brightness(0.7) saturate(1.8) hue-rotate(15deg);opacity:0.85}
+  100%{backdrop-filter:blur(8px) brightness(0.3) saturate(2) hue-rotate(20deg);opacity:1}
+}
+
+/* Glitch bands – horizontal shake fragments */
+@keyframes slGlitchBand{
+  0%{transform:translateX(-100%) scaleY(1);opacity:0}
+  25%{transform:translateX(10%) scaleY(2);opacity:0.8}
+  50%{transform:translateX(-5%) scaleY(0.5);opacity:0.4}
+  75%{transform:translateX(3%) scaleY(1.5);opacity:0.6}
+  100%{transform:translateX(100%) scaleY(1);opacity:0}
+}
+
+/* Void expansion – radial dark void consuming screen */
+@keyframes slVoidExpand{
+  0%{clip-path:circle(0% at 50% 50%)}
+  40%{clip-path:circle(35% at 50% 50%)}
+  70%{clip-path:circle(65% at 50% 50%)}
+  100%{clip-path:circle(100% at 50% 50%)}
+}
+
+/* Void collapse – void retreating to reveal new view */
+@keyframes slVoidCollapse{
+  0%{clip-path:circle(100% at 50% 50%);opacity:1}
+  30%{clip-path:circle(60% at 50% 50%);opacity:0.98}
+  60%{clip-path:circle(25% at 50% 50%);opacity:0.9}
+  80%{clip-path:circle(8% at 50% 50%);opacity:0.5}
+  100%{clip-path:circle(0% at 50% 50%);opacity:0}
+}
+
+/* Energy ripple – expanding concentric energy rings */
+@keyframes slEnergyRipple{
+  0%{transform:scale(0);opacity:0.9;border-width:3px}
+  30%{opacity:0.7;border-width:2px}
+  60%{opacity:0.35;border-width:1px}
+  100%{transform:scale(8);opacity:0;border-width:0.5px}
+}
+
+/* Rift glow – vertical rift opening */
+@keyframes slRiftGlow{
+  0%{height:0;opacity:0;filter:blur(4px)}
+  30%{height:50vh;opacity:0.8;filter:blur(1px)}
+  60%{height:70vh;opacity:1;filter:blur(0)}
+  100%{height:85vh;opacity:0.95;filter:blur(0)}
+}
+
+/* Rift pulse – core rift breathing */
+@keyframes slRiftPulse{
+  0%{box-shadow:0 0 25px #7c3aed88,0 0 50px #22d3ee44;filter:brightness(1)}
+  100%{box-shadow:0 0 60px #a78bfacc,0 0 100px #7c3aed88,0 0 140px #22d3ee33;filter:brightness(1.3)}
+}
+
+/* Rift outer pulse – ambient glow breathing */
+@keyframes slRiftPulseOuter{
+  0%{opacity:0.4;transform:scaleX(1)}
+  100%{opacity:0.9;transform:scaleX(1.2)}
+}
+
+/* Scan line – horizontal sweep */
+@keyframes slScanLine{
+  0%{transform:translateY(-100vh);opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{transform:translateY(100vh);opacity:0}
+}
+
+/* View name glitch – cinematic text reveal */
+@keyframes slViewNameGlitch{
+  0%{opacity:0;letter-spacing:0px;filter:blur(12px);transform:translateY(10px) scaleY(0.8)}
+  15%{opacity:0.3;filter:blur(6px);transform:translateY(-3px) scaleY(1.1) skewX(-2deg)}
+  25%{opacity:0.7;filter:blur(2px);transform:translateY(2px) scaleY(0.95) skewX(1deg)}
+  40%{opacity:1;letter-spacing:8px;filter:blur(0);transform:translateY(-1px) scaleY(1.02)}
+  55%{opacity:0.9;letter-spacing:12px;transform:translateY(0) scaleY(1) skewX(-0.5deg)}
+  70%{opacity:1;letter-spacing:10px;transform:skewX(0.3deg)}
+  85%{opacity:0.95;letter-spacing:10px;transform:skewX(0)}
+  100%{opacity:1;letter-spacing:10px;filter:blur(0);transform:none}
+}
+
+/* Rune orbit – magical symbols circling */
+@keyframes slRuneOrbit{
+  0%{transform:rotate(0deg) translateX(var(--orbit-radius, 70px)) rotate(0deg);opacity:0;filter:blur(4px)}
+  10%{opacity:0.8;filter:blur(0)}
+  50%{opacity:0.6}
+  85%{opacity:0.3;filter:blur(1px)}
+  100%{transform:rotate(360deg) translateX(var(--orbit-radius, 70px)) rotate(-360deg);opacity:0;filter:blur(4px)}
+}
+
+/* Shadow eyes reveal – monarch's gaze */
+@keyframes slShadowEyesReveal{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.1);filter:blur(8px)}
+  40%{opacity:0.9;transform:translate(-50%,-50%) scale(1.2);filter:blur(0)}
+  70%{opacity:1;transform:translate(-50%,-50%) scale(0.95)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+
+/* Shadow eye pulse – individual eye glow */
+@keyframes slShadowEyePulse{
+  0%{box-shadow:0 0 20px #7c3aed,0 0 40px #7c3aed,0 0 60px #7c3aed88,inset 0 0 8px rgba(255,255,255,0.2)}
+  100%{box-shadow:0 0 35px #a78bfa,0 0 65px #7c3aedcc,0 0 100px #7c3aedaa,0 0 130px #22d3ee33,inset 0 0 12px rgba(255,255,255,0.35)}
+}
+
+/* Badge slide in */
+@keyframes slBadgeIn{
+  0%{opacity:0;transform:translateY(-8px) scale(0.8)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Cursor blink */
+@keyframes slCursorBlink{50%{opacity:0}}
+
+/* Underline expand */
+@keyframes slUnderlineExpand{
+  0%{width:0;opacity:0}
+  100%{width:120px;opacity:1}
+}
+
+/* Fade out */
+@keyframes slFadeOut{
+  0%{opacity:1;filter:blur(0)}
+  100%{opacity:0;filter:blur(4px);transform:translate(-50%,-50%) scale(0.95)}
+}
+
+/* Residual float particles */
+@keyframes slResidualFloat{
+  0%{opacity:0.8;transform:translateY(0) scale(1)}
+  40%{opacity:0.5;transform:translateY(-20px) scale(0.8)}
+  100%{opacity:0;transform:translateY(-60px) scale(0.1)}
+}
+
+/* Radial burst behind collapse */
+@keyframes slRadialBurst{
+  0%{width:0;height:0;opacity:0.6}
+  50%{width:150vw;height:150vw;opacity:0.3}
+  100%{width:200vw;height:200vw;opacity:0}
+}
+
+/* Corner afterglow fade */
+@keyframes slAfterglowFade{
+  0%{opacity:1}
+  100%{opacity:0}
+}
+
+/* Page emerge – view content entry animation */
+@keyframes pageEmerge{
+  0%{transform:scale(0.96);opacity:0;filter:brightness(1.5) saturate(1.4) blur(2px)}
+  30%{transform:scale(1.008);opacity:0.7;filter:brightness(1.15) saturate(1.1) blur(0)}
+  60%{transform:scale(0.998);opacity:0.9;filter:brightness(1.05)}
+  100%{transform:scale(1);opacity:1;filter:brightness(1) saturate(1) blur(0)}
+}
+
+@keyframes slideDown{
+  from{transform:translateY(-16px);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+
 @media (max-width: 440px) {
   .header-hide-mobile { display: none !important; }
   .header-compact { gap: 4px !important; }
