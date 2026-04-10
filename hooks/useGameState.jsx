@@ -16,6 +16,7 @@ import {
 } from '../data/constants';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
 import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextMonday } from '../data/seasons.js';
+import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER_UNLOCK_MESSAGES } from '../data/featureUnlocks.js';
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
@@ -179,31 +180,35 @@ export function useGameState(initialHunterName, onLogout) {
             if (dayOfWeek === 1) {
               s.quests = (s.quests || []).filter(q => q.type !== "weekly");
               s.weeklyQuestReset = today;
-              // World Event rotation on Monday
-              const nextEvent = getNextWorldEvent(s.seasons?.currentWorldEvent || null);
-              s.seasons = { ...(s.seasons || {}), currentWorldEvent: nextEvent.key, worldEventExpires: getNextMonday() };
-              setTimeout(() => notify(`🌍 Neues World-Event: ${nextEvent.icon} ${nextEvent.name} – ${nextEvent.desc}`, "named"), 3000);
-            }
-            // Season detection (runs daily)
-            const detectedSeason = detectCurrentSeason();
-            if (!s.seasons?.currentSeason || s.seasons.currentSeason !== detectedSeason) {
-              const oldSeason = s.seasons?.currentSeason;
-              s.seasons = {
-                ...(s.seasons || {}),
-                currentSeason: detectedSeason,
-                seasonStartDate: today,
-                seasonalCompletions: [],
-              };
-              const seasonalQs = generateSeasonalQuests(detectedSeason);
-              s.quests = [...s.quests, ...seasonalQs];
-              if (oldSeason) {
-                setTimeout(() => notify(`🌸 Neue Saison: ${SEASONS[detectedSeason].icon} ${SEASONS[detectedSeason].name}! Saison-Quests wurden hinzugefügt.`, "named"), 2000);
+              // World Event rotation on Monday (only if seasons unlocked)
+              if (isFeatureUnlocked('seasons', s.level || 1)) {
+                const nextEvent = getNextWorldEvent(s.seasons?.currentWorldEvent || null);
+                s.seasons = { ...(s.seasons || {}), currentWorldEvent: nextEvent.key, worldEventExpires: getNextMonday() };
+                setTimeout(() => notify(`🌍 Neues World-Event: ${nextEvent.icon} ${nextEvent.name} – ${nextEvent.desc}`, "named"), 3000);
               }
-            } else {
-              // Ensure seasonal quests still exist
-              const hasSeasonal = s.quests.some(q => q.isSeasonal);
-              if (!hasSeasonal) {
-                s.quests = [...s.quests, ...generateSeasonalQuests(detectedSeason)];
+            }
+            // Season detection (only if seasons feature unlocked)
+            if (isFeatureUnlocked('seasons', s.level || 1)) {
+              const detectedSeason = detectCurrentSeason();
+              if (!s.seasons?.currentSeason || s.seasons.currentSeason !== detectedSeason) {
+                const oldSeason = s.seasons?.currentSeason;
+                s.seasons = {
+                  ...(s.seasons || {}),
+                  currentSeason: detectedSeason,
+                  seasonStartDate: today,
+                  seasonalCompletions: [],
+                };
+                const seasonalQs = generateSeasonalQuests(detectedSeason);
+                s.quests = [...s.quests, ...seasonalQs];
+                if (oldSeason) {
+                  setTimeout(() => notify(`🌸 Neue Saison: ${SEASONS[detectedSeason].icon} ${SEASONS[detectedSeason].name}! Saison-Quests wurden hinzugefügt.`, "named"), 2000);
+                }
+              } else {
+                // Ensure seasonal quests still exist
+                const hasSeasonal = s.quests.some(q => q.isSeasonal);
+                if (!hasSeasonal) {
+                  s.quests = [...s.quests, ...generateSeasonalQuests(detectedSeason)];
+                }
               }
             }
             s.dailyUserQuestsCreated = 0;
@@ -212,24 +217,30 @@ export function useGameState(initialHunterName, onLogout) {
             s.integrityScore = Math.min(100, (s.integrityScore !== undefined ? s.integrityScore : 100) + 20);
           }
           s.lastActiveDate = today;
-          if (!s.emergencyQuest || !s.emergencyQuest.id.endsWith(today)) {
-            s.emergencyQuest = generateEmergencyQuest(s.level || 1);
-            s.emergencyDone = false;
-            s.emergencyFailed = false;
-            setTimeout(() => {
-              triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
-                "ACHTUNG: Eine temporale Anomalie wurde registriert.",
-                `Mission: ${s.emergencyQuest.title}`,
-                "Die Belohnungen für diese Aufgabe wurden verdoppelt.",
-                "Versagen wird nicht toleriert."
-              ]);
-            }, 2500);
+          // Emergency quests only generate if feature is unlocked (level >= 3)
+          if (isFeatureUnlocked('emergency_quests', s.level || 1)) {
+            if (!s.emergencyQuest || !s.emergencyQuest.id.endsWith(today)) {
+              s.emergencyQuest = generateEmergencyQuest(s.level || 1);
+              s.emergencyDone = false;
+              s.emergencyFailed = false;
+              setTimeout(() => {
+                triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
+                  "ACHTUNG: Eine temporale Anomalie wurde registriert.",
+                  `Mission: ${s.emergencyQuest.title}`,
+                  "Die Belohnungen für diese Aufgabe wurden verdoppelt.",
+                  "Versagen wird nicht toleriert."
+                ]);
+              }, 2500);
+            }
           }
           if (!s.hiddenQuests) s.hiddenQuests = { discovered: [], completed: [] };
-          if (!s.lastDungeonRefresh || s.lastDungeonRefresh !== today) {
-            s.dungeons = generateDungeons(getRank(s.level || 1).name);
-            s.lastDungeonRefresh = today;
-            s.todayModifier = getDailyModifier();
+          // Dungeons only generate if feature is unlocked (level >= 11)
+          if (isFeatureUnlocked('dungeons', s.level || 1)) {
+            if (!s.lastDungeonRefresh || s.lastDungeonRefresh !== today) {
+              s.dungeons = generateDungeons(getRank(s.level || 1).name);
+              s.lastDungeonRefresh = today;
+              s.todayModifier = getDailyModifier();
+            }
           }
           setTimeout(() => {
             const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
@@ -659,8 +670,8 @@ export function useGameState(initialHunterName, onLogout) {
           : (state.seasons?.seasonalCompletions || [])
       }
     };
-    // Check hidden quest triggers after state update
-    const newlyDiscoveredHQ = checkHiddenQuestTriggers(next);
+    // Check hidden quest triggers after state update (only if feature unlocked)
+    const newlyDiscoveredHQ = isFeatureUnlocked('hidden_quests', next.level) ? checkHiddenQuestTriggers(next) : [];
     if (newlyDiscoveredHQ.length > 0) {
       const newDiscovered = [...(next.hiddenQuests.discovered || []), ...newlyDiscoveredHQ.map(hq => hq.id)];
       next.hiddenQuests = { ...next.hiddenQuests, discovered: newDiscovered };
@@ -711,7 +722,10 @@ export function useGameState(initialHunterName, onLogout) {
     persist(next);
     if (didLevelUp) {
       setPrevRank(oldRank);
-      setLevelUp({ level: newLevel, earnedPoints });
+      // Check for newly unlocked features
+      const newFeatures = getNewlyUnlockedFeatures(state.level, newLevel);
+      const newTier = getNewlyUnlockedTier(state.level, newLevel);
+      setLevelUp({ level: newLevel, earnedPoints, unlockedFeatures: newFeatures });
       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
         `Glückwunsch, Hunter ${state.hunterName}.`,
         `Sie haben Level ${newLevel} erreicht.`,
@@ -719,6 +733,16 @@ export function useGameState(initialHunterName, onLogout) {
         `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`,
         "Verteilen Sie diese weise im Statistik-Menü."
       ]);
+      // Show feature unlock message after a delay for newly unlocked tiers
+      if (newTier !== null && TIER_UNLOCK_MESSAGES[newTier]) {
+        const msg = TIER_UNLOCK_MESSAGES[newTier];
+        setTimeout(() => {
+          triggerSystemMessage(msg.title, msg.lines);
+        }, 4000);
+        newFeatures.forEach(f => {
+          setTimeout(() => notify(`🔓 Freigeschaltet: ${f.label} — ${f.desc}`, "named"), 5000);
+        });
+      }
     }
     else if (!ariseData && quest.type !== "hidden" && quest.type !== "chained") notify(`+${xpGain} XP · +${goldGain} Gold`, "success");
     if (ariseData && !newNameds.length) setTimeout(() => setAriseTarget(ariseData), 500);

@@ -43,6 +43,8 @@ import {
   JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI
 } from './data/constants';
 import { useGameState } from './hooks/useGameState.jsx';
+import { useFeatureUnlocks } from './hooks/useFeatureUnlocks.js';
+import { getNextUnlockLevel, getUnlocksAtLevel } from './data/featureUnlocks.js';
 function hoursUntilMidnight() {
   const now = new Date();
   const midnight = new Date(now);
@@ -194,6 +196,24 @@ function App({ initialHunterName, onLogout }) {
       return saved !== null ? JSON.parse(saved) : true;
     } catch { return true; }
   });
+
+  // ── Progressive Feature Unlock System ──
+  const { can, nextLevel } = useFeatureUnlocks(state?.level || 1);
+
+  // ── View Guard: Reset to dashboard if current view is locked ──
+  React.useEffect(() => {
+    const viewToFeature = {
+      training: 'training_tab', goals: 'goals', calendar: 'calendar',
+      dungeon: 'dungeons', story: 'story', shadows: 'shadow_army',
+      equipment: 'equipment', jobs: 'jobs', shop: 'shop',
+      analytics: 'analytics', achievements: 'achievements',
+      challenges: 'challenges', sanctum: 'sanctum', settings: null, stats: 'stats_view',
+    };
+    const feature = viewToFeature[view];
+    if (feature && !can(feature)) {
+      setView('dashboard');
+    }
+  }, [view, can]);
 
   React.useEffect(() => {
     localStorage.setItem("sl_dashboard_stats_hidden", JSON.stringify(showDashboardStats));
@@ -476,7 +496,7 @@ function App({ initialHunterName, onLogout }) {
                 </div>
               </div>
               {/* Soul Link Pill */}
-              {state.soulLink?.linkCode && (
+              {can('soul_link') && state.soulLink?.linkCode && (
                 <button onClick={() => setShowSoulLink(true)} style={{
                   display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
                   borderRadius: 8, background: state.soulLink.bothActive ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
@@ -490,7 +510,7 @@ function App({ initialHunterName, onLogout }) {
                 </button>
               )}
               {/* Season Indicator */}
-              {state.seasons?.currentSeason && (
+              {can('seasons') && state.seasons?.currentSeason && (
                 <button onClick={() => setShowSeasonView(true)} style={{
                   display: "flex", alignItems: "center", gap: 3, padding: "4px 8px",
                   borderRadius: 8, background: "rgba(255,255,255,0.04)",
@@ -503,7 +523,7 @@ function App({ initialHunterName, onLogout }) {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button
+              {can('sanctum') && <button
                 onClick={() => setView("sanctum")}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
@@ -517,8 +537,8 @@ function App({ initialHunterName, onLogout }) {
                 title="Inner Sanctum Base"
               >
                 <span style={{ fontSize: 13 }}>🏛️</span> <span className="hide-on-mobile">SANCTUM</span>
-              </button>
-              <button
+              </button>}
+              {can('focus_mode') && <button
                 onClick={() => setShowFocusMode(true)}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
@@ -532,8 +552,8 @@ function App({ initialHunterName, onLogout }) {
                 title="Focus Mode starten"
               >
                 <span style={{ fontSize: 13 }}>⚡</span> <span className="hide-on-mobile">FOCUS</span>
-              </button>
-              <button
+              </button>}
+              {can('dawn_dusk') && <button
                 onClick={() => setShowDawnDusk(true)}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
@@ -553,8 +573,8 @@ function App({ initialHunterName, onLogout }) {
                   {new Date().getHours() >= 5 && new Date().getHours() < 11 ? "☀️" : "🌙"}
                 </span>
                 <span className="hide-on-mobile">PROTOCOL</span>
-              </button>
-              <button
+              </button>}
+              {can('music') && <button
                 onClick={() => setIsMusicPlaying(prev => {
                   const next = !prev;
                   localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
@@ -570,9 +590,9 @@ function App({ initialHunterName, onLogout }) {
                 }}
               >
                 {isMusicPlaying ? "🔊" : "🔈"}
-              </button>
+              </button>}
 
-              <button
+              {can('multiplayer') && <button
                 onClick={enterPortal}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -587,7 +607,7 @@ function App({ initialHunterName, onLogout }) {
                 title="Hunter Association"
               >
                 🏛️
-              </button>
+              </button>}
             </div>
           </div>
         </div>
@@ -641,7 +661,7 @@ function App({ initialHunterName, onLogout }) {
         ) : null}
 
         {/* SEASON / WORLD EVENT BANNER */}
-        {state.seasons?.currentSeason && (() => {
+        {can('seasons') && state.seasons?.currentSeason && (() => {
           const season = SEASONS[state.seasons.currentSeason];
           const worldEvent = WORLD_EVENTS.find(e => e.key === state.seasons.currentWorldEvent);
           if (!season) return null;
@@ -675,7 +695,7 @@ function App({ initialHunterName, onLogout }) {
         })()}
 
         {/* MODIFIER BANNER */}
-        {modifier && modifier.id !== "none" && (
+        {can('dungeons') && modifier && modifier.id !== "none" && (
           <div style={{ background: `linear-gradient(135deg,${modifier.color}10,transparent)`, border: `1px solid ${modifier.color}25`, borderLeft: `3px solid ${modifier.color}`, borderRadius: 12, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 20 }}>{modifier.icon}</span>
             <div style={{ flex: 1 }}>
@@ -751,7 +771,7 @@ function App({ initialHunterName, onLogout }) {
 
             {/* ── EMERGENCY QUEST ── */}
             {
-              state.emergencyQuest && (
+              can('emergency_quests') && state.emergencyQuest && (
                 <EmergencyQuestCard
                   quest={state.emergencyQuest}
                   done={state.emergencyDone}
@@ -764,14 +784,14 @@ function App({ initialHunterName, onLogout }) {
 
             {/* ── QUEST FILTERS + ADD ── */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 6, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 2, flex: 1 }}>
+              {can('quest_filters') && <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 2, flex: 1 }}>
                 {[
                   { key: "all", label: "Alle", color: theme.accent },
                   { key: "daily", label: "Daily", color: "#22d3ee" },
                   { key: "side", label: "Side", color: "#a78bfa" },
-                  { key: "weekly", label: "Weekly", color: "#8b5cf6" },
-                  { key: "chained", label: "Kette", color: "#f59e0b" },
-                  ...(hiddenQuestCount > 0 ? [{ key: "hidden", label: `❓ ${hiddenQuestCount}`, color: "#6366f1" }] : []),
+                  ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly", color: "#8b5cf6" }] : []),
+                  ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
+                  ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: `❓ ${hiddenQuestCount}`, color: "#6366f1" }] : []),
                 ].map(f => (
                   <button key={f.key} onClick={() => setQuestFilter(f.key)} style={{
                     padding: "5px 10px", borderRadius: 8, fontSize: 10, fontWeight: 600, flexShrink: 0,
@@ -781,7 +801,7 @@ function App({ initialHunterName, onLogout }) {
                     transition: "all 0.25s", fontFamily: "'JetBrains Mono',monospace"
                   }}>{f.label}</button>
                 ))}
-              </div>
+              </div>}
               <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 12, fontSize: 11, fontWeight: 900, background: `linear-gradient(135deg,${theme.primary},${theme.secondary})`, color: "#fff", border: "none", boxShadow: `0 4px 16px ${theme.glow}`, textShadow: "0 1px 4px rgba(0,0,0,0.4)", fontFamily: "'Cinzel',serif", letterSpacing: 1.5, display: "flex", alignItems: "center", gap: 6, flexShrink: 0, transition: "all 0.3s", transform: "translateY(-1px)", animation: "float 3s ease-in-out infinite" }}>+ QUEST</button>
             </div>
 
@@ -796,6 +816,7 @@ function App({ initialHunterName, onLogout }) {
             }
 
             {/* ── VISION BOARD ── */}
+            {can('vision_board') && (
             <div style={{ marginBottom: 24, padding: "18px", borderRadius: 16, background: "linear-gradient(135deg,rgba(168,85,247,0.05),rgba(124,58,237,0.08))", border: "1px solid #7c3aed33", position: "relative", overflow: "hidden", backdropFilter: "blur(4px)" }}>
               <div style={{ position: "absolute", right: -20, top: -20, fontSize: 80, opacity: 0.05, pointerEvents: "none", animation: "float 4s ease-in-out infinite" }}>🔮</div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -813,16 +834,48 @@ function App({ initialHunterName, onLogout }) {
                 <li>Ich bin der Architekt meines eigenen Systems.</li>
               </ul>
             </div>
+            )}
 
             {/* ── HABITS & DAILY ROUTINE ── */}
+            {can('habit_tracker') && (
             <div style={{ marginBottom: 24 }}>
               <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
             </div>
+            )}
 
             {/* ── MICRO-HABITS ── */}
+            {can('micro_habits') && (
             <div style={{ marginBottom: 24 }}>
               <MicroHabits state={state} persist={persist} notify={notify} theme={theme} />
             </div>
+            )}
+
+            {/* ── NEXT UNLOCK TEASER ── */}
+            {nextLevel ? (
+              <div style={{ marginBottom: 24, padding: "14px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(99,102,241,0.02))", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ fontSize: 22, animation: "pulse 2s infinite" }}>🔒</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>NÄCHSTES SYSTEM-UPDATE</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3, lineHeight: 1.4 }}>
+                    {getUnlocksAtLevel(nextLevel).map(f => f.label).join(" · ")}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace" }}>LVL {nextLevel}</div>
+                  <div style={{ width: 48, height: 3, borderRadius: 2, background: "rgba(99,102,241,0.15)", marginTop: 4, overflow: "hidden" }}>
+                    <div style={{ height: "100%", borderRadius: 2, background: "#6366f1", width: `${Math.min(100, (state.level / nextLevel) * 100)}%`, transition: "width 0.5s" }} />
+                  </div>
+                </div>
+              </div>
+            ) : state.level >= 36 ? (
+              <div style={{ marginBottom: 24, padding: "14px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(34,211,153,0.06), rgba(34,211,153,0.02))", border: "1px solid rgba(34,211,153,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ fontSize: 22 }}>✅</div>
+                <div>
+                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#34d399", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>ALL SYSTEMS ONLINE</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Alle Features freigeschaltet. Volle Kontrolle, Hunter.</div>
+                </div>
+              </div>
+            ) : null}
           </div >
         )
         }
@@ -1474,9 +1527,9 @@ function App({ initialHunterName, onLogout }) {
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
           {[
             { key: "dashboard", icon: "📋", label: "Heute" },
-            { key: "training", icon: "🎯", label: "Ziele" },
-            { key: "dungeon", icon: <div style={{ width: 38, height: 38, margin: "-6px auto 2px auto", borderRadius: "50%", border: "1.5px solid #a78bfa", boxShadow: "0 0 10px #a78bfa, inset 0 0 8px #a78bfa", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0814", position: "relative" }}><img src="/icons/gate_normal.png" style={{ width: "160%", height: "160%", objectFit: "cover", mixBlendMode: "screen", filter: "brightness(1.5) contrast(1.2)" }} alt="Gate" /></div>, label: "Gates", badge: activeDungeons.length },
-            { key: "story", icon: "📖", label: "Story" },
+            ...(can('training_tab') ? [{ key: "training", icon: "🎯", label: "Ziele" }] : []),
+            ...(can('dungeons') ? [{ key: "dungeon", icon: <div style={{ width: 38, height: 38, margin: "-6px auto 2px auto", borderRadius: "50%", border: "1.5px solid #a78bfa", boxShadow: "0 0 10px #a78bfa, inset 0 0 8px #a78bfa", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0814", position: "relative" }}><img src="/icons/gate_normal.png" style={{ width: "160%", height: "160%", objectFit: "cover", mixBlendMode: "screen", filter: "brightness(1.5) contrast(1.2)" }} alt="Gate" /></div>, label: "Gates", badge: activeDungeons.length }] : []),
+            ...(can('story') ? [{ key: "story", icon: "📖", label: "Story" }] : []),
             { key: "system", icon: "⚙️", label: "System" }
           ].map(tab => (
             <button key={tab.key} onClick={() => {
@@ -1568,24 +1621,25 @@ function App({ initialHunterName, onLogout }) {
                 title: "HUNTER INTEL", icon: "📊", color: theme.accent,
                 items: [
                   { key: "stats", icon: "📊", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
-                  { key: "analytics", icon: "📈", label: "Analytics", desc: "Fortschritt & Trends" },
-                  { key: "achievements", icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length },
-                  { key: "challenges", icon: "🎖️", label: "Events", desc: "Challenges & Missionen" },
+                  ...(can('analytics') ? [{ key: "analytics", icon: "📈", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", icon: "📈", label: "Analytics", locked: true, unlockLevel: 8 }]),
+                  ...(can('achievements') ? [{ key: "achievements", icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", icon: "🏆", label: "Achievements", locked: true, unlockLevel: 8 }]),
+                  ...(can('challenges') ? [{ key: "challenges", icon: "🎖️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", icon: "🎖️", label: "Events", locked: true, unlockLevel: 21 }]),
                 ]
               }, {
                 title: "ARSENAL", icon: "🗡️", color: "#f59e0b",
                 items: [
-                  { key: "shadows", icon: "🌑", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 },
-                  { key: "equipment", icon: "🗡️", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 },
-                  { key: "jobs", icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" },
-                  { key: "shop", icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` },
+                  ...(can('shadow_army') ? [{ key: "shadows", icon: "🌑", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", icon: "🌑", label: "Shadow Army", locked: true, unlockLevel: 15 }]),
+                  ...(can('equipment') ? [{ key: "equipment", icon: "🗡️", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", icon: "🗡️", label: "Equipment", locked: true, unlockLevel: 11 }]),
+                  ...(can('jobs') ? [{ key: "jobs", icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" }] : [{ key: "jobs_locked", icon: "🎭", label: "Jobs", locked: true, unlockLevel: 21 }]),
+                  ...(can('shop') ? [{ key: "shop", icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` }] : [{ key: "shop_locked", icon: "🛒", label: "Shop", locked: true, unlockLevel: 11 }]),
                 ]
               }, {
                 title: "SOCIAL & SPECIAL", icon: "🔗", color: "#a855f7",
                 items: [
-                  { key: "soullink_overlay", icon: "🔗", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) },
-                  { key: "charisma_overlay", icon: "🎭", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) },
-                  { key: "protocol_overlay", icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) },
+                  ...(can('sanctum') ? [{ key: "sanctum", icon: "🏛️", label: "Inner Sanctum", desc: "Meditation & Willenskraft", isOverlay: false }] : [{ key: "sanctum_locked", icon: "🏛️", label: "Inner Sanctum", locked: true, unlockLevel: 11 }]),
+                  ...(can('dawn_dusk') ? [{ key: "protocol_overlay", icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", icon: "⏰", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
+                  ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "🔗", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "🔗", label: "Soul Link", locked: true, unlockLevel: 30 }]),
+                  ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", icon: "🎭", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", icon: "🎭", label: "Charisma Dungeons", locked: true, unlockLevel: 30 }]),
                 ]
               }, {
                 title: "SYSTEM", icon: "⚙️", color: "#64748b",
@@ -1602,25 +1656,34 @@ function App({ initialHunterName, onLogout }) {
                   {/* Section items */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {section.items.map((item, ii) => (
-                      <button key={item.key} onClick={() => item.isOverlay ? item.action?.() : setView(item.key)} style={{
+                      <button key={item.key} onClick={() => {
+                        if (item.locked) return;
+                        item.isOverlay ? item.action?.() : setView(item.key);
+                      }} style={{
                         width: "100%", padding: "14px 16px", borderRadius: 14,
-                        background: theme.card, border: `1px solid ${section.color}15`,
+                        background: item.locked ? "rgba(10,10,22,0.4)" : theme.card,
+                        border: `1px solid ${item.locked ? "rgba(100,116,139,0.08)" : section.color + "15"}`,
                         display: "flex", alignItems: "center", gap: 12, textAlign: "left",
-                        transition: "all 0.2s", cursor: "pointer", backdropFilter: "blur(8px)",
+                        transition: "all 0.2s", cursor: item.locked ? "default" : "pointer",
+                        backdropFilter: "blur(8px)",
+                        opacity: item.locked ? 0.45 : 1,
+                        filter: item.locked ? "grayscale(0.7)" : "none",
                         animation: `cardEnter 0.3s ease ${(si * 0.08) + (ii * 0.04)}s both`
                       }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = section.color + "44"; e.currentTarget.style.transform = "translateX(4px)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = section.color + "15"; e.currentTarget.style.transform = "none"; }}
+                        onMouseEnter={e => { if (!item.locked) { e.currentTarget.style.borderColor = section.color + "44"; e.currentTarget.style.transform = "translateX(4px)"; } }}
+                        onMouseLeave={e => { if (!item.locked) { e.currentTarget.style.borderColor = section.color + "15"; e.currentTarget.style.transform = "none"; } }}
                       >
                         <div style={{ fontSize: 20, position: "relative", flexShrink: 0 }}>
-                          {item.icon}
-                          {item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -6, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
+                          {item.locked ? "🔒" : item.icon}
+                          {!item.locked && item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -6, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.label}</div>
-                          <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{item.desc}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: item.locked ? "#475569" : "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.label}</div>
+                          <div style={{ fontSize: 9, color: item.locked ? "#334155" : "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
+                            {item.locked ? `🔒 AB LEVEL ${item.unlockLevel}` : item.desc}
+                          </div>
                         </div>
-                        <div style={{ fontSize: 12, color: "#334155", opacity: 0.5 }}>›</div>
+                        <div style={{ fontSize: 12, color: "#334155", opacity: 0.5 }}>{item.locked ? "" : "›"}</div>
                       </button>
                     ))}
                   </div>
@@ -1628,6 +1691,7 @@ function App({ initialHunterName, onLogout }) {
               ))}
 
               {/* Multiplayer Portal */}
+              {can('multiplayer') && (
               <div style={{ marginBottom: 20, animation: `slideUp 0.3s ease 0.4s both` }}>
                 <button onClick={enterPortal} style={{
                   width: "100%", padding: "16px 20px", borderRadius: 16,
@@ -1647,6 +1711,7 @@ function App({ initialHunterName, onLogout }) {
                   <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>⟶</div>
                 </button>
               </div>
+              )}
 
               {/* Version footer */}
               <div style={{ textAlign: "center", padding: "12px 0", fontSize: 9, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 3 }}>
@@ -1777,8 +1842,8 @@ function App({ initialHunterName, onLogout }) {
                       {[
                         { key: "side", label: "Side Quest", color: "#a78bfa", desc: "Kein Zeitlimit" },
                         { key: "daily", label: "Daily Quest", color: "#22d3ee", desc: "Täglich zurückgesetzt" },
-                        { key: "weekly", label: "Weekly Quest", color: "#8b5cf6", desc: "2× XP & Gold" },
-                        { key: "chained", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" },
+                        ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly Quest", color: "#8b5cf6", desc: "2× XP & Gold" }] : []),
+                        ...(can('chained_quests') ? [{ key: "chained", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" }] : []),
                       ].map(t => {
                         const active = qType === t.key;
                         return (
