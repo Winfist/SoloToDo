@@ -1399,7 +1399,7 @@ function App({ initialHunterName, onLogout }) {
               ))}
 
               {/* HUNTER'S CODEX */}
-              {shopUnlocked && (
+              {shopUnlocked && can('codex') && (
                 <div style={{ marginTop: 32, padding: "20px", borderRadius: 16, background: "linear-gradient(135deg,rgba(168,85,247,0.05),rgba(124,58,237,0.1))", border: "1px solid #7c3aed44" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                     <div>
@@ -1561,9 +1561,11 @@ function App({ initialHunterName, onLogout }) {
                     <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>Ziele & Fortschritt</div>
                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>Langzeit-Ziele und Quest-Kalender</div>
                   </div>
-                  <button onClick={() => setView("sanctum")} style={{ padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #a855f722, #7c3aed11)", color: "#a855f7", border: "1px solid #a855f744", fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px #a855f722", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 16px #a855f744"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 12px #a855f722"; }}>
-                    🧘 SANCTUM
-                  </button>
+                  {can('sanctum') && (
+                    <button onClick={() => setView("sanctum")} style={{ padding: "8px 14px", borderRadius: 12, background: "linear-gradient(135deg, #a855f722, #7c3aed11)", color: "#a855f7", border: "1px solid #a855f744", fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700, cursor: "pointer", boxShadow: "0 0 12px #a855f722", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 16px #a855f744"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 12px #a855f722"; }}>
+                      🧘 SANCTUM
+                    </button>
+                  )}
                 </div>
               </div>
 
