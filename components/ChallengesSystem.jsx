@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { calculateLevelUp } from "../data/constants";
+import { NAV_ICONS, GATE_ICONS, SEASON_ICONS } from "../data/icons.js";
 
 const WEEKLY_CHALLENGES = [
-    { id: "iron_week", title: "Iron Week", req: "7 STR-Quests in einer Woche", reward: { xp: 500, gold: 200, badge: "iron_will" }, icon: "💪" },
+    { id: "iron_week", title: "Iron Week", req: "7 STR-Quests in einer Woche", reward: { xp: 500, gold: 200, badge: "iron_will" }, icon: "💪", iconSrc: "/icons/habit_fitness.png" },
     { id: "streak_master", title: "Streak Master", req: "7-Tage Streak halten", reward: { xp: 300, gold: 150 }, icon: "🔥" },
     { id: "scholar", title: "Scholar", req: "5 INT-Quests in einer Woche", reward: { xp: 400, gold: 100 }, icon: "📚" }
 ];
@@ -12,8 +13,8 @@ const MONTHLY_CHALLENGES = [
 ];
 
 const SEASONAL_EVENTS = [
-    { id: "winter_dungeon", title: "Der gefrorene Turm", duration: "21.12 - 06.01", desc: "Spezielle Eis-Dungeons mit 2x Item Drop Rate.", active: false, icon: "❄️" },
-    { id: "red_gate", title: "Red Gate Anomaly", duration: "Heute", desc: "Ein Red Gate wurde gesichtet. Extreme Gefahr. Extreme Belohnung.", active: true, icon: "🩸" }
+    { id: "winter_dungeon", title: "Der gefrorene Turm", duration: "21.12 - 06.01", desc: "Spezielle Eis-Dungeons mit 2x Item Drop Rate.", active: false, icon: "❄️", iconSrc: SEASON_ICONS.frost },
+    { id: "red_gate", title: "Red Gate Anomaly", duration: "Heute", desc: "Ein Red Gate wurde gesichtet. Extreme Gefahr. Extreme Belohnung.", active: true, icon: "🩸", iconSrc: GATE_ICONS.red }
 ];
 
 export default function ChallengesSystem({ state, persist, notify, theme }) {
@@ -51,7 +52,7 @@ export default function ChallengesSystem({ state, persist, notify, theme }) {
                             const completed = state.completedChallenges?.includes(c.id);
                             return (
                                 <div key={c.id} style={{ padding: "14px", borderRadius: 14, background: completed ? "rgba(34,197,94,0.05)" : theme.surface, border: `1px solid ${completed ? "#22c55e44" : theme.primary + "1a"}`, display: "flex", alignItems: "center", gap: 12, opacity: completed ? 0.6 : 1, animation: `slideUp 0.3s ease ${i * 0.1}s both` }}>
-                                    <span style={{ fontSize: 24, filter: completed ? "grayscale(1)" : "none" }}>{c.icon}</span>
+                                    {c.iconSrc ? <img src={c.iconSrc} alt={c.title} style={{ width: 28, height: 28, objectFit: "contain", filter: completed ? "grayscale(1) brightness(0.5)" : `drop-shadow(0 0 6px rgba(255,255,255,0.3)) brightness(1.1)` }} /> : <span style={{ fontSize: 24, filter: completed ? "grayscale(1)" : "none" }}>{c.icon}</span>}
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: 13, fontWeight: 700, color: completed ? "#22c55e" : "#e2e8f0" }}>{c.title}</div>
                                         <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{c.req}</div>
@@ -74,7 +75,7 @@ export default function ChallengesSystem({ state, persist, notify, theme }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         <div style={{ padding: "14px", borderRadius: 14, background: `linear-gradient(135deg, ${theme.primary}11, ${theme.secondary}11)`, border: `1px solid ${theme.primary}33` }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                                <span style={{ fontSize: 32 }}>🌍</span>
+                                <img src={NAV_ICONS.guild} alt="Global" style={{ width: 36, height: 36, objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(168,85,247,0.5)) brightness(1.1)" }} />
                                 <div>
                                     <div style={{ fontSize: 14, fontWeight: 900, color: theme.accent, fontFamily: "'Cinzel',serif" }}>Global Hunter Games</div>
                                     <div style={{ fontSize: 10, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Community Event</div>
@@ -99,7 +100,7 @@ export default function ChallengesSystem({ state, persist, notify, theme }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         {SEASONAL_EVENTS.map(ev => (
                             <div key={ev.id} style={{ padding: "14px", borderRadius: 14, background: ev.active ? "rgba(239,68,68,0.05)" : "rgba(255,255,255,0.02)", border: `1px solid ${ev.active ? "#ef444433" : "#1e2940"}`, display: "flex", alignItems: "flex-start", gap: 12 }}>
-                                <span style={{ fontSize: 24 }}>{ev.icon}</span>
+                                {ev.iconSrc ? <img src={ev.iconSrc} alt={ev.title} style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 6px ${ev.active ? "#ef444488" : "rgba(255,255,255,0.3)"}) brightness(1.1)` }} /> : <span style={{ fontSize: 24 }}>{ev.icon}</span>}
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                         <div style={{ fontSize: 13, fontWeight: 700, color: ev.active ? "#ef4444" : "#e2e8f0" }}>{ev.title}</div>

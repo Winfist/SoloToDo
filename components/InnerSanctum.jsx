@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { genId } from "../data/constants";
+import { STORY_ICONS } from "../data/icons";
 
 const PREMIUM_MANIFESTATIONS = [
     "Ich bin der Architekt meines eigenen Schicksals. Niemand wird die Arbeit für mich erledigen.",
@@ -139,7 +140,7 @@ export default function InnerSanctum({ state, persist, notify, theme }) {
                             onMouseEnter={e => { if ((state.gold || 0) >= 20) { e.currentTarget.style.background = "rgba(245,158,11,0.25)"; e.currentTarget.style.transform = "scale(1.05)"; } }}
                             onMouseLeave={e => { if ((state.gold || 0) >= 20) { e.currentTarget.style.background = "rgba(245,158,11,0.15)"; e.currentTarget.style.transform = "none"; } }}
                         >
-                            <span style={{ fontSize: 20 }}>🎲</span>
+                            <span style={{ display: "flex", justifyContent: "center" }}><img src={STORY_ICONS.scroll} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} /></span>
                             <span style={{ fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>20G</span>
                         </button>
                     )}

@@ -5,6 +5,7 @@ import CreateGuildModal from '../components/CreateGuildModal';
 import GuildBrowser from '../components/GuildBrowser';
 import ChatPanel from '../components/ChatPanel';
 import { auth } from '../../firebase';
+import { NAV_ICONS, STAT_ICONS, STORY_ICONS } from '../../data/icons';
 
 export default function GuildView({ playerState }) {
   const myGuild = playerState?.multiplayer?.guild;
@@ -103,7 +104,9 @@ export default function GuildView({ playerState }) {
             background: `radial-gradient(circle, ${MP_THEME.primary}12, transparent 70%)`,
             animation: "mpBreathe 4s ease-in-out infinite",
           }} />
-          <div style={{ fontSize: 56, marginBottom: 16, animation: "mpFloat 3s ease-in-out infinite", position: "relative" }}>🏰</div>
+          <div style={{ fontSize: 56, marginBottom: 16, animation: "mpFloat 3s ease-in-out infinite", position: "relative" }}>
+            <img src={NAV_ICONS.guild} alt="" style={{ width: 64, height: 64, objectFit: "contain", filter: `drop-shadow(0 0 12px ${MP_THEME.primary})` }} />
+          </div>
           <div style={{ fontSize: 9, letterSpacing: 5, color: MP_THEME.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 12, position: "relative" }}>
             HUNTER ASSOCIATION
           </div>
@@ -126,7 +129,7 @@ export default function GuildView({ playerState }) {
           onMouseEnter={e => { e.currentTarget.style.background = `linear-gradient(135deg, ${MP_THEME.primary}33, ${MP_THEME.primary}15)`; e.currentTarget.style.transform = "translateY(-2px)"; }}
           onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(135deg, ${MP_THEME.primary}22, ${MP_THEME.primary}08)`; e.currentTarget.style.transform = "none"; }}
           >
-            🔍 Gilde suchen
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={NAV_ICONS.events} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(2)" }} /> Gilde suchen</span>
           </button>
           <button onClick={() => setSubView("create")} style={{
             flex: 1, padding: 16, borderRadius: 16, fontSize: 13, fontWeight: 900,
@@ -139,7 +142,7 @@ export default function GuildView({ playerState }) {
           onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.filter = "brightness(1.1)"; }}
           onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.filter = "none"; }}
           >
-            ⚔️ Gilde gründen
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={STAT_ICONS.str} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(2)" }} /> Gilde gründen</span>
           </button>
         </div>
       </div>
@@ -175,7 +178,7 @@ export default function GuildView({ playerState }) {
           <div style={{
             fontSize: 48, filter: `drop-shadow(0 0 12px ${MP_THEME.glow})`,
           }}>
-            {guildData?.icon || "🏰"}
+            {guildData?.icon ? <img src={NAV_ICONS.guild} alt="" style={{ width: 48, height: 48, objectFit: "contain" }} /> : <img src={NAV_ICONS.guild} alt="" style={{ width: 48, height: 48, objectFit: "contain" }} />}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 10px ${MP_THEME.glow}` }}>
@@ -208,8 +211,8 @@ export default function GuildView({ playerState }) {
       {/* Sub-navigation */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {[
-          { id: "info", label: "Members", icon: "👥" },
-          { id: "chat", label: "Chat", icon: "💬" },
+          { id: "info", label: "Members", iconSrc: STAT_ICONS.cha },
+          { id: "chat", label: "Chat", iconSrc: STORY_ICONS.scroll },
         ].map(tab => (
           <button key={tab.id} onClick={() => setSubView(tab.id)} style={{
             flex: 1, padding: "10px", borderRadius: 12, fontSize: 11,
@@ -220,7 +223,7 @@ export default function GuildView({ playerState }) {
             fontFamily: "'JetBrains Mono',monospace", fontWeight: 700,
             cursor: "pointer", transition: "all 0.2s",
           }}>
-            <span>{tab.icon}</span> {tab.label}
+            <span style={{ display: "inline-flex", alignItems: "center" }}><img src={tab.iconSrc} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: subView === tab.id ? `drop-shadow(0 0 4px ${MP_THEME.accent})` : "brightness(0.6)" }} /></span> {tab.label}
           </button>
         ))}
       </div>
@@ -246,7 +249,9 @@ export default function GuildView({ playerState }) {
                   padding: "10px 14px", background: "rgba(0,0,0,0.3)", borderRadius: 10,
                   border: member.id === myUid ? `1px solid ${MP_THEME.primary}33` : "1px solid rgba(255,255,255,0.02)",
                 }}>
-                  <div style={{ fontSize: 18 }}>{roleInfo.icon}</div>
+                  <div style={{ fontSize: 18 }}>
+                    <img src={roleInfo.iconSrc || STAT_ICONS.vit} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                  </div>
                   <div style={{ flex: 1 }}>
                     <div style={{
                       fontSize: 13, fontWeight: 700,
@@ -261,9 +266,9 @@ export default function GuildView({ playerState }) {
                   </div>
                   <div style={{
                     fontSize: 9, color: member.online ? MP_THEME.guildGreen : "#64748b",
-                    fontFamily: "'JetBrains Mono',monospace",
+                    fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center"
                   }}>
-                    {member.online ? "🟢" : "🟡"}
+                    {member.online ? <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e" }}></span> : <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#64748b" }}></span>}
                   </div>
                 </div>
               );
@@ -293,7 +298,7 @@ export default function GuildView({ playerState }) {
             color: "#ef4444", fontSize: 10, fontFamily: "'JetBrains Mono',monospace",
             cursor: "pointer", transition: "all 0.2s", letterSpacing: 1,
           }}>
-            {isMaster ? "🗑️ GILDE AUFLÖSEN" : "🚪 GILDE VERLASSEN"}
+            {isMaster ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={STAT_ICONS.cha} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(0.6)" }} /> GILDE AUFLÖSEN</span> : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={STAT_ICONS.agi} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(0.6)" }} /> GILDE VERLASSEN</span>}
           </button>
         ) : (
           <div style={{ display: "flex", gap: 8 }}>

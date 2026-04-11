@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from "react";
-import { STAT_ICONS, SHADOW_ICONS } from "../data/icons.js";
+import { STAT_ICONS, SHADOW_ICONS, STORY_ICONS, NAV_ICONS, QUEST_ICONS, DUNGEON_ICONS, GATE_ICONS, BOSS_ICONS } from "../data/icons.js";
 
 /**
  * DoubleDungeonTutorial – Thematisches Onboarding nach Solo Leveling.
@@ -17,7 +17,7 @@ import { STAT_ICONS, SHADOW_ICONS } from "../data/icons.js";
 const STEPS = [
     {
         id: "awakening",
-        icon: "💀",
+        iconSrc: STORY_ICONS.skull,
         title: "DER DOUBLE DUNGEON",
         lines: [
             "Du öffnest die Augen.",
@@ -30,7 +30,7 @@ const STEPS = [
     },
     {
         id: "system_intro",
-        icon: "⚙️",
+        iconSrc: NAV_ICONS.settings,
         title: "DAS SYSTEM",
         lines: [
             "Diese App ist dein persönliches System.",
@@ -42,7 +42,7 @@ const STEPS = [
     },
     {
         id: "quests",
-        icon: "📝",
+        iconSrc: NAV_ICONS.quests,
         title: "QUESTS – DEINE AUFGABEN",
         lines: [
             "Quests sind echte Aufgaben aus deinem Alltag.",
@@ -51,17 +51,17 @@ const STEPS = [
             "Boss-Quests beschwören Schatten für deine Armee!",
         ],
         highlight: [
-            { icon: "◇", label: "Easy", desc: "+5 XP", color: "#6b7280" },
-            { icon: "◆", label: "Normal", desc: "+15 XP", color: "#22d3ee" },
-            { icon: "★", label: "Hard", desc: "+40 XP", color: "#a78bfa" },
-            { icon: "♛", label: "Boss", desc: "+100 XP + Shadow", color: "#ef4444" },
+            { iconSrc: QUEST_ICONS.easy, label: "Easy", desc: "+5 XP", color: "#6b7280" },
+            { iconSrc: QUEST_ICONS.normal, label: "Normal", desc: "+15 XP", color: "#22d3ee" },
+            { iconSrc: QUEST_ICONS.hard, label: "Hard", desc: "+40 XP", color: "#a78bfa" },
+            { iconSrc: QUEST_ICONS.boss, label: "Boss", desc: "+100 XP + Shadow", color: "#ef4444" },
         ],
         systemLine: "SYSTEM: Täglich werden 3 System-Quests generiert. Eigene Quests jederzeit erstellbar.",
         bg: "radial-gradient(ellipse at 30% 50%, #0e1a0e 0%, #06060e 70%)",
     },
     {
         id: "stats",
-        icon: "📊",
+        iconSrc: NAV_ICONS.stats,
         title: "DEINE STATS",
         lines: [
             "Jede Quest gehört zu einer Kategorie und stärkt den passenden Stat.",
@@ -79,7 +79,7 @@ const STEPS = [
     },
     {
         id: "shadows",
-        icon: "🌑",
+        iconSrc: DUNGEON_ICONS.bloodmoon,
         title: "DIE SHADOW ARMY",
         lines: [
             "Boss-Quests beschwören Schatten-Soldaten.",
@@ -91,7 +91,7 @@ const STEPS = [
     },
     {
         id: "dungeons",
-        icon: "🌀",
+        iconSrc: GATE_ICONS.red,
         title: "DUNGEON GATES",
         lines: [
             "Täglich öffnen sich 3 Gates mit verschiedenen Rängen.",
@@ -103,7 +103,7 @@ const STEPS = [
     },
     {
         id: "arise",
-        icon: "👑",
+        iconSrc: BOSS_ICONS.unleashed,
         title: "A R I S E",
         lines: [
             "Du hast das Tutorial des Double Dungeon überlebt.",
@@ -228,7 +228,7 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
                         ? "drop-shadow(0 0 40px rgba(168,85,247,0.6))"
                         : "drop-shadow(0 0 20px rgba(168,85,247,0.3))",
                 }}>
-                    {step.icon}
+                    {step.iconSrc ? <img src={step.iconSrc} alt="" style={{ width: step.isFinale ? 72 : 56, height: step.isFinale ? 72 : 56, objectFit: "contain" }} /> : step.icon}
                 </div>
 
                 {/* Title */}

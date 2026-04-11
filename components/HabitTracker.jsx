@@ -1,31 +1,32 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { calculateLevelUp } from "../data/constants";
+import { HABIT_ICONS, QUEST_ICONS, NAV_ICONS, STAT_ICONS } from "../data/icons.js";
 
 // ═══════════════════════════════════════════════════════════════
 // HABIT TRACKER – Recurring Habits with per-Habit Streaks & Timer
 // ═══════════════════════════════════════════════════════════════
 
 const HABIT_CATEGORIES = [
-    { key: "fitness", icon: "💪", label: "Fitness", color: "#ef4444" },
-    { key: "learning", icon: "📖", label: "Lernen", color: "#3b82f6" },
-    { key: "health", icon: "🧘", label: "Gesundheit", color: "#22c55e" },
-    { key: "productivity", icon: "⚡", label: "Produktiv", color: "#f59e0b" },
-    { key: "social", icon: "👥", label: "Sozial", color: "#a855f7" },
-    { key: "mindfulness", icon: "🧠", label: "Achtsamkeit", color: "#06b6d4" },
+    { key: "fitness", icon: "💪", iconSrc: HABIT_ICONS.fitness, label: "Fitness", color: "#ef4444" },
+    { key: "learning", icon: "📖", iconSrc: STAT_ICONS.int, label: "Lernen", color: "#3b82f6" },
+    { key: "health", icon: "🧘", iconSrc: HABIT_ICONS.health, label: "Gesundheit", color: "#22c55e" },
+    { key: "productivity", icon: "⚡", iconSrc: STAT_ICONS.agi, label: "Produktiv", color: "#f59e0b" },
+    { key: "social", icon: "👥", iconSrc: STAT_ICONS.cha, label: "Sozial", color: "#a855f7" },
+    { key: "mindfulness", icon: "🧠", iconSrc: HABIT_ICONS.mindfulness, label: "Achtsamkeit", color: "#06b6d4" },
 ];
 
 const FREQUENCY_OPTIONS = [
-    { key: "daily", label: "Täglich", icon: "📅" },
-    { key: "weekday", label: "Mo-Fr", icon: "🏢" },
-    { key: "weekend", label: "Sa-So", icon: "☀️" },
-    { key: "weekly", label: "Wöchentlich", icon: "📆" },
-    { key: "custom", label: "Benutzerdefiniert", icon: "⚙️" },
+    { key: "daily", label: "Täglich", icon: "📅", iconSrc: QUEST_ICONS.daily },
+    { key: "weekday", label: "Mo-Fr", icon: "🏢", iconSrc: HABIT_ICONS.weekday },
+    { key: "weekend", label: "Sa-So", icon: "☀️", iconSrc: HABIT_ICONS.weekend },
+    { key: "weekly", label: "Wöchentlich", icon: "📆", iconSrc: QUEST_ICONS.weekly },
+    { key: "custom", label: "Benutzerdefiniert", icon: "⚙️", iconSrc: NAV_ICONS.settings },
 ];
 
 const VERIFICATION_TYPES = [
-    { key: "manual", label: "Manuell", icon: "✅", desc: "Selbst bestätigen" },
-    { key: "timer", label: "Timer", icon: "⏱️", desc: "Zeitbasiert" },
-    { key: "counter", label: "Zähler", icon: "🔢", desc: "Wiederholungen" },
+    { key: "manual", label: "Manuell", icon: "✅", iconSrc: HABIT_ICONS.manual, desc: "Selbst bestätigen" },
+    { key: "timer", label: "Timer", icon: "⏱️", iconSrc: HABIT_ICONS.timer, desc: "Zeitbasiert" },
+    { key: "counter", label: "Zähler", icon: "🔢", iconSrc: HABIT_ICONS.counter, desc: "Wiederholungen" },
 ];
 
 function getToday() { return new Date().toISOString().slice(0, 10); }
@@ -204,7 +205,13 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
                         fontSize: 22,
                         boxShadow: `0 0 10px ${completed ? "#22c55e" : cat.color}22`,
                     }}>
-                        {completed ? "✓" : habit.icon || cat.icon}
+                        {completed ? (
+                          <span style={{ fontSize: 22, color: "#22c55e" }}>✓</span>
+                        ) : cat.iconSrc ? (
+                          <img src={cat.iconSrc} alt={cat.label} style={{ width: 28, height: 28, objectFit: "contain", filter: `brightness(${completed ? 0.6 : 1.05}) drop-shadow(0 0 5px ${cat.color}55)` }} />
+                        ) : (
+                          habit.icon || cat.icon
+                        )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
@@ -218,17 +225,20 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
                             {habit.title}
                         </div>
                         <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "18", fontFamily: "'JetBrains Mono',monospace" }}>{cat.icon} {cat.label}</span>
+                            <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "18", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                              {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.label} style={{ width: 10, height: 10, objectFit: "contain" }} /> : cat.icon}
+                              {cat.label}
+                            </span>
                             {streak > 0 && (
-                                <span style={{ fontSize: 8, color: streak >= 5 ? "#f97316" : "#f59e0b", padding: "1px 5px", borderRadius: 4, background: "#f59e0b15", fontFamily: "'JetBrains Mono',monospace" }}>
-                                    <span style={{ display: "inline-block", animation: streak >= 3 ? "fireGlow 1.5s ease-in-out infinite" : "none" }}>🔥</span> {streak}d
+                                <span style={{ fontSize: 8, color: streak >= 5 ? "#f97316" : "#f59e0b", padding: "1px 5px", borderRadius: 4, background: "#f59e0b15", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                    <img src={STAT_ICONS.str} alt="" style={{ width: 10, height: 10, objectFit: "contain", filter: "brightness(1.2)", animation: streak >= 3 ? "fireGlow 1.5s ease-in-out infinite" : "none" }} /> {streak}d
                                 </span>
                             )}
                             {habit.verification === "timer" && (
-                                <span style={{ fontSize: 8, color: "#06b6d4", padding: "1px 5px", borderRadius: 4, background: "#06b6d415", fontFamily: "'JetBrains Mono',monospace" }}>⏱️ {habit.targetMinutes}min</span>
+                                <span style={{ fontSize: 8, color: "#06b6d4", padding: "1px 5px", borderRadius: 4, background: "#06b6d415", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}><img src={HABIT_ICONS.timer} alt="" style={{ width: 10, height: 10, objectFit: "contain", filter: "brightness(1.2) drop-shadow(0 0 2px #06b6d488)" }} /> {habit.targetMinutes}min</span>
                             )}
                             {habit.verification === "counter" && (
-                                <span style={{ fontSize: 8, color: "#a855f7", padding: "1px 5px", borderRadius: 4, background: "#a855f715", fontFamily: "'JetBrains Mono',monospace" }}>🔢 {todayLog?.counterValue || 0}/{habit.targetCount}</span>
+                                <span style={{ fontSize: 8, color: "#a855f7", padding: "1px 5px", borderRadius: 4, background: "#a855f715", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}><img src={HABIT_ICONS.counter} alt="" style={{ width: 10, height: 10, objectFit: "contain", filter: "brightness(1.2) drop-shadow(0 0 2px #a855f788)" }} /> {todayLog?.counterValue || 0}/{habit.targetCount}</span>
                             )}
                         </div>
                     </div>
@@ -266,8 +276,8 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
                                     background: "rgba(255,255,255,0.025)", borderRadius: 8,
                                     border: "1px solid rgba(255,255,255,0.04)",
                                 }}>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: s.color, fontFamily: "'Cinzel',serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
-                                        {s.fire && <span style={{ fontSize: 11, animation: "fireGlow 1.5s ease-in-out infinite", display: "inline-block" }}>🔥</span>}
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: s.color, fontFamily: "'Cinzel',serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                                        {s.fire && <img src={STAT_ICONS.str} alt="" style={{ width: 14, height: 14, objectFit: "contain", animation: "fireGlow 1.5s ease-in-out infinite", filter: "drop-shadow(0 0 4px #ef4444)" }} />}
                                         {s.value}
                                     </div>
                                     <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{s.label}</div>
@@ -422,7 +432,11 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
                                 onMouseEnter={e => { if (category !== c.key) { e.currentTarget.style.borderColor = c.color + "44"; e.currentTarget.style.color = c.color + "aa"; } }}
                                 onMouseLeave={e => { if (category !== c.key) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
                             >
-                                <span style={{ fontSize: 16 }}>{c.icon}</span>
+                                {c.iconSrc ? (
+                                  <img src={c.iconSrc} alt={c.label} style={{ width: 20, height: 20, objectFit: "contain", filter: category === c.key ? `drop-shadow(0 0 6px ${c.color}88)` : "brightness(0.7)" }} />
+                                ) : (
+                                  <span style={{ fontSize: 16 }}>{c.icon}</span>
+                                )}
                                 <span>{c.label}</span>
                             </button>
                         ))}
@@ -442,7 +456,7 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
                                 transform: frequency === f.key ? "scale(0.96) translateY(1px)" : "scale(1)",
                                 boxShadow: frequency === f.key ? `inset 0 -2px 4px rgba(0,0,0,0.3)` : "none",
                             }}>
-                                {f.icon} {f.label}
+                                {f.iconSrc ? <img src={f.iconSrc} alt={f.label} style={{ width: 14, height: 14, objectFit: "contain", verticalAlign: "middle", marginRight: 3 }} /> : f.icon} {f.label}
                             </button>
                         ))}
                     </div>
@@ -462,7 +476,11 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
                                 transform: verification === v.key ? "scale(0.95) translateY(1px)" : "scale(1)",
                                 boxShadow: verification === v.key ? `0 0 12px ${theme?.primary || "#22d3ee"}22, inset 0 -2px 4px rgba(0,0,0,0.3)` : "none",
                             }}>
-                                <span style={{ fontSize: 16 }}>{v.icon}</span>
+                                {v.iconSrc ? (
+                                  <img src={v.iconSrc} alt={v.label} style={{ width: 20, height: 20, objectFit: "contain", filter: verification === v.key ? "brightness(1.2)" : "brightness(0.7)" }} />
+                                ) : (
+                                  <span style={{ fontSize: 16 }}>{v.icon}</span>
+                                )}
                                 <span>{v.label}</span>
                                 <span style={{ fontSize: 7, opacity: 0.6 }}>{v.desc}</span>
                             </button>
@@ -717,7 +735,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
                         transition: "all 0.15s",
                         boxShadow: filter === f.key ? `0 0 8px ${f.color}22` : "none",
                     }}>
-                        {f.icon} {f.label}
+                        {f.iconSrc ? <img src={f.iconSrc} alt={f.label} style={{ width: 10, height: 10, objectFit: "contain", verticalAlign: "middle", marginRight: 2, filter: filter === f.key ? `drop-shadow(0 0 3px ${f.color}88)` : "brightness(0.7)" }} /> : f.icon} {f.label}
                     </button>
                 ))}
             </div>

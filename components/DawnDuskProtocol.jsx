@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { STAT_ICONS } from "../data/icons.js";
+import { STAT_ICONS, NAV_ICONS } from "../data/icons.js";
 
 // ═══════════════════════════════════════════════════════════════
 // DAWN/DUSK PROTOCOL — Timed Routine Dungeon Run
@@ -37,6 +37,7 @@ const TUTORIAL_SLIDES = [
   },
   {
     icon: "⏰",
+    iconSrc: NAV_ICONS.timer,
     title: "ZEITFENSTER",
     subtitle: "SYSTEM — PROTOKOLL-FENSTER",
     color: "#fbbf24",
@@ -197,7 +198,9 @@ function SystemTutorial({ onClose }) {
           textAlign: "center", fontSize: "3.5rem", marginBottom: "1rem",
           animation: "icon-float 3s ease-in-out infinite"
         }}>
-          {current.icon}
+          {current.iconSrc ? (
+            <img src={current.iconSrc} alt={current.title} style={{ width: 64, height: 64, objectFit: "contain", filter: `drop-shadow(0 0 16px ${current.color}99) brightness(1.15)` }} />
+          ) : current.icon}
         </div>
 
         {/* Title */}
@@ -432,8 +435,8 @@ export default function DawnDuskProtocol({
                 textShadow: run ? `0 0 20px ${run.type === "dawn" ? "#fbbf24" : "#818cf8"}50` : "none"
               }}>
                 {screen === "run"
-                  ? (run?.type === "dawn" ? "☀️ DAWN PROTOCOL" : "🌙 DUSK PROTOCOL")
-                  : "⚡ DAWN / DUSK PROTOCOL"
+                  ? (run?.type === "dawn" ? "DAWN PROTOCOL" : "DUSK PROTOCOL")
+                  : "DAWN / DUSK PROTOCOL"
                 }
               </div>
             </div>
@@ -484,7 +487,7 @@ export default function DawnDuskProtocol({
                       fontFamily: "'Courier New', monospace",
                       letterSpacing: "0.08em"
                     }}>
-                      <div>{type === "dawn" ? "☀️" : "🌙"}</div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{type === "dawn" ? <img src="/icons/story_dawn.png" alt="Dawn" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #fbbf2488) brightness(1.1)" }} /> : <img src="/icons/health_sleep.png" alt="Dusk" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #818cf888) brightness(1.1)" }} />}</div>
                       <div style={{ fontSize: "0.75rem", marginTop: "0.15rem" }}>
                         {type === "dawn" ? "DAWN" : "DUSK"}
                       </div>
@@ -544,7 +547,7 @@ export default function DawnDuskProtocol({
                     color: "#e2e8f0", fontWeight: 700, fontSize: "0.82rem",
                     letterSpacing: "0.12em"
                   }}>
-                    {tab === "dawn" ? "☀️ MORGEN-ETAGEN" : "🌙 ABEND-ETAGEN"}
+                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{tab === "dawn" ? <img src="/icons/story_dawn.png" alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> : <img src="/icons/health_sleep.png" alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />} {tab === "dawn" ? "MORGEN-ETAGEN" : "ABEND-ETAGEN"}</span>
                     <span style={{ color: tabColor, marginLeft: "0.5rem" }}>
                       {currentTasks.length}/5
                     </span>
@@ -557,7 +560,7 @@ export default function DawnDuskProtocol({
                     border: `1px dashed ${tabColor}25`, borderRadius: "12px",
                     background: `${tabColor}05`
                   }}>
-                    <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🏯</div>
+                     <div style={{ marginBottom: "0.5rem" }}><img src={tab === "dawn" ? "/icons/story_dawn.png" : "/icons/health_sleep.png"} alt="" style={{ width: 36, height: 36, objectFit: "contain", filter: `drop-shadow(0 0 8px ${tabColor}88) brightness(1.1)` }} /></div>
                     <div style={{ color: "#4b5563", fontSize: "0.82rem", lineHeight: 1.5 }}>
                       Keine Etagen konfiguriert.<br />
                       <span style={{ color: tabColor, opacity: 0.7 }}>Richte deine Routine ein →</span>
@@ -613,7 +616,7 @@ export default function DawnDuskProtocol({
                     onMouseOver={e => { e.currentTarget.style.background = `${tabColor}28`; e.currentTarget.style.boxShadow = `0 0 35px ${tabColor}30`; }}
                     onMouseOut={e => { e.currentTarget.style.background = `linear-gradient(135deg, ${tabColor}22, ${tabColor}08)`; e.currentTarget.style.boxShadow = `0 0 25px ${tabColor}15`; }}
                   >
-                    {tab === "dawn" ? "☀️ DAWN PROTOCOL STARTEN" : "🌙 DUSK PROTOCOL STARTEN"}
+                     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{tab === "dawn" ? <img src="/icons/story_dawn.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} /> : <img src="/icons/health_sleep.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />} {tab === "dawn" ? "DAWN PROTOCOL STARTEN" : "DUSK PROTOCOL STARTEN"}</span>
                   </button>
                 )}
 
@@ -641,7 +644,7 @@ export default function DawnDuskProtocol({
                   onMouseOver={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#9ca3af"; }}
                   onMouseOut={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.09)"; e.currentTarget.style.color = "#6b7280"; }}
                 >
-                  ⚙️ ETAGEN KONFIGURIEREN
+                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src={NAV_ICONS.settings} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(0.8)" }} /> ETAGEN KONFIGURIEREN</span>
                 </button>
               </div>
             </>
@@ -658,7 +661,7 @@ export default function DawnDuskProtocol({
                   background: `${tabColor}18`, border: `1px solid ${tabColor}40`,
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem"
                 }}>
-                  {tab === "dawn" ? "☀️" : "🌙"}
+                   {tab === "dawn" ? <img src="/icons/story_dawn.png" alt="Dawn" style={{ width: 20, height: 20, objectFit: "contain", filter: `drop-shadow(0 0 4px ${tabColor}88)` }} /> : <img src="/icons/health_sleep.png" alt="Dusk" style={{ width: 20, height: 20, objectFit: "contain", filter: `drop-shadow(0 0 4px ${tabColor}88)` }} />}
                 </div>
                 <div>
                   <div style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.88rem" }}>
@@ -729,7 +732,7 @@ export default function DawnDuskProtocol({
                         fontSize: "0.62rem", fontWeight: 700, fontFamily: "'Courier New', monospace",
                         transition: "all 0.15s"
                       }}>
-                        <div>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.label} style={{ width: 14, height: 14, objectFit: "contain" }} /> : cat.icon}</div>
+                         <div>{CATEGORIES[cat]?.iconSrc ? <img src={CATEGORIES[cat].iconSrc} alt={label} style={{ width: 14, height: 14, objectFit: "contain", filter: newTask.category === cat ? `drop-shadow(0 0 4px ${color}88)` : "brightness(0.6)" }} /> : icon}</div>
                         <div>{label}</div>
                       </button>
                     ))}
@@ -776,7 +779,7 @@ export default function DawnDuskProtocol({
                   fontSize: "0.6rem", letterSpacing: "0.45em", color: timerColor,
                   opacity: 0.6, marginBottom: "0.4rem"
                 }}>
-                  {run.type === "dawn" ? "☀️ DAWN" : "🌙 DUSK"} — COUNTDOWN
+                   {run.type === "dawn" ? "DAWN" : "DUSK"} — COUNTDOWN
                 </div>
                 <div style={{
                   fontSize: "3.5rem", fontWeight: 900, color: timerColor,
@@ -890,7 +893,7 @@ export default function DawnDuskProtocol({
                           color: floor.completed ? "#22c55e" : cat.color,
                           fontSize: "0.62rem", marginTop: "0.12rem", opacity: 0.7
                         }}>
-                          {cat.icon} {cat.label}
+                           <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><img src={cat.iconSrc} alt={cat.label} style={{ width: 10, height: 10, objectFit: "contain" }} /> {cat.label}</span>
                           {floor.completed && floor.completedAt && (
                             <span style={{ color: "#374151", marginLeft: "0.5rem" }}>
                               · {new Date(floor.completedAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}

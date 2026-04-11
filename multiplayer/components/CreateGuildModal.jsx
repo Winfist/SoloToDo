@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { MP_THEME, GUILD_ICONS } from '../data/mpConstants';
+import { STAT_ICONS } from '../../data/icons';
 
 export default function CreateGuildModal({ onClose, onCreate }) {
   const [name, setName] = useState("");
@@ -148,7 +148,7 @@ export default function CreateGuildModal({ onClose, onCreate }) {
               boxShadow: (name.trim() && tag.trim()) ? `0 4px 20px ${MP_THEME.glow}` : "none",
               transition: "all 0.3s",
             }}>
-              {creating ? "Wird erstellt..." : "⚔️ GILDE GRÜNDEN"}
+              {creating ? "Wird erstellt..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={STAT_ICONS.str} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(2)" }} /> GILDE GRÜNDEN</span>}
             </button>
           </div>
         </div>

@@ -28,6 +28,8 @@ import DawnDuskProtocol from "./components/DawnDuskProtocol.jsx";
 import CharismaDungeonsView from "./components/CharismaDungeonsView.jsx";
 import { SEASONS, WORLD_EVENTS } from "./data/seasons.js";
 import PageTransition from "./components/PageTransition.jsx";
+import { NAV_ICONS, STAT_ICONS, GATE_ICONS, QUEST_ICONS, SEASON_ICONS } from "./data/icons.js";
+import GameIcon from "./components/GameIcon.jsx";
 
 // ─── RANKS ────────────────────────────────────────────────────
 import {
@@ -284,7 +286,7 @@ function App({ initialHunterName, onLogout }) {
     );
   }
 
-  if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><div style={{ fontSize: 40, animation: "float 2s ease-in-out infinite" }}>⚔️</div><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
+  if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><GameIcon src={NAV_ICONS.dashboard} fallback="⚔️" size={56} glow glowColor="rgba(79,110,247,0.5)" animate="float" /><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
   if (showSetup) return <SetupScreen onFinish={gameState.finishSetup} theme={THEMES[state?.selectedTheme] || THEMES["default"]} />;
 
   const theme = (state?.selectedTheme === "custom" && state?.customThemeData)
@@ -336,7 +338,7 @@ function App({ initialHunterName, onLogout }) {
           <div key={i} style={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", border: "2px solid #f59e0b66", animation: `portalRipple 2s ease-out ${i * 0.3}s infinite` }} />
         ))}
         {/* Central Portal */}
-        <div style={{ fontSize: 64, animation: "portalGate 1.5s cubic-bezier(0.4,0,0.2,1) forwards", filter: "drop-shadow(0 0 40px rgba(245,158,11,0.8))", marginBottom: 32 }}>🌐</div>
+        <div style={{ marginBottom: 32, animation: "portalGate 1.5s cubic-bezier(0.4,0,0.2,1) forwards" }}><GameIcon src={NAV_ICONS.guild} fallback="🌐" size={72} glow glowColor="rgba(245,158,11,0.8)" /></div>
         {/* Text */}
         <div style={{ fontSize: 11, letterSpacing: 6, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, animation: "portalText 1.5s ease-out 0.3s both" }}>{text}</div>
         {/* Ambient glow */}
@@ -476,7 +478,7 @@ function App({ initialHunterName, onLogout }) {
         <div onClick={() => setShowHiddenQuestModal(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(1,0,6,0.96)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.4s", cursor: "pointer" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 360, animation: "scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ fontSize: 56, marginBottom: 12, animation: "float 2s ease-in-out infinite", filter: "drop-shadow(0 0 20px #6366f1)" }}>❓</div>
+              <div style={{ marginBottom: 12 }}><GameIcon src={QUEST_ICONS.hidden} fallback="❓" size={56} glow glowColor="#6366f1" animate="float" /></div>
               <div style={{ fontSize: 9, letterSpacing: 5, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>VERBORGENE QUEST ENTHÜLLT</div>
               <h2 style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginBottom: 6, textShadow: "0 0 30px #6366f188" }}>{showHiddenQuestModal.title}</h2>
               <p style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>{showHiddenQuestModal.discoveryMsg}</p>
@@ -526,7 +528,7 @@ function App({ initialHunterName, onLogout }) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 10px", borderRadius: 8, background: state.streak >= 3 ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${state.streak >= 3 ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.06)"}`, color: state.streak >= 5 ? "#f97316" : state.streak >= 3 ? "#fb923c" : "#94a3b8", minWidth: 40 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 2 }}>
-                  <span style={{ animation: state.streak >= 3 ? "pulse 1.5s infinite" : "none" }}>🔥</span>{state.streak}
+                  <span style={{ animation: state.streak >= 3 ? "pulse 1.5s infinite" : "none", display: "inline-flex", alignItems: "center" }}>🔥</span>{state.streak}
                 </div>
               </div>
               {/* Soul Link Pill */}
@@ -570,7 +572,7 @@ function App({ initialHunterName, onLogout }) {
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(34,211,153,0.05)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))"; }}
                 title="Inner Sanctum Base"
               >
-                <span style={{ fontSize: 13 }}>🏛️</span> <span className="hide-on-mobile">SANCTUM</span>
+                <GameIcon src={NAV_ICONS.timer} fallback="🏛️" size={16} glow glowColor="rgba(34,211,153,0.5)" /> <span className="hide-on-mobile">SANCTUM</span>
               </button>}
               {can('focus_mode') && <button
                 onClick={() => setShowFocusMode(true)}
@@ -585,7 +587,7 @@ function App({ initialHunterName, onLogout }) {
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(168,85,247,0.05)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))"; }}
                 title="Focus Mode starten"
               >
-                <span style={{ fontSize: 13 }}>⚡</span> <span className="hide-on-mobile">FOCUS</span>
+                <GameIcon src={NAV_ICONS.timer} fallback="⚡" size={16} glow glowColor="rgba(168,85,247,0.5)" /> <span className="hide-on-mobile">FOCUS</span>
               </button>}
               {can('dawn_dusk') && <button
                 onClick={() => setShowDawnDusk(true)}
@@ -623,7 +625,7 @@ function App({ initialHunterName, onLogout }) {
                   cursor: "pointer", fontSize: 18, transition: "all 0.3s"
                 }}
               >
-                {isMusicPlaying ? "🔊" : "🔈"}
+                {isMusicPlaying ? "♫" : "♪"}
               </button>}
 
               {can('multiplayer') && <button
@@ -640,7 +642,7 @@ function App({ initialHunterName, onLogout }) {
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = '#f59e0b55'; }}
                 title="Hunter Association"
               >
-                🏛️
+                <GameIcon src={NAV_ICONS.guild} fallback="🏛️" size={20} glow glowColor="rgba(245,158,11,0.5)" />
               </button>}
             </div>
           </div>
@@ -710,14 +712,18 @@ function App({ initialHunterName, onLogout }) {
                 cursor: "pointer", display: "flex", alignItems: "center", gap: 10
               }}
             >
-              <span style={{ fontSize: 20 }}>{season.icon}</span>
+              {season.iconSrc ? (
+                <img src={season.iconSrc} alt={season.name} style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 8px ${season.colors.primary}88) brightness(1.1)` }} />
+              ) : (
+                <span style={{ fontSize: 20 }}>{season.icon}</span>
+              )}
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: season.colors.primary, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
                   {season.name.toUpperCase()}
                 </div>
                 {worldEvent && (
                   <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>
-                    {worldEvent.icon} {worldEvent.name}: {worldEvent.desc.split(" ").slice(0, 5).join(" ")}…
+                    {worldEvent.iconSrc ? <img src={worldEvent.iconSrc} alt={worldEvent.name} style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle", marginRight: 3 }} /> : worldEvent.icon} {worldEvent.name}: {worldEvent.desc.split(" ").slice(0, 5).join(" ")}…
                   </div>
                 )}
               </div>
@@ -731,7 +737,11 @@ function App({ initialHunterName, onLogout }) {
         {/* MODIFIER BANNER */}
         {can('dungeons') && modifier && modifier.id !== "none" && (
           <div style={{ background: `linear-gradient(135deg,${modifier.color}10,transparent)`, border: `1px solid ${modifier.color}25`, borderLeft: `3px solid ${modifier.color}`, borderRadius: 12, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 20 }}>{modifier.icon}</span>
+            {modifier.iconSrc ? (
+              <img src={modifier.iconSrc} alt={modifier.name} style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 8px ${modifier.color}88)` }} />
+            ) : (
+              <span style={{ fontSize: 20 }}>{modifier.icon}</span>
+            )}
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: modifier.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{modifier.name.toUpperCase()}</div>
               <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>{modifier.desc}</div>
@@ -924,7 +934,7 @@ function App({ initialHunterName, onLogout }) {
                   Reset in {hoursUntilMidnight()}h · {modifier?.id !== "none" ? <>{modifier?.icon === "💰" ? <img src="/icon/coin.png" style={{ width: 14, height: 14, verticalAlign: "middle", marginTop: -2 }} alt="G" /> : modifier?.icon} {modifier?.name}</> : "Stable Gates"}
                 </div>
               </div>
-              {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ fontSize: 36, marginBottom: 10 }}>🌀</div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
+              {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ marginBottom: 10 }}><GameIcon src={GATE_ICONS.normal} fallback="🌀" size={48} glow glowColor={theme.primary} animate="float" /></div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
               {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} modifier={modifier} /></div>)}
               {(state.dungeons || []).filter(d => d.cleared).length > 0 && (
                 <div style={{ marginTop: 20 }}>
@@ -1154,13 +1164,15 @@ function App({ initialHunterName, onLogout }) {
                       <div key={ns.id} style={{ background: isOwned ? "rgba(8,8,20,0.9)" : theme.card, border: `1px solid ${isOwned ? ns.glowColor + "44" : "#1e2940"}`, borderRadius: 16, padding: "16px", marginBottom: 10, opacity: isOwned ? 1 : 0.65, animation: `cardEnter 0.4s ease ${i * 0.08}s both`, boxShadow: isOwned ? `0 0 16px ${ns.glowColor}18` : "none" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
                           <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: isOwned ? ns.glowColor + "18" : "rgba(255,255,255,0.03)", border: `2px solid ${isOwned ? ns.glowColor + "66" : "#1e2940"}`, fontSize: 28 }}>
-                            {isOwned ? ns.icon : <span style={{ opacity: 0.2 }}>?</span>}
+                            {!isOwned ? <span style={{ opacity: 0.2 }}>?</span> : ns.iconSrc ? (
+                              <img src={ns.iconSrc} alt={ns.name} style={{ width: 38, height: 38, objectFit: "contain", filter: `drop-shadow(0 0 10px ${ns.glowColor}99) brightness(1.1)` }} />
+                            ) : ns.icon}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 14, fontWeight: 800, color: isOwned ? ns.glowColor : "#475569", fontFamily: "'Cinzel',serif" }}>{isOwned ? ns.name : "???"}</div>
                             <div style={{ fontSize: 10, color: isOwned ? ns.glowColor + "99" : "#334155", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginTop: 2 }}>{isOwned ? ns.title : "Unbekannt"}</div>
                             <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
-                              <span style={{ fontSize: 9, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: cls.color + "15" }}>{cls.icon} {ns.class.toUpperCase()}</span>
+                              <span style={{ fontSize: 9, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: cls.color + "15", display: "inline-flex", alignItems: "center", gap: 3 }}>{cls.iconSrc ? <img src={cls.iconSrc} alt={cls.name} style={{ width: 10, height: 10, objectFit: "contain" }} /> : cls.icon} {ns.class.toUpperCase()}</span>
                               <span style={{ fontSize: 9, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: tierData.color + "15" }}>TIER {ns.tier}</span>
                             </div>
                           </div>
@@ -1291,7 +1303,14 @@ function App({ initialHunterName, onLogout }) {
                         <div style={{ fontSize: 8, letterSpacing: 2, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>{label}</div>
                         {equipped ? (
                           <div>
-                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}><span style={{ fontSize: 22 }}>{equipped.icon}</span><div><div style={{ fontSize: 12, fontWeight: 700, color: RARITY_COLORS[equipped.rarity], fontFamily: "'Cinzel',serif" }}>{equipped.name}</div><div style={{ fontSize: 9, color: "#475569", marginTop: 1 }}>{equipped.desc}</div></div></div>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                              {equipped.iconSrc ? (
+                                <img src={equipped.iconSrc} alt={equipped.name} style={{ width: 36, height: 36, objectFit: "contain", filter: `drop-shadow(0 0 8px ${RARITY_COLORS[equipped.rarity]}88) brightness(1.15)`, flexShrink: 0 }} />
+                              ) : (
+                                <span style={{ fontSize: 22 }}>{equipped.icon}</span>
+                              )}
+                              <div><div style={{ fontSize: 12, fontWeight: 700, color: RARITY_COLORS[equipped.rarity], fontFamily: "'Cinzel',serif" }}>{equipped.name}</div><div style={{ fontSize: 9, color: "#475569", marginTop: 1 }}>{equipped.desc}</div></div>
+                            </div>
                             <button onClick={() => unequipItem(slot)} style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "transparent", color: "#475569", border: "1px solid #1e2940", fontFamily: "'JetBrains Mono',monospace" }}>ABLEGEN</button>
                           </div>
                         ) : (
@@ -1325,7 +1344,11 @@ function App({ initialHunterName, onLogout }) {
                 const isEquipped = Object.values(state.equipment?.slots || {}).some(e => e?.instanceId === item.instanceId);
                 return (
                   <div key={item.instanceId} style={{ background: theme.card, border: `1px solid ${rc}22`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, backdropFilter: "blur(8px)", animation: `cardEnter 0.4s ease ${i * 0.05}s both` }}>
-                    <span style={{ fontSize: 26 }}>{item.icon}</span>
+                    {item.iconSrc ? (
+                      <img src={item.iconSrc} alt={item.name} style={{ width: 44, height: 44, objectFit: "contain", flexShrink: 0, filter: `drop-shadow(0 0 10px ${RARITY_COLORS[item.rarity]}77) brightness(1.1)` }} />
+                    ) : (
+                      <span style={{ fontSize: 26 }}>{item.icon}</span>
+                    )}
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: rc, fontFamily: "'Cinzel',serif" }}>{item.name}</div>
@@ -1560,11 +1583,11 @@ function App({ initialHunterName, onLogout }) {
       < nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
           {[
-            { key: "dashboard", icon: "📋", label: "Heute" },
-            ...(can('training_tab') ? [{ key: "training", icon: "🎯", label: "Ziele" }] : []),
-            ...(can('dungeons') ? [{ key: "dungeon", icon: <div style={{ width: 38, height: 38, margin: "-6px auto 2px auto", borderRadius: "50%", border: "1.5px solid #a78bfa", boxShadow: "0 0 10px #a78bfa, inset 0 0 8px #a78bfa", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0814", position: "relative" }}><img src="/icons/gate_normal.png" style={{ width: "160%", height: "160%", objectFit: "cover", mixBlendMode: "screen", filter: "brightness(1.5) contrast(1.2)" }} alt="Gate" /></div>, label: "Gates", badge: activeDungeons.length }] : []),
+            { key: "dashboard", iconSrc: NAV_ICONS.dashboard, icon: "📋", label: "Heute" },
+            ...(can('training_tab') ? [{ key: "training", iconSrc: NAV_ICONS.goals, icon: "🎯", label: "Ziele" }] : []),
+            ...(can('dungeons') ? [{ key: "dungeon", icon: <img src="/icons/gate_normal.png" alt="Gate" style={{ width: 36, height: 36, objectFit: "contain", filter: "drop-shadow(0 0 8px #a78bfa88) brightness(1.3)" }} />, label: "Gates", badge: activeDungeons.length }] : []),
             ...(can('story') ? [{ key: "story", icon: "📖", label: "Story" }] : []),
-            { key: "system", icon: "⚙️", label: "System" }
+            { key: "system", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: "System" }
           ].map(tab => (
             <button key={tab.key} onClick={() => {
               setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
@@ -1572,7 +1595,20 @@ function App({ initialHunterName, onLogout }) {
             }} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: tab.isOverlay ? "#9ca3af" : view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
               {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
               <div style={{ position: "relative" }}>
-                <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
+                {tab.iconSrc ? (
+                  <img src={tab.iconSrc} alt={tab.label} style={{
+                    width: 26, height: 26,
+                    objectFit: "contain",
+                    display: "block",
+                    transition: "all 0.3s",
+                    transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? "scale(1.18) translateY(-2px)" : "scale(1)",
+                    filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view)))
+                      ? `brightness(1.35) drop-shadow(0 0 8px ${theme.glow}) saturate(1.3)`
+                      : "brightness(0.55) saturate(0.4)",
+                  }} />
+                ) : (
+                  <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
+                )}
                 {tab.badge > 0 && <div style={{ position: "absolute", top: -6, right: -8, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono',monospace", border: "2px solid #000", animation: "pulse 2s infinite" }}>{tab.badge}</div>}
               </div>
               <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"].includes(view))) ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
@@ -1654,40 +1690,41 @@ function App({ initialHunterName, onLogout }) {
 
               {/* HUNTER PROFILE SECTION */}
               {[{
-                title: "HUNTER INTEL", icon: "📊", color: theme.accent,
+                title: "HUNTER INTEL", iconSrc: NAV_ICONS.analytics, icon: "📊", color: theme.accent,
                 items: [
-                  { key: "stats", icon: "📊", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
-                  ...(can('analytics') ? [{ key: "analytics", icon: "📈", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", icon: "📈", label: "Analytics", locked: true, unlockLevel: 8 }]),
-                  ...(can('achievements') ? [{ key: "achievements", icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", icon: "🏆", label: "Achievements", locked: true, unlockLevel: 8 }]),
-                  ...(can('challenges') ? [{ key: "challenges", icon: "🎖️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", icon: "🎖️", label: "Events", locked: true, unlockLevel: 21 }]),
+                  { key: "stats", iconSrc: STAT_ICONS.str, icon: "📊", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
+                  ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📈", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", icon: "📈", label: "Analytics", locked: true, unlockLevel: 8 }]),
+                  ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", icon: "🏆", label: "Achievements", locked: true, unlockLevel: 8 }]),
+                  ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "🎖️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", icon: "🎖️", label: "Events", locked: true, unlockLevel: 21 }]),
                 ]
               }, {
-                title: "ARSENAL", icon: "🗡️", color: "#f59e0b",
+                title: "ARSENAL", iconSrc: NAV_ICONS.shop, icon: "🗡️", color: "#f59e0b",
                 items: [
                   ...(can('shadow_army') ? [{ key: "shadows", icon: "🌑", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", icon: "🌑", label: "Shadow Army", locked: true, unlockLevel: 15 }]),
                   ...(can('equipment') ? [{ key: "equipment", icon: "🗡️", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", icon: "🗡️", label: "Equipment", locked: true, unlockLevel: 11 }]),
-                  ...(can('jobs') ? [{ key: "jobs", icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" }] : [{ key: "jobs_locked", icon: "🎭", label: "Jobs", locked: true, unlockLevel: 21 }]),
-                  ...(can('shop') ? [{ key: "shop", icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` }] : [{ key: "shop_locked", icon: "🛒", label: "Shop", locked: true, unlockLevel: 11 }]),
+                  ...(can('jobs') ? [{ key: "jobs", iconSrc: NAV_ICONS.jobs, icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" }] : [{ key: "jobs_locked", icon: "🎭", label: "Jobs", locked: true, unlockLevel: 21 }]),
+                  ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` }] : [{ key: "shop_locked", icon: "🛒", label: "Shop", locked: true, unlockLevel: 11 }]),
                 ]
               }, {
-                title: "SOCIAL & SPECIAL", icon: "🔗", color: "#a855f7",
+                title: "SOCIAL & SPECIAL", iconSrc: NAV_ICONS.guild, icon: "🔗", color: "#a855f7",
                 items: [
                   ...(can('sanctum') ? [{ key: "sanctum", icon: "🏛️", label: "Inner Sanctum", desc: "Meditation & Willenskraft", isOverlay: false }] : [{ key: "sanctum_locked", icon: "🏛️", label: "Inner Sanctum", locked: true, unlockLevel: 11 }]),
-                  ...(can('dawn_dusk') ? [{ key: "protocol_overlay", icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", icon: "⏰", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
+                  ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", icon: "⏰", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
                   ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "🔗", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "🔗", label: "Soul Link", locked: true, unlockLevel: 30 }]),
                   ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", icon: "🎭", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", icon: "🎭", label: "Charisma Dungeons", locked: true, unlockLevel: 30 }]),
                 ]
               }, {
-                title: "SYSTEM", icon: "⚙️", color: "#64748b",
+                title: "SYSTEM", iconSrc: NAV_ICONS.settings, icon: "⚙️", color: "#64748b",
                 items: [
-                  { key: "settings", icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
+                  { key: "settings", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
                 ]
               }].map((section, si) => (
                 <div key={section.title} style={{ marginBottom: 20, animation: `slideUp 0.3s ease ${si * 0.08}s both` }}>
                   {/* Section header */}
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingLeft: 4 }}>
                     <div style={{ width: 3, height: 16, borderRadius: 2, background: section.color, boxShadow: `0 0 8px ${section.color}44` }} />
-                    <span style={{ fontSize: 10, letterSpacing: 3, color: section.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{section.icon} {section.title}</span>
+                    {section.iconSrc ? <img src={section.iconSrc} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 4px ${section.color}55)` }} /> : null}
+                    <span style={{ fontSize: 10, letterSpacing: 3, color: section.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{!section.iconSrc ? section.icon + " " : ""}{section.title}</span>
                   </div>
                   {/* Section items */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1709,9 +1746,15 @@ function App({ initialHunterName, onLogout }) {
                         onMouseEnter={e => { if (!item.locked) { e.currentTarget.style.borderColor = section.color + "44"; e.currentTarget.style.transform = "translateX(4px)"; } }}
                         onMouseLeave={e => { if (!item.locked) { e.currentTarget.style.borderColor = section.color + "15"; e.currentTarget.style.transform = "none"; } }}
                       >
-                        <div style={{ fontSize: 20, position: "relative", flexShrink: 0 }}>
-                          {item.locked ? "🔒" : item.icon}
-                          {!item.locked && item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -6, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
+                        <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: item.locked ? "rgba(30,34,48,0.4)" : `${section.color}12`, border: `1px solid ${item.locked ? "rgba(100,116,139,0.1)" : section.color + "22"}`, position: "relative", flexShrink: 0, transition: "all 0.2s" }}>
+                          {item.locked ? (
+                            <span style={{ fontSize: 16 }}>🔒</span>
+                          ) : item.iconSrc ? (
+                            <img src={item.iconSrc} alt={item.label} style={{ width: 24, height: 24, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 6px ${section.color}55)` }} />
+                          ) : (
+                            <span style={{ fontSize: 18 }}>{item.icon}</span>
+                          )}
+                          {!item.locked && item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -5, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: item.locked ? "#475569" : "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.label}</div>
@@ -1739,7 +1782,7 @@ function App({ initialHunterName, onLogout }) {
                   onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b88"; e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(245,158,11,0.1)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "#f59e0b33"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
                 >
-                  <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b44", fontSize: 22, flexShrink: 0 }}>🌐</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b44", flexShrink: 0 }}><GameIcon src={NAV_ICONS.guild} fallback="🌐" size={28} glow glowColor="rgba(245,158,11,0.5)" /></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fcd34d", fontFamily: "'Cinzel',serif" }}>Hunter Association</div>
                     <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>Multiplayer Portal betreten</div>
@@ -1849,7 +1892,7 @@ function App({ initialHunterName, onLogout }) {
                             <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.3 }}>{tmpl.t}</div>
                             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                               <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "15", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 10, height: 10, mixBlendMode: "screen" }} /> : cat.icon}<span>{cat.stat}</span></span>
-                              <span style={{ fontSize: 8, color: diff.color, padding: "1px 5px", borderRadius: 4, background: diff.color + "15", fontFamily: "'JetBrains Mono',monospace" }}>{diff.icon}{diff.label}</span>
+                              <span style={{ fontSize: 8, color: diff.color, padding: "1px 5px", borderRadius: 4, background: diff.color + "15", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 2 }}>{diff.iconSrc ? <img src={diff.iconSrc} alt={diff.label} style={{ width: 9, height: 9, objectFit: "contain" }} /> : diff.icon}{diff.label}</span>
                             </div>
                           </button>
                         );
@@ -1928,7 +1971,11 @@ function App({ initialHunterName, onLogout }) {
                             onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = d.color + "44"; e.currentTarget.style.color = d.color + "cc"; } }}
                             onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
                           >
-                            <span style={{ fontSize: 18, lineHeight: 1 }}>{d.icon}</span>
+                            {d.iconSrc ? (
+                              <img src={d.iconSrc} alt={d.label} style={{ width: 22, height: 22, objectFit: "contain", filter: active ? `drop-shadow(0 0 6px ${d.color}88) brightness(1.15)` : "brightness(0.6) saturate(0.5)" }} />
+                            ) : (
+                              <span style={{ fontSize: 18, lineHeight: 1 }}>{d.icon}</span>
+                            )}
                             <span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{d.label.toUpperCase()}</span>
                             <span style={{ fontSize: 9, opacity: 0.75, fontFamily: "'JetBrains Mono',monospace" }}>+{xpVal} XP</span>
                             <span style={{ fontSize: 8, opacity: 0.5, fontFamily: "'JetBrains Mono',monospace" }}>{d.waitHours}h Timer</span>
@@ -1959,7 +2006,7 @@ function App({ initialHunterName, onLogout }) {
                         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr auto 1fr", gap: 0, alignItems: "center" }}>
                           <div style={{ textAlign: "center" }}>
                             <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>SCHWIERIG</div>
-                            <div style={{ fontSize: 12, color: diff.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{diff.icon} {diff.label}</div>
+                            <div style={{ fontSize: 12, color: diff.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>{diff.iconSrc ? <img src={diff.iconSrc} alt={diff.label} style={{ width: 12, height: 12, objectFit: "contain" }} /> : diff.icon} {diff.label}</div>
                           </div>
                           <div style={{ width: 1, height: 28, background: "#1e2940", margin: "0 8px" }} />
                           <div style={{ textAlign: "center" }}>

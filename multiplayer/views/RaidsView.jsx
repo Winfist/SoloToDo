@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { MP_THEME, RAID_TEMPLATES } from '../data/mpConstants';
+import { STAT_ICONS, NAV_ICONS } from '../../data/icons';
 
 const RANK_COLORS = { "S": "#e879f9", "A": "#f59e0b", "B": "#a78bfa", "C": "#22d3ee", "D": "#6b7280" };
 
@@ -14,8 +14,8 @@ export default function RaidsView({ playerState, onStateUpdate }) {
         <div style={{ fontSize: 9, letterSpacing: 4, color: MP_THEME.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
           COOPERATIVE DUNGEONS
         </div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 20px ${MP_THEME.glow}` }}>
-          🌀 Raid Gates
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 20px ${MP_THEME.glow}`, display: "flex", alignItems: "center", gap: 8 }}>
+          <img src={NAV_ICONS.events} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(1.5)" }} /> Raid Gates
         </div>
       </div>
 
@@ -55,7 +55,7 @@ export default function RaidsView({ playerState, onStateUpdate }) {
                   fontSize: 24,
                   filter: meetsLevel ? `drop-shadow(0 0 8px ${rankColor}66)` : "grayscale(0.5)",
                 }}>
-                  {raid.icon}
+                  {raid.iconSrc ? <img src={raid.iconSrc} alt="" style={{ width: 28, height: 28, objectFit: "contain" }} /> : raid.icon}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -110,7 +110,7 @@ export default function RaidsView({ playerState, onStateUpdate }) {
                     background: meetsLevel ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
                     border: `1px solid ${meetsLevel ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
                   }}>
-                    <span style={{ fontSize: 14 }}>{meetsLevel ? "✅" : "🔒"}</span>
+                    <span style={{ fontSize: 14 }}>{meetsLevel ? "✓" : "×"}</span>
                     <div style={{
                       fontSize: 10, color: meetsLevel ? "#22c55e" : "#ef4444",
                       fontFamily: "'JetBrains Mono',monospace",
@@ -154,7 +154,7 @@ export default function RaidsView({ playerState, onStateUpdate }) {
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                     transition: "all 0.3s"
                   }}>
-                    <span style={{ fontSize: 14, animation: meetsLevel ? "mpPulseGold 2s infinite" : "none" }}>{meetsLevel ? "⚔️" : "🔒"}</span>
+                    <span style={{ fontSize: 14, animation: meetsLevel ? "mpPulseGold 2s infinite" : "none", display: "flex" }}>{meetsLevel ? <img src={STAT_ICONS.str} alt="" style={{ width: 16, height: 16 }} /> : "×"}</span>
                     {playerState?.multiplayer?.activeRaid === raid.id ? "BEREITS BEIGETRETEN" : "RAID LOBBY BETRETEN"}
                   </button>
                 </div>
@@ -166,14 +166,14 @@ export default function RaidsView({ playerState, onStateUpdate }) {
 
       {playerState?.multiplayer?.activeRaid && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ fontSize: 40, animation: "mpFloat 2s ease-in-out infinite" }}>⚔️</div>
+          <div style={{ fontSize: 40, animation: "mpFloat 2s ease-in-out infinite" }}><img src={STAT_ICONS.str} alt="" style={{ width: 48, height: 48 }} /></div>
           <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 20 }}>Raid Lobby: Gefunden</div>
           <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 10, marginBottom: 30 }}>Suche nach anderen Huntern... (Mock)</div>
 
           <div style={{ display: "flex", gap: 10 }}>
             {(playerState.multiplayer?.social?.friends || []).slice(0, 3).map((f, i) => (
               <div key={i} style={{ width: 60, height: 60, borderRadius: 12, background: "rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ fontSize: 20 }}>👤</div>
+                <div style={{ fontSize: 20 }}><img src={STAT_ICONS.cha} alt="" style={{ width: 24, height: 24, opacity: 0.5 }} /></div>
                 <div style={{ fontSize: 8 }}>Lv.{f.level}</div>
               </div>
             ))}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MP_THEME, GUILD_TIERS } from '../data/mpConstants';
 import { fetchAvailableGuilds } from '../mpFirebase';
+import { NAV_ICONS } from '../../data/icons';
 
 export default function GuildBrowser({ onJoin, onBack, myUid }) {
   const [guilds, setGuilds] = useState([]);
@@ -55,7 +56,7 @@ export default function GuildBrowser({ onJoin, onBack, myUid }) {
 
       {loading ? (
         <div style={{ textAlign: "center", padding: 40 }}>
-          <div style={{ fontSize: 32, marginBottom: 12, animation: "mpSpin 2s linear infinite" }}>🌀</div>
+          <div style={{ fontSize: 32, marginBottom: 12, animation: "mpSpin 2s linear infinite", display: "flex", justifyContent: "center" }}><img src={NAV_ICONS.events} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} /></div>
           <div style={{ fontSize: 11, color: MP_THEME.textMuted, fontFamily: "'JetBrains Mono',monospace" }}>
             Gilden werden geladen...
           </div>
@@ -65,7 +66,7 @@ export default function GuildBrowser({ onJoin, onBack, myUid }) {
           textAlign: "center", padding: 40,
           background: MP_THEME.card, borderRadius: 16, border: `1px solid rgba(255,255,255,0.05)`,
         }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>🏜️</div>
+          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src={NAV_ICONS.guild} alt="" style={{ width: 48, height: 48, objectFit: "contain", filter: "grayscale(1) opacity(0.5)" }} /></div>
           <div style={{ fontSize: 14, color: "#fff", fontWeight: 700, marginBottom: 6 }}>Keine Gilden gefunden</div>
           <div style={{ fontSize: 11, color: MP_THEME.textMuted }}>Sei der Erste und gründe eine Gilde!</div>
         </div>
@@ -82,7 +83,7 @@ export default function GuildBrowser({ onJoin, onBack, myUid }) {
                 opacity: isFull ? 0.5 : 1,
                 transition: "all 0.2s",
               }}>
-                <div style={{ fontSize: 36 }}>{guild.icon || "🏰"}</div>
+                <div style={{ fontSize: 36 }}>{guild.icon ? (guild.icon.startsWith('/') ? <img src={guild.icon} alt="" style={{width: 36, height: 36}} /> : guild.icon) : <img src={NAV_ICONS.guild} alt="" style={{width: 36, height: 36}} />}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "'Cinzel',serif" }}>
@@ -122,9 +123,9 @@ export default function GuildBrowser({ onJoin, onBack, myUid }) {
         width: "100%", padding: 12, marginTop: 16, borderRadius: 12,
         background: "rgba(255,255,255,0.03)", border: `1px solid rgba(255,255,255,0.06)`,
         color: MP_THEME.textMuted, fontSize: 11, fontFamily: "'JetBrains Mono',monospace",
-        cursor: "pointer", transition: "all 0.2s",
+        cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
       }}>
-        🔄 Aktualisieren
+        <img src={NAV_ICONS.events} alt="" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(0.6)" }} /> Aktualisieren
       </button>
     </div>
   );

@@ -1,3 +1,5 @@
+import { STAT_ICONS, NAV_ICONS, HABIT_ICONS, STORY_ICONS, SEASON_ICONS } from "../data/icons.js";
+
 /**
  * SystemCoach – Adaptive AI Coach Interventions.
  *
@@ -27,6 +29,7 @@ export function checkInactivity(state) {
     return {
         type: "coaching",
         icon: "⚠",
+        iconSrc: NAV_ICONS.events,
         title: "ANOMALIE DETEKTIERT",
         lines: [
             `SYSTEM: Hunter ${state.hunterName || "Unbekannt"} zeigt reduzierte Aktivität.`,
@@ -48,6 +51,7 @@ export function checkOverexertion(state) {
     return {
         type: "coaching",
         icon: "🛡️",
+        iconSrc: STAT_ICONS.vit,
         title: "ÜBERLASTUNG ERKANNT",
         lines: [
             `SYSTEM: ${recent} Quests in 3 Tagen. Überlastungsmuster erkannt.`,
@@ -73,6 +77,7 @@ export function checkImbalance(state) {
     return {
         type: "coaching",
         icon: "⚖️",
+        iconSrc: STAT_ICONS.int,
         title: "STAT-UNGLEICHGEWICHT",
         lines: [
             `SYSTEM: Kritisches Ungleichgewicht in Hunter-Profil.`,
@@ -97,6 +102,7 @@ export function checkStreakDanger(state) {
     return {
         type: "warning",
         icon: "🔥",
+        iconSrc: STAT_ICONS.str,
         title: "STREAK IN GEFAHR",
         lines: [
             `⚠ KRITISCHE WARNUNG ⚠`,
@@ -119,6 +125,7 @@ export function checkHabitReminder(state) {
     return {
         type: "coaching",
         icon: "🔄",
+        iconSrc: HABIT_ICONS.weekday,
         title: "HABITS OFFEN",
         lines: [
             `SYSTEM: ${unfinished} Habit${unfinished > 1 ? "s" : ""} noch nicht erledigt.`,
@@ -132,16 +139,16 @@ export function checkHabitReminder(state) {
 // ── Celebration Messages ─────────────────────────────────────
 
 const CELEBRATIONS = [
-    { check: s => (s.totalQuestsCompleted || 0) === 1, msg: "Deine erste Quest. Der Anfang einer Reise.", icon: "⚔️" },
-    { check: s => (s.streak || 0) === 7, msg: "Eine Woche ungebrochener Wille. Du wirst stärker.", icon: "🔥" },
-    { check: s => (s.streak || 0) === 30, msg: "30 Tage. Eiserne Disziplin. Du bist nicht derselbe Mensch.", icon: "💎" },
-    { check: s => s.level === 10, msg: "Level 10. Der schwächste Hunter überlebt.", icon: "✨" },
-    { check: s => s.level === 25, msg: "Level 25. Du hast mehr erreicht als die meisten.", icon: "🌟" },
-    { check: s => s.level === 50, msg: "Level 50. Ein wahrer Veteran.", icon: "👑" },
-    { check: s => (s.totalQuestsCompleted || 0) === 100, msg: "100 Quests. Du bist kein E-Rank mehr.", icon: "💯" },
-    { check: s => (s.shadowArmy?.shadows || []).length === 1, msg: "Dein erster Schatten erhebt sich. ARISE.", icon: "🌑" },
-    { check: s => (s.shadowArmy?.shadows || []).some(sh => sh.isNamed), msg: "Ein Named Shadow erkennt dich als würdig an.", icon: "🩸" },
-    { check: s => (s.dungeonHistory || []).filter(d => d.won).length === 1, msg: "Dein erstes Gate. Der Pfad der Stärke beginnt.", icon: "🌀" },
+    { check: s => (s.totalQuestsCompleted || 0) === 1, msg: "Deine erste Quest. Der Anfang einer Reise.", icon: "⚔️", iconSrc: STAT_ICONS.str },
+    { check: s => (s.streak || 0) === 7, msg: "Eine Woche ungebrochener Wille. Du wirst stärker.", icon: "🔥", iconSrc: STAT_ICONS.str },
+    { check: s => (s.streak || 0) === 30, msg: "30 Tage. Eiserne Disziplin. Du bist nicht derselbe Mensch.", icon: "💎", iconSrc: STORY_ICONS.butterfly },
+    { check: s => s.level === 10, msg: "Level 10. Der schwächste Hunter überlebt.", icon: "✨", iconSrc: STAT_ICONS.cha },
+    { check: s => s.level === 25, msg: "Level 25. Du hast mehr erreicht als die meisten.", icon: "🌟", iconSrc: NAV_ICONS.achievements },
+    { check: s => s.level === 50, msg: "Level 50. Ein wahrer Veteran.", icon: "👑", iconSrc: SEASON_ICONS.merchant },
+    { check: s => (s.totalQuestsCompleted || 0) === 100, msg: "100 Quests. Du bist kein E-Rank mehr.", icon: "💯", iconSrc: NAV_ICONS.achievements },
+    { check: s => (s.shadowArmy?.shadows || []).length === 1, msg: "Dein erster Schatten erhebt sich. ARISE.", icon: "🌑", iconSrc: STORY_ICONS.arise },
+    { check: s => (s.shadowArmy?.shadows || []).some(sh => sh.isNamed), msg: "Ein Named Shadow erkennt dich als würdig an.", icon: "🩸", iconSrc: SEASON_ICONS.redgate },
+    { check: s => (s.dungeonHistory || []).filter(d => d.won).length === 1, msg: "Dein erstes Gate. Der Pfad der Stärke beginnt.", icon: "🌀", iconSrc: NAV_ICONS.dashboard },
 ];
 
 export function checkCelebrations(state, prevState) {
@@ -152,6 +159,7 @@ export function checkCelebrations(state, prevState) {
                 return {
                     type: "celebration",
                     icon: c.icon,
+                    iconSrc: c.iconSrc,
                     title: "SYSTEM NACHRICHT",
                     lines: [c.msg],
                     priority: 2,
@@ -244,6 +252,7 @@ export function checkWeeklyPathReport(state) {
     return {
         type: "coaching",
         icon: "📊",
+        iconSrc: NAV_ICONS.analytics,
         title: "WEEKLY PATH REPORT",
         lines,
         priority: 2,

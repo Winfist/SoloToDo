@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { NAV_ICONS } from "../data/icons.js";
 
 /**
  * NotificationManager – Push Notifications & Smart Reminders
@@ -175,7 +176,7 @@ export function NotificationBanner({ state, theme }) {
             display: "flex", alignItems: "center", gap: 10,
             animation: "fadeIn 0.4s ease",
         }}>
-            <span style={{ fontSize: 20 }}>🔔</span>
+            <img src={NAV_ICONS.settings} alt="" style={{ width: 24, height: 24, objectFit: "contain", filter: `drop-shadow(0 0 6px ${theme?.primary || "#22d3ee"}88) brightness(1.2)` }} />
             <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: theme?.accent || "#67e8f9", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
                     BENACHRICHTIGUNGEN

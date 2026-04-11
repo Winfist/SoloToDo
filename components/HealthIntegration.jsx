@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { HEALTH_ICONS } from "../data/icons.js";
 
 export default function HealthIntegration({ state, persist, notify, theme }) {
     const [syncing, setSyncing] = useState(false);
@@ -65,12 +66,16 @@ export default function HealthIntegration({ state, persist, notify, theme }) {
                         <div style={{ fontSize: 10, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>HEUTIGE MESSEWERTE</div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                             {[
-                                { icon: "👟", label: "SCHRITTE", val: syncedData.steps.toLocaleString(), color: "#38bdf8" },
-                                { icon: "💤", label: "SCHLAF", val: `${syncedData.sleep.toFixed(1)}h`, color: "#a78bfa" },
+                                { icon: "👟", iconSrc: HEALTH_ICONS.steps, label: "SCHRITTE", val: syncedData.steps.toLocaleString(), color: "#38bdf8" },
+                                { icon: "💤", iconSrc: HEALTH_ICONS.sleep, label: "SCHLAF", val: `${syncedData.sleep.toFixed(1)}h`, color: "#a78bfa" },
                                 { icon: "⚡", label: "WORKOUT", val: `${syncedData.workout}m`, color: "#f59e0b" }
                             ].map(s => (
                                 <div key={s.label} style={{ background: "rgba(0,0,0,0.2)", borderRadius: 12, padding: "12px", border: `1px solid ${s.color}22`, textAlign: "center" }}>
-                                    <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
+                                    <div style={{ fontSize: 20, marginBottom: 4 }}>
+                                    {s.iconSrc ? (
+                                        <img src={s.iconSrc} alt={s.label} style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 6px ${s.color}88) brightness(1.1)` }} />
+                                    ) : s.icon}
+                                </div>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: s.color, fontFamily: "'Cinzel',serif" }}>{s.val}</div>
                                     <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, letterSpacing: 1 }}>{s.label}</div>
                                 </div>

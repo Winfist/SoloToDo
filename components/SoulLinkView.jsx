@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { NAV_ICONS, STAT_ICONS } from "../data/icons";
 
 // ═══════════════════════════════════════════════════════════════
 // SOUL LINK VIEW
@@ -57,8 +58,8 @@ export default function SoulLinkView({
             <div style={{ fontSize: "0.65rem", letterSpacing: "0.3em", color: t.primary, textTransform: "uppercase", opacity: 0.7 }}>
               SYSTEM FEATURE
             </div>
-            <div style={{ fontSize: "1.5rem", fontWeight: 900, color: t.primary, letterSpacing: "0.1em" }}>
-              🔗 SOUL LINK
+            <div style={{ fontSize: "1.5rem", fontWeight: 900, color: t.primary, letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 8 }}>
+              <img src={NAV_ICONS.guild} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 6px ${t.primary}88)` }} /> SOUL LINK
             </div>
           </div>
           <button onClick={onClose} style={{
@@ -111,7 +112,7 @@ export default function SoulLinkView({
                   color: t.primary, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer",
                   fontSize: "0.85rem", letterSpacing: "0.1em", opacity: loading ? 0.5 : 1
                 }}>
-                  {loading ? "ERSTELLE..." : "🔑 CODE GENERIEREN"}
+                  {loading ? "ERSTELLE..." : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={NAV_ICONS.guild} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(0.9)" }} /> CODE GENERIEREN</span>}
                 </button>
               )}
             </div>
@@ -163,7 +164,7 @@ export default function SoulLinkView({
               }}>
                 <style>{`@keyframes pulse-link { 0%,100%{box-shadow:0 0 0 0 rgba(34,211,238,0.3)} 50%{box-shadow:0 0 0 8px rgba(34,211,238,0)} }`}</style>
                 <span style={{ color: t.primary, fontWeight: 700, fontSize: "0.85rem" }}>
-                  ⚡ BEIDE AKTIV — +25% XP BONUS AKTIV
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={STAT_ICONS.agi} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> BEIDE AKTIV — +25% XP BONUS AKTIV</span>
                 </span>
               </div>
             )}
@@ -194,10 +195,10 @@ export default function SoulLinkView({
                   color: state.lastActiveDate === today ? "#22c55e" : "#6b7280",
                   fontSize: "1.25rem", fontWeight: 700
                 }}>
-                  🔥 {state.streak || 0}
+                  <img src={STAT_ICONS.str} alt="" style={{ width: 18, height: 18, objectFit: "contain", filter: "drop-shadow(0 0 4px #22c55e)", marginRight: 4, verticalAlign: "middle" }} /> {state.streak || 0}
                 </div>
                 <div style={{ color: "#6b7280", fontSize: "0.65rem", marginTop: "0.25rem" }}>
-                  {state.lastActiveDate === today ? "✅ Heute aktiv" : "Noch inaktiv"}
+                  {state.lastActiveDate === today ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src="/icons/quest_s.png" alt="" style={{ width: 10, height: 10, objectFit: "contain" }} /> Heute aktiv</span> : "Noch inaktiv"}
                 </div>
               </div>
 
@@ -220,10 +221,10 @@ export default function SoulLinkView({
                       color: soulLink.partnerLastActive === today ? "#a855f7" : "#6b7280",
                       fontSize: "1.25rem", fontWeight: 700
                     }}>
-                      🔥 {soulLink.partnerStreak || 0}
+                      <img src={STAT_ICONS.str} alt="" style={{ width: 18, height: 18, objectFit: "contain", filter: "drop-shadow(0 0 4px #a855f7)", marginRight: 4, verticalAlign: "middle" }} /> {soulLink.partnerStreak || 0}
                     </div>
                     <div style={{ color: "#6b7280", fontSize: "0.65rem", marginTop: "0.25rem" }}>
-                      {soulLink.partnerLastActive === today ? "✅ Heute aktiv" : "Noch inaktiv"}
+                      {soulLink.partnerLastActive === today ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src="/icons/quest_s.png" alt="" style={{ width: 10, height: 10, objectFit: "contain" }} /> Heute aktiv</span> : "Noch inaktiv"}
                     </div>
                   </>
                 ) : (
@@ -244,7 +245,7 @@ export default function SoulLinkView({
                 cursor: (soulLink.revivesLeft || 0) > 0 ? "pointer" : "not-allowed",
                 fontWeight: 700, fontSize: "0.85rem"
               }}>
-                💓 STREAK-REVIVE SENDEN ({soulLink.revivesLeft || 0} verbleibend)
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={STAT_ICONS.vit} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 4px #f472b6)" }} /> STREAK-REVIVE SENDEN ({soulLink.revivesLeft || 0} verbleibend)</span>
               </button>
             )}
 

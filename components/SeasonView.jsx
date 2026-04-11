@@ -52,7 +52,11 @@ export default function SeasonView({ state, theme, onClose }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ fontSize: "3rem" }}>{season.icon}</div>
+          {season.iconSrc ? (
+            <img src={season.iconSrc} alt={season.name} style={{ width: 64, height: 64, objectFit: "contain", filter: `drop-shadow(0 4px 16px ${season.colors.primary}77) brightness(1.1)` }} />
+          ) : (
+            <div style={{ fontSize: "3rem" }}>{season.icon}</div>
+          )}
           <div>
             <div style={{
               fontSize: "1.6rem", fontWeight: 900, color: season.colors.primary,
@@ -73,7 +77,7 @@ export default function SeasonView({ state, theme, onClose }) {
           border: `1px solid ${season.colors.primary}30`,
           fontSize: "0.8rem", color: season.colors.accent || season.colors.primary
         }}>
-          ⚡ Saison-Bonus: {season.questModifier.category?.toUpperCase()} Quests geben ×{season.questModifier.xpMult} XP
+           <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{season.iconSrc ? <img src={season.iconSrc} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> : null} Saison-Bonus: {season.questModifier.category?.toUpperCase()} Quests geben ×{season.questModifier.xpMult} XP</span>
         </div>
       </div>
 
@@ -87,10 +91,11 @@ export default function SeasonView({ state, theme, onClose }) {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: "0.65rem", letterSpacing: "0.25em", color: "#fbbf24", marginBottom: "0.25rem" }}>
-                🌍 WORLD EVENT — Diese Woche
+                WORLD EVENT — Diese Woche
               </div>
-              <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fde68a" }}>
-                {worldEvent.icon} {worldEvent.name}
+              <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fde68a", display: "flex", alignItems: "center", gap: 6 }}>
+                {worldEvent.iconSrc ? <img src={worldEvent.iconSrc} alt={worldEvent.name} style={{ width: 20, height: 20, objectFit: "contain", filter: "drop-shadow(0 0 5px #fbbf2488)" }} /> : worldEvent.icon}
+                {worldEvent.name}
               </div>
               <div style={{ color: "#9ca3af", fontSize: "0.8rem", marginTop: "0.25rem" }}>
                 {worldEvent.desc}
@@ -105,8 +110,9 @@ export default function SeasonView({ state, theme, onClose }) {
 
         {/* Seasonal Quests */}
         <div style={{ marginBottom: "1.25rem" }}>
-          <div style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.75rem" }}>
-            {season.icon} Saison-Quests
+          <div style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: 6 }}>
+            {season.iconSrc ? <img src={season.iconSrc} alt={season.name} style={{ width: 18, height: 18, objectFit: "contain", filter: `drop-shadow(0 0 4px ${season.colors.primary}88)` }} /> : season.icon}
+            Saison-Quests
           </div>
           {seasonalQuests.length > 0 ? (
             seasonalQuests.map(q => (
@@ -137,7 +143,7 @@ export default function SeasonView({ state, theme, onClose }) {
           borderRadius: "10px", padding: "1rem"
         }}>
           <div style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.85rem", marginBottom: "0.75rem" }}>
-            🏆 Saison-Achievement
+             Saison-Achievement
           </div>
           <div style={{ color: "#9ca3af", fontSize: "0.8rem", marginBottom: "0.5rem" }}>
             {season.achievement.desc}
@@ -174,7 +180,7 @@ export default function SeasonView({ state, theme, onClose }) {
                 background: ev.key === worldEventKey ? "rgba(251,191,36,0.12)" : "rgba(255,255,255,0.03)",
                 border: `1px solid ${ev.key === worldEventKey ? "rgba(251,191,36,0.4)" : "rgba(255,255,255,0.06)"}`,
               }}>
-                <div style={{ fontSize: "0.85rem" }}>{ev.icon}</div>
+                 <div style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", justifyContent: "center" }}>{ev.iconSrc ? <img src={ev.iconSrc} alt={ev.name} style={{ width: 20, height: 20, objectFit: "contain", filter: ev.key === worldEventKey ? `drop-shadow(0 0 4px rgba(251,191,36,0.6))` : "brightness(0.7)" }} /> : ev.icon}</div>
                 <div style={{
                   color: ev.key === worldEventKey ? "#fde68a" : "#6b7280",
                   fontSize: "0.7rem", fontWeight: ev.key === worldEventKey ? 700 : 400,

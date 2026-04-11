@@ -3,7 +3,7 @@ import { JOBS } from "./jobs.js";
 import { QUEST_POOL } from "./questPool.js";
 import { db, auth } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { STAT_ICONS, SHADOW_ICONS, GATE_ICONS, ITEM_ICONS } from "../data/icons.js";
+import { STAT_ICONS, SHADOW_ICONS, GATE_ICONS, ITEM_ICONS, QUEST_ICONS, DIFF_ICONS, ROLE_ICONS, STYLE_ICONS, DUNGEON_ICONS } from "../data/icons.js";
 
 const RANKS = [
   { name: "E", label: "E-Rank Hunter", minLv: 1, maxLv: 10, xpPerLv: 100, color: "#6b7280", glow: "rgba(107,114,128,0.4)" },
@@ -16,10 +16,10 @@ const RANKS = [
 ];
 
 const DIFFICULTIES = [
-  { key: "easy", label: "Easy", xp: 5, gold: 10, color: "#6b7280", icon: "◇", waitHours: 0 },
-  { key: "normal", label: "Normal", xp: 15, gold: 25, color: "#22d3ee", icon: "◆", waitHours: 0.5 },
-  { key: "hard", label: "Hard", xp: 40, gold: 60, color: "#a78bfa", icon: "★", waitHours: 1 },
-  { key: "boss", label: "Boss", xp: 100, gold: 150, color: "#ef4444", icon: "♛", waitHours: 2 },
+  { key: "easy", label: "Easy", xp: 5, gold: 10, color: "#6b7280", icon: "◇", iconSrc: DIFF_ICONS.easy, waitHours: 0 },
+  { key: "normal", label: "Normal", xp: 15, gold: 25, color: "#22d3ee", icon: "◆", iconSrc: DIFF_ICONS.normal, waitHours: 0.5 },
+  { key: "hard", label: "Hard", xp: 40, gold: 60, color: "#a78bfa", icon: "★", iconSrc: DIFF_ICONS.hard, waitHours: 1 },
+  { key: "boss", label: "Boss", xp: 100, gold: 150, color: "#ef4444", icon: "♛", iconSrc: DIFF_ICONS.boss, waitHours: 2 },
 ];
 
 const CATEGORIES = [
@@ -31,10 +31,10 @@ const CATEGORIES = [
 ];
 
 const STRATEGIES = [
-  { key: "str", label: "Aggressive", desc: "Frontalangriff ohne Rücksicht", icon: "⚔️", color: "#ef4444" },
-  { key: "int", label: "Tactical", desc: "Strategie, Täuschung & Planung", icon: "🧠", color: "#3b82f6" },
-  { key: "vit", label: "Defensive", desc: "Schildwall – Ausdauer gewinnt", icon: "🛡️", color: "#22c55e" },
-  { key: "agi", label: "Swift", desc: "Schnell, lautlos, unsichtbar", icon: "⚡", color: "#f59e0b" },
+  { key: "str", label: "Aggressive", desc: "Frontalangriff ohne Rücksicht", icon: "⚔️", iconSrc: STYLE_ICONS.aggressive, color: "#ef4444" },
+  { key: "int", label: "Tactical", desc: "Strategie, Täuschung & Planung", icon: "🧠", iconSrc: STYLE_ICONS.tactical, color: "#3b82f6" },
+  { key: "vit", label: "Defensive", desc: "Schildwall – Ausdauer gewinnt", icon: "🛡️", iconSrc: STYLE_ICONS.defensive, color: "#22c55e" },
+  { key: "agi", label: "Swift", desc: "Schnell, lautlos, unsichtbar", icon: "⚡", iconSrc: STYLE_ICONS.swift, color: "#f59e0b" },
 ];
 
 // ─── QUEST TEMPLATES LIBRARY ──────────────────────────────────
@@ -117,7 +117,7 @@ const SHADOW_CLASSES = {
     description: "Standard-Schattenkrieger"
   },
   knight: {
-    name: "Shadow Knight", icon: "🛡️", color: "#3b82f6",
+    name: "Shadow Knight", icon: "🛡️", iconSrc: SHADOW_ICONS.knight, color: "#3b82f6",
     baseStats: { power: 18, speed: 8, loyalty: 12, presence: 7 },
     passiveEffect: "+5% Dungeon Verteidigung",
     description: "Gepanzerter Frontline-Kämpfer"
@@ -129,13 +129,13 @@ const SHADOW_CLASSES = {
     description: "Magischer Unterstützer"
   },
   assassin: {
-    name: "Shadow Assassin", icon: "🗡️", color: "#22c55e",
+    name: "Shadow Assassin", icon: "🗡️", iconSrc: SHADOW_ICONS.assassin, color: "#22c55e",
     baseStats: { power: 14, speed: 18, loyalty: 8, presence: 5 },
     passiveEffect: "+5% Gold von Dungeons",
     description: "Schneller Schattenangreifer"
   },
   healer: {
-    name: "Shadow Healer", icon: "💚", color: "#14b8a6",
+    name: "Shadow Healer", icon: "💚", iconSrc: SHADOW_ICONS.healer, color: "#14b8a6",
     baseStats: { power: 5, speed: 10, loyalty: 18, presence: 12 },
     passiveEffect: "+1 Tag Streak-Schutz",
     description: "Beschützer der Armee"
@@ -184,7 +184,7 @@ const NAMED_SHADOWS = {
   },
   bellion: {
     id: "bellion", name: "Bellion", title: "The Grand Marshal",
-    class: "commander", tier: 5, icon: "⚜️",
+    class: "commander", tier: 5, icon: "⚜️", iconSrc: SHADOW_ICONS.bellion,
     unlockCondition: { type: "level", value: 90, desc: "Level 90 erreichen" },
     uniqueAbility: { name: "Army Command", effect: "Kann gesamte Shadow Army gleichzeitig kommandieren", icon: "👑" },
     lore: "Der oberste General des ursprünglichen Shadow Monarchen.",
@@ -193,9 +193,9 @@ const NAMED_SHADOWS = {
 };
 
 const FORMATION_SLOTS = {
-  vanguard: { name: "Vanguard", maxSlots: 3, bonus: "+15% Aggressive Strategy", icon: "⚔️", preferredClasses: ["knight", "soldier"], color: "#ef4444" },
-  core: { name: "Core", maxSlots: 5, bonus: "+10% All Strategies", icon: "🛡️", preferredClasses: ["any"], color: "#6366f1" },
-  rearguard: { name: "Rearguard", maxSlots: 2, bonus: "+20% XP & Gold", icon: "🎯", preferredClasses: ["mage", "healer", "assassin"], color: "#22c55e" },
+  vanguard: { name: "Vanguard", maxSlots: 3, bonus: "+15% Aggressive Strategy", icon: "⚔️", iconSrc: ROLE_ICONS.vanguard, preferredClasses: ["knight", "soldier"], color: "#ef4444" },
+  core: { name: "Core", maxSlots: 5, bonus: "+10% All Strategies", icon: "🛡️", iconSrc: ROLE_ICONS.core, preferredClasses: ["any"], color: "#6366f1" },
+  rearguard: { name: "Rearguard", maxSlots: 2, bonus: "+20% XP & Gold", icon: "🎯", iconSrc: ROLE_ICONS.rearguard, preferredClasses: ["mage", "healer", "assassin"], color: "#22c55e" },
 };
 
 // Class assignment based on quest category & difficulty
@@ -357,8 +357,8 @@ const SKILLS = [
 
 // ─── DUNGEON MODIFIERS ────────────────────────────────────────
 const DUNGEON_MODIFIERS = [
-  { id: "blood_moon", name: "Blood Moon", icon: "🌙", desc: "+50% XP, +15% Schwierigkeit", xpMult: 1.5, diffMod: 15, color: "#ef4444" },
-  { id: "dense_mana", name: "Dense Mana", icon: "💜", desc: "INT-Strategien +20% Erfolg", intBonus: 20, color: "#a78bfa" },
+  { id: "blood_moon", name: "Blood Moon", icon: "🌙", iconSrc: DUNGEON_ICONS.bloodmoon, desc: "+50% XP, +15% Schwierigkeit", xpMult: 1.5, diffMod: 15, color: "#ef4444" },
+  { id: "dense_mana", name: "Dense Mana", icon: "💜", iconSrc: DUNGEON_ICONS.densemana, desc: "INT-Strategien +20% Erfolg", intBonus: 20, color: "#a78bfa" },
   { id: "blessing", name: "Hunter's Bless", icon: "✨", desc: "+10% Erfolg für alle Gates", successBonus: 10, color: "#f59e0b" },
   { id: "shadow_surge", name: "Shadow Surge", icon: "🌑", desc: "Boss-Quest XP x2", shadowXpMult: 2.0, color: "#6366f1" },
   { id: "double_loot", name: "Double Loot", icon: "💰", desc: "+60% Gold aus Dungeons", goldMult: 1.6, color: "#22c55e" },
@@ -369,8 +369,8 @@ const DUNGEON_MODIFIERS = [
 
 const FLOOR_TYPES = {
   combat: { name: "Combat", icon: "⚔️", color: "#ef4444", desc: "Gegner blockieren den Weg", safeRoom: false },
-  elite: { name: "Elite", icon: "💀", color: "#a855f7", desc: "Mächtiger Elite-Gegner", safeRoom: false },
-  puzzle: { name: "Puzzle", icon: "🔮", color: "#3b82f6", desc: "Magisches Rätsel – INT hilft", safeRoom: false },
+  elite: { name: "Elite", icon: "💀", iconSrc: DUNGEON_ICONS.floorElite, color: "#a855f7", desc: "Mächtiger Elite-Gegner", safeRoom: false },
+  puzzle: { name: "Puzzle", icon: "🔮", iconSrc: DUNGEON_ICONS.floorPuzzle, color: "#3b82f6", desc: "Magisches Rätsel – INT hilft", safeRoom: false },
   trap: { name: "Trap", icon: "⚡", color: "#f59e0b", desc: "Fallen-Korridor – AGI gefragt", safeRoom: false },
   safe_room: { name: "Safe Room", icon: "🏕️", color: "#22c55e", desc: "Erholungsraum – Heilt Ausdauer", safeRoom: true },
   treasure: { name: "Treasure", icon: "💰", color: "#fbbf24", desc: "Schatzkammer – Bonus-Gold", safeRoom: false },
@@ -478,11 +478,11 @@ function getFloorLogs(floor, dungeon, strategy, playerStats, isStrong, isWeak) {
 
 const QUEST_TYPES_CONFIG = {
   side: { label: "Side", color: "#a78bfa", icon: "📋", xpMult: 1.0, goldMult: 1.0 },
-  daily: { label: "Daily", color: "#22d3ee", icon: "📅", xpMult: 1.2, goldMult: 1.2 },
-  weekly: { label: "Weekly", color: "#8b5cf6", icon: "📆", xpMult: 2.0, goldMult: 2.0 },
-  emergency: { label: "Emergency", color: "#ef4444", icon: "🚨", xpMult: 2.5, goldMult: 2.5 },
-  chained: { label: "Chained", color: "#f59e0b", icon: "⛓️", xpMult: 1.0, goldMult: 1.0 },
-  hidden: { label: "Hidden", color: "#6366f1", icon: "❓", xpMult: 3.0, goldMult: 3.0 },
+  daily: { label: "Daily", color: "#22d3ee", icon: "📅", iconSrc: QUEST_ICONS.daily, xpMult: 1.2, goldMult: 1.2 },
+  weekly: { label: "Weekly", color: "#8b5cf6", icon: "📆", iconSrc: QUEST_ICONS.weekly, xpMult: 2.0, goldMult: 2.0 },
+  emergency: { label: "Emergency", color: "#ef4444", icon: "🚨", iconSrc: QUEST_ICONS.emergency, xpMult: 2.5, goldMult: 2.5 },
+  chained: { label: "Chained", color: "#f59e0b", icon: "⛓️", iconSrc: QUEST_ICONS.chain, xpMult: 1.0, goldMult: 1.0 },
+  hidden: { label: "Hidden", color: "#6366f1", icon: "❓", iconSrc: QUEST_ICONS.hidden, xpMult: 3.0, goldMult: 3.0 },
 };
 
 const HIDDEN_QUESTS = [
@@ -1869,7 +1869,11 @@ function AriseCinematic({ shadow, onClose }) {
       {phase >= 3 && (
         <div style={{ textAlign: "center", animation: "ariseShadow 1s cubic-bezier(0.34,1.56,0.64,1) forwards", opacity: 0 }}>
           {isNamed ? (
-            <div style={{ fontSize: 100, animation: "namedGlow 2s ease-in-out infinite", ["--named-color"]: glowColor }}>{shadow.icon}</div>
+            <div style={{ fontSize: 100, animation: "namedGlow 2s ease-in-out infinite", ["--named-color"]: glowColor }}>
+              {shadow.iconSrc ? (
+                <img src={shadow.iconSrc} alt={shadow.name} style={{ width: 140, height: 140, objectFit: "contain", filter: `drop-shadow(0 0 40px ${glowColor}99) drop-shadow(0 0 20px ${glowColor}66) brightness(1.15)` }} />
+              ) : shadow.icon}
+            </div>
           ) : (
             <div style={{ fontSize: 100, filter: `brightness(0.15) saturate(200%) sepia(100%) hue-rotate(${shadow?.class === "knight" ? 200 : shadow?.class === "mage" ? 280 : shadow?.class === "assassin" ? 120 : shadow?.class === "healer" ? 160 : 220}deg) brightness(0.8)`, textShadow: `0 0 40px ${glowColor}` }}>👤</div>
           )}
@@ -1878,7 +1882,7 @@ function AriseCinematic({ shadow, onClose }) {
               <div style={{ fontSize: isNamed ? 18 : 16, fontWeight: 700, color: glowColor, fontFamily: "'Cinzel',serif", letterSpacing: 3, marginTop: 12, textShadow: `0 0 20px ${glowColor}` }}>{shadow?.name || "Shadow Soldier"}</div>
               {isNamed && shadow.title && <div style={{ fontSize: 11, color: glowColor + "aa", fontFamily: "'Cinzel',serif", letterSpacing: 2, marginTop: 4 }}>{shadow.title}</div>}
               <div style={{ fontSize: 10, color: cls.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span>{cls.icon}</span>
+                {cls.iconSrc ? <img src={cls.iconSrc} alt={cls.name} style={{ width: 16, height: 16, objectFit: "contain", filter: `drop-shadow(0 0 5px ${cls.color}88)` }} /> : <span>{cls.icon}</span>}
                 <span>{cls.name.toUpperCase()}</span>
                 <span style={{ color: tierData.color }}>· {tierData.name.toUpperCase()}</span>
               </div>
@@ -1924,7 +1928,7 @@ function ShadowCard({ shadow, theme, onClick, showSlot, index }) {
       boxShadow: isDeployed
         ? `0 0 22px ${glowColor}22, inset 0 0 28px ${glowColor}04`
         : shadow.isNamed ? `0 0 14px ${glowColor}18` : "none",
-      position: "relative", overflow: "hidden",
+      position: "relative", overflow: "visible",
       animation: `shadowRise 0.4s ease ${index * 0.06}s both`,
       transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)",
       ["--shadow-glow"]: glowColor,
@@ -1949,33 +1953,53 @@ function ShadowCard({ shadow, theme, onClick, showSlot, index }) {
       )}
 
       {/* Portrait area */}
-      <div style={{ position: "relative", padding: "16px 12px 10px", textAlign: "center" }}>
-        {/* Deployed aura pulse */}
+      <div style={{ position: "relative", padding: "14px 8px 6px", textAlign: "center" }}>
+        {/* Ambient glow pool beneath the character */}
+        <div style={{
+          position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+          width: 90, height: 40,
+          background: `radial-gradient(ellipse at center, ${glowColor}28 0%, transparent 70%)`,
+          pointerEvents: "none", borderRadius: "50%",
+        }} />
+        {/* Deployed aura ring */}
         {isDeployed && (
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 72, height: 72, borderRadius: "50%", border: `1px solid ${glowColor}44`, animation: "ringExpand 2.2s ease-out infinite", pointerEvents: "none" }} />
-        )}
-        {/* Named glow orb */}
-        {shadow.isNamed && (
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 80, height: 80, background: `radial-gradient(circle,${glowColor}12,transparent 70%)`, pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 90, height: 90, borderRadius: "50%", border: `1px solid ${glowColor}44`, animation: "ringExpand 2.2s ease-out infinite", pointerEvents: "none" }} />
         )}
 
-        {/* Icon portrait */}
-        <div style={{
-          width: 56, height: 56, margin: "0 auto",
-          borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
-          background: `radial-gradient(circle at 38% 28%,${glowColor}22,${glowColor}06)`,
-          border: `1.5px solid ${glowColor}${isDeployed ? "66" : "33"}`,
-          fontSize: shadow.isNamed ? 30 : 26,
-          boxShadow: isDeployed ? `0 0 18px ${glowColor}33` : "none",
-          animation: shadow.isNamed ? "namedGlow 3s ease-in-out infinite" : "none",
-          position: "relative", zIndex: 1,
-        }}>
-          {(() => {
-            const namedDef = shadow.isNamed ? NAMED_SHADOWS[shadow.id] || NAMED_SHADOWS[shadow.namedId] : null;
-            const src = shadow.isNamed && namedDef ? namedDef.iconSrc : cls.iconSrc;
-            return src ? <img src={src} alt={shadow.name} style={{ width: 48, height: 48, objectFit: "contain", mixBlendMode: "screen", filter: `drop-shadow(0 0 8px ${glowColor}55)` }} /> : (shadow.isNamed ? shadow.icon : cls.icon);
-          })()}
-        </div>
+        {/* Character portrait — free-floating transparent PNG */}
+        {(() => {
+          const namedDef = shadow.isNamed ? NAMED_SHADOWS[shadow.id] || NAMED_SHADOWS[shadow.namedId] : null;
+          const src = shadow.isNamed && namedDef?.iconSrc ? namedDef.iconSrc : cls.iconSrc;
+          const imgSize = shadow.isNamed ? 100 : 88;
+          return src ? (
+            <div style={{ position: "relative", display: "inline-block", zIndex: 1 }}>
+              <img src={src} alt={shadow.name} style={{
+                width: imgSize, height: imgSize,
+                objectFit: "contain",
+                filter: [
+                  `drop-shadow(0 6px 18px ${glowColor}70)`,
+                  "brightness(1.08)",
+                  shadow.isNamed ? `drop-shadow(0 0 12px ${glowColor}66)` : "",
+                ].filter(Boolean).join(" "),
+                animation: shadow.isNamed ? "namedGlow 3s ease-in-out infinite" : "none",
+                display: "block",
+              }} />
+              {/* Named glow ring around image */}
+              {shadow.isNamed && (
+                <div style={{ position: "absolute", inset: -6, borderRadius: "50%", background: `radial-gradient(circle,${glowColor}18,transparent 65%)`, pointerEvents: "none" }} />
+              )}
+            </div>
+          ) : (
+            <div style={{
+              width: 72, height: 72, margin: "0 auto",
+              borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+              background: `radial-gradient(circle at 38% 28%,${glowColor}22,${glowColor}06)`,
+              border: `1.5px solid ${glowColor}33`,
+              fontSize: shadow.isNamed ? 30 : 26,
+              position: "relative", zIndex: 1,
+            }}>{shadow.isNamed ? shadow.icon : cls.icon}</div>
+          );
+        })()}
 
         {/* Tier badge top-left */}
         <div style={{ position: "absolute", top: 10, left: 10, padding: "2px 5px", borderRadius: 5, background: tierData.color + "20", border: `1px solid ${tierData.color}44`, fontSize: 7, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>T{shadow.tier}</div>
@@ -1992,7 +2016,9 @@ function ShadowCard({ shadow, theme, onClick, showSlot, index }) {
         {shadow.isNamed && shadow.title && <div style={{ fontSize: 8, color: shadow.glowColor + "88", fontFamily: "'Outfit',sans-serif", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shadow.title}</div>}
         {/* Class pill */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 9 }}>
-          <span style={{ fontSize: 8, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 6px", borderRadius: 4, background: cls.color + "14", border: `1px solid ${cls.color}28`, letterSpacing: 0.5 }}>{cls.icon} {shadow.class.toUpperCase()}</span>
+          <span style={{ fontSize: 8, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 6px", borderRadius: 4, background: cls.color + "14", border: `1px solid ${cls.color}28`, letterSpacing: 0.5, display: "inline-flex", alignItems: "center", gap: 3 }}>
+            {cls.iconSrc ? <img src={cls.iconSrc} alt={cls.name} style={{ width: 10, height: 10, objectFit: "contain" }} /> : cls.icon} {shadow.class.toUpperCase()}
+          </span>
         </div>
 
         {/* Stats */}
@@ -2017,7 +2043,7 @@ function ShadowCard({ shadow, theme, onClick, showSlot, index }) {
         {/* Deployment status */}
         {isDeployed && slotData ? (
           <div style={{ fontSize: 8, color: slotData.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, padding: "3px 8px", borderRadius: 5, background: slotData.color + "12", border: `1px solid ${slotData.color}28` }}>
-            <span>{slotData.icon}</span><span>{slotData.name.toUpperCase()}</span>
+            {slotData.iconSrc ? <img src={slotData.iconSrc} alt={slotData.name} style={{ width: 10, height: 10, objectFit: "contain" }} /> : <span>{slotData.icon}</span>}<span>{slotData.name.toUpperCase()}</span>
           </div>
         ) : (
           <div style={{ fontSize: 8, color: "#1e2840", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>◌ IN RESERVE</div>
@@ -2054,7 +2080,9 @@ function ShadowDetailModal({ shadow, theme, onClose, onDeploy, onUndeploy, onEvo
             <div style={{ fontSize: 20, fontWeight: 900, color: shadow.isNamed ? shadow.glowColor : "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{shadow.name}</div>
             {shadow.isNamed && shadow.title && <div style={{ fontSize: 11, color: shadow.glowColor + "88", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginTop: 2 }}>{shadow.title}</div>}
             <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 10, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "2px 8px", borderRadius: 5, background: cls.color + "18" }}>{cls.icon} {cls.name}</span>
+              <span style={{ fontSize: 10, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "2px 8px", borderRadius: 5, background: cls.color + "18", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                {cls.iconSrc ? <img src={cls.iconSrc} alt={cls.name} style={{ width: 12, height: 12, objectFit: "contain" }} /> : cls.icon} {cls.name}
+              </span>
               <span style={{ fontSize: 10, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", padding: "2px 8px", borderRadius: 5, background: tierData.color + "18", border: `1px solid ${tierData.color}33` }}>Tier {shadow.tier} · {tierData.name}</span>
             </div>
           </div>
@@ -2115,7 +2143,7 @@ function ShadowDetailModal({ shadow, theme, onClose, onDeploy, onUndeploy, onEvo
         {shadow.isDeployed ? (
           <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
             <div style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: `${slotData?.color}15`, border: `1px solid ${slotData?.color}44`, display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18 }}>{slotData?.icon}</span>
+              {slotData?.iconSrc ? <img src={slotData.iconSrc} alt={slotData.name} style={{ width: 22, height: 22, objectFit: "contain", filter: `drop-shadow(0 0 4px ${slotData.color}88)` }} /> : <span style={{ fontSize: 18 }}>{slotData?.icon}</span>}
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: slotData?.color, fontFamily: "'JetBrains Mono',monospace" }}>{slotData?.name.toUpperCase()}</div>
                 <div style={{ fontSize: 9, color: "#475569", marginTop: 1 }}>{slotData?.bonus}</div>
@@ -2128,7 +2156,11 @@ function ShadowDetailModal({ shadow, theme, onClose, onDeploy, onUndeploy, onEvo
             {Object.entries(FORMATION_SLOTS).map(([slotKey, slot]) => (
               <button key={slotKey} onClick={() => onDeploy(shadow.id, slotKey)} style={{ padding: "10px 6px", borderRadius: 10, background: `${slot.color}10`, border: `1px solid ${slot.color}33`, color: slot.color, textAlign: "center", transition: "all 0.2s" }}
                 onMouseEnter={e => { e.currentTarget.style.background = slot.color + "20"; }} onMouseLeave={e => { e.currentTarget.style.background = slot.color + "10"; }}>
-                <div style={{ fontSize: 18 }}>{slot.icon}</div>
+                <div style={{ fontSize: 18, display: "flex", justifyContent: "center" }}>
+                  {slot.iconSrc ? (
+                    <img src={slot.iconSrc} alt={slot.name} style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 6px ${slot.color}88) brightness(1.1)` }} />
+                  ) : slot.icon}
+                </div>
                 <div style={{ fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>{slot.name.toUpperCase()}</div>
                 <div style={{ fontSize: 8, color: "#475569", marginTop: 2 }}>{slot.bonus}</div>
               </button>
@@ -2202,7 +2234,11 @@ function FormationEditor({ shadowArmy, theme, onDeploy, onUndeploy, formationBon
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${slot.color}44,transparent)` }} />
             {/* Slot header */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: slot.color + "14", border: `1px solid ${slot.color}33`, fontSize: 15, flexShrink: 0 }}>{slot.icon}</div>
+              <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: slot.color + "14", border: `1px solid ${slot.color}33`, fontSize: 15, flexShrink: 0 }}>
+                {slot.iconSrc ? (
+                  <img src={slot.iconSrc} alt={slot.name} style={{ width: 20, height: 20, objectFit: "contain", filter: `drop-shadow(0 0 4px ${slot.color}88)` }} />
+                ) : slot.icon}
+              </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 10, fontWeight: 800, color: slot.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{slot.name.toUpperCase()}</div>
                 <div style={{ fontSize: 8, color: "#334155", marginTop: 1 }}>{slot.bonus}</div>
@@ -2220,7 +2256,9 @@ function FormationEditor({ shadowArmy, theme, onDeploy, onUndeploy, formationBon
                     onMouseEnter={e => { e.currentTarget.style.background = "#ef444418"; e.currentTarget.style.borderColor = "#ef444466"; e.currentTarget.style.boxShadow = "0 0 14px #ef444428"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(160deg,${glow}14,${glow}06)`; e.currentTarget.style.borderColor = glow + "44"; e.currentTarget.style.boxShadow = `0 0 10px ${glow}18`; }}>
                     <div style={{ position: "absolute", top: 4, right: 4, width: 5, height: 5, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 5px #22c55e" }} />
-                    <div style={{ fontSize: 18, marginBottom: 3 }}>{s.isNamed ? s.icon : cls.icon}</div>
+                    <div style={{ fontSize: 18, marginBottom: 3, display: "flex", justifyContent: "center" }}>
+                      {(() => { const src = s.isNamed && (NAMED_SHADOWS[s.id] || NAMED_SHADOWS[s.namedId])?.iconSrc || cls.iconSrc; return src ? <img src={src} alt={s.name} style={{ width: 26, height: 26, objectFit: "contain", filter: `drop-shadow(0 0 5px ${glow}88)` }} /> : (s.isNamed ? s.icon : cls.icon); })()}
+                    </div>
                     <div style={{ fontSize: 8, color: s.isNamed ? s.glowColor : "#c8d4e0", fontFamily: "'JetBrains Mono',monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name.length > 7 ? s.name.slice(0, 7) + "…" : s.name}</div>
                     <div style={{ fontSize: 7, color: "#334155", marginTop: 2, fontFamily: "'JetBrains Mono',monospace" }}>Lv.{s.level}</div>
                   </div>
@@ -2228,7 +2266,9 @@ function FormationEditor({ shadowArmy, theme, onDeploy, onUndeploy, formationBon
               })}
               {Array.from({ length: emptySlots }).map((_, i) => (
                 <div key={`empty-${i}`} style={{ border: `1px dashed ${slot.color}18`, borderRadius: 12, padding: "10px 6px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, minHeight: 68 }}>
-                  <div style={{ fontSize: 16, opacity: 0.15, animation: "formationPulse 2.5s ease-in-out infinite" }}>{slot.icon}</div>
+                  <div style={{ fontSize: 16, opacity: 0.15, animation: "formationPulse 2.5s ease-in-out infinite" }}>
+                    {slot.iconSrc ? <img src={slot.iconSrc} alt={slot.name} style={{ width: 20, height: 20, objectFit: "contain" }} /> : slot.icon}
+                  </div>
                   <div style={{ fontSize: 7, color: "#1a2030", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>LEER</div>
                 </div>
               ))}
@@ -2247,7 +2287,9 @@ function FormationEditor({ shadowArmy, theme, onDeploy, onUndeploy, formationBon
               const glow = s.isNamed ? s.glowColor : cls.color;
               return (
                 <div key={s.id} style={{ background: glow + "09", border: `1px solid ${glow}22`, borderRadius: 10, padding: "8px 4px", textAlign: "center", opacity: 0.65 }}>
-                  <div style={{ fontSize: 16 }}>{s.isNamed ? s.icon : cls.icon}</div>
+                  <div style={{ fontSize: 16, display: "flex", justifyContent: "center" }}>
+                    {(() => { const src = s.isNamed && (NAMED_SHADOWS[s.id] || NAMED_SHADOWS[s.namedId])?.iconSrc || cls.iconSrc; return src ? <img src={src} alt={s.name} style={{ width: 22, height: 22, objectFit: "contain", filter: `drop-shadow(0 0 4px ${glow}77)` }} /> : (s.isNamed ? s.icon : cls.icon); })()}
+                  </div>
                   <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name.length > 6 ? s.name.slice(0, 6) + "…" : s.name}</div>
                 </div>
               );
@@ -2333,7 +2375,10 @@ function QuestTypeBadge({ type }) {
       padding: "1px 6px", borderRadius: 4, letterSpacing: 0.5,
       display: "inline-flex", alignItems: "center", gap: 3,
     }}>
-      {cfg.icon} {cfg.label.toUpperCase()}
+      {cfg.iconSrc ? (
+        <img src={cfg.iconSrc} alt={cfg.label} style={{ width: 10, height: 10, objectFit: "contain", filter: `drop-shadow(0 0 3px ${cfg.color}88)` }} />
+      ) : cfg.icon}
+      {cfg.label.toUpperCase()}
     </span>
   );
 }
@@ -2463,7 +2508,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
           <QuestTypeBadge type={quest.type} />
-          <span style={{ color: diff.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: diff.color + "15", fontSize: 9 }}>{diff.icon} {diff.label}</span>
+          <span style={{ color: diff.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: diff.color + "15", fontSize: 9, display: "inline-flex", alignItems: "center", gap: 3 }}>{diff.iconSrc ? <img src={diff.iconSrc} alt={diff.label} style={{ width: 10, height: 10, objectFit: "contain" }} /> : diff.icon} {diff.label}</span>
           <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: cat.color + "15", color: cat.color, fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 10, height: 10, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} <span>{cat.stat}</span></span>
           {quest.type === "weekly" && quest.timeLimit && <QuestTimer expiresAt={quest.timeLimit} color="#8b5cf6" />}
         </div>
@@ -2544,12 +2589,16 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
       <div style={{ padding: "15px 18px 0", position: "relative", zIndex: 1 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
 
-          {/* Gate icon — pure image */}
-          <div style={{ width: 96, height: 96, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#0a0814", border: `2px solid ${rc}`, boxShadow: `0 0 16px ${rc}66, inset 0 0 12px ${rc}44`, overflow: "hidden" }}>
+          {/* Gate icon — free-floating transparent PNG with glow ring */}
+          <div style={{ width: 96, height: 96, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {/* Glow ring */}
+            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: `1.5px solid ${rc}55`, boxShadow: `0 0 20px ${rc}44, inset 0 0 16px ${rc}22`, pointerEvents: "none" }} />
+            {/* Ambient glow pool */}
+            <div style={{ position: "absolute", bottom: -8, left: "50%", transform: "translateX(-50%)", width: 70, height: 20, background: `radial-gradient(ellipse at center, ${rc}33, transparent 70%)`, borderRadius: "50%", pointerEvents: "none" }} />
             {dungeon.cleared ? (
               <span style={{ fontSize: 36, color: "#fff", fontWeight: "bold", textShadow: `0 0 20px ${rc}` }}>✓</span>
             ) : (
-              <img src={getDungeonGateImage(dungeon)} style={{ width: "160%", height: "160%", objectFit: "cover", mixBlendMode: "screen", filter: `brightness(1.5) contrast(1.2)`, animation: "gateFloat 4s ease-in-out infinite" }} alt="Gate" />
+              <img src={getDungeonGateImage(dungeon)} style={{ width: 120, height: 120, objectFit: "contain", filter: `drop-shadow(0 4px 16px ${rc}77) brightness(1.15)`, animation: "gateFloat 4s ease-in-out infinite", position: "relative", zIndex: 1 }} alt="Gate" />
             )}
           </div>
 
@@ -2956,7 +3005,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
             </div>
             <div style={{ fontSize: 10, letterSpacing: 4, color: rankData.color, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{dungeon.rank}-RANK · {dungeon.floors} FLOORS</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif" }}>{dungeon.name}</div>
-            {modifier && modifier.id !== "none" && <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: modifier.color + "15", border: `1px solid ${modifier.color}33`, fontSize: 11, color: modifier.color, fontFamily: "'JetBrains Mono',monospace" }}>{modifier.icon} {modifier.name}</div>}
+            {modifier && modifier.id !== "none" && <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: modifier.color + "15", border: `1px solid ${modifier.color}33`, fontSize: 11, color: modifier.color, fontFamily: "'JetBrains Mono',monospace" }}>{modifier.iconSrc ? <img src={modifier.iconSrc} alt={modifier.name} style={{ width: 14, height: 14, objectFit: "contain", filter: `drop-shadow(0 0 4px ${modifier.color}88)` }} /> : modifier.icon} {modifier.name}</div>}
             {formationBonus?.dungeonBonus > 0 && <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "#7c3aed15", border: "1px solid #7c3aed33", fontSize: 11, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace" }}>🌑 Shadow Army +{formationBonus.dungeonBonus}%</div>}
           </div>
           {/* Floor Preview */}
@@ -2986,7 +3035,11 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
               return (
                 <button key={s.key} onClick={() => setStrategy(s)} style={{ padding: "14px 12px", borderRadius: 12, textAlign: "left", background: isActive ? s.color + "14" : isBest ? s.color + "08" : "rgba(10,10,20,0.6)", border: `1px solid ${isActive ? s.color + "66" : isBest ? s.color + "33" : "#1e2940"}`, color: isActive ? s.color : isBest ? s.color + "aa" : "#64748b", transition: "all 0.22s", position: "relative" }}>
                   {isBest && <div style={{ position: "absolute", top: -8, right: -6, fontSize: 14, animation: "pulse 2s infinite" }}>👁️</div>}
-                  <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}>
+                    {s.iconSrc ? (
+                      <img src={s.iconSrc} alt={s.label} style={{ width: 32, height: 32, objectFit: "contain", filter: `drop-shadow(0 0 8px ${s.color}77) brightness(${isActive ? 1.2 : 0.85})` }} />
+                    ) : s.icon}
+                  </div>
                   <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>{s.label}</div>
                   <div style={{ fontSize: 10, opacity: 0.7, marginTop: 2, lineHeight: 1.4 }}>{s.desc}</div>
                   <div style={{ fontSize: 11, marginTop: 8, fontFamily: "'JetBrains Mono',monospace", color: isActive ? s.color : "#475569" }}>{CATEGORIES.find(c => c.key === s.key)?.stat}: <span style={{ fontWeight: 700 }}>{playerStats[s.key] || 0}</span></div>
@@ -3104,7 +3157,11 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
           </div>
           {result.drop && (
             <div style={{ background: "rgba(8,8,18,0.9)", border: `1px solid ${RARITY_COLORS[result.drop.rarity]}33`, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontSize: 26 }}>{result.drop.icon}</span>
+              {result.drop.iconSrc ? (
+                <img src={result.drop.iconSrc} alt={result.drop.name} style={{ width: 44, height: 44, objectFit: "contain", flexShrink: 0, filter: `drop-shadow(0 0 10px ${RARITY_COLORS[result.drop.rarity]}88) brightness(1.15)` }} />
+              ) : (
+                <span style={{ fontSize: 26 }}>{result.drop.icon}</span>
+              )}
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontSize: 9, color: RARITY_COLORS[result.drop.rarity], fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginBottom: 2 }}>{RARITY_LABELS[result.drop.rarity].toUpperCase()} DROP</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{result.drop.name}</div>
@@ -3151,7 +3208,13 @@ function JobCard({ jobKey, level, xp, currentJob, onSwitch, onActivate, theme, r
       )}
 
       <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 18 }}>
-        <div style={{ width: 60, height: 60, borderRadius: 16, background: `${job.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, border: `1px solid ${job.color}33`, boxShadow: isCurrent ? `0 0 20px ${job.color}22` : "none" }}>{job.icon}</div>
+        <div style={{ width: 60, height: 60, borderRadius: 16, background: `linear-gradient(135deg, ${job.color}18, ${job.color}06)`, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${job.color}${isCurrent ? "55" : "28"}`, boxShadow: isCurrent ? `0 0 24px ${job.color}33, inset 0 0 12px ${job.color}0a` : "none", flexShrink: 0 }}>
+          {job.iconSrc ? (
+            <img src={job.iconSrc} alt={job.name} style={{ width: 44, height: 44, objectFit: "contain", filter: `drop-shadow(0 0 10px ${job.color}66) brightness(1.1)` }} />
+          ) : (
+            <span style={{ fontSize: 32 }}>{job.icon}</span>
+          )}
+        </div>
         <div>
           <div style={{ fontSize: 11, color: job.color, fontWeight: 700, letterSpacing: 2, fontFamily: "'JetBrains Mono', monospace", marginBottom: 2 }}>{title.toUpperCase()}</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif" }}>{job.name}</div>
@@ -3298,7 +3361,13 @@ function JobLevelUpCinematic({ job, newLevel, onClose }) {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(1, 0, 5, 0.98)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, cursor: "pointer", animation: "fadeIn 0.5s ease" }}>
       <div style={{ textAlign: "center", maxWidth: 400, animation: "slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
-        <div style={{ fontSize: 80, marginBottom: 20, filter: `drop-shadow(0 0 30px ${job.color})`, animation: "float 3s infinite" }}>{job.icon}</div>
+        <div style={{ fontSize: 80, marginBottom: 20, animation: "float 3s infinite" }}>
+          {job.iconSrc ? (
+            <img src={job.iconSrc} alt={job.name} style={{ width: 100, height: 100, objectFit: "contain", filter: `drop-shadow(0 0 30px ${job.color}) drop-shadow(0 0 15px ${job.color}88) brightness(1.2)` }} />
+          ) : (
+            <span style={{ filter: `drop-shadow(0 0 30px ${job.color})` }}>{job.icon}</span>
+          )}
+        </div>
         <div style={{ fontSize: 12, letterSpacing: 8, color: job.color, fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, animation: "pulse 2s infinite" }}>JOB LEVEL UP</div>
         <h2 style={{ fontSize: 42, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", marginBottom: 8 }}>{job.name}</h2>
         <div style={{ fontSize: 20, color: job.color, fontWeight: 700, fontFamily: "'Cinzel', serif", letterSpacing: 4, marginBottom: 32 }}>{title.toUpperCase()} (LV. {newLevel})</div>
@@ -3327,7 +3396,13 @@ function AbilityActivationCinematic({ ability, job, onClose }) {
         ))}
       </div>
       <div style={{ textAlign: "center", animation: "scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
-        <div style={{ fontSize: 100, marginBottom: 20, filter: `drop-shadow(0 0 40px ${job.color})`, animation: "pulse 1.5s infinite" }}>{ability.icon || "✨"}</div>
+        <div style={{ fontSize: 100, marginBottom: 20, animation: "pulse 1.5s infinite" }}>
+          {ability.iconSrc ? (
+            <img src={ability.iconSrc} alt={ability.name} style={{ width: 120, height: 120, objectFit: "contain", filter: `drop-shadow(0 0 40px ${job.color}) drop-shadow(0 0 20px ${job.color}88) brightness(1.2)` }} />
+          ) : (
+            <span style={{ filter: `drop-shadow(0 0 40px ${job.color})` }}>{ability.icon || "✨"}</span>
+          )}
+        </div>
         <div style={{ fontSize: 14, letterSpacing: 6, color: job.color, fontFamily: "'JetBrains Mono', monospace", marginBottom: 12 }}>FÄHIGKEIT AKTIVIERT</div>
         <h2 style={{ fontSize: 48, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", textShadow: `0 0 20px ${job.color}`, marginBottom: 16 }}>{ability.name.toUpperCase()}</h2>
         <div style={{ fontSize: 16, color: "#94a3b8", fontStyle: "italic", maxWidth: 300, margin: "0 auto" }}>"{ability.desc}"</div>

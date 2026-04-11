@@ -2,6 +2,8 @@
 // StoryView.jsx - Solo Leveling Story Campaign
 // Einbinden in solo-leveling-v5.jsx als eigener View
 import React, { useState, useEffect } from "react";
+import { STORY_ICONS, BOSS_ICONS, SHADOW_ICONS } from "./data/icons.js";
+import GameIcon from "./components/GameIcon.jsx";
 
 // ─── STORY DATA ───────────────────────────────────────────────
 export const STORY_ARCS = [
@@ -16,9 +18,9 @@ export const STORY_ARCS = [
     chapters: [
       { id: "ch1", title: "First Awakening", description: "Das System erwacht", unlockLevel: 1, type: "tutorial", rewards: { xp: 25, gold: 10, unlock: "daily_quest_system" }, icon: "✨" },
       { id: "ch2", title: "The Double Dungeon", description: "Dein erstes Gate erwartet dich", unlockLevel: 5, type: "dungeon_intro", rewards: { xp: 50, gold: 25 }, icon: "🌀" },
-      { id: "ch3", title: "System Initialization", description: "Das System offenbart sein wahres Gesicht", unlockLevel: 10, type: "revelation", rewards: { xp: 75, gold: 60 }, icon: "💻" },
+      { id: "ch3", title: "System Initialization", description: "Das System offenbart sein wahres Gesicht", unlockLevel: 10, type: "revelation", rewards: { xp: 75, gold: 60 }, icon: "💻", iconSrc: STORY_ICONS.systeminit },
     ],
-    arcBoss: { name: "Statue of God", rank: "E", rewards: { xp: 125, gold: 150, title: "Survivor" }, icon: "🗿" },
+    arcBoss: { name: "Statue of God", rank: "E", rewards: { xp: 125, gold: 150, title: "Survivor" }, icon: "🗿", iconSrc: STORY_ICONS.statue },
   },
   {
     id: "arc2",
@@ -29,11 +31,11 @@ export const STORY_ARCS = [
     rankColor: "#22d3ee",
     icon: "⚔️",
     chapters: [
-      { id: "ch4", title: "A New Beginning", description: "Erste echte Solo-Dungeons", unlockLevel: 11, type: "exploration", rewards: { xp: 80, gold: 60 }, icon: "🌄" },
-      { id: "ch5", title: "The Secret of Levels", description: "Die wahre Natur des Systems", unlockLevel: 15, type: "lore", rewards: { xp: 100, gold: 100 }, icon: "📜" },
+      { id: "ch4", title: "A New Beginning", description: "Erste echte Solo-Dungeons", unlockLevel: 11, type: "exploration", rewards: { xp: 80, gold: 60 }, icon: "🌄", iconSrc: STORY_ICONS.dawn },
+      { id: "ch5", title: "The Secret of Levels", description: "Die wahre Natur des Systems", unlockLevel: 15, type: "lore", rewards: { xp: 100, gold: 100 }, icon: "📜", iconSrc: STORY_ICONS.scroll },
       { id: "ch6", title: "Shadows of the Past", description: "Erste Shadow-Begegnung", unlockLevel: 20, type: "shadow_intro", rewards: { xp: 125, gold: 125 }, icon: "🌑" },
     ],
-    arcBoss: { name: "Cerberus", rank: "C", rewards: { xp: 250, gold: 150, unlock: "shadow_extraction_ability" }, icon: "🐕" },
+    arcBoss: { name: "Cerberus", rank: "C", rewards: { xp: 250, gold: 150, unlock: "shadow_extraction_ability" }, icon: "🐕", iconSrc: STORY_ICONS.cerberus },
   },
   {
     id: "arc3",
@@ -44,11 +46,11 @@ export const STORY_ARCS = [
     rankColor: "#34d399",
     icon: "🌑",
     chapters: [
-      { id: "ch7", title: "ARISE", description: "Deine erste Shadow-Beschwörung", unlockLevel: 21, type: "ability_unlock", cinematicKey: "arise_first", rewards: { xp: 150, gold: 150 }, icon: "⚫" },
-      { id: "ch8", title: "Building an Army", description: "Shadow Army Mechaniken entdecken", unlockLevel: 28, type: "system_unlock", rewards: { xp: 200, gold: 200 }, icon: "🪖" },
-      { id: "ch9", title: "The Hunter Association", description: "Andere Hunter existieren", unlockLevel: 35, type: "world_building", rewards: { xp: 250, gold: 250 }, icon: "🏛️" },
+      { id: "ch7", title: "ARISE", description: "Deine erste Shadow-Beschwörung", unlockLevel: 21, type: "ability_unlock", cinematicKey: "arise_first", rewards: { xp: 150, gold: 150 }, icon: "⚫", iconSrc: STORY_ICONS.arise },
+      { id: "ch8", title: "Building an Army", description: "Shadow Army Mechaniken entdecken", unlockLevel: 28, type: "system_unlock", rewards: { xp: 200, gold: 200 }, icon: "🪖", iconSrc: STORY_ICONS.helmet },
+      { id: "ch9", title: "The Hunter Association", description: "Andere Hunter existieren", unlockLevel: 35, type: "world_building", rewards: { xp: 250, gold: 250 }, icon: "🏛️", iconSrc: STORY_ICONS.association },
     ],
-    arcBoss: { name: "Igris, the Bloodred Commander", rank: "B", rewards: { namedShadow: "igris", xp: 500, gold: 500 }, icon: "🩸" },
+    arcBoss: { name: "Igris, the Bloodred Commander", rank: "B", rewards: { namedShadow: "igris", xp: 500, gold: 500 }, icon: "🩸", iconSrc: SHADOW_ICONS.igris },
   },
   {
     id: "arc4",
@@ -59,11 +61,11 @@ export const STORY_ARCS = [
     rankColor: "#a78bfa",
     icon: "🔴",
     chapters: [
-      { id: "ch10", title: "No Escape", description: "Red Gate Mechaniken", unlockLevel: 36, type: "danger_reveal", rewards: { xp: 300, gold: 300 }, icon: "🚪" },
+      { id: "ch10", title: "No Escape", description: "Red Gate Mechaniken", unlockLevel: 36, type: "danger_reveal", rewards: { xp: 300, gold: 300 }, icon: "🚪", iconSrc: STORY_ICONS.door },
       { id: "ch11", title: "The Ant King", description: "Jeju Island – Die wahre Bedrohung", unlockLevel: 43, type: "major_battle", rewards: { xp: 400, gold: 500 }, icon: "🐜" },
       { id: "ch12", title: "National Level", description: "S-Rank Hunter Existenz", unlockLevel: 50, type: "power_reveal", rewards: { xp: 500, gold: 750 }, icon: "🏆" },
     ],
-    arcBoss: { name: "Beru, the Ant King", rank: "A", rewards: { namedShadow: "beru", xp: 750, gold: 1000, title: "Ant Slayer" }, icon: "👑" },
+    arcBoss: { name: "Beru, the Ant King", rank: "A", rewards: { namedShadow: "beru", xp: 750, gold: 1000, title: "Ant Slayer" }, icon: "👑", iconSrc: SHADOW_ICONS.beru },
   },
   {
     id: "arc5",
@@ -74,11 +76,11 @@ export const STORY_ARCS = [
     rankColor: "#f59e0b",
     icon: "👁️",
     chapters: [
-      { id: "ch13", title: "Rulers and Monarchs", description: "Die Wahrheit über die Welt", unlockLevel: 51, type: "lore_heavy", rewards: { xp: 600, gold: 1000 }, icon: "⚖️" },
+      { id: "ch13", title: "Rulers and Monarchs", description: "Die Wahrheit über die Welt", unlockLevel: 51, type: "lore_heavy", rewards: { xp: 600, gold: 1000 }, icon: "⚖️", iconSrc: STORY_ICONS.scales },
       { id: "ch14", title: "The Shadow Monarch's Legacy", description: "Deine Verbindung zur Vergangenheit", unlockLevel: 60, type: "destiny_reveal", rewards: { xp: 750, gold: 1500 }, icon: "🌌" },
       { id: "ch15", title: "Domain Expansion", description: "Shadow Realm Powers erwachen", unlockLevel: 70, type: "power_unlock", rewards: { xp: 1000, gold: 2000 }, icon: "🌀" },
     ],
-    arcBoss: { name: "Legia, the Monarch of Giants", rank: "S", rewards: { xp: 1500, gold: 3000, title: "Giant Slayer" }, icon: "🏔️" },
+    arcBoss: { name: "Legia, the Monarch of Giants", rank: "S", rewards: { xp: 1500, gold: 3000, title: "Giant Slayer" }, icon: "🏔️", iconSrc: STORY_ICONS.mountain },
   },
   {
     id: "arc6",
@@ -89,11 +91,11 @@ export const STORY_ARCS = [
     rankColor: "#ef4444",
     icon: "🌟",
     chapters: [
-      { id: "ch16", title: "Beyond Human", description: "Transzendenz – ein neues Kapitel", unlockLevel: 71, type: "transformation", rewards: { xp: 1250, gold: 2500 }, icon: "🦋" },
+      { id: "ch16", title: "Beyond Human", description: "Transzendenz – ein neues Kapitel", unlockLevel: 71, type: "transformation", rewards: { xp: 1250, gold: 2500 }, icon: "🦋", iconSrc: STORY_ICONS.butterfly },
       { id: "ch17", title: "The Final Army", description: "Bellion erwacht", unlockLevel: 80, type: "army_complete", rewards: { xp: 1750, gold: 3500 }, icon: "⚜️" },
       { id: "ch18", title: "War Declaration", description: "Die letzte Schlacht naht", unlockLevel: 90, type: "setup_finale", rewards: { xp: 2250, gold: 5000 }, icon: "⚡" },
     ],
-    arcBoss: { name: "Antares, the Monarch of Destruction", rank: "SS", rewards: { xp: 2500, gold: 7500, title: "Monarch Slayer" }, icon: "💀" },
+    arcBoss: { name: "Antares, the Monarch of Destruction", rank: "SS", rewards: { xp: 2500, gold: 7500, title: "Monarch Slayer" }, icon: "💀", iconSrc: BOSS_ICONS.unleashed },
   },
   {
     id: "arc7",
@@ -104,10 +106,10 @@ export const STORY_ARCS = [
     rankColor: "#e879f9",
     icon: "☠️",
     chapters: [
-      { id: "ch19", title: "Acceptance", description: "Akzeptiere dein Schicksal", unlockLevel: 91, type: "character_growth", rewards: { xp: 3000, gold: 10000 }, icon: "🖤" },
+      { id: "ch19", title: "Acceptance", description: "Akzeptiere dein Schicksal", unlockLevel: 91, type: "character_growth", rewards: { xp: 3000, gold: 10000 }, icon: "🖤", iconSrc: STORY_ICONS.blackheart },
       { id: "ch20", title: "The Final Gate", description: "Das ultimative Dungeon", unlockLevel: 100, type: "final_dungeon", rewards: { xp: 5000, gold: 25000, title: "Shadow Monarch" }, icon: "🌑" },
     ],
-    finalBoss: { name: "The Absolute Being", rank: "???", rewards: { xp: 6000, gold: 50000, title: "Shadow Monarch", namedShadow: "bellion", unlock: "prestige_system" }, icon: "🌌" },
+    finalBoss: { name: "The Absolute Being", rank: "???", rewards: { xp: 6000, gold: 50000, title: "Shadow Monarch", namedShadow: "bellion", unlock: "prestige_system" }, icon: "🌌", iconSrc: BOSS_ICONS.awakening },
   },
 ];
 
@@ -136,7 +138,7 @@ function StoryPanel({ arc, chapter, onClose, onComplete, playerLevel, isComplete
   if (completed) {
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(2,1,8,0.98)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontSize: 60, marginBottom: 20, animation: "successPulse 0.6s ease" }}>✅</div>
+        <div style={{ marginBottom: 20, animation: "successPulse 0.6s ease" }}><GameIcon src={chapter.iconSrc} fallback="✅" size={56} glow glowColor="#7c3aed" /></div>
         <div style={{ fontSize: 11, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12 }}>KAPITEL ABGESCHLOSSEN</div>
         <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 3, textShadow: "0 0 30px #7c3aed", marginBottom: 24 }}>{chapter.title}</div>
         {isCompleted ? (
@@ -171,13 +173,25 @@ function StoryPanel({ arc, chapter, onClose, onComplete, playerLevel, isComplete
             {arc.rank}-RANK
           </div>
           <div style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(124,58,237,0.15)", border: "1px solid #7c3aed44", color: "#a78bfa", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>
-            {chapter.icon} {chapter.title}
+            {chapter.iconSrc ? <img src={chapter.iconSrc} alt={chapter.title} style={{ width: 14, height: 14, objectFit: "contain", verticalAlign: "middle", marginRight: 4, filter: `drop-shadow(0 0 4px ${arc.rankColor}88)` }} /> : chapter.icon} {chapter.title}
           </div>
         </div>
 
-        {/* Panel icon / visual */}
-        <div style={{ fontSize: panel.type === "dramatic" ? 120 : 80, marginBottom: 24, filter: `drop-shadow(0 0 40px ${arc.rankColor})`, animation: "float 3s ease-in-out infinite" }}>
-          {panel.icon}
+        {/* Panel icon / visual — cinematic image or emoji */}
+        <div style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {panel.iconSrc ? (
+            <img src={panel.iconSrc} alt="" style={{
+              width: panel.type === "dramatic" ? 260 : 200,
+              height: panel.type === "dramatic" ? 260 : 200,
+              objectFit: "contain",
+              filter: `drop-shadow(0 0 40px ${arc.rankColor}99) drop-shadow(0 8px 24px rgba(0,0,0,0.8)) brightness(1.1)`,
+              animation: "float 3s ease-in-out infinite",
+            }} />
+          ) : (
+            <span style={{ fontSize: panel.type === "dramatic" ? 120 : 80, filter: `drop-shadow(0 0 40px ${arc.rankColor})`, animation: "float 3s ease-in-out infinite", display: "block" }}>
+              {panel.icon}
+            </span>
+          )}
         </div>
 
         {/* Narrative text */}
@@ -231,18 +245,21 @@ function getPanelsForChapter(chapter, arc) {
   return [
     {
       icon,
+      iconSrc: chapter.iconSrc || null,
       narration: getChapterIntro(chapter),
       systemMsg: null,
       type: "intro",
     },
     {
       icon: chapter.icon,
+      iconSrc: chapter.iconSrc || null,
       narration: getChapterMid(chapter),
       systemMsg: getSystemMessage(chapter),
       type: "mid",
     },
     {
       icon: "⚔️",
+      iconSrc: chapter.iconSrc || null,
       dramatic: getDramaticText(chapter, arc),
       narration: getChapterOutro(chapter),
       systemMsg: null,
@@ -374,6 +391,7 @@ function BossFightPanel({ arc, boss, onClose, onComplete, isDefeated }) {
   const bossPhases = [
     {
       icon: boss.icon,
+      iconSrc: boss.iconSrc || null,
       dramatic: null,
       narration: `${boss.name}. ${arc.rank}-Rank Boss. Du hast alle Etagen überwunden – jetzt wartet die finale Prüfung. Kein Rückzug mehr.`,
       systemMsg: `SYSTEM: BOSS-GEGNER DETEKTIERT — ${boss.name.toUpperCase()}`,
@@ -401,7 +419,7 @@ function BossFightPanel({ arc, boss, onClose, onComplete, isDefeated }) {
   if (phase === 3) {
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(10,0,0,0.98)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontSize: 72, marginBottom: 16, animation: "successPulse 0.6s ease" }}>⚔️</div>
+        <div style={{ marginBottom: 16, animation: "successPulse 0.6s ease" }}><GameIcon src={boss.iconSrc} fallback="⚔️" size={72} glow glowColor="#ef4444" /></div>
         <div style={{ fontSize: 11, letterSpacing: 6, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12 }}>BOSS BESIEGT</div>
         <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 3, textShadow: "0 0 40px #ef4444", marginBottom: 8, textAlign: "center", padding: "0 1rem" }}>{boss.name}</div>
         <div style={{ fontSize: 12, color: "#ef4444aa", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2, marginBottom: 24 }}>{arc.rank}-RANK BOSS — ÜBERWUNDEN</div>
@@ -438,8 +456,21 @@ function BossFightPanel({ arc, boss, onClose, onComplete, isDefeated }) {
           </div>
         </div>
 
-        <div style={{ fontSize: phase === 1 ? 120 : 80, marginBottom: 24, filter: "drop-shadow(0 0 60px #ef4444)", animation: "float 3s ease-in-out infinite" }}>
-          {current.icon}
+        <div style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {(current.iconSrc || (phase <= 1 && boss.iconSrc)) ? (
+            <img src={current.iconSrc || boss.iconSrc} alt={boss.name} style={{
+              width: phase === 1 ? 180 : 240, height: phase === 1 ? 180 : 240,
+              objectFit: "contain",
+              filter: phase === 1
+                ? "drop-shadow(0 0 80px #ef4444cc) drop-shadow(0 0 40px #ef444488) brightness(1.3) saturate(1.2)"
+                : "drop-shadow(0 0 60px #ef444499) drop-shadow(0 8px 32px rgba(0,0,0,0.9)) brightness(1.1)",
+              animation: phase === 1 ? "pulse 0.8s ease-in-out infinite" : "float 3s ease-in-out infinite",
+            }} />
+          ) : (
+            <span style={{ fontSize: phase === 1 ? 120 : 80, filter: "drop-shadow(0 0 60px #ef4444)", animation: "float 3s ease-in-out infinite", display: "block" }}>
+              {current.icon}
+            </span>
+          )}
         </div>
 
         <div style={{ maxWidth: 520, textAlign: "center", transition: "opacity 0.4s ease", opacity: textVisible ? 1 : 0 }}>
@@ -571,8 +602,12 @@ export default function StoryView({ gameState, onChapterComplete, onBossComplete
                 onClick={() => unlocked && setSelectedArc(expanded ? null : arc.id)}
                 style={{ padding: "20px 20px", display: "flex", alignItems: "center", gap: 16, cursor: unlocked ? "pointer" : "default" }}
               >
-                <div style={{ width: 50, height: 50, borderRadius: 14, background: arc.rankColor + "22", border: `1px solid ${arc.rankColor}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>
-                  {arc.icon}
+                <div style={{ width: 50, height: 50, borderRadius: 14, background: arc.rankColor + "22", border: `1px solid ${arc.rankColor}44`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                  {arc.chapters[0]?.iconSrc || arc.arcBoss?.iconSrc || arc.finalBoss?.iconSrc ? (
+                    <img src={arc.chapters[0]?.iconSrc || arc.arcBoss?.iconSrc || arc.finalBoss?.iconSrc} alt={arc.name} style={{ width: 38, height: 38, objectFit: "contain", filter: `drop-shadow(0 0 6px ${arc.rankColor}88) brightness(1.1)` }} />
+                  ) : (
+                    <span style={{ fontSize: 24 }}>{arc.icon}</span>
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -608,8 +643,12 @@ export default function StoryView({ gameState, onChapterComplete, onBossComplete
                           transition: "all 0.2s ease",
                         }}
                       >
-                        <div style={{ width: 38, height: 38, borderRadius: 10, background: chCompleted ? arc.rankColor + "30" : "rgba(30,30,60,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                          {chCompleted ? "✅" : chUnlocked ? ch.icon : "🔒"}
+                        <div style={{ width: 38, height: 38, borderRadius: 10, background: chCompleted ? arc.rankColor + "30" : "rgba(30,30,60,0.5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                          {chCompleted ? (
+                            ch.iconSrc ? <img src={ch.iconSrc} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 6px ${arc.rankColor}88) brightness(1.2)` }} /> : <span style={{ fontSize: 16 }}>✅</span>
+                          ) : chUnlocked ? (
+                            ch.iconSrc ? <img src={ch.iconSrc} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(0.8)" }} /> : <span style={{ fontSize: 18 }}>{ch.icon}</span>
+                          ) : <span style={{ fontSize: 16 }}>🔒</span>}
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: chCompleted ? arc.rankColor : chUnlocked ? "#e2e8f0" : "#475569", fontFamily: "'Outfit', sans-serif" }}>{ch.title}</div>
@@ -651,7 +690,11 @@ export default function StoryView({ gameState, onChapterComplete, onBossComplete
                           animation: allChaptersDone && !bossDefeated ? "bossGlow 2s ease-in-out infinite" : "none",
                         }}
                       >
-                        <div style={{ width: 38, height: 38, borderRadius: 10, background: bossDefeated ? "#22c55e22" : "#ef444422", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{bossDefeated ? "✅" : boss.icon}</div>
+                        <div style={{ width: 38, height: 38, borderRadius: 10, background: bossDefeated ? "#22c55e22" : "#ef444422", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                          {bossDefeated ? "✅" : boss.iconSrc ? (
+                            <img src={boss.iconSrc} alt={boss.name} style={{ width: 30, height: 30, objectFit: "contain", filter: "drop-shadow(0 0 8px #ef444499) brightness(1.1)" }} />
+                          ) : boss.icon}
+                        </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 12, color: bossDefeated ? "#22c55e" : "#ef4444", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1, marginBottom: 2 }}>
                             {bossDefeated ? "BOSS BESIEGT" : "BOSS"}

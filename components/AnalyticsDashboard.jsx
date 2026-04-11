@@ -102,7 +102,7 @@ export default function AnalyticsDashboard({ state, theme }) {
                 borderRadius: 18, padding: "18px 20px", marginBottom: 14,
             }}>
                 <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 14 }}>
-                    📊 DEINE ENTWICKLUNG (30 TAGE)
+                    <img src={STAT_ICONS.str} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(1.1)", verticalAlign: "middle", marginRight: 4 }} /> DEINE ENTWICKLUNG (30 TAGE)
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
                     {[
@@ -147,7 +147,7 @@ export default function AnalyticsDashboard({ state, theme }) {
                     boxShadow: `0 4px 20px ${theme?.primary || "#22d3ee"}15`
                 }}>
                     <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                        <div style={{ fontSize: 24, animation: "float 3s ease-in-out infinite" }}>🧭</div>
+                        <img src={STAT_ICONS.int} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 8px #22d3ee44) brightness(1.1)", animation: "float 3s ease-in-out infinite" }} />
                         <div>
                             <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", fontFamily: "'Cinzel',serif", marginBottom: 4 }}>Weekly Path Report</div>
                             <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5 }}>
@@ -292,7 +292,7 @@ export default function AnalyticsDashboard({ state, theme }) {
                         marginTop: 12, padding: "10px 12px", borderRadius: 10,
                         background: "rgba(34,211,238,0.05)", border: "1px solid #22d3ee15",
                     }}>
-                        <div style={{ fontSize: 8, color: "#06b6d4", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>💡 SYSTEM INSIGHT</div>
+                        <div style={{ fontSize: 8, color: "#06b6d4", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>SYSTEM INSIGHT</div>
                         <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>
                             Stärkste Kategorie: <span style={{ color: strongest.color, fontWeight: 700 }}>{strongest.label} ({strongest.pct}%)</span>
                             <br />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MP_THEME } from '../data/mpConstants';
+import { SOCIAL_ICONS, NAV_ICONS, STAT_ICONS } from '../../data/icons.js';
 import { subscribeToGlobalChat, sendGlobalMessage } from '../mpFirebase';
 import ChatPanel from '../components/ChatPanel';
 import { auth } from '../../firebase';
@@ -32,16 +33,16 @@ export default function SocialView({ playerState, onStateUpdate }) {
         <div style={{ fontSize: 9, letterSpacing: 4, color: MP_THEME.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
           HUNTER NETWORK
         </div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 20px ${MP_THEME.glow}` }}>
-          💬 Social Hub
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 20px ${MP_THEME.glow}`, display: "flex", alignItems: "center", gap: 8 }}>
+          <img src={SOCIAL_ICONS.global} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(1.5)" }} /> Social Hub
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {[
-          { id: "global", label: "Global Chat", icon: "🌐" },
-          { id: "friends", label: "Freunde", icon: "👥" },
+          { id: "global", label: "Global Chat", icon: "🌐", iconSrc: SOCIAL_ICONS.global },
+          { id: "friends", label: "Freunde", icon: "👥", iconSrc: STAT_ICONS.cha },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             flex: 1, padding: "10px", borderRadius: 12, fontSize: 11,
@@ -52,7 +53,9 @@ export default function SocialView({ playerState, onStateUpdate }) {
             fontFamily: "'JetBrains Mono',monospace", fontWeight: 700,
             cursor: "pointer", transition: "all 0.2s",
           }}>
-            <span>{t.icon}</span> {t.label}
+            {t.iconSrc ? (
+              <img src={t.iconSrc} alt={t.label} style={{ width: 16, height: 16, objectFit: "contain", filter: tab === t.id ? `brightness(1.2) drop-shadow(0 0 5px ${MP_THEME.primary}88)` : "brightness(0.6) saturate(0.5)" }} />
+            ) : <span>{t.icon}</span>} {t.label}
           </button>
         ))}
       </div>
@@ -105,7 +108,7 @@ export default function SocialView({ playerState, onStateUpdate }) {
               playerState.multiplayer.social.friends.map((f, i) => (
                 <div key={i} style={{ background: MP_THEME.card, border: `1px solid rgba(255,255,255,0.05)`, padding: "12px", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ fontSize: 24 }}>👤</div>
+                    <div style={{ display: "flex" }}><img src={STAT_ICONS.cha} alt="" style={{ width: 24, height: 24, opacity: 0.5 }} /></div>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{f.name}</div>
                       <div style={{ fontSize: 10, color: MP_THEME.accent, fontFamily: "'JetBrains Mono',monospace" }}>Lv. {f.level}</div>

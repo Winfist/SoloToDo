@@ -1,14 +1,15 @@
 import React, { useState, useCallback } from "react";
 import { genId, calculateLevelUp } from '../data/constants';
+import { HABIT_ICONS, NAV_ICONS } from '../data/icons.js';
 
 // ═══════════════════════════════════════════════════════════════
 // GOAL FRAMEWORK – Overarching Goals with Milestones
 // ═══════════════════════════════════════════════════════════════
 
 const GOAL_CATEGORIES = [
-    { key: "fitness", icon: "💪", label: "Fitness", color: "#ef4444" },
+    { key: "fitness", icon: "💪", iconSrc: HABIT_ICONS.fitness, label: "Fitness", color: "#ef4444" },
     { key: "learning", icon: "📖", label: "Lernen", color: "#3b82f6" },
-    { key: "health", icon: "🧘", label: "Gesundheit", color: "#22c55e" },
+    { key: "health", icon: "🧘", iconSrc: HABIT_ICONS.health, label: "Gesundheit", color: "#22c55e" },
     { key: "productivity", icon: "⚡", label: "Produktiv", color: "#f59e0b" },
     { key: "social", icon: "👥", label: "Sozial", color: "#a855f7" },
 ];
@@ -73,11 +74,12 @@ function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, onGenerateQuest, 
                         width: 48, height: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center",
                         background: isGoalCompleted ? "#22c55e15" : cat.color + "18",
                         border: `1px solid ${isGoalCompleted ? "#22c55e55" : cat.color + "55"}`,
-                        fontSize: 24,
                         boxShadow: `0 0 12px ${isGoalCompleted ? "#22c55e" : cat.color}22`,
-                        flexShrink: 0,
+                        flexShrink: 0, overflow: "hidden",
                     }}>
-                        {isGoalCompleted ? "👑" : cat.icon}
+                        {isGoalCompleted ? "👑" : cat.iconSrc ? (
+                            <img src={cat.iconSrc} alt={cat.label} style={{ width: 32, height: 32, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 5px ${cat.color}55)` }} />
+                        ) : <span style={{ fontSize: 24 }}>{cat.icon}</span>}
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -279,7 +281,11 @@ function CreateGoalModal({ onClose, onSave, initialGoal, theme }) {
                                 onMouseEnter={e => { if (category !== c.key) { e.currentTarget.style.borderColor = c.color + "44"; e.currentTarget.style.color = c.color + "aa"; } }}
                                 onMouseLeave={e => { if (category !== c.key) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
                             >
-                                <span style={{ fontSize: 16 }}>{c.icon}</span>
+                                {c.iconSrc ? (
+                                    <img src={c.iconSrc} alt={c.label} style={{ width: 20, height: 20, objectFit: "contain", filter: category === c.key ? `drop-shadow(0 0 6px ${c.color}88)` : "brightness(0.7)" }} />
+                                ) : (
+                                    <span style={{ fontSize: 16 }}>{c.icon}</span>
+                                )}
                                 <span>{c.label}</span>
                             </button>
                         ))}
@@ -446,7 +452,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                 }}>
                     <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.008) 3px, rgba(255,255,255,0.008) 4px)", pointerEvents: "none" }} />
                     <div style={{ position: "relative", zIndex: 1 }}>
-                        <div style={{ fontSize: 44, marginBottom: 12, animation: "float 3s ease-in-out infinite", filter: `drop-shadow(0 0 12px ${theme?.primary || "#22d3ee"}44)` }}>🎯</div>
+                        <div style={{ marginBottom: 12, animation: "float 3s ease-in-out infinite" }}><img src={NAV_ICONS.goals} alt="Goals" style={{ width: 48, height: 48, objectFit: "contain", filter: `drop-shadow(0 0 12px ${theme?.primary || "#22d3ee"}44) brightness(1.1)` }} /></div>
                         <div style={{ fontSize: 13, color: "#64748b", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>Keine Ziele definiert</div>
                         <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
                             Ein guter Hunter kämpft für ein höheres Ziel.

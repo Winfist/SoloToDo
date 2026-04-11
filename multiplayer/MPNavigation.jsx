@@ -1,11 +1,12 @@
 import React from 'react';
 import { MP_THEME } from './data/mpConstants';
+import { NAV_ICONS } from '../data/icons.js';
 
 const MP_NAV_ITEMS = [
-  { id: "guild", icon: "🏰", label: "Guild" },
-  { id: "raids", icon: "🌀", label: "Raids" },
-  { id: "ranks", icon: "🏆", label: "Ranks" },
-  { id: "social", icon: "💬", label: "Social" },
+  { id: "guild", icon: "🏰", iconSrc: NAV_ICONS.guild, label: "Guild" },
+  { id: "raids", icon: "🌀", iconSrc: NAV_ICONS.events, label: "Raids" },
+  { id: "ranks", icon: "🏆", iconSrc: NAV_ICONS.achievements, label: "Ranks" },
+  { id: "social", icon: "💬", iconSrc: NAV_ICONS.jobs, label: "Social" },
 ];
 
 export default function MPNavigation({ currentView, setCurrentView }) {
@@ -46,13 +47,15 @@ export default function MPNavigation({ currentView, setCurrentView }) {
               }} />
             )}
 
-            <div style={{ 
+            <div style={{
               fontSize: 22,
               filter: active ? `drop-shadow(0 0 8px ${MP_THEME.primary}88)` : "grayscale(100%) opacity(0.5)",
               transition: "all 0.3s",
               position: "relative",
             }}>
-              {item.icon}
+              {item.iconSrc ? (
+                <img src={item.iconSrc} alt={item.label} style={{ width: 28, height: 28, objectFit: "contain", filter: active ? `brightness(1.3) drop-shadow(0 0 8px ${MP_THEME.primary}99) saturate(1.3)` : "brightness(0.55) saturate(0.4)" }} />
+              ) : item.icon}
             </div>
             <div style={{
               fontSize: 9,

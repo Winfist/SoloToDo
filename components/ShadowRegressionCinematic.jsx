@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { NAV_ICONS } from "../data/icons";
 
 // ═══════════════════════════════════════════════════════════════
 // SHADOW REGRESSION CINEMATIC
@@ -99,15 +100,15 @@ export default function ShadowRegressionCinematic({ state, onClose, theme }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem" }}>
           <div>
             <div style={{ color: "#4b5563", fontSize: "0.7rem" }}>WAR</div>
-            <div style={{ color: "#dc2626", fontSize: "2rem", fontWeight: 900 }}>
-              🔥{previousStreak}
+            <div style={{ color: "#dc2626", fontSize: "2rem", fontWeight: 900, display: "flex", alignItems: "center", gap: 6 }}>
+              <img src={NAV_ICONS.events} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(2)" }} /> {previousStreak}
             </div>
           </div>
           <div style={{ color: "#4b5563", fontSize: "1.5rem" }}>→</div>
           <div>
             <div style={{ color: "#4b5563", fontSize: "0.7rem" }}>WIEDERHERGESTELLT</div>
-            <div style={{ color: "#a855f7", fontSize: "2rem", fontWeight: 900 }}>
-              🔥{restoredStreak}
+            <div style={{ color: "#a855f7", fontSize: "2rem", fontWeight: 900, display: "flex", alignItems: "center", gap: 6 }}>
+              <img src={NAV_ICONS.events} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(2)" }} /> {restoredStreak}
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 // ─── GATE SEASONS & WORLD EVENTS ─────────────────────────────────────────────
+import { SEASON_ICONS, QUEST_ICONS } from "./icons.js";
 
 export const SEASONS = {
   frost: {
@@ -6,6 +7,7 @@ export const SEASONS = {
     name: "Frost Monarch",
     months: [11, 0, 1], // Dez, Jan, Feb
     icon: "❄️",
+    iconSrc: SEASON_ICONS.frost,
     colors: {
       primary: "#67e8f9",
       secondary: "#0ea5e9",
@@ -27,6 +29,7 @@ export const SEASONS = {
     name: "Spring Awakening",
     months: [2, 3, 4], // Mär, Apr, Mai
     icon: "🌸",
+    iconSrc: SEASON_ICONS.spring,
     colors: {
       primary: "#34d399",
       secondary: "#10b981",
@@ -48,6 +51,7 @@ export const SEASONS = {
     name: "Inferno Gate",
     months: [5, 6, 7], // Jun, Jul, Aug
     icon: "🔥",
+    iconSrc: SEASON_ICONS.inferno,
     colors: {
       primary: "#f97316",
       secondary: "#ef4444",
@@ -69,6 +73,7 @@ export const SEASONS = {
     name: "Red Gate",
     months: [8, 9, 10], // Sep, Okt, Nov
     icon: "🔴",
+    iconSrc: SEASON_ICONS.redgate,
     colors: {
       primary: "#ef4444",
       secondary: "#dc2626",
@@ -120,6 +125,7 @@ export const WORLD_EVENTS = [
     key: "chain_breaker",
     name: "Kettenbrecher",
     icon: "⛓️",
+    iconSrc: QUEST_ICONS.chain,
     desc: "Chained Quests geben +50% XP diese Woche",
     effect: { chainedXpMult: 1.5 },
   },
@@ -127,6 +133,7 @@ export const WORLD_EVENTS = [
     key: "stat_surge",
     name: "Stat-Surge",
     icon: "📊",
+    iconSrc: SEASON_ICONS.statsurge,
     desc: "Stat-Punkte aus Quests +100% diese Woche",
     effect: { statMult: 2 },
   },
@@ -134,6 +141,7 @@ export const WORLD_EVENTS = [
     key: "merchant_arrival",
     name: "Händler angekommen",
     icon: "🏪",
+    iconSrc: SEASON_ICONS.merchant,
     desc: "Alle Shop-Items -30% Rabatt diese Woche",
     effect: { shopDiscount: 30 },
   },

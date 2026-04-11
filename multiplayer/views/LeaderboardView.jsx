@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MP_THEME, RANK_COLORS } from '../data/mpConstants';
 import { fetchLeaderboard, fetchGuildLeaderboard } from '../mpFirebase';
 import { auth } from '../../firebase';
+import { NAV_ICONS } from '../../data/icons';
 
 const LB_RANK_ICONS = { 1: "👑", 2: "🥈", 3: "🥉" };
 
@@ -101,8 +102,8 @@ export default function LeaderboardView({ playerState }) {
         <div style={{ fontSize: 9, letterSpacing: 4, color: MP_THEME.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
           GLOBAL RANKINGS
         </div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 20px ${MP_THEME.glow}` }}>
-          🏆 Hunter Rankings
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 20px ${MP_THEME.glow}`, display: "flex", alignItems: "center", gap: 8 }}>
+          <img src={NAV_ICONS.achievements} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(1.5)" }} /> Hunter Rankings
         </div>
       </div>
 
@@ -125,7 +126,7 @@ export default function LeaderboardView({ playerState }) {
       {/* Loading */}
       {loading ? (
         <div style={{ textAlign: "center", padding: 40 }}>
-          <div style={{ fontSize: 32, marginBottom: 12, animation: "mpSpin 2s linear infinite" }}>🌀</div>
+          <div style={{ fontSize: 32, marginBottom: 12, animation: "mpSpin 2s linear infinite", display: "flex", justifyContent: "center" }}><img src={NAV_ICONS.events} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} /></div>
           <div style={{ fontSize: 11, color: MP_THEME.textMuted, fontFamily: "'JetBrains Mono',monospace" }}>
             Rankings laden...
           </div>
@@ -138,7 +139,7 @@ export default function LeaderboardView({ playerState }) {
               textAlign: "center", padding: 40,
               background: MP_THEME.card, borderRadius: 16, border: `1px solid rgba(255,255,255,0.05)`,
             }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🏰</div>
+              <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src={NAV_ICONS.guild} alt="" style={{ width: 48, height: 48, objectFit: "contain" }} /></div>
               <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, marginBottom: 6 }}>Keine Gilde</div>
               <div style={{ fontSize: 11, color: MP_THEME.textMuted }}>Tritt einer Gilde bei, um Guild Rankings zu sehen.</div>
             </div>
@@ -150,7 +151,7 @@ export default function LeaderboardView({ playerState }) {
               textAlign: "center", padding: 40,
               background: MP_THEME.card, borderRadius: 16, border: `1px solid rgba(255,255,255,0.05)`,
             }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🏆</div>
+              <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src={NAV_ICONS.achievements} alt="" style={{ width: 48, height: 48, objectFit: "contain" }} /></div>
               <div style={{ fontSize: 13, color: "#fff", fontWeight: 700, marginBottom: 6 }}>Noch keine Rankings</div>
               <div style={{ fontSize: 11, color: MP_THEME.textMuted, lineHeight: 1.5 }}>
                 Rankings werden aus den Daten aller Hunter generiert. Schließe Quests ab, um in den Rankings zu erscheinen!

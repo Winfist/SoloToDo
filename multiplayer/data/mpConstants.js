@@ -1,3 +1,5 @@
+import { BOSS_ICONS, STORY_ICONS, GATE_ICONS, DUNGEON_ICONS, SEASON_ICONS, STAT_ICONS } from '../../data/icons.js';
+
 // ─── MULTIPLAYER THEME ────────────────────────────────────────
 export const MP_THEME = {
   primary: "#f59e0b",
@@ -34,9 +36,9 @@ export const GUILD_TIERS = {
 
 // ─── GUILD ROLES ──────────────────────────────────────────────
 export const GUILD_ROLES = {
-  master: { label: "Guild Master", icon: "👑", color: "#fcd34d", priority: 0 },
-  officer: { label: "Officer", icon: "⚔️", color: "#f59e0b", priority: 1 },
-  member: { label: "Member", icon: "🛡️", color: "#94a3b8", priority: 2 },
+  master: { label: "Guild Master", icon: "👑", iconSrc: SEASON_ICONS.merchant, color: "#fcd34d", priority: 0 },
+  officer: { label: "Officer", icon: "⚔️", iconSrc: STAT_ICONS.str, color: "#f59e0b", priority: 1 },
+  member: { label: "Member", icon: "🛡️", iconSrc: STAT_ICONS.vit, color: "#94a3b8", priority: 2 },
 };
 
 // ─── CHAT CONFIG ──────────────────────────────────────────────
@@ -68,7 +70,7 @@ export const RAID_TEMPLATES = [
     desc: "Das Reich eines uralten Monarchen. Nur die stärksten Hunter überleben.",
     minPlayers: 4, maxPlayers: 8, minLevel: 80,
     rewards: ["50,000 XP (Split)", "Legendary Equipment", "Exclusive Shadow"],
-    icon: "👑", color: "#e879f9",
+    icon: "👑", iconSrc: BOSS_ICONS.unleashed, color: "#e879f9",
     timeEstimate: "~45 min",
   },
   {
@@ -78,7 +80,7 @@ export const RAID_TEMPLATES = [
     desc: "Nest des uralten Drachen. Kooperation ist der Schlüssel.",
     minPlayers: 3, maxPlayers: 4, minLevel: 60,
     rewards: ["25,000 XP (Split)", "Epic Equipment", "Rare Shadow"],
-    icon: "🐉", color: "#f59e0b",
+    icon: "🐉", iconSrc: STORY_ICONS.dragon, color: "#f59e0b",
     timeEstimate: "~30 min",
   },
   {
@@ -88,7 +90,7 @@ export const RAID_TEMPLATES = [
     desc: "Ein Riss in der Realität. Unberechenbare Gegner lauern.",
     minPlayers: 2, maxPlayers: 4, minLevel: 40,
     rewards: ["10,000 XP (Split)", "Rare Equipment", "Gold Bonus"],
-    icon: "🌀", color: "#a78bfa",
+    icon: "🌀", iconSrc: GATE_ICONS.red, color: "#a78bfa",
     timeEstimate: "~20 min",
   },
   {
@@ -98,7 +100,7 @@ export const RAID_TEMPLATES = [
     desc: "Eisiger Palast des Winterkönigs. Team-Strategie erforderlich.",
     minPlayers: 2, maxPlayers: 4, minLevel: 25,
     rewards: ["5,000 XP (Split)", "Uncommon Equipment", "Gold"],
-    icon: "❄️", color: "#22d3ee",
+    icon: "❄️", iconSrc: GATE_ICONS.ice, color: "#22d3ee",
     timeEstimate: "~15 min",
   },
   {
@@ -108,7 +110,7 @@ export const RAID_TEMPLATES = [
     desc: "Verworrenes Labyrinth voller Schattenwesen.",
     minPlayers: 2, maxPlayers: 3, minLevel: 10,
     rewards: ["2,000 XP (Split)", "Common Equipment", "Gold"],
-    icon: "🌑", color: "#6b7280",
+    icon: "🌑", iconSrc: DUNGEON_ICONS.bloodmoon, color: "#6b7280",
     timeEstimate: "~10 min",
   },
 ];

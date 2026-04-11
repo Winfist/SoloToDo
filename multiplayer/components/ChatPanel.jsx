@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MP_THEME, RANK_COLORS, CHAT_CONFIG } from '../data/mpConstants';
+import { STORY_ICONS, STAT_ICONS } from '../../data/icons';
 
 export default function ChatPanel({ messages, onSend, playerName, playerLevel, playerRank, placeholder }) {
   const [text, setText] = useState("");
@@ -35,7 +36,7 @@ export default function ChatPanel({ messages, onSend, playerName, playerLevel, p
   };
 
   const getRankIcon = (rank) => {
-    const icons = { "E": "◇", "D": "◆", "C": "★", "B": "✦", "A": "♛", "S": "☠", "SSS": "👑" };
+    const icons = { "E": "◇", "D": "◆", "C": "★", "B": "✦", "A": "♛", "S": "×", "SSS": "◆" };
     return icons[rank] || "◇";
   };
 
@@ -53,7 +54,7 @@ export default function ChatPanel({ messages, onSend, playerName, playerLevel, p
       }}>
         {messages.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40 }}>
-            <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.5 }}>💬</div>
+            <div style={{ marginBottom: 8, opacity: 0.5, display: "flex", justifyContent: "center" }}><img src={STORY_ICONS.scroll} alt="" style={{ width: 28, height: 28, objectFit: "contain" }} /></div>
             <div style={{ fontSize: 11, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
               Noch keine Nachrichten. Sei der Erste!
             </div>

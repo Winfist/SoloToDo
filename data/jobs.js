@@ -1,8 +1,11 @@
+import { JOB_ICONS } from "./icons.js";
+
 export const JOBS = {
   berserker: {
     id: "berserker",
     name: "Berserker",
     icon: "⚔️",
+    iconSrc: JOB_ICONS.berserker,
     color: "#ef4444",
     statFocus: "str",
     unlockRequirement: { level: 15 },
@@ -26,6 +29,7 @@ export const JOBS = {
     id: "archmage",
     name: "Archmage",
     icon: "📖",
+    iconSrc: JOB_ICONS.archmage,
     color: "#3b82f6",
     statFocus: "int",
     unlockRequirement: { level: 15 },
@@ -40,6 +44,7 @@ export const JOBS = {
       key: "insight",
       name: "Insight",
       icon: "👁️",
+      iconSrc: JOB_ICONS.insight,
       desc: "Zeigt optimale Dungeonstrategie",
       unlockLevel: 5,
       cooldown: 43200 // 12h
@@ -49,6 +54,7 @@ export const JOBS = {
     id: "guardian",
     name: "Guardian",
     icon: "🛡️",
+    iconSrc: JOB_ICONS.guardian,
     color: "#10b981",
     statFocus: "vit",
     unlockRequirement: { level: 15 },
@@ -63,6 +69,7 @@ export const JOBS = {
       key: "fortress",
       name: "Fortress",
       icon: "🏰",
+      iconSrc: JOB_ICONS.fortress,
       desc: "Dungeon Niederlage -> Trotzdem Sieg mit 50% Reward",
       unlockLevel: 5,
       cooldown: 604800 // 7 days
@@ -72,6 +79,7 @@ export const JOBS = {
     id: "assassin",
     name: "Assassin",
     icon: "🗡️",
+    iconSrc: JOB_ICONS.assassin,
     color: "#14b8a6",
     statFocus: "agi",
     unlockRequirement: { level: 15 },
@@ -86,6 +94,7 @@ export const JOBS = {
       key: "shadow_step",
       name: "Shadow Step",
       icon: "💨",
+      iconSrc: JOB_ICONS.shadowstep,
       desc: "Dungeon FloorSkip manuell (3x/Tag)",
       unlockLevel: 5,
       cooldown: 28800 // 8h per use
@@ -95,6 +104,7 @@ export const JOBS = {
     id: "monarch",
     name: "Monarch",
     icon: "👑",
+    iconSrc: JOB_ICONS.monarch,
     color: "#f59e0b",
     statFocus: "all",
     unlockRequirement: { level: 15 },
@@ -109,6 +119,7 @@ export const JOBS = {
       key: "domain_expansion",
       name: "Domain Expansion",
       icon: "🌌",
+      iconSrc: JOB_ICONS.domain,
       desc: "Alle Boni verdoppelt für 1 Stunde",
       unlockLevel: 5,
       cooldown: 86400 // 24h
@@ -118,6 +129,7 @@ export const JOBS = {
     id: "necromancer",
     name: "Necromancer",
     icon: "💀",
+    iconSrc: JOB_ICONS.necromancer,
     color: "#a855f7",
     statFocus: "cha",
     unlockRequirement: { level: 15 },
@@ -132,6 +144,7 @@ export const JOBS = {
       key: "army_of_the_dead",
       name: "Army of the Dead",
       icon: "🧟",
+      iconSrc: JOB_ICONS.armydead,
       desc: "Alle Shadows zählen als eingesetzt im Dungeon",
       unlockLevel: 5,
       cooldown: 604800 // 7 days

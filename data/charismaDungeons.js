@@ -1,4 +1,5 @@
 // ─── CHARISMA DUNGEONS (Expositionstherapie-basierte Quest-Ketten) ────────────
+import { CHA_ICONS } from "./icons.js";
 
 export const CHARISMA_CHAINS = [
   {
@@ -51,6 +52,7 @@ export const CHARISMA_CHAINS = [
     id: "conversation_mastery",
     name: "Gesprächsmeister",
     icon: "💬",
+    iconSrc: CHA_ICONS.conversation,
     description: "Meistere Gesprächsführung – von Smalltalk bis tiefem Verständnis.",
     chaThreshold: 5,
     color: "#6366f1",
@@ -104,6 +106,7 @@ export const CHARISMA_CHAINS = [
     id: "dating_protocol",
     name: "Dating-Protokoll",
     icon: "💘",
+    iconSrc: CHA_ICONS.romance,
     description: "Systematisches Vorgehen für romantische Verbindungen. Expositionstherapie für das Herz.",
     chaThreshold: 10,
     color: "#ec4899",
@@ -164,6 +167,7 @@ export const CHARISMA_CHAINS = [
     id: "public_speaking",
     name: "Public Speaking",
     icon: "🎤",
+    iconSrc: CHA_ICONS.publicspeaking,
     description: "Von Mundtrockenheit zur Bühne. Schrittweise Überwindung der Redeangst.",
     chaThreshold: 15,
     color: "#f59e0b",
