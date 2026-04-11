@@ -1,11 +1,11 @@
-// ─── CHARISMA DUNGEONS (Expositionstherapie-basierte Quest-Ketten) ────────────
-import { CHA_ICONS } from "./icons.js";
+import { CHA_ICONS, STAT_ICONS, STORY_ICONS } from "./icons.js";
 
 export const CHARISMA_CHAINS = [
   {
     id: "social_exposure",
     name: "Soziale Entblößung",
     icon: "👥",
+    iconSrc: STAT_ICONS.cha,
     description: "Überwinde soziale Angst durch schrittweise Exposition. Jede Begegnung stählt dein CHA.",
     chaThreshold: 0,
     color: "#a855f7",
@@ -228,6 +228,7 @@ export const CHARISMA_CHAINS = [
     id: "leadership",
     name: "Führungsprotokoll",
     icon: "👑",
+    iconSrc: STORY_ICONS.arise,
     description: "Entwickle natürliche Autorität und Führungspräsenz. Der letzte Dungeon der CHA-Reihe.",
     chaThreshold: 25,
     color: "#ef4444",

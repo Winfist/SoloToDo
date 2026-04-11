@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { NAV_ICONS, SHOP_ICONS } from "../data/icons.js";
 
 export default function SettingsView({ state, persist, theme }) {
     const [primaryCache, setPrimaryCache] = useState(state.customThemeData?.primary || "#3b82f6");
@@ -30,7 +31,7 @@ export default function SettingsView({ state, persist, theme }) {
                     SYSTEM PREFERENCES
                 </div>
                 <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 15px ${theme.glow}` }}>
-                    ⚙️ Settings
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><img src={NAV_ICONS.settings} alt="Settings" style={{ width: 22, height: 22, objectFit: "contain", filter: "drop-shadow(0 0 4px " + theme.glow + ")" }} /> Settings</span>
                 </div>
             </div>
 
@@ -55,7 +56,7 @@ export default function SettingsView({ state, persist, theme }) {
                 </div>
 
                 <button onClick={saveCustomTheme} style={{ width: "100%", marginTop: 20, padding: 14, borderRadius: 12, background: theme.primary, border: "none", color: "#fff", fontWeight: 800, fontFamily: "'Cinzel',serif", cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}>
-                    <span>✒️</span> THEME AKTIVIEREN
+                    <img src={SHOP_ICONS.theme} alt="theme" style={{ width: 16, height: 16, objectFit: "contain" }} /> THEME AKTIVIEREN
                 </button>
             </div>
 
@@ -71,7 +72,7 @@ export default function SettingsView({ state, persist, theme }) {
                 </div>
 
                 <button onClick={exportData} style={{ width: "100%", padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: `1px solid rgba(255,255,255,0.1)`, color: "#fff", fontWeight: 800, fontFamily: "'Cinzel',serif", cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}>
-                    💾 JSON EXPORTIEREN
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={NAV_ICONS.analytics} alt="export" style={{ width: 14, height: 14, objectFit: "contain" }} /> JSON EXPORTIEREN</span>
                 </button>
             </div>
 

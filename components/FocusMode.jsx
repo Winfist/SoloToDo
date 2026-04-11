@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { calculateLevelUp } from "../data/constants";
+import { STAT_ICONS } from "../data/icons.js";
 
 // ═══════════════════════════════════════════════════════════════
 // FOCUS MODE – Fullscreen Pomodoro/Deep Work Timer
@@ -174,7 +175,7 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <button onClick={onExit} style={{ background: "transparent", border: "none", color: "#64748b", fontSize: 24, cursor: "pointer" }}>✕</button>
                     <div style={{ fontSize: 10, letterSpacing: 4, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>DUNGEON GATE</div>
-                    <div style={{ fontSize: 14 }}>{sessionStreak > 0 ? `🔥 ${sessionStreak}` : "〰"}</div>
+                    <div style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 4 }}>{sessionStreak > 0 ? <><img src={STAT_ICONS.str} alt="Streak" style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 4px #f59e0b88)" }} />{sessionStreak}</> : "〰"}</div>
                 </div>
 
                 {/* Mode Selector */}

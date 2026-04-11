@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { HABIT_ICONS, QUEST_ICONS } from "../data/icons.js";
 
 // ═══════════════════════════════════════════════════════════════
 // CALENDAR & SCHEDULING – Native Calendar View for Quests
@@ -129,7 +130,13 @@ export default function CalendarSchedule({ state, persist, notify, theme }) {
                                     borderRadius: 12, border: `1px solid ${item.completed ? "#22c55e22" : "transparent"}`,
                                     borderLeft: `3px solid ${item.completed ? "#22c55e" : col}`
                                 }}>
-                                    <div style={{ fontSize: 16 }}>{item.completed ? "✓" : (item.type === "habit" ? "🔄" : "📝")}</div>
+                                    <div style={{ width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        {item.completed
+                                            ? <span style={{ fontSize: 14, color: "#22c55e" }}>✓</span>
+                                            : item.type === "habit"
+                                                ? <img src={HABIT_ICONS.manual} alt="Habit" style={{ width: 16, height: 16, objectFit: "contain", opacity: 0.8 }} />
+                                                : <img src={QUEST_ICONS.daily} alt="Quest" style={{ width: 16, height: 16, objectFit: "contain", opacity: 0.8 }} />}
+                                    </div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: 13, fontWeight: 700, color: item.completed ? "#64748b" : "#e2e8f0", textDecoration: item.completed ? "line-through" : "none" }}>{item.title}</div>
                                         {item.type === "habit" && <div style={{ fontSize: 9, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace" }}>HABIT</div>}

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { calculateLevelUp } from "../data/constants";
-import { NAV_ICONS, GATE_ICONS, SEASON_ICONS } from "../data/icons.js";
+import { NAV_ICONS, GATE_ICONS, SEASON_ICONS, STAT_ICONS, SOCIAL_ICONS } from "../data/icons.js";
 
 const WEEKLY_CHALLENGES = [
     { id: "iron_week", title: "Iron Week", req: "7 STR-Quests in einer Woche", reward: { xp: 500, gold: 200, badge: "iron_will" }, icon: "💪", iconSrc: "/icons/habit_fitness.png" },
-    { id: "streak_master", title: "Streak Master", req: "7-Tage Streak halten", reward: { xp: 300, gold: 150 }, icon: "🔥" },
-    { id: "scholar", title: "Scholar", req: "5 INT-Quests in einer Woche", reward: { xp: 400, gold: 100 }, icon: "📚" }
+    { id: "streak_master", title: "Streak Master", req: "7-Tage Streak halten", reward: { xp: 300, gold: 150 }, icon: "🔥", iconSrc: STAT_ICONS.str },
+    { id: "scholar", title: "Scholar", req: "5 INT-Quests in einer Woche", reward: { xp: 400, gold: 100 }, icon: "📚", iconSrc: STAT_ICONS.int }
 ];
 
 const MONTHLY_CHALLENGES = [
-    { id: "hunter_games", title: "Hunter Games", desc: "Alle Hunter gemeinsam: 1 Million Quests", progressStr: "348.192 / 1.000.000", pct: 34, reward: { xp: 2000, title: "Global Contributor" }, icon: "🌍" }
+    { id: "hunter_games", title: "Hunter Games", desc: "Alle Hunter gemeinsam: 1 Million Quests", progressStr: "348.192 / 1.000.000", pct: 34, reward: { xp: 2000, title: "Global Contributor" }, icon: "🌍", iconSrc: SOCIAL_ICONS.global }
 ];
 
 const SEASONAL_EVENTS = [

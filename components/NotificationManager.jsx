@@ -56,7 +56,7 @@ function checkStreakProtection(state) {
     if (questsToday > 0 || habitsToday > 0) return null;
     const hoursLeft = 24 - hour;
     return {
-        title: `⚠ ${streak}-Tage Streak in Gefahr!`,
+        title: `${streak}-Tage Streak in Gefahr!`,
         body: `Dein Streak endet in ${hoursLeft}h. Eine Quest oder ein Habit rettet ihn!`,
         tag: "streak-protection",
     };
@@ -68,7 +68,7 @@ function checkEmergencyQuest(state) {
     const hoursLeft = (expires.getTime() - Date.now()) / (1000 * 60 * 60);
     if (hoursLeft > 2 || hoursLeft < 0) return null;
     return {
-        title: "🚨 NOTFALL-QUEST läuft ab!",
+        title: "NOTFALL-QUEST läuft ab!",
         body: `"${state.emergencyQuest.title}" endet in ${Math.round(hoursLeft * 60)} Minuten. Penalty droht!`,
         tag: "emergency-quest",
     };
@@ -83,7 +83,7 @@ function checkHabitNudge(state) {
     const unfinished = habits.filter(h => h.active && !h.history?.[today]?.completed).length;
     if (unfinished === 0) return null;
     return {
-        title: "🔄 Habits noch offen",
+        title: "Habits noch offen",
         body: `${unfinished} Habit${unfinished > 1 ? "s" : ""} warten noch auf dich heute.`,
         tag: "habit-nudge",
     };
@@ -95,7 +95,7 @@ function checkDungeonReset(state) {
     const today = getToday();
     if (state?.lastDungeonRefresh === today) {
         return {
-            title: "🌀 Neue Gates verfügbar!",
+            title: "Neue Gates verfügbar!",
             body: `${(state.dungeons || []).length} Dungeon Gates warten auf dich.`,
             tag: "dungeon-reset",
         };
@@ -116,7 +116,7 @@ function checkWeeklySummary(state) {
     const weekQuests = completed.filter(q => q.completedAt >= weekAgoStr).length;
 
     return {
-        title: "📊 Deine Woche",
+        title: "Deine Woche",
         body: `${weekQuests} Quests · ${state?.streak || 0}d Streak · Level ${state?.level || 1}`,
         tag: "weekly-summary",
     };

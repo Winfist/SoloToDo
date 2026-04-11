@@ -2,7 +2,7 @@
 // StoryView.jsx - Solo Leveling Story Campaign
 // Einbinden in solo-leveling-v5.jsx als eigener View
 import React, { useState, useEffect } from "react";
-import { STORY_ICONS, BOSS_ICONS, SHADOW_ICONS } from "./data/icons.js";
+import { STORY_ICONS, BOSS_ICONS, SHADOW_ICONS, GATE_ICONS, SKILL_ICONS, STAT_ICONS } from "./data/icons.js";
 import GameIcon from "./components/GameIcon.jsx";
 
 // ─── STORY DATA ───────────────────────────────────────────────
@@ -153,7 +153,7 @@ function StoryPanel({ arc, chapter, onClose, onComplete, playerLevel, isComplete
           </div>
         )}
         <button onClick={() => onComplete(chapter)} style={{ marginTop: 32, padding: "16px 40px", borderRadius: 14, background: "linear-gradient(135deg,#7c3aed,#5b21b6)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "'Cinzel', serif", letterSpacing: 3, cursor: "pointer" }}>
-          WEITER ⚔️
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>WEITER <img src={SKILL_ICONS.attack} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /></span>
         </button>
       </div>
     );
@@ -434,7 +434,7 @@ function BossFightPanel({ arc, boss, onClose, onComplete, isDefeated }) {
           <div style={{ color: "#475569", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", marginBottom: 24 }}>Dieser Boss wurde bereits besiegt.</div>
         )}
         <button onClick={() => onComplete(boss)} style={{ padding: "16px 40px", borderRadius: 14, background: "linear-gradient(135deg,#ef4444,#b91c1c)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "'Cinzel', serif", letterSpacing: 3, cursor: "pointer" }}>
-          WEITER ⚔️
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>WEITER <img src={SKILL_ICONS.attack} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /></span>
         </button>
       </div>
     );
@@ -452,7 +452,7 @@ function BossFightPanel({ arc, boss, onClose, onComplete, isDefeated }) {
             {arc.rank}-RANK BOSS
           </div>
           <div style={{ padding: "6px 12px", borderRadius: 8, background: "rgba(239,68,68,0.1)", border: "1px solid #ef444433", color: "#fca5a5", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>
-            ⚔️ {boss.name}
+            {boss.iconSrc ? <img src={boss.iconSrc} alt="" style={{ width: 14, height: 14, objectFit: "contain", verticalAlign: "middle", marginRight: 4 }} /> : null} {boss.name}
           </div>
         </div>
 
@@ -645,10 +645,10 @@ export default function StoryView({ gameState, onChapterComplete, onBossComplete
                       >
                         <div style={{ width: 38, height: 38, borderRadius: 10, background: chCompleted ? arc.rankColor + "30" : "rgba(30,30,60,0.5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
                           {chCompleted ? (
-                            ch.iconSrc ? <img src={ch.iconSrc} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 6px ${arc.rankColor}88) brightness(1.2)` }} /> : <span style={{ fontSize: 16 }}>✅</span>
+                            ch.iconSrc ? <img src={ch.iconSrc} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 6px ${arc.rankColor}88) brightness(1.2)` }} /> : <img src={STAT_ICONS.vit} alt="done" style={{ width: 22, height: 22, objectFit: "contain", filter: "drop-shadow(0 0 4px #22c55e88) hue-rotate(60deg)" }} />
                           ) : chUnlocked ? (
                             ch.iconSrc ? <img src={ch.iconSrc} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(0.8)" }} /> : <span style={{ fontSize: 18 }}>{ch.icon}</span>
-                          ) : <span style={{ fontSize: 16 }}>🔒</span>}
+                          ) : <img src={GATE_ICONS.normal} alt="locked" style={{ width: 22, height: 22, objectFit: "contain", filter: "grayscale(100%) brightness(0.4)" }} />}
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: chCompleted ? arc.rankColor : chUnlocked ? "#e2e8f0" : "#475569", fontFamily: "'Outfit', sans-serif" }}>{ch.title}</div>
@@ -691,7 +691,7 @@ export default function StoryView({ gameState, onChapterComplete, onBossComplete
                         }}
                       >
                         <div style={{ width: 38, height: 38, borderRadius: 10, background: bossDefeated ? "#22c55e22" : "#ef444422", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
-                          {bossDefeated ? "✅" : boss.iconSrc ? (
+                          {bossDefeated ? <img src={STAT_ICONS.vit} alt="done" style={{ width: 24, height: 24, objectFit: "contain", filter: "drop-shadow(0 0 4px #22c55e88) hue-rotate(60deg)" }} /> : boss.iconSrc ? (
                             <img src={boss.iconSrc} alt={boss.name} style={{ width: 30, height: 30, objectFit: "contain", filter: "drop-shadow(0 0 8px #ef444499) brightness(1.1)" }} />
                           ) : boss.icon}
                         </div>
@@ -719,7 +719,7 @@ export default function StoryView({ gameState, onChapterComplete, onBossComplete
               {/* Locked overlay */}
               {!unlocked && (
                 <div style={{ padding: "8px 20px 16px", fontSize: 11, color: "#475569", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>
-                  🔒 Erfordert Level {arc.levelRange.min}
+                  Erfordert Level {arc.levelRange.min}
                 </div>
               )}
             </div>

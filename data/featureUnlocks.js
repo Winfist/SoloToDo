@@ -31,6 +31,7 @@ export const FEATURE_UNLOCKS = {
   // ─── STUFE 4 — Level 11: D-Rang (Dungeons & Shop) ──────────
   dungeons:           { level: 11, tier: 4, label: "Dungeon Gates",    desc: "Besiege magische Portale" },
   shop:               { level: 11, tier: 4, label: "Shop",             desc: "Titel, Themes & Items kaufen" },
+  gem_shop:           { level: 11, tier: 4, label: "Gem Shop",         desc: "Premium-Shop mit Gems 💎" },
   equipment:          { level: 11, tier: 4, label: "Equipment",        desc: "Waffen & Rüstung verwalten" },
   chained_quests:     { level: 11, tier: 4, label: "Chained Quests",   desc: "Mehrteilige Ketten-Quests" },
   story:              { level: 11, tier: 4, label: "Story",            desc: "Deine Heldenreise als Hunter" },

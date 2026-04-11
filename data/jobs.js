@@ -1,4 +1,4 @@
-import { JOB_ICONS } from "./icons.js";
+import { JOB_ICONS, SKILL_ICONS } from "./icons.js";
 
 export const JOBS = {
   berserker: {
@@ -6,6 +6,7 @@ export const JOBS = {
     name: "Berserker",
     icon: "⚔️",
     iconSrc: JOB_ICONS.berserker,
+    illustrationSrc: JOB_ICONS.berserkerBig,
     color: "#ef4444",
     statFocus: "str",
     unlockRequirement: { level: 15 },
@@ -20,6 +21,7 @@ export const JOBS = {
       key: "rage_mode",
       name: "Rage Mode",
       icon: "🔥",
+      iconSrc: SKILL_ICONS.attack,
       desc: "2x XP für 1 Stunde",
       unlockLevel: 5,
       cooldown: 86400 // 24h
@@ -28,8 +30,9 @@ export const JOBS = {
   archmage: {
     id: "archmage",
     name: "Archmage",
-    icon: "📖",
+    icon: "🔮",
     iconSrc: JOB_ICONS.archmage,
+    illustrationSrc: JOB_ICONS.archmageBig,
     color: "#3b82f6",
     statFocus: "int",
     unlockRequirement: { level: 15 },
@@ -55,6 +58,7 @@ export const JOBS = {
     name: "Guardian",
     icon: "🛡️",
     iconSrc: JOB_ICONS.guardian,
+    illustrationSrc: JOB_ICONS.guardianBig,
     color: "#10b981",
     statFocus: "vit",
     unlockRequirement: { level: 15 },
@@ -78,9 +82,10 @@ export const JOBS = {
   assassin: {
     id: "assassin",
     name: "Assassin",
-    icon: "🗡️",
+    icon: "💀",
     iconSrc: JOB_ICONS.assassin,
-    color: "#14b8a6",
+    illustrationSrc: JOB_ICONS.assassinBig,
+    color: "#8b5cf6",
     statFocus: "agi",
     unlockRequirement: { level: 15 },
     passives: {
@@ -105,6 +110,7 @@ export const JOBS = {
     name: "Monarch",
     icon: "👑",
     iconSrc: JOB_ICONS.monarch,
+    illustrationSrc: JOB_ICONS.monarchBig,
     color: "#f59e0b",
     statFocus: "all",
     unlockRequirement: { level: 15 },
@@ -128,9 +134,10 @@ export const JOBS = {
   necromancer: {
     id: "necromancer",
     name: "Necromancer",
-    icon: "💀",
+    icon: "👑",
     iconSrc: JOB_ICONS.necromancer,
-    color: "#a855f7",
+    illustrationSrc: JOB_ICONS.necromancerBig,
+    color: "#9333ea",
     statFocus: "cha",
     unlockRequirement: { level: 15 },
     passives: {

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { calculateLevelUp } from "../data/constants";
-import { HABIT_ICONS, QUEST_ICONS, NAV_ICONS, STAT_ICONS } from "../data/icons.js";
+import { HABIT_ICONS, QUEST_ICONS, NAV_ICONS, STAT_ICONS, BACKGROUNDS } from "../data/icons.js";
 
 // ═══════════════════════════════════════════════════════════════
 // HABIT TRACKER – Recurring Habits with per-Habit Streaks & Timer
@@ -364,6 +364,7 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
             targetMinutes: verification === "timer" ? targetMinutes : undefined,
             targetCount: verification === "counter" ? targetCount : undefined,
             icon: icon || cat?.icon || "📋",
+            iconSrc: cat?.iconSrc || null,
             createdAt: initialHabit ? initialHabit.createdAt : getToday(),
             currentStreak: initialHabit ? initialHabit.currentStreak : 0,
             bestStreak: initialHabit ? initialHabit.bestStreak : 0,
@@ -597,7 +598,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
         }) : state.quests;
 
         persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpGain));
-        notify(`Habit erledigt! +${xpGain} XP 🔥 Streak: ${(updated.find(h => h.id === habitId)?.currentStreak || 1)}`, "success");
+        notify(`Habit erledigt! +${xpGain} XP Streak: ${(updated.find(h => h.id === habitId)?.currentStreak || 1)}`, "success");
     }, [habits, state, persist, notify, today]);
 
     const updateCounter = useCallback((habitId, value) => {
@@ -634,7 +635,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
 
         persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpToGain));
         if (value >= habit.targetCount && !habit.history?.[today]?.completed) {
-            notify(`Ziel erreicht! 🎯 +12 XP`, "success");
+            notify(`Ziel erreicht! +12 XP`, "success");
         }
     }, [habits, state, persist, notify, today]);
 
@@ -682,7 +683,10 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
 
             {/* Header with progress */}
             <div style={{
-                background: `radial-gradient(ellipse at 90% 20%, ${theme?.primary || "#22d3ee"}0c, ${theme?.card || "rgba(10,10,22,0.92)"} 65%)`,
+                background: `linear-gradient(135deg, rgba(10,10,22,0.9) 0%, rgba(10,10,22,0.4) 100%), url(${BACKGROUNDS.habitBanner})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundBlendMode: "overlay",
                 border: `1px solid ${theme?.primary || "#22d3ee"}15`,
                 borderRadius: 18, padding: "18px 20px", marginBottom: 14,
                 backdropFilter: "blur(16px)",
@@ -725,7 +729,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
 
             {/* Category filter */}
             <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
-                {[{ key: "all", label: "Alle", icon: "📋", color: theme?.accent || "#67e8f9" }, ...HABIT_CATEGORIES].map(f => (
+                {[{ key: "all", label: "Alle", icon: "📋", iconSrc: NAV_ICONS.dashboard, color: theme?.accent || "#67e8f9" }, ...HABIT_CATEGORIES].map(f => (
                     <button key={f.key} onClick={() => setFilter(f.key)} style={{
                         padding: "5px 10px", borderRadius: 8, fontSize: 9, fontWeight: 700, flexShrink: 0,
                         background: filter === f.key ? f.color + "22" : "transparent",
@@ -750,7 +754,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
                 }}>
                     <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.007) 3px, rgba(255,255,255,0.007) 4px)", pointerEvents: "none" }} />
                     <div style={{ position: "relative", zIndex: 1 }}>
-                        <div style={{ fontSize: 44, marginBottom: 12, animation: "float 3s ease-in-out infinite", filter: `drop-shadow(0 0 12px ${theme?.primary || "#22d3ee"}44)` }}>🔄</div>
+                        <div style={{ marginBottom: 12, animation: "float 3s ease-in-out infinite" }}><img src={HABIT_ICONS.manual} alt="Habits" style={{ width: 52, height: 52, objectFit: "contain", opacity: 0.3, filter: `drop-shadow(0 0 12px ${theme?.primary || "#22d3ee"}44)` }} /></div>
                         <div style={{ fontSize: 13, color: "#64748b", fontFamily: "'Cinzel',serif", marginBottom: 8 }}>Keine Habits vorhanden</div>
                         <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>Erstelle deine erste Gewohnheit</div>
                         <button onClick={openCreate} style={{

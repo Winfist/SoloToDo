@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { STAT_ICONS } from "../data/icons.js";
+import { STAT_ICONS, MILESTONE_ICONS, JOB_ICONS } from "../data/icons.js";
+import { JOBS } from "../data/jobs.js";
 
 /**
  * AnalyticsDashboard – Progress Analytics showing XP history,
@@ -12,6 +13,7 @@ export default function AnalyticsDashboard({ state, theme }) {
     const completedQuests = state?.completedQuests || [];
     const habits = state?.habits || [];
     const dungeonHistory = state?.dungeonHistory || [];
+    const userJob = state?.job ? JOBS[state.job] : null;
 
     // ── 30-day data ────────────────────────────────────────────
     const last30 = useMemo(() => {
@@ -100,8 +102,19 @@ export default function AnalyticsDashboard({ state, theme }) {
                 background: theme?.card || "rgba(10,10,22,0.88)",
                 border: `1px solid ${theme?.primary || "#22d3ee"}15`,
                 borderRadius: 18, padding: "18px 20px", marginBottom: 14,
+                position: "relative", overflow: "hidden"
             }}>
-                <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 14 }}>
+                {/* Epic Class Portrait Background */}
+                <div style={{
+                    position: "absolute", top: -20, right: -20, width: 200, height: 200,
+                    opacity: 0.2, pointerEvents: "none", zIndex: 0, mixBlendMode: "screen",
+                    filter: "grayscale(0.5)"
+                }}>
+                    <img src={userJob?.illustrationSrc || JOB_ICONS.necromancerBig} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", filter: userJob ? `drop-shadow(0 0 10px ${userJob.color})` : "none" }} />
+                </div>
+                
+                <div style={{ position: "relative", zIndex: 1 }}>
+                    <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 14 }}>
                     <img src={STAT_ICONS.str} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: "brightness(1.1)", verticalAlign: "middle", marginRight: 4 }} /> DEINE ENTWICKLUNG (30 TAGE)
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
@@ -115,8 +128,11 @@ export default function AnalyticsDashboard({ state, theme }) {
                             textAlign: "center", padding: "12px 4px",
                             background: `linear-gradient(135deg, rgba(255,255,255,0.02), ${s.color}06)`, borderRadius: 14,
                             border: `1px solid ${s.color}15`,
-                            boxShadow: `0 0 12px ${s.color}08`,
+                            boxShadow: `0 0 12px ${s.color}08`, position: "relative"
                         }}>
+                            {s.label === "Streak" && currentStreak >= 100 && (
+                                <img src={MILESTONE_ICONS.streak100} alt="100 Days" style={{ position: "absolute", top: -14, right: -14, width: 36, height: 36, filter: "drop-shadow(0 0 8px rgba(168,85,247,0.8))" }} />
+                            )}
                             <div style={{ fontSize: 20, fontWeight: 900, color: s.color, fontFamily: "'Cinzel',serif" }}>{s.value}</div>
                             <div style={{ fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 2 }}>{s.label}</div>
                             <div style={{ fontSize: 7, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{s.sub}</div>
@@ -134,6 +150,7 @@ export default function AnalyticsDashboard({ state, theme }) {
                         <div style={{ fontSize: 8, color: "#334155", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>TOTAL GOLD</div>
                         <div style={{ fontSize: 16, fontWeight: 800, color: "#fbbf24", fontFamily: "'Cinzel',serif" }}>{(state?.totalGoldEarned || 0).toLocaleString()}</div>
                     </div>
+                </div>
                 </div>
             </div>
 

@@ -3,7 +3,7 @@ import { JOBS } from "./jobs.js";
 import { QUEST_POOL } from "./questPool.js";
 import { db, auth } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { STAT_ICONS, SHADOW_ICONS, GATE_ICONS, ITEM_ICONS, QUEST_ICONS, DIFF_ICONS, ROLE_ICONS, STYLE_ICONS, DUNGEON_ICONS } from "../data/icons.js";
+import { STAT_ICONS, SHADOW_ICONS, GATE_ICONS, ITEM_ICONS, QUEST_ICONS, DIFF_ICONS, ROLE_ICONS, STYLE_ICONS, DUNGEON_ICONS, BACKGROUNDS, STORY_ICONS, HABIT_ICONS, NAV_ICONS, MICRO_ICONS, SHOP_ICONS, SKILL_ICONS, SYSTEM_ICONS, BOSS_ICONS, ABILITY_ICONS, JOB_ICONS } from "../data/icons.js";
 
 const RANKS = [
   { name: "E", label: "E-Rank Hunter", minLv: 1, maxLv: 10, xpPerLv: 100, color: "#6b7280", glow: "rgba(107,114,128,0.4)" },
@@ -162,15 +162,15 @@ const NAMED_SHADOWS = {
     id: "igris", name: "Igris", title: "The Bloodred Commander",
     class: "knight", tier: 4, icon: "🩸", iconSrc: SHADOW_ICONS.igris,
     unlockCondition: { type: "dungeon_rank", dungeonRank: "A", desc: "A-Rank Dungeon besiegen" },
-    uniqueAbility: { name: "Crimson Blade", effect: "Critical Strike +50% in Dungeons", icon: "⚔️" },
+    uniqueAbility: { name: "Crimson Blade", effect: "Critical Strike +50% in Dungeons", icon: "⚔️", iconSrc: ITEM_ICONS.blade },
     lore: "Einst ein loyaler Ritter, nun der treueste Schatten des Monarchen.",
     glowColor: "#dc2626",
   },
   tank: {
     id: "tank", name: "Tank", title: "The Iron Fortress",
-    class: "knight", tier: 4, icon: "🛡️",
+    class: "knight", tier: 4, icon: "🛡️", iconSrc: SHADOW_ICONS.knight,
     unlockCondition: { type: "stat", stat: "vit", value: 100, desc: "VIT 100 erreichen" },
-    uniqueAbility: { name: "Unbreakable Defense", effect: "1x täglich: Dungeon-Schaden Immunität", icon: "🛡️" },
+    uniqueAbility: { name: "Unbreakable Defense", effect: "1x täglich: Dungeon-Schaden Immunität", icon: "🛡️", iconSrc: SKILL_ICONS.defense },
     lore: "Ein Koloss aus Schatten, unerschütterlich wie ein Berg.",
     glowColor: "#3b82f6",
   },
@@ -178,7 +178,7 @@ const NAMED_SHADOWS = {
     id: "beru", name: "Beru", title: "The Ant King",
     class: "assassin", tier: 4, icon: "🐜", iconSrc: SHADOW_ICONS.beru,
     unlockCondition: { type: "dungeon_rank", dungeonRank: "S", desc: "S-Rank Dungeon besiegen" },
-    uniqueAbility: { name: "Consume", effect: "Absorbiert 5% der Boss-Stats permanent", icon: "👅" },
+    uniqueAbility: { name: "Consume", effect: "Absorbiert 5% der Boss-Stats permanent", icon: "👅", iconSrc: ABILITY_ICONS.consume },
     lore: "Der gefallene König der Ameisen, wiedergeboren als Schatten.",
     glowColor: "#22c55e",
   },
@@ -186,7 +186,7 @@ const NAMED_SHADOWS = {
     id: "bellion", name: "Bellion", title: "The Grand Marshal",
     class: "commander", tier: 5, icon: "⚜️", iconSrc: SHADOW_ICONS.bellion,
     unlockCondition: { type: "level", value: 90, desc: "Level 90 erreichen" },
-    uniqueAbility: { name: "Army Command", effect: "Kann gesamte Shadow Army gleichzeitig kommandieren", icon: "👑" },
+    uniqueAbility: { name: "Army Command", effect: "Kann gesamte Shadow Army gleichzeitig kommandieren", icon: "👑", iconSrc: SHADOW_ICONS.commander },
     lore: "Der oberste General des ursprünglichen Shadow Monarchen.",
     glowColor: "#f59e0b",
   },
@@ -300,114 +300,114 @@ function checkNamedShadowUnlocks(state) {
 
 // ─── ACHIEVEMENTS ─────────────────────────────────────────────
 const ACHIEVEMENTS = [
-  { id: "first_quest", name: "Erste Schritte", icon: "⚔️", desc: "Schließe deine erste Quest ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 1, reward: { xp: 50, gold: 20 } },
-  { id: "quests_10", name: "Fleißiger Hunter", icon: "📋", desc: "Schließe 10 Quests ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 10, reward: { xp: 100, gold: 50 } },
-  { id: "quests_50", name: "Quest Meister", icon: "🏆", desc: "Schließe 50 Quests ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 50, reward: { xp: 500, gold: 200 } },
-  { id: "quests_100", name: "Legendärer Hunter", icon: "👑", desc: "Schließe 100 Quests ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 100, reward: { xp: 1000, gold: 500, title: "Legendary Hunter" } },
-  { id: "boss_first", name: "Besieger", icon: "💀", desc: "Schließe deine erste Boss-Quest ab", cat: "quests", check: s => (s.shadowArmy?.shadows || []).length >= 1, reward: { xp: 200, gold: 100 } },
-  { id: "boss_5", name: "Schattenherr", icon: "🌑", desc: "Beschwöre 5 Schatten", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).length >= 5, reward: { xp: 400, gold: 200 } },
-  { id: "boss_15", name: "Schattenmonarch", icon: "☠️", desc: "Beschwöre 15 Schatten", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).length >= 15, reward: { xp: 1500, gold: 600, title: "Shadow Monarch" } },
-  { id: "shadow_named", name: "Erste Berufung", icon: "🩸", desc: "Erwecke einen Named Shadow", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).some(sh => sh.isNamed), reward: { xp: 800, gold: 400, title: "Shadow Sovereign" } },
-  { id: "shadow_tier3", name: "Elite Armee", icon: "💜", desc: "Habe einen Tier-3 Shadow", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).some(sh => sh.tier >= 3), reward: { xp: 600, gold: 300 } },
-  { id: "formation_full", name: "Volles Kommando", icon: "🎖️", desc: "Fülle alle Formation-Slots", cat: "shadows", check: s => { const a = s.shadowArmy; if (!a) return false; const d = a.shadows.filter(sh => sh.isDeployed); return d.filter(sh => sh.deploymentSlot === "vanguard").length >= 3 && d.filter(sh => sh.deploymentSlot === "core").length >= 5; }, reward: { xp: 1000, gold: 500 } },
-  { id: "streak_3", name: "Beständigkeit", icon: "🔥", desc: "Erreiche einen 3-Tage Streak", cat: "streaks", check: s => (s.streak || 0) >= 3, reward: { xp: 100, gold: 50 } },
-  { id: "streak_7", name: "Unaufhaltsam", icon: "⚡", desc: "Erreiche einen 7-Tage Streak", cat: "streaks", check: s => (s.streak || 0) >= 7, reward: { xp: 300, gold: 150, title: "Unstoppable" } },
-  { id: "streak_30", name: "Eiserne Disziplin", icon: "💎", desc: "Erreiche einen 30-Tage Streak", cat: "streaks", check: s => (s.streak || 0) >= 30, reward: { xp: 2000, gold: 1000, title: "Iron Discipline" } },
-  { id: "level_10", name: "Erweckung", icon: "✨", desc: "Erreiche Level 10", cat: "progress", check: s => s.level >= 10, reward: { xp: 100, gold: 50 } },
-  { id: "rank_d", name: "D-Rang Aufstieg", icon: "🌀", desc: "Erreiche D-Rang (Level 11)", cat: "progress", check: s => s.level >= 11, reward: { xp: 300, gold: 150 } },
-  { id: "rank_c", name: "C-Rang Aufstieg", icon: "💚", desc: "Erreiche C-Rang (Level 21)", cat: "progress", check: s => s.level >= 21, reward: { xp: 600, gold: 300 } },
-  { id: "rank_b", name: "B-Rang Aufstieg", icon: "💜", desc: "Erreiche B-Rang (Level 36)", cat: "progress", check: s => s.level >= 36, reward: { xp: 1200, gold: 600 } },
-  { id: "rank_a", name: "A-Rang Aufstieg", icon: "🧡", desc: "Erreiche A-Rang (Level 51)", cat: "progress", check: s => s.level >= 51, reward: { xp: 2500, gold: 1000, title: "A-Rank Hunter" } },
-  { id: "rank_s", name: "S-Rang Aufstieg", icon: "❤️", desc: "Erreiche S-Rang (Level 71)", cat: "progress", check: s => s.level >= 71, reward: { xp: 5000, gold: 2000, title: "S-Rank Hunter" } },
-  { id: "dungeon_first", name: "Gate Öffner", icon: "🌀", desc: "Bezwinge deinen ersten Dungeon", cat: "dungeons", check: s => (s.dungeonHistory || []).filter(d => d.won).length >= 1, reward: { xp: 200, gold: 100 } },
-  { id: "dungeon_10", name: "Dungeon Meister", icon: "🏯", desc: "Bezwinge 10 Dungeons", cat: "dungeons", check: s => (s.dungeonHistory || []).filter(d => d.won).length >= 10, reward: { xp: 800, gold: 400 } },
-  { id: "dungeon_25", name: "Gate Legende", icon: "⚡", desc: "Bezwinge 25 Dungeons", cat: "dungeons", check: s => (s.dungeonHistory || []).filter(d => d.won).length >= 25, reward: { xp: 2000, gold: 800, title: "Gate Legend" } },
-  { id: "str_20", name: "Krieger", icon: "💪", desc: "Erreiche STR 20", cat: "stats", check: s => (s.stats?.str || 0) >= 20, reward: { xp: 150, gold: 75 } },
-  { id: "int_20", name: "Gelehrter", icon: "🧠", desc: "Erreiche INT 20", cat: "stats", check: s => (s.stats?.int || 0) >= 20, reward: { xp: 150, gold: 75 } },
-  { id: "vit_20", name: "Eiserner Körper", icon: "🛡️", desc: "Erreiche VIT 20", cat: "stats", check: s => (s.stats?.vit || 0) >= 20, reward: { xp: 150, gold: 75 } },
-  { id: "agi_20", name: "Blitzschnell", icon: "💨", desc: "Erreiche AGI 20", cat: "stats", check: s => (s.stats?.agi || 0) >= 20, reward: { xp: 150, gold: 75 } },
-  { id: "all_stats_10", name: "Ausgewogener Hunter", icon: "⭐", desc: "Alle Stats auf 10", cat: "stats", check: s => Object.values(s.stats || {}).every(v => v >= 10), reward: { xp: 400, gold: 200 } },
-  { id: "gold_1000", name: "Goldfieber", icon: "💰", desc: "Sammle insgesamt 1000 Gold", cat: "misc", check: s => (s.totalGoldEarned || 0) >= 1000, reward: { xp: 200, gold: 0 } },
-  { id: "equip_first", name: "Ausgerüstet", icon: "🗡️", desc: "Equipe dein erstes Item", cat: "misc", check: s => Object.values(s.equipment?.slots || {}).some(v => v), reward: { xp: 100, gold: 50 } },
-  { id: "story_ch1", name: "Erste Erweckung", icon: "📖", desc: "Schließe Kapitel 1 ab", cat: "story", check: s => (s.story?.completedChapters || []).includes("ch1"), reward: { xp: 100, gold: 50 } },
-  { id: "story_arc1", name: "Der schwächste Hunter", icon: "🗡️", desc: "Schließe Arc 1 komplett ab", cat: "story", check: s => ["ch1", "ch2", "ch3"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 500, gold: 200, title: "Survivor" } },
-  { id: "story_arise", name: "ARISE", icon: "🌑", desc: "Schließe das ARISE-Kapitel ab", cat: "story", check: s => (s.story?.completedChapters || []).includes("ch7"), reward: { xp: 800, gold: 400, title: "Shadow Master" } },
-  { id: "story_arc3", name: "Der Schattenmonarch erwacht", icon: "👑", desc: "Schließe Arc 3 komplett ab", cat: "story", check: s => ["ch7", "ch8", "ch9"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 2000, gold: 1000 } },
-  { id: "story_complete", name: "Shadow Monarch", icon: "☠️", desc: "Schließe die gesamte Story aus", cat: "story", check: s => ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8", "ch9", "ch10", "ch11", "ch12", "ch13", "ch14", "ch15", "ch16", "ch17", "ch18", "ch19", "ch20"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 25000, gold: 10000, title: "Shadow Monarch" } },
-  { id: "health_link", name: "Vitalität Gekoppelt", icon: "❤️", desc: "Synchronisiere zum ersten Mal Health Tracker Daten", cat: "misc", check: s => !!s.healthSyncDate, reward: { xp: 300, gold: 100 } },
-  { id: "challenge_first", name: "Rookie Herausforderer", icon: "🎖️", desc: "Schließe deine erste Community/Weekly Challenge ab", cat: "quests", check: s => (s.completedChallenges || []).length >= 1, reward: { xp: 400, gold: 150 } },
-  { id: "challenge_master", name: "Veteran der Gilde", icon: "🌍", desc: "Schließe 5 Challenges ab", cat: "quests", check: s => (s.completedChallenges || []).length >= 5, reward: { xp: 1500, gold: 600, title: "Guild Veteran" } },
-  { id: "focus_10", name: "Tiefen Fokus", icon: "⏳", desc: "Nutze den Focus Mode für insgesamt 10 Sessions", cat: "streaks", check: s => (s.stats?.focusSessions || 0) >= 10, reward: { xp: 500, gold: 200 } },
-  { id: "micro_100", name: "Drop-by-Drop", icon: "💧", desc: "Absolviere 100 Micro-Habit Taps", cat: "habits", check: s => (s.microHabits?.totalTaps || 0) >= 100, reward: { xp: 400, gold: 150 } },
+  { id: "first_quest", name: "Erste Schritte", icon: "⚔️", iconSrc: QUEST_ICONS.daily, desc: "Schließe deine erste Quest ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 1, reward: { xp: 50, gold: 20 } },
+  { id: "quests_10", name: "Fleißiger Hunter", icon: "📋", iconSrc: QUEST_ICONS.weekly, desc: "Schließe 10 Quests ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 10, reward: { xp: 100, gold: 50 } },
+  { id: "quests_50", name: "Quest Meister", icon: "🏆", iconSrc: QUEST_ICONS.chain, desc: "Schließe 50 Quests ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 50, reward: { xp: 500, gold: 200 } },
+  { id: "quests_100", name: "Legendärer Hunter", icon: "👑", iconSrc: NAV_ICONS.achievements, desc: "Schließe 100 Quests ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 100, reward: { xp: 1000, gold: 500, title: "Legendary Hunter" } },
+  { id: "boss_first", name: "Besieger", icon: "💀", iconSrc: DIFF_ICONS.boss, desc: "Schließe deine erste Boss-Quest ab", cat: "quests", check: s => (s.shadowArmy?.shadows || []).length >= 1, reward: { xp: 200, gold: 100 } },
+  { id: "boss_5", name: "Schattenherr", icon: "🌑", iconSrc: SHADOW_ICONS.soldier, desc: "Beschwöre 5 Schatten", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).length >= 5, reward: { xp: 400, gold: 200 } },
+  { id: "boss_15", name: "Schattenmonarch", icon: "☠️", iconSrc: SHADOW_ICONS.commander, desc: "Beschwöre 15 Schatten", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).length >= 15, reward: { xp: 1500, gold: 600, title: "Shadow Monarch" } },
+  { id: "shadow_named", name: "Erste Berufung", icon: "🩸", iconSrc: SHADOW_ICONS.igris, desc: "Erwecke einen Named Shadow", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).some(sh => sh.isNamed), reward: { xp: 800, gold: 400, title: "Shadow Sovereign" } },
+  { id: "shadow_tier3", name: "Elite Armee", icon: "💜", iconSrc: SHADOW_ICONS.knight, desc: "Habe einen Tier-3 Shadow", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).some(sh => sh.tier >= 3), reward: { xp: 600, gold: 300 } },
+  { id: "formation_full", name: "Volles Kommando", icon: "🎖️", iconSrc: ROLE_ICONS.core, desc: "Fülle alle Formation-Slots", cat: "shadows", check: s => { const a = s.shadowArmy; if (!a) return false; const d = a.shadows.filter(sh => sh.isDeployed); return d.filter(sh => sh.deploymentSlot === "vanguard").length >= 3 && d.filter(sh => sh.deploymentSlot === "core").length >= 5; }, reward: { xp: 1000, gold: 500 } },
+  { id: "streak_3", name: "Beständigkeit", icon: "🔥", iconSrc: STAT_ICONS.str, desc: "Erreiche einen 3-Tage Streak", cat: "streaks", check: s => (s.streak || 0) >= 3, reward: { xp: 100, gold: 50 } },
+  { id: "streak_7", name: "Unaufhaltsam", icon: "⚡", iconSrc: STAT_ICONS.agi, desc: "Erreiche einen 7-Tage Streak", cat: "streaks", check: s => (s.streak || 0) >= 7, reward: { xp: 300, gold: 150, title: "Unstoppable" } },
+  { id: "streak_30", name: "Eiserne Disziplin", icon: "💎", iconSrc: NAV_ICONS.timer, desc: "Erreiche einen 30-Tage Streak", cat: "streaks", check: s => (s.streak || 0) >= 30, reward: { xp: 2000, gold: 1000, gems: 10, title: "Iron Discipline" } },
+  { id: "level_10", name: "Erweckung", icon: "✨", iconSrc: STAT_ICONS.int, desc: "Erreiche Level 10", cat: "progress", check: s => s.level >= 10, reward: { xp: 100, gold: 50 } },
+  { id: "rank_d", name: "D-Rang Aufstieg", icon: "🌀", iconSrc: GATE_ICONS.normal, desc: "Erreiche D-Rang (Level 11)", cat: "progress", check: s => s.level >= 11, reward: { xp: 300, gold: 150 } },
+  { id: "rank_c", name: "C-Rang Aufstieg", icon: "💚", iconSrc: GATE_ICONS.ice, desc: "Erreiche C-Rang (Level 21)", cat: "progress", check: s => s.level >= 21, reward: { xp: 600, gold: 300 } },
+  { id: "rank_b", name: "B-Rang Aufstieg", icon: "💜", iconSrc: GATE_ICONS.saferoom, desc: "Erreiche B-Rang (Level 36)", cat: "progress", check: s => s.level >= 36, reward: { xp: 1200, gold: 600 } },
+  { id: "rank_a", name: "A-Rang Aufstieg", icon: "🧡", iconSrc: GATE_ICONS.red, desc: "Erreiche A-Rang (Level 51)", cat: "progress", check: s => s.level >= 51, reward: { xp: 2500, gold: 1000, title: "A-Rank Hunter" } },
+  { id: "rank_s", name: "S-Rang Aufstieg", icon: "❤️", iconSrc: DUNGEON_ICONS.bloodmoon, desc: "Erreiche S-Rang (Level 71)", cat: "progress", check: s => s.level >= 71, reward: { xp: 5000, gold: 2000, title: "S-Rank Hunter" } },
+  { id: "dungeon_first", name: "Gate Öffner", icon: "🌀", iconSrc: GATE_ICONS.normal, desc: "Bezwinge deinen ersten Dungeon", cat: "dungeons", check: s => (s.dungeonHistory || []).filter(d => d.won).length >= 1, reward: { xp: 200, gold: 100 } },
+  { id: "dungeon_10", name: "Dungeon Meister", icon: "🏯", iconSrc: DUNGEON_ICONS.densemana, desc: "Bezwinge 10 Dungeons", cat: "dungeons", check: s => (s.dungeonHistory || []).filter(d => d.won).length >= 10, reward: { xp: 800, gold: 400 } },
+  { id: "dungeon_25", name: "Gate Legende", icon: "⚡", iconSrc: DIFF_ICONS.boss, desc: "Bezwinge 25 Dungeons", cat: "dungeons", check: s => (s.dungeonHistory || []).filter(d => d.won).length >= 25, reward: { xp: 2000, gold: 800, title: "Gate Legend" } },
+  { id: "str_20", name: "Krieger", icon: "💪", iconSrc: STAT_ICONS.str, desc: "Erreiche STR 20", cat: "stats", check: s => (s.stats?.str || 0) >= 20, reward: { xp: 150, gold: 75 } },
+  { id: "int_20", name: "Gelehrter", icon: "🧠", iconSrc: STAT_ICONS.int, desc: "Erreiche INT 20", cat: "stats", check: s => (s.stats?.int || 0) >= 20, reward: { xp: 150, gold: 75 } },
+  { id: "vit_20", name: "Eiserner Körper", icon: "🛡️", iconSrc: STAT_ICONS.vit, desc: "Erreiche VIT 20", cat: "stats", check: s => (s.stats?.vit || 0) >= 20, reward: { xp: 150, gold: 75 } },
+  { id: "agi_20", name: "Blitzschnell", icon: "💨", iconSrc: STAT_ICONS.agi, desc: "Erreiche AGI 20", cat: "stats", check: s => (s.stats?.agi || 0) >= 20, reward: { xp: 150, gold: 75 } },
+  { id: "all_stats_10", name: "Ausgewogener Hunter", icon: "⭐", iconSrc: NAV_ICONS.dashboard, desc: "Alle Stats auf 10", cat: "stats", check: s => Object.values(s.stats || {}).every(v => v >= 10), reward: { xp: 400, gold: 200 } },
+  { id: "gold_1000", name: "Goldfieber", icon: "💰", iconSrc: NAV_ICONS.shop, desc: "Sammle insgesamt 1000 Gold", cat: "misc", check: s => (s.totalGoldEarned || 0) >= 1000, reward: { xp: 200, gold: 0 } },
+  { id: "equip_first", name: "Ausgerüstet", icon: "🗡️", iconSrc: ITEM_ICONS.armor, desc: "Equipe dein erstes Item", cat: "misc", check: s => Object.values(s.equipment?.slots || {}).some(v => v), reward: { xp: 100, gold: 50 } },
+  { id: "story_ch1", name: "Erste Erweckung", icon: "📖", iconSrc: STORY_ICONS.scroll, desc: "Schließe Kapitel 1 ab", cat: "story", check: s => (s.story?.completedChapters || []).includes("ch1"), reward: { xp: 100, gold: 50 } },
+  { id: "story_arc1", name: "Der schwächste Hunter", icon: "🗡️", iconSrc: STORY_ICONS.helmet, desc: "Schließe Arc 1 komplett ab", cat: "story", check: s => ["ch1", "ch2", "ch3"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 500, gold: 200, title: "Survivor" } },
+  { id: "story_arise", name: "ARISE", icon: "🌑", iconSrc: STORY_ICONS.arise, desc: "Schließe das ARISE-Kapitel ab", cat: "story", check: s => (s.story?.completedChapters || []).includes("ch7"), reward: { xp: 800, gold: 400, title: "Shadow Master" } },
+  { id: "story_arc3", name: "Der Schattenmonarch erwacht", icon: "👑", iconSrc: STORY_ICONS.blackheart, desc: "Schließe Arc 3 komplett ab", cat: "story", check: s => ["ch7", "ch8", "ch9"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 2000, gold: 1000 } },
+  { id: "story_complete", name: "Shadow Monarch", icon: "☠️", iconSrc: NAV_ICONS.achievements, desc: "Schließe die gesamte Story aus", cat: "story", check: s => ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7", "ch8", "ch9", "ch10", "ch11", "ch12", "ch13", "ch14", "ch15", "ch16", "ch17", "ch18", "ch19", "ch20"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 25000, gold: 10000, gems: 50, title: "Shadow Monarch" } },
+  { id: "health_link", name: "Vitalität Gekoppelt", icon: "❤️", iconSrc: HABIT_ICONS.health, desc: "Synchronisiere zum ersten Mal Health Tracker Daten", cat: "misc", check: s => !!s.healthSyncDate, reward: { xp: 300, gold: 100 } },
+  { id: "challenge_first", name: "Rookie Herausforderer", icon: "🎖️", iconSrc: QUEST_ICONS.emergency, desc: "Schließe deine erste Community/Weekly Challenge ab", cat: "quests", check: s => (s.completedChallenges || []).length >= 1, reward: { xp: 400, gold: 150 } },
+  { id: "challenge_master", name: "Veteran der Gilde", icon: "🌍", iconSrc: NAV_ICONS.guild, desc: "Schließe 5 Challenges ab", cat: "quests", check: s => (s.completedChallenges || []).length >= 5, reward: { xp: 1500, gold: 600, title: "Guild Veteran" } },
+  { id: "focus_10", name: "Tiefen Fokus", icon: "⏳", iconSrc: HABIT_ICONS.timer, desc: "Nutze den Focus Mode für insgesamt 10 Sessions", cat: "streaks", check: s => (s.stats?.focusSessions || 0) >= 10, reward: { xp: 500, gold: 200 } },
+  { id: "micro_100", name: "Drop-by-Drop", icon: "💧", iconSrc: MICRO_ICONS.water, desc: "Absolviere 100 Micro-Habit Taps", cat: "habits", check: s => (s.microHabits?.totalTaps || 0) >= 100, reward: { xp: 400, gold: 150 } },
 ];
 
 // ─── SKILLS ───────────────────────────────────────────────────
 const SKILLS = [
-  { id: "power_strike", name: "Power Strike", icon: "⚔️", stat: "str", threshold: 10, desc: "+5% XP aus STR-Quests", effect: { type: "xp_bonus_cat", cat: "str", bonus: 0.05 } },
-  { id: "berserker", name: "Berserker Instinct", icon: "🔥", stat: "str", threshold: 25, desc: "+15% XP aus Hard & Boss Quests", effect: { type: "xp_hard_bonus", bonus: 0.15 } },
-  { id: "quick_learner", name: "Quick Learner", icon: "📖", stat: "int", threshold: 10, desc: "+5% XP aus INT-Quests", effect: { type: "xp_bonus_cat", cat: "int", bonus: 0.05 } },
-  { id: "tactical_mind", name: "Tactical Mind", icon: "🧠", stat: "int", threshold: 25, desc: "+10% Dungeon Erfolgswahrscheinlichkeit", effect: { type: "dungeon_bonus", bonus: 10 } },
-  { id: "resilience", name: "Resilience", icon: "🛡️", stat: "vit", threshold: 10, desc: "1 Tag Streak-Schutz", effect: { type: "streak_shield", days: 1 } },
-  { id: "iron_will", name: "Iron Will", icon: "💪", stat: "vit", threshold: 25, desc: "+2 Tage Streak-Schutz", effect: { type: "streak_shield", days: 2 } },
-  { id: "swift_fingers", name: "Swift Fingers", icon: "💨", stat: "agi", threshold: 10, desc: "+5% Gold aus allen Quests", effect: { type: "gold_bonus", bonus: 0.05 } },
-  { id: "shadow_step", name: "Shadow Step", icon: "🌑", stat: "agi", threshold: 25, desc: "+10% Erfolg mit AGI-Strategie", effect: { type: "strat_bonus", strat: "agi", bonus: 10 } },
-  { id: "presence", name: "Sovereign Presence", icon: "👥", stat: "cha", threshold: 10, desc: "+3% XP Bonus global", effect: { type: "xp_global", bonus: 0.03 } },
-  { id: "cmd_aura", name: "Commanding Aura", icon: "👑", stat: "cha", threshold: 25, desc: "Schatten-Boss-Quests +30% XP", effect: { type: "shadow_xp", bonus: 0.30 } },
+  { id: "power_strike", name: "Power Strike", icon: "⚔️", iconSrc: SKILL_ICONS.attack, stat: "str", threshold: 10, desc: "+5% XP aus STR-Quests", effect: { type: "xp_bonus_cat", cat: "str", bonus: 0.05 } },
+  { id: "berserker", name: "Berserker Instinct", icon: "🔥", iconSrc: SKILL_ICONS.attack, stat: "str", threshold: 25, desc: "+15% XP aus Hard & Boss Quests", effect: { type: "xp_hard_bonus", bonus: 0.15 } },
+  { id: "quick_learner", name: "Quick Learner", icon: "📖", iconSrc: SKILL_ICONS.magic, stat: "int", threshold: 10, desc: "+5% XP aus INT-Quests", effect: { type: "xp_bonus_cat", cat: "int", bonus: 0.05 } },
+  { id: "tactical_mind", name: "Tactical Mind", icon: "🧠", iconSrc: SKILL_ICONS.magic, stat: "int", threshold: 25, desc: "+10% Dungeon Erfolgswahrscheinlichkeit", effect: { type: "dungeon_bonus", bonus: 10 } },
+  { id: "resilience", name: "Resilience", icon: "🛡️", iconSrc: SKILL_ICONS.defense, stat: "vit", threshold: 10, desc: "1 Tag Streak-Schutz", effect: { type: "streak_shield", days: 1 } },
+  { id: "iron_will", name: "Iron Will", icon: "💪", iconSrc: SKILL_ICONS.defense, stat: "vit", threshold: 25, desc: "+2 Tage Streak-Schutz", effect: { type: "streak_shield", days: 2 } },
+  { id: "swift_fingers", name: "Swift Fingers", icon: "💨", iconSrc: SKILL_ICONS.speed, stat: "agi", threshold: 10, desc: "+5% Gold aus allen Quests", effect: { type: "gold_bonus", bonus: 0.05 } },
+  { id: "shadow_step", name: "Shadow Step", icon: "🌑", iconSrc: SKILL_ICONS.speed, stat: "agi", threshold: 25, desc: "+10% Erfolg mit AGI-Strategie", effect: { type: "strat_bonus", strat: "agi", bonus: 10 } },
+  { id: "presence", name: "Sovereign Presence", icon: "👥", iconSrc: SKILL_ICONS.magic, stat: "cha", threshold: 10, desc: "+3% XP Bonus global", effect: { type: "xp_global", bonus: 0.03 } },
+  { id: "cmd_aura", name: "Commanding Aura", icon: "👑", iconSrc: SYSTEM_ICONS.logo, stat: "cha", threshold: 25, desc: "Schatten-Boss-Quests +30% XP", effect: { type: "shadow_xp", bonus: 0.30 } },
 ];
 
 // ─── DUNGEON MODIFIERS ────────────────────────────────────────
 const DUNGEON_MODIFIERS = [
   { id: "blood_moon", name: "Blood Moon", icon: "🌙", iconSrc: DUNGEON_ICONS.bloodmoon, desc: "+50% XP, +15% Schwierigkeit", xpMult: 1.5, diffMod: 15, color: "#ef4444" },
   { id: "dense_mana", name: "Dense Mana", icon: "💜", iconSrc: DUNGEON_ICONS.densemana, desc: "INT-Strategien +20% Erfolg", intBonus: 20, color: "#a78bfa" },
-  { id: "blessing", name: "Hunter's Bless", icon: "✨", desc: "+10% Erfolg für alle Gates", successBonus: 10, color: "#f59e0b" },
-  { id: "shadow_surge", name: "Shadow Surge", icon: "🌑", desc: "Boss-Quest XP x2", shadowXpMult: 2.0, color: "#6366f1" },
-  { id: "double_loot", name: "Double Loot", icon: "💰", desc: "+60% Gold aus Dungeons", goldMult: 1.6, color: "#22c55e" },
-  { id: "none", name: "Stable Gates", icon: "🌀", desc: "Keine besonderen Bedingungen", color: "#64748b" },
+  { id: "blessing", name: "Hunter's Bless", icon: "✨", iconSrc: STAT_ICONS.int, desc: "+10% Erfolg für alle Gates", successBonus: 10, color: "#f59e0b" },
+  { id: "shadow_surge", name: "Shadow Surge", icon: "🌑", iconSrc: SHADOW_ICONS.commander, desc: "Boss-Quest XP x2", shadowXpMult: 2.0, color: "#6366f1" },
+  { id: "double_loot", name: "Double Loot", icon: "💰", iconSrc: ITEM_ICONS.ring, desc: "+60% Gold aus Dungeons", goldMult: 1.6, color: "#22c55e" },
+  { id: "none", name: "Stable Gates", icon: "🌀", iconSrc: GATE_ICONS.normal, desc: "Keine besonderen Bedingungen", color: "#64748b" },
 ];
 
 // ─── SPRINT 3: DUNGEON ENHANCEMENTS ──────────────────────────
 
 const FLOOR_TYPES = {
-  combat: { name: "Combat", icon: "⚔️", color: "#ef4444", desc: "Gegner blockieren den Weg", safeRoom: false },
-  elite: { name: "Elite", icon: "💀", iconSrc: DUNGEON_ICONS.floorElite, color: "#a855f7", desc: "Mächtiger Elite-Gegner", safeRoom: false },
-  puzzle: { name: "Puzzle", icon: "🔮", iconSrc: DUNGEON_ICONS.floorPuzzle, color: "#3b82f6", desc: "Magisches Rätsel – INT hilft", safeRoom: false },
-  trap: { name: "Trap", icon: "⚡", color: "#f59e0b", desc: "Fallen-Korridor – AGI gefragt", safeRoom: false },
-  safe_room: { name: "Safe Room", icon: "🏕️", color: "#22c55e", desc: "Erholungsraum – Heilt Ausdauer", safeRoom: true },
-  treasure: { name: "Treasure", icon: "💰", color: "#fbbf24", desc: "Schatzkammer – Bonus-Gold", safeRoom: false },
-  ambush: { name: "Ambush", icon: "🗡️", color: "#dc2626", desc: "Hinterhalt! Vorsicht geboten", safeRoom: false },
-  boss_arena: { name: "Boss Arena", icon: "👑", color: "#e879f9", desc: "Endboss-Kammer", safeRoom: false },
+  combat:    { name: "Combat",    icon: "⚔️", iconSrc: SKILL_ICONS.attack,          color: "#ef4444", desc: "Gegner blockieren den Weg",        safeRoom: false },
+  elite:     { name: "Elite",     icon: "💀", iconSrc: DUNGEON_ICONS.floorElite,     color: "#a855f7", desc: "Mächtiger Elite-Gegner",            safeRoom: false },
+  puzzle:    { name: "Puzzle",    icon: "🔮", iconSrc: DUNGEON_ICONS.floorPuzzle,    color: "#3b82f6", desc: "Magisches Rätsel – INT hilft",       safeRoom: false },
+  trap:      { name: "Trap",      icon: "⚡", iconSrc: SKILL_ICONS.speed,            color: "#f59e0b", desc: "Fallen-Korridor – AGI gefragt",      safeRoom: false },
+  safe_room: { name: "Safe Room", icon: "🏕️", iconSrc: GATE_ICONS.saferoom,          color: "#22c55e", desc: "Erholungsraum – Heilt Ausdauer",    safeRoom: true  },
+  treasure:  { name: "Treasure",  icon: "💰", iconSrc: DUNGEON_ICONS.floorTreasure,    color: "#fbbf24", desc: "Schatzkammer – Bonus-Gold",          safeRoom: false },
+  ambush:    { name: "Ambush",    icon: "🗡️", iconSrc: SHADOW_ICONS.assassin,        color: "#dc2626", desc: "Hinterhalt! Vorsicht geboten",       safeRoom: false },
+  boss_arena:{ name: "Boss Arena",icon: "👑", iconSrc: DIFF_ICONS.boss,              color: "#e879f9", desc: "Endboss-Kammer",                     safeRoom: false },
 };
 
 const BOSS_PHASES = {
   E: [
-    { phase: 1, name: "Awakening", hp: 100, desc: "Boss erwacht aus dem Schlaf", icon: "👹", atkMod: 1.0, color: "#6b7280" },
-    { phase: 2, name: "Frenzy", hp: 50, desc: "Boss greift wild um sich!", icon: "😤", atkMod: 1.5, color: "#f59e0b" },
-    { phase: 3, name: "Last Stand", hp: 20, desc: "Verzweifelte letzte Anstrengung", icon: "💀", atkMod: 2.0, color: "#ef4444" },
+    { phase: 1, name: "Awakening", hp: 100, desc: "Boss erwacht aus dem Schlaf", icon: "👹", iconSrc: BOSS_ICONS.awakening, atkMod: 1.0, color: "#6b7280" },
+    { phase: 2, name: "Frenzy", hp: 50, desc: "Boss greift wild um sich!", icon: "😤", iconSrc: BOSS_ICONS.unleashed, atkMod: 1.5, color: "#f59e0b" },
+    { phase: 3, name: "Last Stand", hp: 20, desc: "Verzweifelte letzte Anstrengung", icon: "💀", iconSrc: BOSS_ICONS.deathsdoor, atkMod: 2.0, color: "#ef4444" },
   ],
   D: [
-    { phase: 1, name: "Dominant", hp: 100, desc: "Boss dominiert das Schlachtfeld", icon: "🏯", atkMod: 1.0, color: "#22d3ee" },
-    { phase: 2, name: "Berserker", hp: 60, desc: "Boss verfällt in den Berserkermodus!", icon: "🔥", atkMod: 1.6, color: "#f59e0b" },
-    { phase: 3, name: "Death's Door", hp: 25, desc: "Boss kämpft ums Überleben!", icon: "☠️", atkMod: 2.2, color: "#ef4444" },
+    { phase: 1, name: "Dominant", hp: 100, desc: "Boss dominiert das Schlachtfeld", icon: "🏯", iconSrc: BOSS_ICONS.awakening, atkMod: 1.0, color: "#22d3ee" },
+    { phase: 2, name: "Berserker", hp: 60, desc: "Boss verfällt in den Berserkermodus!", icon: "🔥", iconSrc: BOSS_ICONS.unleashed, atkMod: 1.6, color: "#f59e0b" },
+    { phase: 3, name: "Death's Door", hp: 25, desc: "Boss kämpft ums Überleben!", icon: "☠️", iconSrc: BOSS_ICONS.deathsdoor, atkMod: 2.2, color: "#ef4444" },
   ],
   C: [
-    { phase: 1, name: "Composed", hp: 100, desc: "Boss bleibt kalkulierend", icon: "❄️", atkMod: 1.0, color: "#34d399" },
-    { phase: 2, name: "Unleashed", hp: 65, desc: "Boss entfesselt versteckte Macht!", icon: "💥", atkMod: 1.7, color: "#a78bfa" },
-    { phase: 3, name: "Omega Form", hp: 30, desc: "Boss erreicht seine ultimative Form!", icon: "🌌", atkMod: 2.5, color: "#e879f9" },
+    { phase: 1, name: "Composed", hp: 100, desc: "Boss bleibt kalkulierend", icon: "❄️", iconSrc: BOSS_ICONS.awakening, atkMod: 1.0, color: "#34d399" },
+    { phase: 2, name: "Unleashed", hp: 65, desc: "Boss entfesselt versteckte Macht!", icon: "💥", iconSrc: BOSS_ICONS.unleashed, atkMod: 1.7, color: "#a78bfa" },
+    { phase: 3, name: "Omega Form", hp: 30, desc: "Boss erreicht seine ultimative Form!", icon: "🌌", iconSrc: BOSS_ICONS.calamity, atkMod: 2.5, color: "#e879f9" },
   ],
   B: [
-    { phase: 1, name: "Sovereign", hp: 100, desc: "Boss regiert das Schlachtfeld", icon: "🐉", atkMod: 1.2, color: "#a78bfa" },
-    { phase: 2, name: "Ascended", hp: 70, desc: "Boss steigt auf eine höhere Ebene!", icon: "🌑", atkMod: 1.9, color: "#6366f1" },
-    { phase: 3, name: "True Form", hp: 35, desc: "Boss enthüllt seine wahre Gestalt!", icon: "👁️", atkMod: 2.8, color: "#ef4444" },
+    { phase: 1, name: "Sovereign", hp: 100, desc: "Boss regiert das Schlachtfeld", icon: "🐉", iconSrc: BOSS_ICONS.awakening, atkMod: 1.2, color: "#a78bfa" },
+    { phase: 2, name: "Ascended", hp: 70, desc: "Boss steigt auf eine höhere Ebene!", icon: "🌑", iconSrc: BOSS_ICONS.unleashed, atkMod: 1.9, color: "#6366f1" },
+    { phase: 3, name: "True Form", hp: 35, desc: "Boss enthüllt seine wahre Gestalt!", icon: "👁️", iconSrc: BOSS_ICONS.calamity, atkMod: 2.8, color: "#ef4444" },
   ],
   A: [
-    { phase: 1, name: "Majestic", hp: 100, desc: "Boss demonstriert überwältigende Macht", icon: "🏰", atkMod: 1.3, color: "#f59e0b" },
-    { phase: 2, name: "Catastrophic", hp: 70, desc: "Katastrophale Energie entweicht!", icon: "⚡", atkMod: 2.1, color: "#dc2626" },
-    { phase: 3, name: "Calamity", hp: 40, desc: "Katastrophenform aktiviert!", icon: "🌪️", atkMod: 3.0, color: "#e879f9" },
+    { phase: 1, name: "Majestic", hp: 100, desc: "Boss demonstriert überwältigende Macht", icon: "🏰", iconSrc: BOSS_ICONS.awakening, atkMod: 1.3, color: "#f59e0b" },
+    { phase: 2, name: "Catastrophic", hp: 70, desc: "Katastrophale Energie entweicht!", icon: "⚡", iconSrc: BOSS_ICONS.unleashed, atkMod: 2.1, color: "#dc2626" },
+    { phase: 3, name: "Calamity", hp: 40, desc: "Katastrophenform aktiviert!", icon: "🌪️", iconSrc: BOSS_ICONS.calamity, atkMod: 3.0, color: "#e879f9" },
   ],
   S: [
-    { phase: 1, name: "Monarch", hp: 100, desc: "Ein Monarch betritt das Feld", icon: "👑", atkMod: 1.5, color: "#e879f9" },
-    { phase: 2, name: "Transcendent", hp: 75, desc: "Transzendiert Zeit und Raum!", icon: "🌌", atkMod: 2.5, color: "#f59e0b" },
-    { phase: 3, name: "World Ender", hp: 45, desc: "Die Welt bebt – Alles oder Nichts!", icon: "💀", atkMod: 4.0, color: "#ef4444" },
+    { phase: 1, name: "Monarch", hp: 100, desc: "Ein Monarch betritt das Feld", icon: "👑", iconSrc: BOSS_ICONS.awakening, atkMod: 1.5, color: "#e879f9" },
+    { phase: 2, name: "Transcendent", hp: 75, desc: "Transzendiert Zeit und Raum!", icon: "🌌", iconSrc: BOSS_ICONS.unleashed, atkMod: 2.5, color: "#f59e0b" },
+    { phase: 3, name: "World Ender", hp: 45, desc: "Die Welt bebt – Alles oder Nichts!", icon: "💀", iconSrc: BOSS_ICONS.calamity, atkMod: 4.0, color: "#ef4444" },
   ],
 };
 
@@ -477,7 +477,7 @@ function getFloorLogs(floor, dungeon, strategy, playerStats, isStrong, isWeak) {
 // ─── SPRINT 2: QUEST SYSTEM 2.0 ──────────────────────────────
 
 const QUEST_TYPES_CONFIG = {
-  side: { label: "Side", color: "#a78bfa", icon: "📋", xpMult: 1.0, goldMult: 1.0 },
+  side: { label: "Side", color: "#a78bfa", icon: "📋", iconSrc: NAV_ICONS.goals, xpMult: 1.0, goldMult: 1.0 },
   daily: { label: "Daily", color: "#22d3ee", icon: "📅", iconSrc: QUEST_ICONS.daily, xpMult: 1.2, goldMult: 1.2 },
   weekly: { label: "Weekly", color: "#8b5cf6", icon: "📆", iconSrc: QUEST_ICONS.weekly, xpMult: 2.0, goldMult: 2.0 },
   emergency: { label: "Emergency", color: "#ef4444", icon: "🚨", iconSrc: QUEST_ICONS.emergency, xpMult: 2.5, goldMult: 2.5 },
@@ -617,10 +617,10 @@ const EQUIPMENT_POOL = [
   { id: "shadow_armor", slot: "armor", name: "Shadow Armor", rarity: "rare", icon: "🛡️", iconSrc: ITEM_ICONS.armor, ranks: ["C"], bonus: { streakShield: 2, dungeonBonus: 8 }, desc: "+2 Schutz, +8% Dungeon" },
   { id: "void_plate", slot: "armor", name: "Void Plate", rarity: "epic", icon: "💠", iconSrc: ITEM_ICONS.armor, ranks: ["B"], bonus: { streakShield: 3, dungeonBonus: 12, vitBonus: 5 }, desc: "+3 Schutz, +12% Dungeon, +5 VIT" },
   { id: "monarch_robes", slot: "armor", name: "Monarch's Robes", rarity: "legendary", icon: "👑", iconSrc: ITEM_ICONS.armor, ranks: ["A", "S"], bonus: { streakShield: 5, dungeonBonus: 20, vitBonus: 10 }, desc: "+5 Schutz, +20% Dungeon, +10 VIT" },
-  { id: "copper_ring", slot: "ring", name: "Copper Ring", rarity: "common", icon: "💍", ranks: ["E", "D"], bonus: { goldBonus: 0.05 }, desc: "+5% Gold" },
-  { id: "mana_ring", slot: "ring", name: "Mana Ring", rarity: "uncommon", icon: "🔮", ranks: ["C"], bonus: { xpBonus: 0.05, intBonus: 3 }, desc: "+5% XP, +3 INT" },
-  { id: "shadow_ring", slot: "ring", name: "Shadow Ring", rarity: "rare", icon: "🌀", ranks: ["B"], bonus: { xpBonus: 0.08, goldBonus: 0.08, agiBonus: 3 }, desc: "+8% XP+Gold, +3 AGI" },
-  { id: "monarch_signet", slot: "ring", name: "Monarch's Signet", rarity: "legendary", icon: "💎", ranks: ["S"], bonus: { xpBonus: 0.15, goldBonus: 0.15, chaBonus: 10 }, desc: "+15% XP+Gold, +10 CHA" },
+  { id: "copper_ring", slot: "ring", name: "Copper Ring", rarity: "common", icon: "💍", iconSrc: ITEM_ICONS.ring, ranks: ["E", "D"], bonus: { goldBonus: 0.05 }, desc: "+5% Gold" },
+  { id: "mana_ring", slot: "ring", name: "Mana Ring", rarity: "uncommon", icon: "🔮", iconSrc: ITEM_ICONS.ring, ranks: ["C"], bonus: { xpBonus: 0.05, intBonus: 3 }, desc: "+5% XP, +3 INT" },
+  { id: "shadow_ring", slot: "ring", name: "Shadow Ring", rarity: "rare", icon: "🌀", iconSrc: ITEM_ICONS.ring, ranks: ["B"], bonus: { xpBonus: 0.08, goldBonus: 0.08, agiBonus: 3 }, desc: "+8% XP+Gold, +3 AGI" },
+  { id: "monarch_signet", slot: "ring", name: "Monarch's Signet", rarity: "legendary", icon: "💎", iconSrc: ITEM_ICONS.ring, ranks: ["S"], bonus: { xpBonus: 0.15, goldBonus: 0.15, chaBonus: 10 }, desc: "+15% XP+Gold, +10 CHA" },
 ];
 
 const RARITY_COLORS = { common: "#6b7280", uncommon: "#22c55e", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b" };
@@ -660,16 +660,49 @@ function getDungeonGateImage(dungeon) {
 }
 
 const SHOP_ITEMS = [
-  { id: "potion_heal", type: "consumable", name: "Elixir of Recovery", cost: 150, minRank: "E", desc: "Heilt einen gebrochenen Streak sofort (Löscht Shadow Regression)" },
-  { id: "extra_slot", type: "consumable", name: "Extra Task Slot", cost: 100, minRank: "E", desc: "+1 Tagesaufgabe heute" },
-  { id: "title_shadow_monarch", type: "title", name: "Shadow Monarch", cost: 500, minRank: "D", desc: "Der König der Schatten" },
-  { id: "title_arise", type: "title", name: "ARISE!", cost: 300, minRank: "D", desc: "Erwecke deine Armee" },
-  { id: "title_s_hunter", type: "title", name: "S-Rank Hunter", cost: 1000, minRank: "B", desc: "Elite unter den Jägern" },
-  { id: "title_sovereign", type: "title", name: "Sovereign", cost: 2000, minRank: "A", desc: "Herrscher über alles" },
-  { id: "theme_crimson", type: "theme", name: "Crimson Gate", cost: 400, minRank: "D", desc: "Rotes Portal-Theme", themeKey: "crimson" },
-  { id: "theme_shadow", type: "theme", name: "Shadow Realm", cost: 600, minRank: "C", desc: "Reich der Schatten", themeKey: "shadow" },
-  { id: "theme_ice", type: "theme", name: "Ice Monarch", cost: 800, minRank: "B", desc: "Eisiger Monarch", themeKey: "ice" },
-  { id: "theme_golden", type: "theme", name: "Ruler's Authority", cost: 1200, minRank: "A", desc: "Goldene Macht", themeKey: "golden" },
+  { id: "potion_heal", type: "consumable", name: "Elixir of Recovery", cost: 150, minRank: "E", iconSrc: ITEM_ICONS.potion, desc: "Heilt einen gebrochenen Streak sofort (Löscht Shadow Regression)" },
+  { id: "extra_slot", type: "consumable", name: "Extra Task Slot", cost: 100, minRank: "E", iconSrc: QUEST_ICONS.daily, desc: "+1 Tagesaufgabe heute" },
+  { id: "title_shadow_monarch", type: "title", name: "Shadow Monarch", cost: 500, minRank: "D", iconSrc: SHOP_ICONS.title, desc: "Der König der Schatten" },
+  { id: "title_arise", type: "title", name: "ARISE!", cost: 300, minRank: "D", iconSrc: SHOP_ICONS.title, desc: "Erwecke deine Armee" },
+  { id: "title_s_hunter", type: "title", name: "S-Rank Hunter", cost: 1000, minRank: "B", iconSrc: SHOP_ICONS.title, desc: "Elite unter den Jägern" },
+  { id: "title_sovereign", type: "title", name: "Sovereign", cost: 2000, minRank: "A", iconSrc: SHOP_ICONS.title, desc: "Herrscher über alles" },
+  { id: "theme_crimson", type: "theme", name: "Crimson Gate", cost: 400, minRank: "D", iconSrc: SHOP_ICONS.theme, desc: "Rotes Portal-Theme", themeKey: "crimson" },
+  { id: "theme_shadow", type: "theme", name: "Shadow Realm", cost: 600, minRank: "C", iconSrc: SHOP_ICONS.theme, desc: "Reich der Schatten", themeKey: "shadow" },
+  { id: "theme_ice", type: "theme", name: "Ice Monarch", cost: 800, minRank: "B", iconSrc: SHOP_ICONS.theme, desc: "Eisiger Monarch", themeKey: "ice" },
+  { id: "theme_golden", type: "theme", name: "Ruler's Authority", cost: 1200, minRank: "A", iconSrc: SHOP_ICONS.theme, desc: "Goldene Macht", themeKey: "golden" },
+];
+
+// ─── GEM SHOP ITEMS (Premium Currency) ────────────────────────
+const GEM_SHOP_ITEMS = [
+  // Booster
+  { id: "gem_xp_surge", type: "booster", name: "XP Surge Crystal", cost: 15, desc: "+50% XP für 2 Stunden", duration: 7200000, effect: { xpMult: 1.5 }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_gold_rush", type: "booster", name: "Gold Rush Fragment", cost: 12, desc: "+75% Gold für 2 Stunden", duration: 7200000, effect: { goldMult: 1.75 }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_double_drop", type: "booster", name: "Double Drop Token", cost: 25, desc: "Doppelte Dungeon-Drops für 24h", duration: 86400000, effect: { dungeonDropMult: 2 }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_streak_shield", type: "booster", name: "Streak Shield Crystal", cost: 20, desc: "3 Tage absoluter Streak-Schutz", duration: 259200000, effect: { streakShield: true }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_mega_xp", type: "booster", name: "Mega XP Elixir", cost: 50, desc: "+100% XP für 24 Stunden", duration: 86400000, effect: { xpMult: 2.0 }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
+  // Premium Themes
+  { id: "gem_theme_celestial", type: "theme", name: "Celestial Monarch", cost: 80, desc: "Himmlisches Gold/Weiß Theme", themeKey: "celestial", category: "theme", iconSrc: SHOP_ICONS.theme },
+  { id: "gem_theme_void", type: "theme", name: "Void Emperor", cost: 80, desc: "Tiefes Void-Lila Theme", themeKey: "void", category: "theme", iconSrc: SHOP_ICONS.theme },
+  { id: "gem_theme_dragon", type: "theme", name: "Dragon's Breath", cost: 120, desc: "Drachenfeuer Orange/Rot Theme", themeKey: "dragon", category: "theme", iconSrc: SHOP_ICONS.theme },
+  { id: "gem_theme_starfall", type: "theme", name: "Starfall", cost: 120, desc: "Kosmischer Sternenhimmel", themeKey: "starfall", category: "theme", iconSrc: SHOP_ICONS.theme },
+  { id: "gem_theme_blood", type: "theme", name: "Blood Sovereign", cost: 200, desc: "Ultra-Premium Blut-Monarch Theme", themeKey: "blood_sovereign", category: "theme", iconSrc: SHOP_ICONS.theme },
+  // Premium Titel
+  { id: "gem_title_monarch", type: "title", name: "Monarch of Shadows", cost: 40, desc: "Der wahre Schattenherrscher", category: "title", iconSrc: SHOP_ICONS.title },
+  { id: "gem_title_celestial", type: "title", name: "Celestial Hunter", cost: 50, desc: "Jäger des Himmels", category: "title", iconSrc: SHOP_ICONS.title },
+  { id: "gem_title_dragon", type: "title", name: "Dragon Slayer", cost: 60, desc: "Bezwinger der Drachen", category: "title", iconSrc: SHOP_ICONS.title },
+  { id: "gem_title_void", type: "title", name: "Void Walker", cost: 80, desc: "Wanderer der Leere", category: "title", iconSrc: SHOP_ICONS.title },
+  { id: "gem_title_absolute", type: "title", name: "The Absolute Being", cost: 150, desc: "Der Absolute", category: "title", iconSrc: SHOP_ICONS.title },
+  // Shadow Cosmetics
+  { id: "gem_aura_crimson", type: "cosmetic", name: "Shadow Aura: Crimson", cost: 30, desc: "Rote Aura für alle Shadows", effect: { auraColor: "#ef4444" }, category: "cosmetic", iconSrc: "/icons/gem.png" },
+  { id: "gem_aura_celestial", type: "cosmetic", name: "Shadow Aura: Celestial", cost: 30, desc: "Goldene Aura für alle Shadows", effect: { auraColor: "#fbbf24" }, category: "cosmetic", iconSrc: "/icons/gem.png" },
+  { id: "gem_aura_void", type: "cosmetic", name: "Shadow Aura: Void", cost: 30, desc: "Violette Void-Aura", effect: { auraColor: "#a855f7" }, category: "cosmetic", iconSrc: "/icons/gem.png" },
+  { id: "gem_nameplate_ancient", type: "cosmetic", name: "Ancient Nameplate", cost: 20, desc: "Antikes Namensschild für Shadows", category: "cosmetic", iconSrc: "/icons/gem.png" },
+  // Convenience / QoL
+  { id: "gem_quest_skip", type: "consumable", name: "Quest Timer Skip", cost: 5, desc: "Überspringt die Wartezeit einer Quest", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_extra_slot", type: "consumable", name: "Premium Quest Slot", cost: 8, desc: "+1 Extra Quest-Slot für heute", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_dungeon_refresh", type: "consumable", name: "Dungeon Refresh", cost: 10, desc: "Generiere sofort neue Dungeons", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_shadow_rename", type: "consumable", name: "Shadow Rename Token", cost: 15, desc: "Benenne einen Shadow um", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_stat_reset", type: "consumable", name: "Stat Reset Scroll", cost: 30, desc: "Alle Stat-Punkte zurücksetzen und neu verteilen", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
 ];
 
 const THEMES = {
@@ -678,10 +711,21 @@ const THEMES = {
   shadow: { primary: "#6366f1", secondary: "#4338ca", glow: "rgba(99,102,241,0.35)", accent: "#a5b4fc", bg: "#06060f", card: "rgba(10,10,28,0.85)", surface: "rgba(18,18,42,0.6)" },
   ice: { primary: "#06b6d4", secondary: "#0891b2", glow: "rgba(6,182,212,0.35)", accent: "#a5f3fc", bg: "#060a0f", card: "rgba(10,16,28,0.85)", surface: "rgba(16,24,42,0.6)" },
   golden: { primary: "#d97706", secondary: "#b45309", glow: "rgba(217,119,6,0.35)", accent: "#fde68a", bg: "#0a0806", card: "rgba(24,20,12,0.85)", surface: "rgba(40,32,18,0.6)" },
+  // ─── GEM PREMIUM THEMES ─────────────────────────────────────
+  celestial: { primary: "#daa520", secondary: "#f5deb3", glow: "rgba(218,165,32,0.35)", accent: "#ffe4b5", bg: "#0a0806", card: "rgba(22,18,12,0.88)", surface: "rgba(36,30,20,0.6)" },
+  void: { primary: "#7c3aed", secondary: "#581c87", glow: "rgba(124,58,237,0.35)", accent: "#c4b5fd", bg: "#08060f", card: "rgba(14,10,28,0.88)", surface: "rgba(22,16,42,0.6)" },
+  dragon: { primary: "#ea580c", secondary: "#9a3412", glow: "rgba(234,88,12,0.35)", accent: "#fdba74", bg: "#0a0604", card: "rgba(24,14,8,0.88)", surface: "rgba(38,22,14,0.6)" },
+  starfall: { primary: "#818cf8", secondary: "#4f46e5", glow: "rgba(129,140,248,0.35)", accent: "#e0e7ff", bg: "#060610", card: "rgba(10,10,26,0.88)", surface: "rgba(18,18,44,0.6)" },
+  blood_sovereign: { primary: "#be123c", secondary: "#881337", glow: "rgba(190,18,60,0.35)", accent: "#fda4af", bg: "#0a0406", card: "rgba(24,10,14,0.88)", surface: "rgba(38,16,22,0.6)" },
 };
 
 const DEFAULT_STATE = {
   hunterName: "", level: 1, xp: 0, gold: 0, totalGoldEarned: 0,
+  gems: 0, totalGemsEarned: 0,
+  gemStreak: { current: 0, lastClaimDate: null },
+  activeGemBoosters: [],
+  gemPurchases: [],
+  adsWatchedToday: 0, lastAdWatchDate: null,
   tutorialCompleted: false,
   stats: { str: 0, int: 0, vit: 0, agi: 0, cha: 0 },
   statPoints: 0,
@@ -1381,6 +1425,14 @@ function migrateState(oldState) {
     completedChains: oldState.charismaDungeons?.completedChains ?? [],
     stepHistory: oldState.charismaDungeons?.stepHistory ?? [],
   };
+  // Gem system migration
+  s.gems = s.gems || 0;
+  s.totalGemsEarned = s.totalGemsEarned || 0;
+  s.gemStreak = { ...DEFAULT_STATE.gemStreak, ...(oldState.gemStreak || {}) };
+  s.activeGemBoosters = oldState.activeGemBoosters || [];
+  s.gemPurchases = oldState.gemPurchases || [];
+  s.adsWatchedToday = oldState.adsWatchedToday || 0;
+  s.lastAdWatchDate = oldState.lastAdWatchDate || null;
 
   // V4 → V5 Legacy: convert shadows to shadowArmy
   if (!oldState.shadowArmy && oldState.shadows) {
@@ -1875,7 +1927,11 @@ function AriseCinematic({ shadow, onClose }) {
               ) : shadow.icon}
             </div>
           ) : (
-            <div style={{ fontSize: 100, filter: `brightness(0.15) saturate(200%) sepia(100%) hue-rotate(${shadow?.class === "knight" ? 200 : shadow?.class === "mage" ? 280 : shadow?.class === "assassin" ? 120 : shadow?.class === "healer" ? 160 : 220}deg) brightness(0.8)`, textShadow: `0 0 40px ${glowColor}` }}>👤</div>
+            <div style={{ filter: `brightness(0.15) saturate(200%) sepia(100%) hue-rotate(${shadow?.class === "knight" ? 200 : shadow?.class === "mage" ? 280 : shadow?.class === "assassin" ? 120 : shadow?.class === "healer" ? 160 : 220}deg) brightness(0.8)` }}>
+              {cls.iconSrc
+                ? <img src={cls.iconSrc} alt={cls.name} style={{ width: 120, height: 120, objectFit: "contain", filter: `drop-shadow(0 0 40px ${glowColor})` }} />
+                : <span style={{ fontSize: 100 }}>{cls.icon}</span>}
+            </div>
           )}
           {phase >= 4 && (
             <div style={{ animation: "fadeIn 0.6s both" }}>
@@ -1889,7 +1945,12 @@ function AriseCinematic({ shadow, onClose }) {
               {isNamed && phase >= 5 && shadow.uniqueAbility && (
                 <div style={{ marginTop: 16, padding: "8px 20px", borderRadius: 12, background: `${glowColor}15`, border: `1px solid ${glowColor}44`, display: "inline-block", animation: "scaleIn 0.4s ease" }}>
                   <div style={{ fontSize: 9, color: glowColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>UNIQUE ABILITY</div>
-                  <div style={{ fontSize: 13, color: "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{shadow.uniqueAbility.icon} {shadow.uniqueAbility.name}</div>
+                  <div style={{ fontSize: 13, color: "#e2e8f0", fontFamily: "'Cinzel',serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                    {shadow.uniqueAbility.iconSrc
+                      ? <img src={shadow.uniqueAbility.iconSrc} alt={shadow.uniqueAbility.name} style={{ width: 18, height: 18, objectFit: "contain" }} />
+                      : <span>{shadow.uniqueAbility.icon}</span>}
+                    {shadow.uniqueAbility.name}
+                  </div>
                   <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{shadow.uniqueAbility.effect}</div>
                 </div>
               )}
@@ -2023,9 +2084,11 @@ function ShadowCard({ shadow, theme, onClick, showSlot, index }) {
 
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 3, marginBottom: 9 }}>
-          {[{ k: "power", icon: "⚔", c: "#ef4444" }, { k: "speed", icon: "⚡", c: "#f59e0b" }, { k: "loyalty", icon: "💙", c: "#3b82f6" }, { k: "presence", icon: "✦", c: "#a855f7" }].map(({ k, icon, c }) => (
+          {[{ k: "power", icon: "⚔", iconSrc: SKILL_ICONS.attack, c: "#ef4444" }, { k: "speed", icon: "⚡", iconSrc: SKILL_ICONS.speed, c: "#f59e0b" }, { k: "loyalty", icon: "💙", iconSrc: SKILL_ICONS.defense, c: "#3b82f6" }, { k: "presence", icon: "✦", iconSrc: SKILL_ICONS.magic, c: "#a855f7" }].map(({ k, icon, iconSrc, c }) => (
             <div key={k} style={{ textAlign: "center", background: c + "09", borderRadius: 5, padding: "4px 2px", border: `1px solid ${c}18` }}>
-              <div style={{ fontSize: 8, color: c, lineHeight: 1 }}>{icon}</div>
+              <div style={{ fontSize: 8, color: c, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <img src={iconSrc} alt={k} style={{ width: 10, height: 10, objectFit: "contain", filter: `drop-shadow(0 0 3px ${c}99)` }} />
+              </div>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#b8c5d6", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.4 }}>{shadow.stats[k]}</div>
             </div>
           ))}
@@ -2104,10 +2167,12 @@ function ShadowDetailModal({ shadow, theme, onClose, onDeploy, onUndeploy, onEvo
         {/* Stats */}
         <div style={{ fontSize: 10, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>KAMPFSTATS</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 18 }}>
-          {[{ k: "power", name: "Power", icon: "⚔️", color: "#ef4444", desc: "Dungeon-Erfolg" }, { k: "speed", name: "Speed", icon: "⚡", color: "#f59e0b", desc: "Clear-Zeit Reduktion" }, { k: "loyalty", name: "Loyalty", icon: "💙", color: "#3b82f6", desc: "Bonus-Aktivierungschance" }, { k: "presence", name: "Presence", icon: "✦", color: "#a855f7", desc: "Passive Effekt-Stärke" }].map(({ k, name, icon, color, desc }) => (
+          {[{ k: "power", name: "Power", iconSrc: SKILL_ICONS.attack, color: "#ef4444", desc: "Dungeon-Erfolg" }, { k: "speed", name: "Speed", iconSrc: SKILL_ICONS.speed, color: "#f59e0b", desc: "Clear-Zeit Reduktion" }, { k: "loyalty", name: "Loyalty", iconSrc: SKILL_ICONS.defense, color: "#3b82f6", desc: "Bonus-Aktivierungschance" }, { k: "presence", name: "Presence", iconSrc: SKILL_ICONS.magic, color: "#a855f7", desc: "Passive Effekt-Stärke" }].map(({ k, name, iconSrc, color, desc }) => (
             <div key={k} style={{ background: `${color}08`, border: `1px solid ${color}22`, borderRadius: 12, padding: "12px 14px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 11, color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{icon} {name}</span>
+                <span style={{ fontSize: 11, color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <img src={iconSrc} alt={name} style={{ width: 13, height: 13, objectFit: "contain", filter: `drop-shadow(0 0 4px ${color}99)` }} /> {name}
+                </span>
                 <span style={{ fontSize: 20, fontWeight: 900, color: "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{shadow.stats[k]}</span>
               </div>
               <div style={{ height: 3, background: "#0a0a14", borderRadius: 2, overflow: "hidden" }}>
@@ -2211,12 +2276,14 @@ function FormationEditor({ shadowArmy, theme, onDeploy, onUndeploy, formationBon
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
           {[
-            { label: "Dungeon", val: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", icon: "⚔️" },
-            { label: "XP", val: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", icon: "✦" },
-            { label: "Gold", val: `+${Math.round(formationBonus.goldBonus * 100)}%`, color: "#fbbf24", icon: "◆" }
-          ].map(({ label, val, color, icon }) => (
+            { label: "Dungeon", val: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", iconSrc: SKILL_ICONS.attack },
+            { label: "XP", val: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", iconSrc: SKILL_ICONS.magic },
+            { label: "Gold", val: `+${Math.round(formationBonus.goldBonus * 100)}%`, color: "#fbbf24", iconSrc: ITEM_ICONS.ring }
+          ].map(({ label, val, color, iconSrc }) => (
             <div key={label} style={{ textAlign: "center", padding: "10px 6px", background: `radial-gradient(circle at 50% 0%,${color}12,${color}04)`, borderRadius: 12, border: `1px solid ${color}22` }}>
-              <div style={{ fontSize: 14, marginBottom: 3 }}>{icon}</div>
+              <div style={{ fontSize: 14, marginBottom: 3, display: "flex", justifyContent: "center" }}>
+                <img src={iconSrc} alt={label} style={{ width: 18, height: 18, objectFit: "contain", filter: `drop-shadow(0 0 4px ${color}99)` }} />
+              </div>
               <div style={{ fontSize: 14, fontWeight: 900, color, fontFamily: "'Cinzel',serif" }}>{val}</div>
               <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
             </div>
@@ -2394,7 +2461,10 @@ function EmergencyQuestCard({ quest, done, failed, onComplete, theme }) {
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
-        background: done ? "rgba(34,197,94,0.06)" : failed || expired ? "rgba(239,68,68,0.06)" : "linear-gradient(135deg,rgba(239,68,68,0.12),rgba(220,38,38,0.04))",
+        background: done ? "rgba(34,197,94,0.06)" : failed || expired ? "rgba(239,68,68,0.06)" : `linear-gradient(135deg,rgba(239,68,68,0.7),rgba(20,0,0,0.8)), url(${BACKGROUNDS.emergency})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundBlendMode: "overlay",
         border: `1px solid ${done ? "#22c55e44" : failed || expired ? "#ef444444" : "#ef4444"}`,
         borderLeft: `3px solid ${done ? "#22c55e" : failed || expired ? "#ef444466" : "#ef4444"}`,
         borderRadius: 14, padding: "14px 16px", marginBottom: 16,
@@ -2488,7 +2558,10 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
   };
   return (
     <div ref={cardRef} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{
-      background: completing ? `linear-gradient(135deg,${diff.color}15,transparent)` : hover ? `linear-gradient(135deg,${theme.card},${diff.color}08)` : theme.card,
+      background: completing ? `linear-gradient(135deg,${diff.color}15,transparent)` : hover ? `linear-gradient(135deg,rgba(10,10,12,0.85),${diff.color}22), url(${quest.difficulty === 'boss' ? BACKGROUNDS.boss : BACKGROUNDS.standard})` : `linear-gradient(135deg,rgba(15,15,20,0.95),rgba(5,5,10,0.9)), url(${quest.difficulty === 'boss' ? BACKGROUNDS.boss : BACKGROUNDS.standard})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundBlendMode: "overlay",
       border: `1px solid ${hover ? diff.color + "44" : isHidden ? typeCfg.color + "33" : theme.primary + "18"}`, borderRadius: 14, padding: "14px 16px", marginBottom: 8,
       borderLeft: `3px solid ${isHidden ? typeCfg.color : diff.color}${hover ? "cc" : "66"}`,
       animation: completing ? "fadeOut 0.5s ease forwards" : `cardEnter 0.4s ease ${index * 0.06}s both`,
@@ -2719,7 +2792,9 @@ function FloorProgressBar({ floors, currentFloor, totalFloors }) {
               opacity: isFuture ? 0.4 : 1,
               position: "relative", overflow: "hidden",
             }}>
-              {isPast ? "✓" : ft.icon}
+              {isPast ? "✓" : (ft.iconSrc
+                ? <img src={ft.iconSrc} alt={ft.name} style={{ width: 14, height: 14, objectFit: "contain", opacity: 0.9 }} />
+                : ft.icon)}
               {isCurrent && <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg,transparent,${ft.color}22,transparent)`, animation: "rankShine 1.5s ease-in-out infinite" }} />}
             </div>
             <div style={{ fontSize: 7, color: isPast ? "#22c55e" : isCurrent ? ft.color : "#334155", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, textAlign: "center", whiteSpace: "nowrap" }}>
@@ -2745,7 +2820,11 @@ function BossPhaseUI({ rank, bossHp, bossMaxHp, currentPhase, phases }) {
       animation: "bossPhaseIn 0.5s cubic-bezier(0.34,1.56,0.64,1)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 28, animation: "bossShake 0.5s ease", filter: `drop-shadow(0 0 10px ${phaseColor})` }}>{phaseData?.icon || "👑"}</div>
+        <div style={{ fontSize: 28, animation: "bossShake 0.5s ease", filter: `drop-shadow(0 0 10px ${phaseColor})` }}>
+          {phaseData?.iconSrc
+            ? <img src={phaseData.iconSrc} alt={phaseData?.name} style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 10px ${phaseColor})` }} />
+            : (phaseData?.icon || "👑")}
+        </div>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
             <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono',monospace", color: phaseColor, letterSpacing: 2, fontWeight: 700 }}>
@@ -2984,7 +3063,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
       {/* EXTRACTION CINEMATIC */}
       {showExtraction && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s" }}>
-          <div style={{ fontSize: 72, animation: "float 1s ease-in-out infinite", filter: "drop-shadow(0 0 30px #22c55e)" }}>🌀</div>
+          <div style={{ animation: "float 1s ease-in-out infinite" }}><img src={GATE_ICONS.normal} alt="Extraction" style={{ width: 88, height: 88, objectFit: "contain", filter: "drop-shadow(0 0 30px #22c55e) hue-rotate(120deg) brightness(1.2)", animation: "spin 3s linear infinite" }} /></div>
           <div style={{ fontSize: 14, letterSpacing: 8, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", animation: "breathe 0.6s infinite" }}>EXTRACTION</div>
           <div style={{ fontSize: 10, letterSpacing: 4, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>DUNGEON VERLASSEN...</div>
           <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
@@ -3006,7 +3085,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
             <div style={{ fontSize: 10, letterSpacing: 4, color: rankData.color, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{dungeon.rank}-RANK · {dungeon.floors} FLOORS</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif" }}>{dungeon.name}</div>
             {modifier && modifier.id !== "none" && <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: modifier.color + "15", border: `1px solid ${modifier.color}33`, fontSize: 11, color: modifier.color, fontFamily: "'JetBrains Mono',monospace" }}>{modifier.iconSrc ? <img src={modifier.iconSrc} alt={modifier.name} style={{ width: 14, height: 14, objectFit: "contain", filter: `drop-shadow(0 0 4px ${modifier.color}88)` }} /> : modifier.icon} {modifier.name}</div>}
-            {formationBonus?.dungeonBonus > 0 && <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "#7c3aed15", border: "1px solid #7c3aed33", fontSize: 11, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace" }}>🌑 Shadow Army +{formationBonus.dungeonBonus}%</div>}
+            {formationBonus?.dungeonBonus > 0 && <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "#7c3aed15", border: "1px solid #7c3aed33", fontSize: 11, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace" }}><img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 4px #a78bfa88) brightness(0.6) invert(1)" }} /> Shadow Army +{formationBonus.dungeonBonus}%</div>}
           </div>
           {/* Floor Preview */}
           <div style={{ background: "rgba(6,6,14,0.9)", borderRadius: 12, padding: "12px 14px", marginBottom: 14, border: "1px solid #1e2940" }}>
@@ -3020,7 +3099,11 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
                     background: ft.color + "18", border: `1px solid ${ft.color}44`,
                     borderRadius: 6, padding: "5px 4px", textAlign: "center",
                   }}>
-                    <div style={{ fontSize: 10 }}>{ft.icon}</div>
+                    <div style={{ fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {ft.iconSrc
+                        ? <img src={ft.iconSrc} alt={ft.name} style={{ width: 14, height: 14, objectFit: "contain" }} />
+                        : ft.icon}
+                    </div>
                     <div style={{ fontSize: 6, color: ft.color, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>F{f.floor}</div>
                   </div>
                 );
@@ -3034,7 +3117,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
               const isBest = bestStrat?.key === s.key;
               return (
                 <button key={s.key} onClick={() => setStrategy(s)} style={{ padding: "14px 12px", borderRadius: 12, textAlign: "left", background: isActive ? s.color + "14" : isBest ? s.color + "08" : "rgba(10,10,20,0.6)", border: `1px solid ${isActive ? s.color + "66" : isBest ? s.color + "33" : "#1e2940"}`, color: isActive ? s.color : isBest ? s.color + "aa" : "#64748b", transition: "all 0.22s", position: "relative" }}>
-                  {isBest && <div style={{ position: "absolute", top: -8, right: -6, fontSize: 14, animation: "pulse 2s infinite" }}>👁️</div>}
+                  {isBest && <div style={{ position: "absolute", top: -8, right: -6, animation: "pulse 2s infinite" }}><img src={JOB_ICONS.insight} alt="Best" style={{ width: 16, height: 16, objectFit: "contain", filter: "drop-shadow(0 0 5px #f59e0b88)" }} /></div>}
                   <div style={{ fontSize: 22, marginBottom: 6 }}>
                     {s.iconSrc ? (
                       <img src={s.iconSrc} alt={s.label} style={{ width: 32, height: 32, objectFit: "contain", filter: `drop-shadow(0 0 8px ${s.color}77) brightness(${isActive ? 1.2 : 0.85})` }} />
@@ -3061,7 +3144,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={onClose} style={{ flex: 1, padding: 14, borderRadius: 12, fontSize: 12, background: "transparent", color: "#475569", border: "1px solid #1e2940", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>ABBRECHEN</button>
-            <button onClick={handleEnterClick} style={{ flex: 2, padding: 14, borderRadius: 12, fontSize: 13, fontWeight: 700, background: `linear-gradient(135deg,${rankData.color}28,${rankData.color}10)`, color: rankData.color, border: `1px solid ${rankData.color}55`, fontFamily: "'Cinzel',serif", letterSpacing: 2, boxShadow: `0 4px 20px ${rankData.color}18` }}>⚔️ BETRETEN</button>
+            <button onClick={handleEnterClick} style={{ flex: 2, padding: 14, borderRadius: 12, fontSize: 13, fontWeight: 700, background: `linear-gradient(135deg,${rankData.color}28,${rankData.color}10)`, color: rankData.color, border: `1px solid ${rankData.color}55`, fontFamily: "'Cinzel',serif", letterSpacing: 2, boxShadow: `0 4px 20px ${rankData.color}18`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><img src={SKILL_ICONS.attack} alt="" style={{ width: 18, height: 18, objectFit: "contain", filter: `drop-shadow(0 0 6px ${rankData.color}88)` }} /> BETRETEN</button>
           </div>
         </div>
       )}
@@ -3140,7 +3223,9 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
 
       {phase === "result" && result && (
         <div style={{ textAlign: "center", padding: "0 24px", width: "100%", maxWidth: 420, animation: "dungeonResultIn 0.6s cubic-bezier(0.34,1.56,0.64,1)" }}>
-          <div style={{ fontSize: 72, marginBottom: 12, filter: `drop-shadow(0 0 28px ${result.won ? "#22c55e" : "#ef4444"})`, animation: "gateFloat 2s ease-in-out infinite" }}>{result.won ? "🏆" : "💀"}</div>
+          <div style={{ fontSize: 72, marginBottom: 12, filter: `drop-shadow(0 0 28px ${result.won ? "#22c55e" : "#ef4444"})`, animation: "gateFloat 2s ease-in-out infinite" }}>
+            <img src={result.won ? NAV_ICONS.achievements : BOSS_ICONS.deathsdoor} alt={result.won ? "Victory" : "Defeat"} style={{ width: 80, height: 80, objectFit: "contain", filter: `drop-shadow(0 0 28px ${result.won ? "#22c55e" : "#ef4444"})` }} />
+          </div>
           <div style={{ fontSize: result.won ? 28 : 22, fontWeight: 900, fontFamily: "'Cinzel',serif", color: result.won ? "#22c55e" : "#ef4444", textShadow: `0 0 32px ${result.won ? "#22c55e" : "#ef4444"}`, marginBottom: 6, letterSpacing: 2 }}>{result.won ? "DUNGEON CLEARED" : "HUNTER DEFEATED"}</div>
           {/* Floors stat */}
           <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 14 }}>
@@ -3258,7 +3343,11 @@ function JobCard({ jobKey, level, xp, currentJob, onSwitch, onActivate, theme, r
       <div style={{ background: `${job.color}08`, border: `1px solid ${job.color}22`, borderRadius: 16, padding: "16px", position: "relative" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 18 }}>✨</span>
+            {ability.iconSrc ? (
+              <img src={ability.iconSrc} alt={ability.name} style={{ width: 22, height: 22, objectFit: "contain", filter: `drop-shadow(0 0 6px ${job.color}88)` }} />
+            ) : (
+              <span style={{ fontSize: 18 }}>✨</span>
+            )}
             <div style={{ fontSize: 13, fontWeight: 800, color: job.color, fontFamily: "'Cinzel', serif" }}>{ability.name}</div>
           </div>
           <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono', monospace", background: "rgba(0,0,0,0.3)", padding: "2px 8px", borderRadius: 4 }}>
@@ -3310,7 +3399,9 @@ function JobsView({ state, onSwitch, onActivate, theme }) {
     <div style={{ animation: "fadeIn 0.5s ease" }}>
       <div style={{ marginBottom: 24, padding: "0 4px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🎭</div>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <img src={NAV_ICONS.jobs} alt="Jobs" style={{ width: 26, height: 26, objectFit: "contain", filter: "brightness(1.3)" }} />
+          </div>
           <h2 style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 4 }}>JOB SYSTEM</h2>
         </div>
         <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>Wähle eine Spezialisierung ab Level 15 um deine Macht als Hunter zu perfektionieren. Jeder Job bietet einzigartige Synergien mit deinem Shadow-System.</p>
@@ -3488,7 +3579,7 @@ export {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
-  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
+  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,

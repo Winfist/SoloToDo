@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CHARISMA_CHAINS } from "../data/charismaDungeons.js";
-import { STAT_ICONS, NAV_ICONS } from "../data/icons.js";
+import { STAT_ICONS, NAV_ICONS, GATE_ICONS } from "../data/icons.js";
 
 // ═══════════════════════════════════════════════════════════════
 // CHARISMA DUNGEONS VIEW — Exposure Therapy Quest Chains
@@ -96,7 +96,7 @@ export default function CharismaDungeonsView({ state, theme, startCharismaChain,
                   border: `2px solid ${isUnlocked ? chain.color : "rgba(255,255,255,0.1)"}`,
                   fontSize: "1.4rem"
                 }}>
-                  {isCompleted ? "✅" : !isUnlocked ? "🔒" : chain.iconSrc ? (
+                  {isCompleted ? <img src={STAT_ICONS.cha} alt="done" style={{ width: 26, height: 26, objectFit: "contain", filter: `drop-shadow(0 0 6px ${chain.color}99) hue-rotate(90deg)` }} /> : !isUnlocked ? <img src={GATE_ICONS.normal} alt="locked" style={{ width: 24, height: 24, objectFit: "contain", filter: "grayscale(100%) brightness(0.4)" }} /> : chain.iconSrc ? (
                     <img src={chain.iconSrc} alt={chain.name} style={{ width: 28, height: 28, objectFit: "contain", filter: `drop-shadow(0 0 6px ${chain.color}99) brightness(1.1)` }} />
                   ) : chain.icon}
                 </div>
@@ -108,7 +108,7 @@ export default function CharismaDungeonsView({ state, theme, startCharismaChain,
                     {isActive && <span style={{ fontSize: "0.65rem", color: "#fbbf24", background: "rgba(251,191,36,0.15)", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>AKTIV</span>}
                   </div>
                   <div style={{ color: "#6b7280", fontSize: "0.75rem", marginTop: "0.15rem" }}>
-                    {!isUnlocked ? `🔒 CHA ${chain.chaThreshold} erforderlich` : `${chain.steps.length} Etagen · +${chain.reward.chaBonus} CHA`}
+                    {!isUnlocked ? `CHA ${chain.chaThreshold} erforderlich` : `${chain.steps.length} Etagen · +${chain.reward.chaBonus} CHA`}
                   </div>
 
                   {/* Progress bar for active chains */}

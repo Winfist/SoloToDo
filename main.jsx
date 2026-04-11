@@ -1,5 +1,6 @@
 // main.jsx – Auth + App Root (Firebase Integrated)
 import React, { useState, useEffect } from 'react'
+import { SYSTEM_ICONS } from "./data/icons.js";
 import ReactDOM from 'react-dom/client'
 import App from './solo-leveling-v5.jsx'
 import AuthScreen from './AuthScreen.jsx'
@@ -69,7 +70,7 @@ function Root() {
         justifyContent: "center",
       }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚔️</div>
+          <div style={{ marginBottom: 16 }}><img src={SYSTEM_ICONS.logo} alt="System" style={{ width: 56, height: 56, objectFit: "contain", animation: "pulse 1.5s ease-in-out infinite", filter: "drop-shadow(0 0 20px #7c3aed88)" }} /></div>
           <div style={{
             fontSize: 11,
             letterSpacing: 4,

@@ -7,7 +7,7 @@ import {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
-  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
+  EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,
@@ -363,13 +363,15 @@ export function useGameState(initialHunterName, onLogout) {
     const newAchs = checkAchievements(nextState);
     if (!newAchs.length) return nextState;
     const unlocked = [...(nextState.achievements?.unlocked || []), ...newAchs.map(a => a.id)];
-    let xpBonus = 0, goldBonus = 0;
-    newAchs.forEach(a => { xpBonus += a.reward.xp || 0; goldBonus += a.reward.gold || 0; });
+    let xpBonus = 0, goldBonus = 0, gemBonus = 0;
+    newAchs.forEach(a => { xpBonus += a.reward.xp || 0; goldBonus += a.reward.gold || 0; gemBonus += a.reward.gems || 0; });
     setAchQueue(prev => [...prev, ...newAchs]);
     return calculateLevelUp({
       ...nextState,
       gold: nextState.gold + goldBonus,
       totalGoldEarned: (nextState.totalGoldEarned || 0) + goldBonus,
+      gems: (nextState.gems || 0) + gemBonus,
+      totalGemsEarned: (nextState.totalGemsEarned || 0) + gemBonus,
       achievements: { ...nextState.achievements, unlocked }
     }, xpBonus);
   }, []);
@@ -1320,6 +1322,148 @@ export function useGameState(initialHunterName, onLogout) {
   const theme = useMemo(() => THEMES[state?.selectedTheme || "default"], [state?.selectedTheme]);
   const modifier = state?.todayModifier || getDailyModifier();
 
+  // ─── GEM SYSTEM FUNCTIONS ─────────────────────────────────────
+
+  // Get active (non-expired) gem boosters
+  const getActiveGemBoosters = useCallback(() => {
+    const now = Date.now();
+    return (state?.activeGemBoosters || []).filter(b => b.expiresAt > now);
+  }, [state?.activeGemBoosters]);
+
+  // Get combined gem booster multipliers
+  const getGemBoosterMultipliers = useCallback(() => {
+    const active = getActiveGemBoosters();
+    let xpMult = 1, goldMult = 1;
+    active.forEach(b => {
+      if (b.effect?.xpMult) xpMult = Math.max(xpMult, b.effect.xpMult);
+      if (b.effect?.goldMult) goldMult = Math.max(goldMult, b.effect.goldMult);
+    });
+    return { xpMult, goldMult };
+  }, [getActiveGemBoosters]);
+
+  // Watch a rewarded ad (simulated)
+  const watchRewardedAd = useCallback(() => {
+    if (!state) return false;
+    const today = getToday();
+    const adsToday = state.lastAdWatchDate === today ? (state.adsWatchedToday || 0) : 0;
+    if (adsToday >= 5) {
+      notify("Tägliches Werbe-Limit erreicht (5/5). Morgen wieder verfügbar!", "warning");
+      return false;
+    }
+    const gemReward = 3 + Math.floor(Math.random() * 3); // 3-5 gems
+    persist({
+      ...state,
+      gems: (state.gems || 0) + gemReward,
+      totalGemsEarned: (state.totalGemsEarned || 0) + gemReward,
+      adsWatchedToday: adsToday + 1,
+      lastAdWatchDate: today,
+    });
+    notify(`+${gemReward} 💎 Gems erhalten!`, "named");
+    return gemReward;
+  }, [state, persist, notify]);
+
+  // Claim daily gem bonus
+  const claimDailyGemBonus = useCallback(() => {
+    if (!state) return false;
+    const today = getToday();
+    if (state.gemStreak?.lastClaimDate === today) {
+      notify("Daily Gem Bonus bereits beansprucht!", "info");
+      return false;
+    }
+    // Check if streak continues (yesterday or first time)
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    const prevStreak = state.gemStreak?.current || 0;
+    const continues = state.gemStreak?.lastClaimDate === yesterdayStr;
+    const newStreak = continues ? prevStreak + 1 : 1;
+    // Day 7 bonus: +2 extra
+    const isDay7 = newStreak % 7 === 0;
+    const gemReward = isDay7 ? 3 : 1;
+    persist({
+      ...state,
+      gems: (state.gems || 0) + gemReward,
+      totalGemsEarned: (state.totalGemsEarned || 0) + gemReward,
+      gemStreak: { current: newStreak, lastClaimDate: today },
+    });
+    if (isDay7) {
+      notify(`💎 Tag-7-Bonus! +${gemReward} Gems (Streak: ${newStreak} Tage)`, "named");
+    } else {
+      notify(`+${gemReward} 💎 Daily Gem Bonus (Streak: ${newStreak})`, "success");
+    }
+    return gemReward;
+  }, [state, persist, notify]);
+
+  // Buy a gem shop item
+  const buyGemItem = useCallback((item) => {
+    if (!state) return;
+    if ((state.gems || 0) < item.cost) {
+      notify("Nicht genug Gems!", "warning");
+      return;
+    }
+    // Non-repeatable check
+    if (!item.repeatable && (state.gemPurchases || []).includes(item.id)) {
+      notify("Bereits gekauft!", "info");
+      return;
+    }
+
+    let effects = {};
+    if (item.type === "booster") {
+      const newBooster = {
+        id: item.id,
+        name: item.name,
+        effect: item.effect,
+        activatedAt: Date.now(),
+        expiresAt: Date.now() + item.duration,
+      };
+      effects.activeGemBoosters = [...(state.activeGemBoosters || []).filter(b => b.expiresAt > Date.now()), newBooster];
+      triggerSystemMessage("BOOSTER AKTIVIERT", [
+        `${item.name} wurde eingesetzt!`,
+        `${item.desc}`,
+        `Dauer: ${Math.round(item.duration / 3600000)} Stunden.`,
+        "Möge die Macht mit dir sein, Hunter."
+      ]);
+    } else if (item.type === "theme") {
+      effects.selectedTheme = item.themeKey;
+    } else if (item.type === "title") {
+      effects.selectedTitle = item.name;
+    } else if (item.type === "consumable") {
+      // Handle specific consumables
+      if (item.id === "gem_extra_slot") {
+        effects.extraDailySlots = (state.extraDailySlots || 0) + 1;
+      } else if (item.id === "gem_dungeon_refresh") {
+        effects.dungeons = generateDungeons(getRank(state.level || 1).name);
+        effects.lastDungeonRefresh = getToday();
+        notify("Neue Dungeons generiert!", "success");
+      } else if (item.id === "gem_stat_reset") {
+        const totalStatPoints = Object.values(state.stats || {}).reduce((a, b) => a + b, 0);
+        effects.stats = { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
+        effects.statPoints = (state.statPoints || 0) + totalStatPoints;
+        triggerSystemMessage("STAT RESET", [
+          "Alle Stat-Punkte wurden zurückgesetzt.",
+          `${totalStatPoints + (state.statPoints || 0)} Punkte stehen zur Verfügung.`,
+          "Verteile sie weise, Hunter."
+        ]);
+      }
+    } else if (item.type === "cosmetic") {
+      // Shadow cosmetics stored in gemPurchases — applied via lookup
+    }
+
+    const newPurchases = item.repeatable ? (state.gemPurchases || []) : [...(state.gemPurchases || []), item.id];
+
+    let next = {
+      ...state,
+      gems: (state.gems || 0) - item.cost,
+      gemPurchases: newPurchases,
+      ...effects,
+    };
+    next = processAchievements(next);
+    persist(next);
+    if (item.type !== "consumable" || !item.id.startsWith("gem_stat_reset")) {
+      notify(`${item.name} erworben! 💎`, item.type === "booster" ? "success" : "named");
+    }
+  }, [state, persist, processAchievements, notify, triggerSystemMessage]);
+
 
   return {
     state,
@@ -1422,5 +1566,12 @@ export function useGameState(initialHunterName, onLogout) {
     SEASONS,
     WORLD_EVENTS,
     CHARISMA_CHAINS,
+    // Gem system
+    watchRewardedAd,
+    buyGemItem,
+    claimDailyGemBonus,
+    getActiveGemBoosters,
+    getGemBoosterMultipliers,
+    GEM_SHOP_ITEMS,
   };
 }

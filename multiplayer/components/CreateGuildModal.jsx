@@ -1,10 +1,12 @@
-import { MP_THEME, GUILD_ICONS } from '../data/mpConstants';
-import { STAT_ICONS } from '../../data/icons';
+import { MP_THEME } from '../data/mpConstants';
+import { STAT_ICONS, GUILD_CRESTS } from '../../data/icons';
+
+const GUILD_ICONS = Object.values(GUILD_CRESTS);
 
 export default function CreateGuildModal({ onClose, onCreate }) {
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
-  const [icon, setIcon] = useState("🏰");
+  const [icon, setIcon] = useState(GUILD_ICONS[0]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
@@ -59,13 +61,13 @@ export default function CreateGuildModal({ onClose, onCreate }) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {GUILD_ICONS.slice(0, 16).map(ic => (
                 <button key={ic} onClick={() => setIcon(ic)} style={{
-                  width: 40, height: 40, fontSize: 20, borderRadius: 10,
+                  width: 48, height: 48, borderRadius: 10, padding: 4,
                   background: icon === ic ? `${MP_THEME.primary}33` : "rgba(255,255,255,0.03)",
                   border: `1px solid ${icon === ic ? MP_THEME.primary : "rgba(255,255,255,0.06)"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   cursor: "pointer", transition: "all 0.2s",
                 }}>
-                  {ic}
+                  <img src={ic} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 0 4px rgba(0,0,0,0.5))" }} />
                 </button>
               ))}
             </div>
@@ -112,7 +114,9 @@ export default function CreateGuildModal({ onClose, onCreate }) {
               border: `1px solid ${MP_THEME.primary}22`, marginBottom: 20,
               display: "flex", alignItems: "center", gap: 14
             }}>
-              <div style={{ fontSize: 36 }}>{icon}</div>
+              <div style={{ width: 42, height: 42, flexShrink: 0 }}>
+                  {icon.startsWith('/') ? <img src={icon} alt="" style={{width: "100%", height: "100%", objectFit: "contain"}} /> : <span style={{fontSize: 36}}>{icon}</span>}
+              </div>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif" }}>
                   {name} <span style={{ fontSize: 12, color: MP_THEME.primary }}>[{tag || "??"}]</span>

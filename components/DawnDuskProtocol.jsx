@@ -24,7 +24,7 @@ const CATEGORIES = {
 
 const TUTORIAL_SLIDES = [
   {
-    icon: "📡",
+    iconSrc: NAV_ICONS.timer,
     title: "PROTOCOL ERKANNT",
     subtitle: "SYSTEM — NEUE DIREKTIVE",
     color: "#22d3ee",
@@ -42,14 +42,14 @@ const TUTORIAL_SLIDES = [
     subtitle: "SYSTEM — PROTOKOLL-FENSTER",
     color: "#fbbf24",
     lines: [
-      "☀️  DAWN  —  05:00 bis 11:00 Uhr  (90 Min. Timer)",
-      "🌙  DUSK  —  18:00 bis 23:00 Uhr  (60 Min. Timer)",
+      "DAWN  —  05:00 bis 11:00 Uhr  (90 Min. Timer)",
+      "DUSK  —  18:00 bis 23:00 Uhr  (60 Min. Timer)",
       "Das Protokoll kann nur innerhalb dieser Zeitfenster aktiviert werden.",
     ],
     lore: "\"Die stärksten Hunter entstehen in den Stunden, in denen andere schlafen.\""
   },
   {
-    icon: "🏯",
+    iconSrc: STAT_ICONS.cha,
     title: "ETAGEN-SYSTEM",
     subtitle: "SYSTEM — DUNGEON-STRUKTUR",
     color: "#a855f7",
@@ -61,7 +61,7 @@ const TUTORIAL_SLIDES = [
     lore: "\"Ein Dungeon ohne Ordnung ist nur Chaos. Bezwinge ihn Floor für Floor.\""
   },
   {
-    icon: "⭐",
+    iconSrc: STAT_ICONS.vit,
     title: "PERFECT RUN",
     subtitle: "SYSTEM — BONUS-PROTOKOLL",
     color: "#22c55e",

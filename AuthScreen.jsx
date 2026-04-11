@@ -1,5 +1,6 @@
 // AuthScreen.jsx - Premium Solo Leveling Login/Register (Firebase Integrated)
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { SYSTEM_ICONS, SKILL_ICONS } from "./data/icons.js";
 
 const AuthTunnelScene = lazy(() => import("./3d/auth/AuthTunnelScene.jsx"));
 
@@ -293,7 +294,7 @@ function SuccessAnimation({ hunterName, onComplete }) {
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(2,1,8,0.98)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
       {phase >= 1 && <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", border: "2px solid #7c3aed", animation: "portalOpen 1s cubic-bezier(0.34,1.56,0.64,1)", boxShadow: "0 0 60px #7c3aed44, inset 0 0 60px #7c3aed22" }} />}
       {phase >= 2 && <div style={{ position: "absolute", width: 4, background: "linear-gradient(to top, transparent, #7c3aed, #a78bfa, transparent)", animation: "lightBeam 1s ease-out forwards", filter: "blur(2px)" }} />}
-      {phase >= 2 && <div style={{ fontSize: 80, animation: "successPulse 0.6s cubic-bezier(0.34,1.56,0.64,1)", filter: "drop-shadow(0 0 40px #7c3aed)", marginBottom: 20, zIndex: 1 }}>⚔️</div>}
+      {phase >= 2 && <div style={{ animation: "successPulse 0.6s cubic-bezier(0.34,1.56,0.64,1)", marginBottom: 20, zIndex: 1 }}><img src={SYSTEM_ICONS.logo} alt="System" style={{ width: 96, height: 96, objectFit: "contain", filter: "drop-shadow(0 0 40px #7c3aed)" }} /></div>}
       {phase >= 3 && <div style={{ fontSize: 11, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, animation: "fadeIn 0.6s ease" }}>SYSTEM ACTIVATED</div>}
       {phase >= 4 && <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 4, textShadow: "0 0 40px #7c3aed", marginBottom: 8, animation: "slideUp 0.6s ease" }}>{hunterName.toUpperCase()}</div>}
       {phase >= 4 && <div style={{ fontSize: 14, color: "#6b7280", fontFamily: "'Cinzel', serif", letterSpacing: 3, animation: "fadeIn 0.6s ease 0.2s both" }}>E-RANK HUNTER</div>}
@@ -636,7 +637,7 @@ export default function AuthScreen({ onAuthSuccess }) {
 
       {/* ── Header — fades out as user approaches portal ──────────── */}
       <div ref={headerRef} style={{ position: "fixed", top: 0, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: isMobile ? 24 : 38, zIndex: 12, pointerEvents: "none", transition: "opacity 0.5s ease" }}>
-        <div style={{ fontSize: isMobile ? 36 : 50, marginBottom: isMobile ? 6 : 10, animation: "float 3s ease-in-out infinite, glow 3s ease-in-out infinite" }}>⚔️</div>
+        <div style={{ marginBottom: isMobile ? 6 : 10, animation: "float 3s ease-in-out infinite, glow 3s ease-in-out infinite" }}><img src={SYSTEM_ICONS.logo} alt="ARISE" style={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64, objectFit: "contain", filter: "drop-shadow(0 0 16px #7c3aed88)" }} /></div>
         <h1 style={{ fontSize: isMobile ? 26 : 36, fontWeight: 900, fontFamily: "'Cinzel', serif", color: "#fff", letterSpacing: isMobile ? 5 : 8, marginBottom: 6, animation: "textGlow 3s ease-in-out infinite, slideDown 0.8s ease" }}>ARISE</h1>
         <p style={{ fontSize: isMobile ? 9 : 11, fontFamily: "'JetBrains Mono', monospace", color: "#7c3aed", letterSpacing: isMobile ? 3 : 5, animation: "fadeIn 1s ease 0.3s both" }}>
           {mode === "login" && "HUNTER SYSTEM ACCESS"}

@@ -32,6 +32,24 @@ export const GATE_ICONS = {
 export const ITEM_ICONS = {
     blade: "/icons/item_blade.png",
     armor: "/icons/item_armor.png",
+    ring: "/icons/item_ring.png",
+    potion: "/icons/item_potion.png",
+};
+
+export const SHOP_ICONS = {
+    title: "/icons/icon_title.png",
+    theme: "/icons/icon_theme.png",
+};
+
+export const SKILL_ICONS = {
+    attack: "/icons/skill_attack.png",
+    defense: "/icons/skill_defense.png",
+    magic: "/icons/skill_magic.png",
+    speed: "/icons/skill_speed.png",
+};
+
+export const SYSTEM_ICONS = {
+    logo: "/icons/setup_logo.png",
 };
 
 export const NAV_ICONS = {
@@ -53,6 +71,13 @@ export const QUEST_ICONS = {
     emergency: "/icons/quest_emergency.png",
     chain:     "/icons/quest_chain.png",
     hidden:    "/icons/quest_hidden.png",
+};
+
+export const BACKGROUNDS = {
+    habitBanner: "/backgrounds/habit_banner_epic.png",
+    emergency:   "/backgrounds/emergency_hero.png",
+    boss:        "/backgrounds/quest_bg_boss.png",
+    standard:    "/backgrounds/quest_bg_standard.png",
 };
 
 export const DIFF_ICONS = {
@@ -77,10 +102,11 @@ export const STYLE_ICONS = {
 };
 
 export const DUNGEON_ICONS = {
-    bloodmoon:  "/icons/dungeon_bloodmoon.png",
-    densemana:  "/icons/dungeon_densemana.png",
-    floorElite: "/icons/floor_elite.png",
-    floorPuzzle:"/icons/floor_puzzle.png",
+    bloodmoon:   "/icons/dungeon_bloodmoon.png",
+    densemana:   "/icons/dungeon_densemana.png",
+    floorElite:  "/icons/floor_elite.png",
+    floorPuzzle: "/icons/floor_puzzle.png",
+    floorTreasure: "/icons/floor_treasure.png",
 };
 
 export const JOB_ICONS = {
@@ -94,6 +120,10 @@ export const JOB_ICONS = {
     monarch:    "/icons/job_monarch.png",
     domain:     "/icons/job_domain.png",
     necromancer:"/icons/job_necromancer.png",
+    necromancerBig:"/icons/class_necromancer.png",
+    assassinBig: "/icons/class_assassin.png",
+    berserkerBig: "/icons/class_berserker.png",
+    archmageBig: "/icons/class_archmage.png",
     armydead:   "/icons/job_armydead.png",
 };
 
@@ -166,6 +196,30 @@ export const BOSS_ICONS = {
     unleashed:  "/icons/boss_unleashed.png",
     calamity:   "/icons/calamity.png",
     deathsdoor: "/icons/deaths_door.png",
+};
+
+export const GEM_ICONS = {
+    gem:        "/icons/gem.png",
+    gemShop:    "/icons/gem.png",
+    booster:    "/icons/gem.png",
+    adReward:   "/icons/gem.png",
+};
+
+export const GUILD_CRESTS = {
+    crest1: "/icons/crest_1.png",
+    crest2: "/icons/crest_2.png",
+    crest3: "/icons/crest_3.png",
+    crest4: "/icons/crest_4.png",
+    crest5: "/icons/crest_5.png",
+    crest6: "/icons/crest_6.png",
+};
+
+export const MILESTONE_ICONS = {
+    streak100: "/icons/milestone_streak_100.png",
+};
+
+export const ABILITY_ICONS = {
+    consume: "/icons/ability_consume.png",
 };
 
 // ─── CONVENIENCE: Lookup helpers for components ────────────────

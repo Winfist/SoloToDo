@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { genId, calculateLevelUp } from '../data/constants';
-import { HABIT_ICONS, NAV_ICONS } from '../data/icons.js';
+import { HABIT_ICONS, NAV_ICONS, SKILL_ICONS, STAT_ICONS, STORY_ICONS } from '../data/icons.js';
 
 // ═══════════════════════════════════════════════════════════════
 // GOAL FRAMEWORK – Overarching Goals with Milestones
@@ -8,10 +8,10 @@ import { HABIT_ICONS, NAV_ICONS } from '../data/icons.js';
 
 const GOAL_CATEGORIES = [
     { key: "fitness", icon: "💪", iconSrc: HABIT_ICONS.fitness, label: "Fitness", color: "#ef4444" },
-    { key: "learning", icon: "📖", label: "Lernen", color: "#3b82f6" },
+    { key: "learning", icon: "📖", iconSrc: STAT_ICONS.int, label: "Lernen", color: "#3b82f6" },
     { key: "health", icon: "🧘", iconSrc: HABIT_ICONS.health, label: "Gesundheit", color: "#22c55e" },
-    { key: "productivity", icon: "⚡", label: "Produktiv", color: "#f59e0b" },
-    { key: "social", icon: "👥", label: "Sozial", color: "#a855f7" },
+    { key: "productivity", icon: "⚡", iconSrc: STAT_ICONS.agi, label: "Produktiv", color: "#f59e0b" },
+    { key: "social", icon: "👥", iconSrc: STAT_ICONS.cha, label: "Sozial", color: "#a855f7" },
 ];
 
 function getToday() { return new Date().toISOString().slice(0, 10); }
@@ -77,7 +77,7 @@ function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, onGenerateQuest, 
                         boxShadow: `0 0 12px ${isGoalCompleted ? "#22c55e" : cat.color}22`,
                         flexShrink: 0, overflow: "hidden",
                     }}>
-                        {isGoalCompleted ? "👑" : cat.iconSrc ? (
+                        {isGoalCompleted ? <img src={STORY_ICONS.arise} alt="completed" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #22c55e88)" }} /> : cat.iconSrc ? (
                             <img src={cat.iconSrc} alt={cat.label} style={{ width: 32, height: 32, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 5px ${cat.color}55)` }} />
                         ) : <span style={{ fontSize: 24 }}>{cat.icon}</span>}
                     </div>
@@ -142,10 +142,10 @@ function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, onGenerateQuest, 
                                         </div>
                                         <div style={{ display: "flex", gap: 8, marginTop: 3 }}>
                                             <span style={{ fontSize: 9, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace" }}>+{Math.min(m.xpBonus || 50, 50)} XP</span>
-                                            {m.titleReward && <span style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace" }}>🏆 {m.titleReward}</span>}
+                                            {m.titleReward && <span style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}><img src={NAV_ICONS.achievements} alt="" style={{ width: 10, height: 10, objectFit: "contain", filter: "drop-shadow(0 0 3px #f59e0b88)" }} /> {m.titleReward}</span>}
                                             {(!m.completed && onGenerateQuest) && (
                                                 <button onClick={(e) => { e.stopPropagation(); onGenerateQuest(goal, m); }} style={{ fontSize: 9, color: theme?.accent || "#67e8f9", background: "transparent", border: `1px dashed ${theme?.accent || "#67e8f9"}55`, borderRadius: 4, padding: "1px 6px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                                                    <span>⚔️</span> Quest Erstellen
+                                                    <img src={SKILL_ICONS.attack} alt="" style={{ width: 10, height: 10, objectFit: "contain" }} /> Quest Erstellen
                                                 </button>
                                             )}
                                         </div>
@@ -385,13 +385,13 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
         let xpGain = 0;
         if (completed && !msOld.completedAt) {
             xpGain = Math.min(msOld.xpBonus || 50, 50);
-            notify(`Meilenstein erreicht! +${xpGain} XP ✨`, "success");
+            notify(`Meilenstein erreicht! +${xpGain} XP`, "success");
             if (ms.titleReward) {
-                notify(`Titel freigeschaltet: ${ms.titleReward} 🏆`, "info");
+                notify(`Titel freigeschaltet: ${ms.titleReward}`, "info");
             }
             const allDone = goal.milestones.every(m => m.completed);
             if (allDone) {
-                setTimeout(() => notify(`ZIEL ERREICHT: ${goal.title} 🌟`, "success"), 1500);
+                setTimeout(() => notify(`ZIEL ERREICHT: ${goal.title}`, "success"), 1500);
             }
         }
 

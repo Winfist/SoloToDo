@@ -178,7 +178,7 @@ export default function GuildView({ playerState }) {
           <div style={{
             fontSize: 48, filter: `drop-shadow(0 0 12px ${MP_THEME.glow})`,
           }}>
-            {guildData?.icon ? <img src={NAV_ICONS.guild} alt="" style={{ width: 48, height: 48, objectFit: "contain" }} /> : <img src={NAV_ICONS.guild} alt="" style={{ width: 48, height: 48, objectFit: "contain" }} />}
+            {guildData?.icon ? (guildData.icon.startsWith('/') ? <img src={guildData.icon} alt="" style={{ width: 48, height: 48, objectFit: "contain", filter: "drop-shadow(0 0 4px rgba(0,0,0,0.5))" }} /> : <span style={{fontSize: 48}}>{guildData.icon}</span>) : <img src={NAV_ICONS.guild} alt="" style={{ width: 48, height: 48, objectFit: "contain" }} />}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 10px ${MP_THEME.glow}` }}>
