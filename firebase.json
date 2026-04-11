@@ -1,12 +1,22 @@
 {
   "hosting": {
-    "public": "dist",
+    "public": "public_deploy",
+    "cleanUrls": true,
+    "trailingSlash": true,
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/admin",
+        "destination": "/admin/index.html"
+      },
+      {
+        "source": "/admin/**",
+        "destination": "/admin/index.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"

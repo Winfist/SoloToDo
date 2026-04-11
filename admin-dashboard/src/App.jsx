@@ -25,11 +25,21 @@ export default function App() {
   const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => {
-      setUser(u);
-      setLoading(false);
+    const unsubscribe = auth.onAuthStateChanged(async (u) => {
       if (u) {
-        fetchAllUsers();
+        if (u.uid === '4FPoiwjIDneGrJqgYDZLPbPOJZu2' && u.email === 'jwuckert2@gmail.com') {
+          setUser(u);
+          setLoading(false);
+          fetchAllUsers();
+        } else {
+          await signOut(auth);
+          setUser(null);
+          setLoading(false);
+          setError('Zugriff verweigert: Nur der Hauptadministrator darf sich hier anmelden.');
+        }
+      } else {
+        setUser(null);
+        setLoading(false);
       }
     });
     return unsubscribe;
@@ -219,6 +229,12 @@ function UserList({ users, searchQuery, setSearchQuery, onUserSelect, onRefresh 
                   </span>
                 </div>
                 <div className="stat-item">
+                  <span className="stat-label">Gems</span>
+                  <span className="stat-val text-info" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Sparkles size={16} /> {u.gems || 0}
+                  </span>
+                </div>
+                <div className="stat-item">
                   <span className="stat-label">XP</span>
                   <span className="stat-val text-accent" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Activity size={16} /> {u.xp || 0}
@@ -248,6 +264,7 @@ function UserDetail({ user, onBack, onUpdate }) {
 
   const [editData, setEditData] = useState({
     gold: user.gold || 0,
+    gems: user.gems || 0,
     xp: user.xp || 0,
     level: user.level || 1,
     statPoints: user.statPoints || 0,
@@ -257,6 +274,23 @@ function UserDetail({ user, onBack, onUpdate }) {
     int: stats.int || 0,
     cha: stats.cha || 0
   });
+
+  useEffect(() => {
+    if (showEditModal) {
+      setEditData({
+        gold: user.gold || 0,
+        gems: user.gems || 0,
+        xp: user.xp || 0,
+        level: user.level || 1,
+        statPoints: user.statPoints || 0,
+        str: stats.str || 0,
+        agi: stats.agi || 0,
+        vit: stats.vit || 0,
+        int: stats.int || 0,
+        cha: stats.cha || 0
+      });
+    }
+  }, [showEditModal, user]);
 
   const handleReset = async (wipeQuests) => {
     try {
@@ -338,6 +372,7 @@ function UserDetail({ user, onBack, onUpdate }) {
       const userRef = doc(db, 'users', user.id);
       await updateDoc(userRef, {
         gold: Number(editData.gold),
+        gems: Number(editData.gems),
         xp: Number(editData.xp),
         level: Number(editData.level),
         statPoints: Number(editData.statPoints),
@@ -401,6 +436,10 @@ function UserDetail({ user, onBack, onUpdate }) {
               <div className="attr-card">
                 <span className="attr-icon-label"><Coins size={18} className="text-warning" /> Gold</span>
                 <span className="attr-val">{user.gold || 0}</span>
+              </div>
+              <div className="attr-card">
+                <span className="attr-icon-label"><Sparkles size={18} className="text-info" /> Gems</span>
+                <span className="attr-val" style={{ color: '#3b82f6' }}>{user.gems || 0}</span>
               </div>
               <div className="attr-card">
                 <span className="attr-icon-label"><Activity size={18} className="text-accent" /> XP</span>
@@ -631,6 +670,15 @@ function UserDetail({ user, onBack, onUpdate }) {
                     className="input-glass"
                     value={editData.gold}
                     onChange={e => setEditData({ ...editData, gold: e.target.value })}
+                  />
+                </div>
+                <div className="input-group">
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Gems</label>
+                  <input
+                    type="number"
+                    className="input-glass"
+                    value={editData.gems}
+                    onChange={e => setEditData({ ...editData, gems: e.target.value })}
                   />
                 </div>
                 <div className="input-group">

@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cd admin-dashboard && npm run build",
     "preview": "vite preview",
+    "predeploy": "cmd /c \"if exist public_deploy rmdir /s /q public_deploy\" && cmd /c \"mkdir public_deploy && xcopy /E /I dist\\* public_deploy\\ && xcopy /E /I admin-dist\\* public_deploy\\admin\\\"",
     "deploy": "firebase deploy"
   },
   "dependencies": {
