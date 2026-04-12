@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { JOBS } from "./data/jobs";
 import { JOB_QUESTS } from "./data/jobQuests";
 import { QUEST_POOL } from "./data/questPool";
@@ -36,6 +36,8 @@ import GemBoosterBanner from "./components/GemBoosterBanner.jsx";
 import DashboardView from "./components/views/DashboardView.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
 import QuestCompletionCinematic from "./components/QuestCompletionCinematic.jsx";
+import UnifiedResultModal from "./components/UnifiedResultModal.jsx";
+import { buildStoryChapterRewardFlow, buildStoryBossRewardFlow } from "./hooks/rewardFlowBuilders.js";
 
 // Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬ RANKS Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬
 import {
@@ -162,6 +164,12 @@ function App({ initialHunterName, onLogout }) {
     setShowDawnDusk,
     questCinematic,
     setQuestCinematic,
+    rewardFlowActive,
+    rewardFlowQueue,
+    showingModal,
+    setShowingModal,
+    enqueueRewardFlow,
+    dismissRewardFlow,
     notify,
     persist,
     triggerSystemMessage,
@@ -199,6 +207,77 @@ function App({ initialHunterName, onLogout }) {
     getActiveGemBoosters,
     getGemBoosterMultipliers,
   } = gameState;
+  // ── Animation Controller (Phase 5) ───────────────────────────────────────────
+  const animationControllerRef = useRef({ queue: [], index: 0, flow: null, active: false });
+
+  // Phase 6 — release deferred UI after all animations finish
+  const releaseDeferredUi = useCallback((flow) => {
+    if (!flow?.deferredUi) return;
+    const d = flow.deferredUi;
+    if (d.xpFloat) {
+      setXpFloats(prev => [...prev, { id: genId(), ...d.xpFloat }]);
+      setTimeout(() => setXpFloats(prev => prev.slice(1)), 1400);
+    }
+    // Show achievements NOT already in modal highlights
+    const shown = flow.suppressDuplicates?.achievementsShownInModal || [];
+    const unshown = (d.achievementPayloads || []).filter(a => !shown.includes(a.id));
+    if (unshown.length) setAchQueue(prev => [...prev, ...unshown]);
+
+    (d.passiveToasts || []).forEach((t, i) => setTimeout(() => notify(t.msg, t.type), t.delayMs + i * 50));
+
+    const maxDelay = (d.passiveToasts || []).reduce((m, t) => Math.max(m, t.delayMs), 0);
+    (d.systemMessages || []).forEach((sm, i) => {
+      setTimeout(() => triggerSystemMessage(sm.title, sm.lines), maxDelay + sm.delayMs + i * 400);
+    });
+    if (d.hiddenQuestModal) {
+      const delay = maxDelay + (d.systemMessages?.length || 0) * 400 + 1200;
+      setTimeout(() => setShowHiddenQuestModal(d.hiddenQuestModal), delay);
+    }
+  }, [notify, triggerSystemMessage, setXpFloats, setAchQueue, setShowHiddenQuestModal]);
+
+  const advanceAnimationQueue = useCallback(() => {
+    const ctrl = animationControllerRef.current;
+    if (!ctrl.active) return;
+    if (ctrl.index >= ctrl.queue.length) {
+      // All animations done — release deferred UI then dismiss flow
+      releaseDeferredUi(ctrl.flow);
+      dismissRewardFlow();
+      ctrl.active = false;
+      return;
+    }
+    const item = ctrl.queue[ctrl.index++];
+    switch (item.type) {
+      case 'levelup':
+        setPrevRank(getRank(item.payload.oldLevel));
+        setLevelUp({ level: item.payload.level, earnedPoints: item.payload.earnedPoints });
+        break;
+      case 'arise':
+        setAriseTarget(item.payload);
+        break;
+      case 'system_message':
+        triggerSystemMessage(item.payload.title, item.payload.lines, advanceAnimationQueue);
+        // triggerSystemMessage doesn't auto-advance — SystemCLI onClose will call setSystemMessage(null)
+        // We need a fallback to advance after a maximum wait
+        setTimeout(() => {
+          if (animationControllerRef.current.active) advanceAnimationQueue();
+        }, 8000);
+        break;
+      default:
+        advanceAnimationQueue();
+    }
+  }, [dismissRewardFlow, releaseDeferredUi, triggerSystemMessage, setPrevRank, setLevelUp, setAriseTarget]);
+
+  const startAnimationController = useCallback((flow) => {
+    animationControllerRef.current = { queue: flow.animationQueue || [], index: 0, flow, active: true };
+    if (flow.animationQueue?.length === 0) {
+      // No animations — release deferred UI immediately and dismiss
+      releaseDeferredUi(flow);
+      dismissRewardFlow();
+    } else {
+      advanceAnimationQueue();
+    }
+  }, [advanceAnimationQueue, dismissRewardFlow, releaseDeferredUi]);
+
   const [showSoulLink, setShowSoulLink] = React.useState(false);
   const [showSeasonView, setShowSeasonView] = React.useState(false);
   const [showCharismaView, setShowCharismaView] = React.useState(false);
@@ -403,7 +482,7 @@ function App({ initialHunterName, onLogout }) {
 
 
   return (
-    <div style={{ minHeight: "100vh", background: penaltyActive ? `linear-gradient(180deg,${theme.bg},rgba(20,4,4,0.95))` : theme.bg, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", position: "relative", overflow: "hidden", animation: questCinematic && questCinematic.difficulty !== 'easy' ? `qcShake 400ms ease-out` : "none" }}>
+    <div style={{ minHeight: "100vh", background: penaltyActive ? `linear-gradient(180deg,${theme.bg},rgba(20,4,4,0.95))` : theme.bg, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", position: "relative", overflow: "hidden" }}>
       <style>{CSS(theme)}</style>
       {/* Cosmic ambient glow */}
       <div style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", width: "120%", height: "50%", background: `radial-gradient(ellipse at 50% 0%,${theme.primary}12,transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
@@ -411,19 +490,74 @@ function App({ initialHunterName, onLogout }) {
       <ParticleField theme={theme} />
       <MusicPlayer play={isMusicPlaying} />
       {penaltyActive && <div style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", border: "2px solid #ef444422", animation: "penaltyPulse 2s infinite" }} />}
-      {notifications.map(n => <SystemNotification key={n.id} message={n.msg} type={n.type} onDone={() => removeNotif(n.id)} />)}
-      {achQueue.slice(0, 1).map(a => <AchievementToast key={a.id} achievement={a} onDone={() => setAchQueue(prev => prev.slice(1))} />)}
-      {xpFloats.map(f => <XpFloat key={f.id} x={f.x} y={f.y} xp={f.xp} gold={f.gold} />)}
-      {questCinematic && (
-        <QuestCompletionCinematic
-          data={questCinematic}
-          onDone={() => { if (questCinematic.commit) questCinematic.commit(); setQuestCinematic(null); }}
+      {/* ── Independent reward UI — silenced while a RewardFlow is active ── */}
+      {!rewardFlowActive && notifications.map(n => <SystemNotification key={n.id} message={n.msg} type={n.type} onDone={() => removeNotif(n.id)} />)}
+      {!rewardFlowActive && achQueue.slice(0, 1).map(a => <AchievementToast key={a.id} achievement={a} onDone={() => setAchQueue(prev => prev.slice(1))} />)}
+      {!rewardFlowActive && xpFloats.map(f => <XpFloat key={f.id} x={f.x} y={f.y} xp={f.xp} gold={f.gold} />)}
+
+      {/* ── Hero moment: UnifiedResultModal shown first, before any animation ── */}
+      {rewardFlowActive && showingModal && rewardFlowQueue[0] && (
+        <UnifiedResultModal
+          flow={rewardFlowQueue[0]}
+          onContinue={() => {
+            setShowingModal(false);
+            startAnimationController(rewardFlowQueue[0]);
+          }}
         />
       )}
-      {!questCinematic && levelUp && <LevelUpCinematic levelData={levelUp} rank={getRank(levelUp.level || levelUp)} oldRank={prevRank} onClose={() => setLevelUp(null)} />}
-      {!questCinematic && !levelUp && ariseTarget && <AriseCinematic shadow={ariseTarget} onClose={() => setAriseTarget(null)} />}
-      {!questCinematic && !levelUp && !ariseTarget && state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
-      {!questCinematic && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
+
+      {/* ── Serial animation chain — only runs after modal closes ── */}
+      {rewardFlowActive && !showingModal && levelUp && (
+        <LevelUpCinematic
+          levelData={levelUp}
+          rank={getRank(levelUp.level || levelUp)}
+          oldRank={prevRank}
+          onClose={() => {
+            setLevelUp(null);
+            if (animationControllerRef.current.active) advanceAnimationQueue();
+          }}
+        />
+      )}
+      {rewardFlowActive && !showingModal && !levelUp && ariseTarget && (
+        <AriseCinematic
+          shadow={ariseTarget}
+          onClose={() => {
+            setAriseTarget(null);
+            if (animationControllerRef.current.active) advanceAnimationQueue();
+          }}
+        />
+      )}
+      {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && state._jobLevelUp && (
+        <JobLevelUpCinematic
+          job={JOBS[state._jobLevelUp.job]}
+          newLevel={state._jobLevelUp.newLevel}
+          onClose={() => {
+            const next = { ...state }; delete next._jobLevelUp; persist(next);
+            if (animationControllerRef.current.active) advanceAnimationQueue();
+          }}
+        />
+      )}
+      {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && (
+        <AbilityActivationCinematic
+          ability={state._abilityActivated.ability}
+          job={state._abilityActivated.job}
+          onClose={() => {
+            const next = { ...state }; delete next._abilityActivated; persist(next);
+            if (animationControllerRef.current.active) advanceAnimationQueue();
+          }}
+        />
+      )}
+      {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && (
+        <SystemCLI key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />
+      )}
+
+      {/* ── Non-flow cinematics (standalone arise from evolveShadow etc.) ── */}
+      {!rewardFlowActive && levelUp && <LevelUpCinematic levelData={levelUp} rank={getRank(levelUp.level || levelUp)} oldRank={prevRank} onClose={() => setLevelUp(null)} />}
+      {!rewardFlowActive && !levelUp && ariseTarget && <AriseCinematic shadow={ariseTarget} onClose={() => setAriseTarget(null)} />}
+      {!rewardFlowActive && !levelUp && !ariseTarget && state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
+      {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
+      {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && <SystemCLI key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
+
       {activeDungeon && (
         <div style={{ display: preview3DDungeon ? "none" : "block" }}>
           <DungeonBattle dungeon={activeDungeon} playerStats={state.stats} theme={theme} onResult={r => finishDungeon(activeDungeon, r)} onClose={() => setActiveDungeon(null)} skillBonuses={getSkillBonuses(null, state.stats)} modifier={modifier} formationBonus={formationBonus} state={state} persist={persist} notify={notify} onTrigger3D={() => setPreview3DDungeon(activeDungeon)} startAutomatically={battlePendingStart} onClearStartAuto={() => setBattlePendingStart(false)} />
@@ -437,7 +571,6 @@ function App({ initialHunterName, onLogout }) {
         />
       )}
       {selectedShadow && <ShadowDetailModal shadow={selectedShadow} theme={theme} gold={state.gold} onClose={() => setSelectedShadow(null)} onDeploy={deployShadow} onUndeploy={undeployShadow} onEvolve={evolveShadow} />}
-      {!questCinematic && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && <SystemCLI key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
 
       {/* SHADOW MONARCH'S GATE — PAGE TRANSITION */}
       <PageTransition
@@ -859,30 +992,26 @@ function App({ initialHunterName, onLogout }) {
                 if (!completedChapters.includes(chapter.id)) {
                   completedChapters.push(chapter.id);
 
-                  // XP und Gold vergeben
                   const xpGain = chapter.rewards?.xp || 0;
                   const goldGain = chapter.rewards?.gold || 0;
                   let next = calculateLevelUp(prev, xpGain);
+                  const didLevelUp = next._didLevelUp;
+                  const earnedPoints = next._levelsGained;
+                  const newLevel = next.level;
 
-                  // Titel vergeben falls vorhanden
-                  let newTitle = next.selectedTitle;
-                  if (chapter.rewards?.title) {
-                    newTitle = chapter.rewards.title;
-                  }
-
-                  notify(`Kapitel "${chapter.title}" abgeschlossen! +${xpGain} XP`, "levelup");
+                  if (chapter.rewards?.title) next.selectedTitle = chapter.rewards.title;
 
                   persist({
                     ...next,
                     gold: (prev.gold || 0) + goldGain,
                     totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
-                    selectedTitle: newTitle,
                     story: {
                       ...prev.story,
                       completedChapters,
                       totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
                     },
                   });
+                  enqueueRewardFlow(buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelUp, newLevel, earnedPoints));
                 } else {
                   notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
                 }
@@ -898,8 +1027,11 @@ function App({ initialHunterName, onLogout }) {
                 const xpGain = boss.rewards?.xp || 0;
                 const goldGain = boss.rewards?.gold || 0;
                 let next = calculateLevelUp(prev, xpGain);
-                if (boss.rewards?.title) next.selectedTitle = boss.rewards.title;
-                notify(`Boss "${boss.name}" besiegt! +${xpGain} XP +${goldGain} Gold`, "levelup");
+                const didLevelUp = next._didLevelUp;
+                const earnedPoints = next._levelsGained;
+                const newLevel = next.level;
+                const titleGranted = boss.rewards?.title || null;
+                if (titleGranted) next.selectedTitle = titleGranted;
                 persist({
                   ...next,
                   gold: (prev.gold || 0) + goldGain,
@@ -910,6 +1042,7 @@ function App({ initialHunterName, onLogout }) {
                     totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
                   },
                 });
+                enqueueRewardFlow(buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, titleGranted));
               }}
             />
           )

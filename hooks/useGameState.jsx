@@ -15,6 +15,8 @@ import {
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests
 } from '../data/constants';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
+import { buildCompleteQuestState, buildCompleteEmergencyQuestState } from './questActions.js';
+import { buildQuestRewardFlow, buildEmergencyRewardFlow, buildDungeonRewardFlow, buildProtocolRewardFlow } from './rewardFlowBuilders.js';
 import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextMonday } from '../data/seasons.js';
 import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER_UNLOCK_MESSAGES } from '../data/featureUnlocks.js';
 
@@ -63,6 +65,24 @@ export function useGameState(initialHunterName, onLogout) {
   const [showShadowRegression, setShowShadowRegression] = useState(false);
   const [showDawnDusk, setShowDawnDusk] = useState(false);
   const [questCinematic, setQuestCinematic] = useState(null);
+  const [rewardFlowActive, setRewardFlowActive] = useState(false);
+  const [rewardFlowQueue, setRewardFlowQueue] = useState([]);
+  const [showingModal, setShowingModal] = useState(false);
+
+  const enqueueRewardFlow = useCallback((flow) => {
+    setRewardFlowQueue(prev => [...prev, flow]);
+    setRewardFlowActive(true);
+    setShowingModal(true);
+  }, []);
+
+  const dismissRewardFlow = useCallback(() => {
+    setRewardFlowQueue(prev => {
+      const next = prev.slice(1);
+      if (next.length === 0) setRewardFlowActive(false);
+      return next;
+    });
+    setShowingModal(false);
+  }, []);
 
   const notify = useCallback((msg, type = "info") => setNotifications(prev => [...prev, { id: genId(), msg, type }]), []);
   const persist = useCallback(s => {
@@ -373,22 +393,33 @@ export function useGameState(initialHunterName, onLogout) {
 
   const removeNotif = useCallback(id => setNotifications(prev => prev.filter(n => n.id !== id)), []);
 
-  const processAchievements = useCallback(nextState => {
+  // Pure version — returns { nextState, newAchievements }, never calls setAchQueue
+  const processAchievementsPure = useCallback(nextState => {
     const newAchs = checkAchievements(nextState);
-    if (!newAchs.length) return nextState;
+    if (!newAchs.length) return { nextState, newAchievements: [] };
     const unlocked = [...(nextState.achievements?.unlocked || []), ...newAchs.map(a => a.id)];
     let xpBonus = 0, goldBonus = 0, gemBonus = 0;
     newAchs.forEach(a => { xpBonus += a.reward.xp || 0; goldBonus += a.reward.gold || 0; gemBonus += a.reward.gems || 0; });
-    setAchQueue(prev => [...prev, ...newAchs]);
-    return calculateLevelUp({
-      ...nextState,
-      gold: nextState.gold + goldBonus,
-      totalGoldEarned: (nextState.totalGoldEarned || 0) + goldBonus,
-      gems: (nextState.gems || 0) + gemBonus,
-      totalGemsEarned: (nextState.totalGemsEarned || 0) + gemBonus,
-      achievements: { ...nextState.achievements, unlocked }
-    }, xpBonus);
+    return {
+      nextState: calculateLevelUp({
+        ...nextState,
+        gold: nextState.gold + goldBonus,
+        totalGoldEarned: (nextState.totalGoldEarned || 0) + goldBonus,
+        gems: (nextState.gems || 0) + gemBonus,
+        totalGemsEarned: (nextState.totalGemsEarned || 0) + gemBonus,
+        achievements: { ...nextState.achievements, unlocked }
+      }, xpBonus),
+      newAchievements: newAchs
+    };
   }, []);
+
+  // Legacy impure version — for minor callers (evolveShadow, buyItem, equipItem, buyGemItem)
+  // that immediately persist and don't need RewardFlow sequencing
+  const processAchievements = useCallback(nextState => {
+    const { nextState: resolved, newAchievements } = processAchievementsPure(nextState);
+    if (newAchievements.length) setAchQueue(prev => [...prev, ...newAchievements]);
+    return resolved;
+  }, [processAchievementsPure]);
 
   const computeXpGain = useCallback((quest, streakBonus, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses = {}, gemBoosterMult = 1) => {
     const diff = DIFFICULTIES.find(d => d.key === quest.difficulty);
@@ -417,7 +448,8 @@ export function useGameState(initialHunterName, onLogout) {
 
   const completeQuest = useCallback((questId, rect) => {
     if (!state) return;
-    const quest = state.quests.find(q => q.id === questId); if (!quest) return;
+    const quest = state.quests.find(q => q.id === questId);
+    if (!quest) return;
 
     // Check wait time for manual quests
     if (!quest.isSystem && quest.createdAtMs) {
@@ -431,211 +463,7 @@ export function useGameState(initialHunterName, onLogout) {
       }
     }
 
-    const today = getToday();
-    const oldStreak = state.streak;
-    const newStreak = state.lastActiveDate === today ? oldStreak : (oldStreak + 1);
-    const streakBonusPct = Math.min(newStreak, 5) * 10;
-    const equipBonuses = getEquipBonuses(state.equipment);
-    const skillBonuses = getSkillBonuses(null, state.stats);
-    const jobBonuses = getJobBonuses(state);
-    const formBonus = calcFormationBonus(state.shadowArmy, jobBonuses.allShadowsActive);
-    const penaltyActive = state.penaltyZone?.active;
-    const soulLinkActive = state.soulLink?.bothActive;
-    const { xpMult: gemXpMult } = getGemBoosterMultipliers();
-    let xpGain = computeXpGain(quest, streakBonusPct, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses, gemXpMult);
-    if (soulLinkActive) xpGain = Math.round(xpGain * 1.25);
-    if (state.restBuff?.active) xpGain = Math.round(xpGain * 1.1);
-
-    let finalSysIntegrity = state.integrityScore !== undefined ? state.integrityScore : 100;
-    if (!quest.isSystem) {
-      if ((state.dailyUserXP || 0) > 200 + state.level * 5) {
-        xpGain = Math.round(xpGain * 0.5);
-      } else if ((state.dailyUserXP || 0) + xpGain > 200 + state.level * 5) {
-        notify("Taegliches XP Soft-Cap erreicht. Kuenftige eigene Quests geben -50%.", "warning");
-      }
-      const actualElapsedHours = (Date.now() - (quest.createdAtMs || Date.now())) / 3600000;
-      if (actualElapsedHours < 0.1) finalSysIntegrity = Math.max(0, finalSysIntegrity - 5);
-      if (finalSysIntegrity < 50) {
-        xpGain = Math.round(xpGain * (finalSysIntegrity / 100));
-        if (Math.random() < 0.3) notify("System-Integritaet niedrig. XP fuer eigene Quests verringert.", "warning");
-      }
-    }
-
-    const diff = DIFFICULTIES.find(d => d.key === quest.difficulty);
-    const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
-    let goldMult = (1 + (equipBonuses.goldBonus || 0) + (skillBonuses.goldBonus || 0) + (formBonus?.goldBonus || 0)) * (typeCfg.goldMult || 1) * (quest.chainMultiplier || 1);
-    const goldGain = Math.round(diff.gold * goldMult);
-    const oldRank = getRank(state.level);
-    let next = calculateLevelUp(state, xpGain);
-    const didLevelUp = next._didLevelUp;
-    const earnedPoints = next._levelsGained;
-    const newLevel = next.level;
-    next = awardJobXp({ ...next, gold: state.gold + goldGain, totalGoldEarned: (state.totalGoldEarned || 0) + goldGain }, "quest_complete", {
-      category: quest.category,
-      difficulty: quest.difficulty
-    });
-
-    let jobLevelUpNotif = null;
-    if (next._jobLevelUp) {
-      jobLevelUpNotif = `JOB LEVEL UP: ${JOBS[next._jobLevelUp.job].name} ist nun Level ${next._jobLevelUp.newLevel}!`;
-      delete next._jobLevelUp;
-    }
-
-    let newShadowArmy = { ...next.shadowArmy };
-    let ariseData = null;
-    let ariseNotif = null;
-    if (quest.difficulty === "boss") {
-      const newShadow = createShadowFromQuest(quest, newLevel);
-      newShadowArmy = { ...newShadowArmy, shadows: [...(newShadowArmy.shadows || []), newShadow] };
-      ariseData = newShadow;
-      ariseNotif = `${quest.title} wurde zu einem ${SHADOW_CLASSES[newShadow.class].name}!`;
-    }
-    let newSoulLink = { ...(state.soulLink || {}) };
-
-    let newPenalty = { ...state.penaltyZone };
-    let penaltyNotif = null;
-    if (newPenalty.active) {
-      newPenalty.questsCompletedInPenalty = (newPenalty.questsCompletedInPenalty || 0) + 1;
-      const needed = newPenalty.redemptionLeft || 3;
-      if (newPenalty.questsCompletedInPenalty >= needed) { newPenalty.active = false; penaltyNotif = "Strafe abgebuest. Willkommen zurueck, Hunter."; }
-    }
-
-    let newShadowRegression = { ...(state.shadowRegression || {}) };
-    let shadowRegressionMsg = null;
-    let shadowRegressionNotif = null;
-    if (newShadowRegression.active && quest.isRedemption) {
-      newShadowRegression.questsCompleted = (newShadowRegression.questsCompleted || 0) + 1;
-      if (newShadowRegression.questsCompleted >= 3) {
-        const restoredStreak = Math.floor((newShadowRegression.previousStreak || 0) * 0.5);
-        newShadowRegression = {
-          ...newShadowRegression, active: false, completedAt: today,
-          regressionHistory: [...(newShadowRegression.regressionHistory || []), { date: today, previousStreak: newShadowRegression.previousStreak, restoredStreak }]
-        };
-        newPenalty = { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 };
-        shadowRegressionMsg = { title: "SCHATTENRUECKKEHR VOLLSTAENDIG", lines: ["Du hast die Dunkelheit ueberwunden.", `Streak wiederhergestellt: ${restoredStreak} Tage`, "Der Schatten wird zu deiner Staerke.", "WILLKOMMEN ZURUECK, HUNTER."] };
-        xpGain = Math.round(xpGain * 2);
-        shadowRegressionNotif = `SHADOW REGRESSION ABGESCHLOSSEN! Streak auf ${restoredStreak} Tage wiederhergestellt!`;
-      } else {
-        const remaining = 3 - newShadowRegression.questsCompleted;
-        notify(`Schattenrueckforderung ${newShadowRegression.questsCompleted}/3 - Noch ${remaining} verbleibend.`, "info");
-      }
-    }
-
-    let extraQuests = [];
-    let chainNotif = null;
-    if (quest.type === "chained" && quest.chainStep < quest.chainTotal) {
-      const nextStep = generateChainedQuest(quest.title, quest.category, quest.difficulty, quest.chainStep + 1, quest.chainTotal);
-      extraQuests = [nextStep];
-      chainNotif = { text: `Kette ${quest.chainStep}/${quest.chainTotal} erfuellt! Multiplikator: x${nextStep.chainMultiplier.toFixed(2)}`, type: "info" };
-    } else if (quest.type === "chained" && quest.chainStep >= quest.chainTotal) {
-      chainNotif = { text: "QUEST-KETTE ABGESCHLOSSEN! Maximaler Multiplikator erreicht!", type: "gold" };
-    }
-
-    let newCharismaDungeons = { ...(state.charismaDungeons || {}) };
-    let charismaDungeonMsg = null;
-    let charismaDungeonNotif = null;
-    if (quest.isCharismaQuest && quest.charismaChainId) {
-      const chain = CHARISMA_CHAINS.find(c => c.id === quest.charismaChainId);
-      if (chain) {
-        const nextStepIdx = quest.charismaStep;
-        const stepHistory = [...(newCharismaDungeons.stepHistory || []), { chainId: quest.charismaChainId, step: quest.charismaStep, completedAt: today, xpGained: xpGain }];
-        if (nextStepIdx < chain.steps.length) {
-          const nextStepData = chain.steps[nextStepIdx];
-          const nextQ = { id: genId(), title: `[${chain.name}] Etage ${nextStepIdx + 1}: ${nextStepData.title}`, category: "cha", difficulty: nextStepData.difficulty, type: "side", isSystem: true, isCharismaQuest: true, charismaChainId: chain.id, charismaStep: nextStepIdx + 1, xpMult: nextStepData.xpMult, createdAt: today, createdAtMs: Date.now() };
-          extraQuests = [...extraQuests, nextQ];
-          newCharismaDungeons = { ...newCharismaDungeons, stepHistory, activeChains: { ...(newCharismaDungeons.activeChains || {}), [chain.id]: { ...(newCharismaDungeons.activeChains?.[chain.id] || {}), currentStep: nextStepIdx + 1 } } };
-          charismaDungeonNotif = { text: `${chain.name}: Etage ${quest.charismaStep} bezwungen! Weiter zu Etage ${nextStepIdx + 1}.`, type: "info" };
-        } else {
-          const chaBonus = chain.reward.chaBonus || 3;
-          newCharismaDungeons = { ...newCharismaDungeons, stepHistory, completedChains: [...(newCharismaDungeons.completedChains || []), chain.id], activeChains: Object.fromEntries(Object.entries(newCharismaDungeons.activeChains || {}).filter(([k]) => k !== chain.id)) };
-          charismaDungeonMsg = { title: "CHARISMA-DUNGEON BEZWUNGEN", lines: [`${chain.icon} ${chain.name} vollstaendig abgeschlossen.`, `+${chaBonus} CHA dauerhaft erlangt.`, `Titel freigeschaltet: "${chain.reward.title}"`, "Das System erkennt dein soziales Erwachen an."] };
-          charismaDungeonNotif = { text: `CHARISMA DUNGEON ABGESCHLOSSEN: ${chain.name}! +${chaBonus} CHA permanent.`, type: "named" };
-          next._charismaChaBonus = (next._charismaChaBonus || 0) + chaBonus;
-          next._charismaTitle = chain.reward.title;
-        }
-      }
-    }
-
-    let newHiddenQuests = { ...state.hiddenQuests };
-    let hiddenNotif = null;
-    if (quest.type === "hidden") {
-      newHiddenQuests = { discovered: (newHiddenQuests.discovered || []).filter(id => id !== quest.hiddenId), completed: [...(newHiddenQuests.completed || []), quest.hiddenId || quest.id] };
-      hiddenNotif = "Verborgene Quest erfuellt! Legendaere Belohnung erhalten!";
-    }
-    const updatedQuests = [...(quest.type === "daily" ? state.quests.map(q => q.id === questId ? { ...q, completed: true } : q) : state.quests.filter(q => q.id !== questId)), ...extraQuests];
-
-    let newHabits = state.habits;
-    if (quest.linkedHabitId && state.habits) {
-      newHabits = state.habits.map(h => {
-        if (h.id === quest.linkedHabitId && !h.history?.[today]?.completed) {
-          const hNewStreak = state.lastActiveDate === today ? h.streak : (h.streak + 1);
-          return { ...h, streak: hNewStreak, bestStreak: Math.max(h.bestStreak || 0, hNewStreak), totalCompletions: (h.totalCompletions || 0) + 1, history: { ...h.history, [today]: { completed: true, xp: 0, gold: 0 } } };
-        }
-        return h;
-      });
-    }
-
-    let newCodexMastered = state.codexMastered || [];
-    let codexStatBonus = 0;
-    let codexNotif = null;
-    if (quest.isCodexQuest && quest.codexId && !newCodexMastered.includes(quest.codexId)) {
-      newCodexMastered = [...newCodexMastered, quest.codexId];
-      codexStatBonus = 1;
-      codexNotif = `CODEX GEMEISTERT! Permanente Weisheit erlangt. +1 ${quest.rewardStat?.toUpperCase() || quest.category.toUpperCase()}`;
-    }
-
-    const finalStreak = (newShadowRegression.active === false && newShadowRegression.completedAt === today && !state.shadowRegression?.completedAt)
-      ? Math.floor((newShadowRegression.previousStreak || 0) * 0.5)
-      : newStreak;
-
-    const charismaChaBonus = next._charismaChaBonus || 0;
-    const charismaTitle = next._charismaTitle || null;
-    delete next._charismaChaBonus;
-    delete next._charismaTitle;
-
-    next = {
-      ...next,
-      stats: {
-        ...state.stats,
-        [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) + codexStatBonus,
-        cha: (state.stats.cha || 0) + charismaChaBonus + (quest.category === "cha" ? Math.ceil(xpGain / 40) + codexStatBonus : 0)
-      },
-      quests: updatedQuests, completedQuests: [...(state.completedQuests || []), { ...quest, completedAt: today }],
-      habits: newHabits, streak: finalStreak, lastActiveDate: today, shadowArmy: newShadowArmy,
-      totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1,
-      penaltyZone: newPenalty, hiddenQuests: newHiddenQuests,
-      dailyUserXP: (state.dailyUserXP || 0) + (!quest.isSystem ? xpGain : 0),
-      integrityScore: finalSysIntegrity, codexMastered: newCodexMastered,
-      shadowRegression: newShadowRegression, soulLink: newSoulLink, charismaDungeons: newCharismaDungeons,
-      ...(charismaTitle ? { selectedTitle: charismaTitle } : {}),
-      seasons: { ...(state.seasons || {}), seasonalCompletions: quest.isSeasonal ? [...(state.seasons?.seasonalCompletions || []), quest.id] : (state.seasons?.seasonalCompletions || []) }
-    };
-
-    const newlyDiscoveredHQ = isFeatureUnlocked('hidden_quests', next.level) ? checkHiddenQuestTriggers(next) : [];
-    if (newlyDiscoveredHQ.length > 0) {
-      const newDiscovered = [...(next.hiddenQuests.discovered || []), ...newlyDiscoveredHQ.map(hq => hq.id)];
-      next.hiddenQuests = { ...next.hiddenQuests, discovered: newDiscovered };
-      const hqAsQuests = newlyDiscoveredHQ.map(hq => ({ id: genId(), hiddenId: hq.id, title: hq.title, category: hq.category, difficulty: hq.difficulty, type: "hidden", createdAt: today, xpMult: hq.reward.xpMult, goldMult: hq.reward.goldMult }));
-      next.quests = [...next.quests, ...hqAsQuests];
-    }
-
-    const newNameds = checkNamedShadowUnlocks(next);
-    if (newNameds.length > 0) {
-      newNameds.forEach(ns => {
-        const namedShadow = { ...ns, id: genId(), namedId: ns.id, level: 1, xp: 0, xpToNext: calcShadowXpToNext(1), stats: { power: 40, speed: 35, loyalty: 50, presence: 30 }, abilities: [ns.uniqueAbility || {}], isDeployed: false, deploymentSlot: null, evolutionStage: 1, summonsCount: 1, dungeonsCleared: 0, totalXpGenerated: 0 };
-        next.shadowArmy.shadows = [...next.shadowArmy.shadows, namedShadow];
-      });
-    }
-    next = processAchievements(next);
-
-    const newCha = next.stats?.cha || 0;
-    const currentUnlocked = next.charismaDungeons?.unlockedChains || ["social_exposure"];
-    const newlyUnlockedChains = CHARISMA_CHAINS.filter(c => newCha >= c.chaThreshold && !currentUnlocked.includes(c.id));
-    if (newlyUnlockedChains.length > 0) {
-      next.charismaDungeons = { ...next.charismaDungeons, unlockedChains: [...currentUnlocked, ...newlyUnlockedChains.map(c => c.id)] };
-    }
-
-    // ── Haptic Feedback ──────────────────────────────────────────
+    // Haptic feedback
     try {
       if (navigator.vibrate) {
         const d = quest.difficulty;
@@ -645,62 +473,14 @@ export function useGameState(initialHunterName, onLogout) {
       }
     } catch (e) { /* Graceful fallback */ }
 
-    // ── All UI side-effects are deferred until the cinematic is dismissed ──
-    const commit = () => {
-      persist(next);
-      if (rect) setXpFloats(prev => [...prev, { id: genId(), x: rect.x - 20, y: rect.y, xp: xpGain, gold: goldGain }]);
-      setTimeout(() => setXpFloats(prev => prev.slice(1)), 1400);
-      if (jobLevelUpNotif) notify(jobLevelUpNotif, "levelup");
-      if (ariseNotif) notify(ariseNotif, "shadow");
-      if (soulLinkActive) notify("Soul Link aktiv! +25% XP Bonus", "success");
-      if (penaltyNotif) notify(penaltyNotif, "success");
-      if (chainNotif) notify(chainNotif.text, chainNotif.type);
-      if (charismaDungeonNotif) notify(charismaDungeonNotif.text, charismaDungeonNotif.type);
-      if (hiddenNotif) notify(hiddenNotif, "named");
-      if (codexNotif) notify(codexNotif, "success");
-      if (shadowRegressionNotif) notify(shadowRegressionNotif, "named");
-      newlyDiscoveredHQ.forEach(hq => {
-        setTimeout(() => notify(`${hq.discoveryMsg}`, "named"), 600);
-        setTimeout(() => setShowHiddenQuestModal(hq), 1200);
-      });
-      newNameds.forEach(ns => { notify(`${ns.name} - ${ns.title} - ist erwacht!`, "named"); setTimeout(() => setAriseTarget(ns), 1000); });
-      newlyUnlockedChains.forEach(c => { setTimeout(() => notify(`Charisma-Dungeon freigeschaltet: ${c.icon} ${c.name}!`, "success"), 800); });
-      if (didLevelUp) {
-        setPrevRank(oldRank);
-        const newFeatures = getNewlyUnlockedFeatures(state.level, newLevel);
-        const newTier = getNewlyUnlockedTier(state.level, newLevel);
-        setLevelUp({ level: newLevel, earnedPoints, unlockedFeatures: newFeatures });
-        triggerSystemMessage("LEVEL UP BESTAETIGT", [
-          `Glueckwunsch, Hunter ${state.hunterName}.`,
-          `Sie haben Level ${newLevel} erreicht.`,
-          "Ihre physischen und mentalen Kapazitaeten wurden erweitert.",
-          `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`,
-          "Verteilen Sie diese weise im Statistik-Menue."
-        ]);
-        if (newTier !== null && TIER_UNLOCK_MESSAGES[newTier]) {
-          const msg = TIER_UNLOCK_MESSAGES[newTier];
-          setTimeout(() => triggerSystemMessage(msg.title, msg.lines), 4000);
-          newFeatures.forEach(f => setTimeout(() => notify(`Freigeschaltet: ${f.label} - ${f.desc}`, "named"), 5000));
-        }
-      } else if (!ariseData && quest.type !== "hidden" && quest.type !== "chained") {
-        notify(`+${xpGain} XP +${goldGain} Gold`, "success");
-      }
-      if (ariseData && !newNameds.length) setTimeout(() => setAriseTarget(ariseData), 500);
-      if (shadowRegressionMsg) setTimeout(() => triggerSystemMessage(shadowRegressionMsg.title, shadowRegressionMsg.lines), 600);
-      if (charismaDungeonMsg) setTimeout(() => triggerSystemMessage(charismaDungeonMsg.title, charismaDungeonMsg.lines), 700);
-    };
+    const { xpMult: gemBoosterMult } = getGemBoosterMultipliers();
+    const result = buildCompleteQuestState(questId, state, processAchievementsPure, gemBoosterMult);
+    if (!result) return;
 
-    // ── Quest Completion Cinematic ────────────────────────────────
-    const isFirstToday = !(state.completedQuests || []).some(q => q.completedAt === today);
-    setQuestCinematic({
-      quest, xpGain, goldGain,
-      statCategory: quest.category,
-      difficulty: quest.difficulty,
-      context: { streak: finalStreak, penaltyActive, isFirstToday, didLevelUp, newLevel: didLevelUp ? newLevel : null },
-      rect, timestamp: Date.now(),
-      commit,
-    });
-  }, [state, persist, processAchievements, computeXpGain, notify]);
+    persist(result.nextState);
+    const flow = buildQuestRewardFlow(result, state.level, rect);
+    enqueueRewardFlow(flow);
+  }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify]);
 
 
   const deleteQuest = id => persist({ ...state, quests: state.quests.filter(q => q.id !== id) });
@@ -783,59 +563,14 @@ export function useGameState(initialHunterName, onLogout) {
 
   const completeEmergencyQuest = useCallback((eq) => {
     if (!state || state.emergencyDone) return;
-    const oldRank = getRank(state.level); // BUG FIX: was missing, caused crash on level-up
-    const diff = DIFFICULTIES.find(d => d.key === eq.difficulty) || DIFFICULTIES[1];
-    const xpGain = Math.round(diff.xp * 2.5);
-    const goldGain = Math.round(diff.gold * 2.5);
-    let next = calculateLevelUp(state, xpGain);
-    const didLevelUp = next._didLevelUp;
-    const earnedPoints = next._levelsGained;
-    const newLevel = next.level;
-
-    next = {
-      ...next,
-      gold: state.gold + goldGain,
-      totalGoldEarned: (state.totalGoldEarned || 0) + goldGain,
-      stats: { ...state.stats, [eq.category]: (state.stats[eq.category] || 0) + 2 },
-      emergencyDone: true,
-      totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1
-    };
-    next = processAchievements(next);
-    persist(next);
-    notify(`ðŸš¨ NOTFALL-QUEST ERFÃœLLT! +${xpGain} XP · +${goldGain} Gold`, "named");
-    if (didLevelUp) {
-      setPrevRank(oldRank);
-      setLevelUp({ level: newLevel, earnedPoints });
-      triggerSystemMessage("LEVEL UP BESTÃ„TIGT", [
-        "Notfallmission erfolgreich abgeschlossen.",
-        `Sie haben Level ${newLevel} erreicht.`,
-        `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`
-      ]);
-    }
-
-    // â”€â”€ Quest Completion Cinematic for Emergency Quest â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    setQuestCinematic({
-      quest: { ...eq, title: eq.title || "Notfallmission", type: "emergency" },
-      xpGain,
-      goldGain,
-      statCategory: eq.category,
-      difficulty: eq.difficulty || "hard",
-      context: {
-        streak: state.streak || 0,
-        penaltyActive: state.penaltyZone?.active,
-        isFirstToday: false,
-        didLevelUp,
-        newLevel: didLevelUp ? newLevel : null,
-      },
-      rect: null,
-      timestamp: Date.now(),
-    });
-
-    // â”€â”€ Haptic Feedback â”€â”€
+    const result = buildCompleteEmergencyQuestState(eq, state, processAchievementsPure);
+    persist(result.nextState);
+    const flow = buildEmergencyRewardFlow(result);
+    enqueueRewardFlow(flow);
     try {
       if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
     } catch (e) { /* Graceful fallback */ }
-  }, [state, persist, processAchievements, notify]);
+  }, [state, persist, processAchievementsPure, enqueueRewardFlow]);
 
   const addChainedQuest = useCallback((title, category, difficulty) => {
     if (!title.trim()) return;
@@ -846,11 +581,11 @@ export function useGameState(initialHunterName, onLogout) {
   }, [state, persist, notify]);
 
   const finishDungeon = useCallback((dungeon, result) => {
+    const oldLevel = state.level;
     let next = calculateLevelUp(state, result.xp);
     const didLevelUp = next._didLevelUp;
     const earnedPoints = next._levelsGained;
     const newLevel = next.level;
-    const oldRank = getRank(state.level);
 
     let newInventory = [...(next.equipment?.inventory || [])];
     if (result.drop) newInventory.push(result.drop);
@@ -865,14 +600,14 @@ export function useGameState(initialHunterName, onLogout) {
     const newShadowArmy = { ...state.shadowArmy, shadows: updatedShadows };
     const totalGold = result.gold + (result.goldBonus ? Math.round(result.goldBonus * (state.todayModifier?.goldMult || 1)) : 0);
 
-    // Job XP calculation for dungeons
     next = awardJobXp({ ...next, gold: state.gold + totalGold, totalGoldEarned: (state.totalGoldEarned || 0) + totalGold }, "dungeon_complete", {
       strategy: result.strategy,
       dungeonRank: dungeon.rank
     });
 
+    let jobLevelUpNotif = null;
     if (next._jobLevelUp) {
-      notify(`JOB LEVEL UP: ${JOBS[next._jobLevelUp.job].name} Lv.${next._jobLevelUp.newLevel}!`, "levelup");
+      jobLevelUpNotif = `JOB LEVEL UP: ${JOBS[next._jobLevelUp.job].name} Lv.${next._jobLevelUp.newLevel}!`;
       delete next._jobLevelUp;
     }
 
@@ -882,13 +617,10 @@ export function useGameState(initialHunterName, onLogout) {
       const partialGold = Math.floor(result.gold * getJobBonuses(state).dungeonFailureRewards);
       next.xp += partialXp;
       next.gold += partialGold;
-      notify(`Guardian-Passiv: +${partialXp} XP, +${partialGold} Gold trotz Niederlage`, "success");
     }
 
     next = {
       ...next,
-      // BUG FIX: calculateLevelUp already adds earnedPoints to statPoints - don't add again!
-      // statPoints already correct in `next` from calculateLevelUp
       dungeons: state.dungeons.map(d => d.instanceId === dungeon.instanceId ? { ...d, cleared: true } : d),
       dungeonHistory: [...(state.dungeonHistory || []), { dungeonId: dungeon.id, dungeonName: dungeon.name, dungeonRank: dungeon.rank, won: result.won, xp: result.xp, gold: totalGold, floorsCleared: result.floorsCleared || dungeon.floors, date: getToday() }],
       totalXpEarned: (state.totalXpEarned || 0) + result.xp,
@@ -896,7 +628,6 @@ export function useGameState(initialHunterName, onLogout) {
       shadowArmy: newShadowArmy
     };
 
-    // Check named shadow unlocks after dungeon
     const newNameds = checkNamedShadowUnlocks(next);
     if (newNameds.length > 0) {
       newNameds.forEach(ns => {
@@ -909,25 +640,28 @@ export function useGameState(initialHunterName, onLogout) {
           summonsCount: 1, dungeonsCleared: 0, totalXpGenerated: 0,
         };
         next.shadowArmy.shadows = [...next.shadowArmy.shadows, namedShadow];
-        notify(`${ns.name} — ${ns.title} — ist erwacht!`, "named");
-        setTimeout(() => setAriseTarget(namedShadow), 800);
       });
     }
-    next = processAchievements(next);
-    persist(next); setActiveDungeon(null);
-    if (didLevelUp) {
-      setPrevRank(oldRank);
-      setLevelUp({ level: newLevel, earnedPoints });
-      triggerSystemMessage("LEVEL UP BESTÃ„TIGT", [
-        `Dungeon erfolgreich abgeschlossen.`,
-        `Sie haben Level ${newLevel} erreicht.`,
-        `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`,
-        "Verteilen Sie diese im Statistik-Menü."
-      ]);
+
+    const { nextState: afterAch, newAchievements } = processAchievementsPure(next);
+    next = afterAch;
+
+    persist(next);
+    setActiveDungeon(null);
+
+    const passiveToasts = [];
+    if (jobLevelUpNotif) passiveToasts.push({ msg: jobLevelUpNotif, type: 'levelup', delayMs: 0 });
+
+    const flow = buildDungeonRewardFlow(
+      dungeon, result, didLevelUp, earnedPoints, newLevel, oldLevel,
+      result.xp, totalGold, newNameds, newAchievements
+    );
+    // Inject jobLevelUp as a passive toast since it's not in builder
+    if (passiveToasts.length) {
+      flow.deferredUi.passiveToasts = [...passiveToasts, ...flow.deferredUi.passiveToasts];
     }
-    else if (result.won) notify(`${dungeon.name} bezwungen! +${result.xp} XP · ${result.floorsCleared || "?"}/${dungeon.floors} Floors`, "dungeon");
-    else notify(`Niederlage in ${dungeon.name}.`, "defeat");
-  }, [state, persist, processAchievements, notify]);
+    enqueueRewardFlow(flow);
+  }, [state, persist, processAchievementsPure, enqueueRewardFlow]);
 
   const deployShadow = useCallback((shadowId, slot) => {
     const slotData = FORMATION_SLOTS[slot];
@@ -1169,25 +903,20 @@ export function useGameState(initialHunterName, onLogout) {
         perfectRuns: isPerfect ? (state.dawnDusk.perfectRuns || 0) + 1 : (state.dawnDusk.perfectRuns || 0),
         runHistory: [...(state.dawnDusk.runHistory || []), historyEntry]
       };
+      persist(nextState);
       if (isPerfect) {
-        notify(`â­ PERFECT RUN! Alle Etagen rechtzeitig bezwungen. +${xpGain} XP Bonus!`, "named");
-        setTimeout(() => triggerSystemMessage("PERFECT RUN BESTÃ„TIGT", [
-          run.type === "dawn" ? "Morgendämmerung vollständig bezwungen." : "Dunkelheit vollständig bezwungen.",
-          `${newCompleted}/${run.totalFloors} Etagen abgeschlossen.`,
-          `Zeit: ${Math.floor(elapsed / 60)} Minuten.`,
-          `+${xpGain} XP Bonus erhalten. Tadellos, Hunter.`
-        ]), 500);
+        enqueueRewardFlow(buildProtocolRewardFlow(run, xpGain, true, elapsed));
       } else {
-        notify(`âœ… Protokoll abgeschlossen! +${xpGain} XP`, "success");
+        notify(`✅ Protokoll abgeschlossen! +${xpGain} XP`, "success");
       }
     } else {
       nextState.dawnDusk = {
         ...state.dawnDusk,
         currentRun: { ...run, floors: newFloors, floorsCompleted: newCompleted, isPerfectPossible: !timedOut }
       };
+      persist(nextState);
     }
-    persist(nextState);
-  }, [state, persist, notify, triggerSystemMessage]);
+  }, [state, persist, notify, enqueueRewardFlow]);
 
   const configureProtocolTasks = useCallback((type, tasks) => {
     if (!state) return;
@@ -1492,6 +1221,13 @@ export function useGameState(initialHunterName, onLogout) {
     setShowDawnDusk,
     questCinematic,
     setQuestCinematic,
+    rewardFlowActive,
+    rewardFlowQueue,
+    showingModal,
+    setShowingModal,
+    enqueueRewardFlow,
+    dismissRewardFlow,
+    processAchievementsPure,
     notify,
     persist,
     triggerSystemMessage,

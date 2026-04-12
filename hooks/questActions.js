@@ -42,7 +42,7 @@ export function computeXpGain(quest, streakBonus, equipBonuses, skillBonuses, pe
  * Handle completing a regular quest.
  * Returns { nextState, sideEffects } – sideEffects contains UI triggers.
  */
-export function buildCompleteQuestState(questId, state, processAchievements) {
+export function buildCompleteQuestState(questId, state, processAchievements, gemBoosterMult = 1) {
   const quest = state.quests.find(q => q.id === questId);
   if (!quest) return null;
 
@@ -58,6 +58,7 @@ export function buildCompleteQuestState(questId, state, processAchievements) {
   const soulLinkActive = state.soulLink?.bothActive;
 
   let xpGain = computeXpGain(quest, streakBonusPct, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses);
+  xpGain = Math.round(xpGain * gemBoosterMult);
   if (soulLinkActive) xpGain = Math.round(xpGain * 1.25);
   if (state.restBuff?.active) xpGain = Math.round(xpGain * 1.1);
 
@@ -305,7 +306,8 @@ export function buildCompleteQuestState(questId, state, processAchievements) {
     });
   }
 
-  next = processAchievements(next);
+  const { nextState: afterAch, newAchievements } = processAchievements(next);
+  next = afterAch;
 
   // Charisma chain unlocks
   const newCha = next.stats?.cha || 0;
@@ -332,6 +334,7 @@ export function buildCompleteQuestState(questId, state, processAchievements) {
     charismaDungeonSystemMessage,
     quest,
     oldLevel: state.level,
+    newAchievements,
   };
 }
 
@@ -355,7 +358,8 @@ export function buildCompleteEmergencyQuestState(eq, state, processAchievements)
     emergencyDone: true,
     totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1
   };
-  next = processAchievements(next);
+  const { nextState: afterAch, newAchievements } = processAchievements(next);
+  next = afterAch;
 
-  return { nextState: next, didLevelUp, earnedPoints, newLevel, xpGain, goldGain };
+  return { nextState: next, didLevelUp, earnedPoints, newLevel, xpGain, goldGain, newAchievements, eq };
 }
