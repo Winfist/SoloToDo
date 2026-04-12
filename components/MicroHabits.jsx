@@ -9,7 +9,7 @@ import { MICRO_ICONS } from "../data/icons.js";
 
 const DEFAULT_MICRO_HABITS = [
     { id: "water", icon: "💧", iconSrc: MICRO_ICONS.water, label: "Wasser", dailyTarget: 8, color: "#3b82f6" },
-    { id: "posture", icon: "🧘", iconSrc: MICRO_ICONS.breathe, label: "Haltung", dailyTarget: 5, color: "#22c55e" },
+    { id: "posture", icon: "🧘", iconSrc: null, label: "Haltung", dailyTarget: 5, color: "#22c55e" },
     { id: "stretch", icon: "🤸", iconSrc: MICRO_ICONS.stretch, label: "Stretch", dailyTarget: 4, color: "#f59e0b" },
     { id: "gratitude", icon: "🙏", iconSrc: MICRO_ICONS.gratitude, label: "Dankbar", dailyTarget: 3, color: "#a855f7" },
     { id: "breathe", icon: "🌬️", iconSrc: MICRO_ICONS.breathe, label: "Atmen", dailyTarget: 3, color: "#06b6d4" },
@@ -19,7 +19,9 @@ function getToday() { return new Date().toISOString().slice(0, 10); }
 
 export default function MicroHabits({ state, persist, notify, theme }) {
     const today = getToday();
-    const microHabits = state?.microHabits?.habits || DEFAULT_MICRO_HABITS;
+    const microHabits = (state?.microHabits?.habits || DEFAULT_MICRO_HABITS).map(h => 
+        h.id === "posture" ? { ...h, iconSrc: null, icon: "🧘" } : h
+    );
     const todayData = state?.microHabits?.daily?.[today] || {};
 
     const totalTarget = microHabits.reduce((s, h) => s + h.dailyTarget, 0);

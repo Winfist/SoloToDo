@@ -33,8 +33,11 @@ import GameIcon from "./components/GameIcon.jsx";
 import GemShopView from "./components/GemShopView.jsx";
 import RewardedAdModal from "./components/RewardedAdModal.jsx";
 import GemBoosterBanner from "./components/GemBoosterBanner.jsx";
+import DashboardView from "./components/views/DashboardView.jsx";
+import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
+import QuestCompletionCinematic from "./components/QuestCompletionCinematic.jsx";
 
-// ─── RANKS ────────────────────────────────────────────────────
+// â”€â”€â”€ RANKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
@@ -157,6 +160,8 @@ function App({ initialHunterName, onLogout }) {
     setShowShadowRegression,
     showDawnDusk,
     setShowDawnDusk,
+    questCinematic,
+    setQuestCinematic,
     notify,
     persist,
     triggerSystemMessage,
@@ -210,7 +215,7 @@ function App({ initialHunterName, onLogout }) {
     } catch { return true; }
   });
 
-  // ── Page Transition State ──
+  // â”€â”€ Page Transition State â”€â”€
   const [isPageTransitioning, setIsPageTransitioning] = React.useState(false);
   const [transitionTargetView, setTransitionTargetView] = React.useState(null);
   const VIEW_LABELS = useMemo(() => ({
@@ -234,16 +239,16 @@ function App({ initialHunterName, onLogout }) {
     setTransitionTargetView(null);
   }, []);
 
-  // ── Progressive Feature Unlock System ──
+  // â”€â”€ Progressive Feature Unlock System â”€â”€
   const { can, nextLevel } = useFeatureUnlocks(state?.level || 1);
 
-  // ── View Guard: Reset to dashboard if current view is locked ──
+  // â”€â”€ View Guard: Reset to dashboard if current view is locked â”€â”€
   React.useEffect(() => {
     const viewToFeature = {
       training: 'training_tab', goals: 'goals', calendar: 'calendar',
       dungeon: 'dungeons', story: 'story', shadows: 'shadow_army',
       equipment: 'equipment', jobs: 'jobs', shop: 'shop',
-      analytics: 'analytics', achievements: 'achievements',
+      gem_shop: 'gem_shop', analytics: 'analytics', achievements: 'achievements',
       challenges: 'challenges', sanctum: 'sanctum', settings: null, stats: 'stats_view',
     };
     const feature = viewToFeature[view];
@@ -258,7 +263,7 @@ function App({ initialHunterName, onLogout }) {
 
 
 
-  // ── Adaptive System Coach: periodic intervention checks ──
+  // â”€â”€ Adaptive System Coach: periodic intervention checks â”€â”€
   const prevStateRef = useRef(null);
   useEffect(() => {
     if (!state || loading) return;
@@ -296,7 +301,7 @@ function App({ initialHunterName, onLogout }) {
     );
   }
 
-  if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><GameIcon src={NAV_ICONS.dashboard} fallback="⚔️" size={56} glow glowColor="rgba(79,110,247,0.5)" animate="float" /><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
+  if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><GameIcon src={NAV_ICONS.dashboard} fallback="âš”️" size={56} glow glowColor="rgba(79,110,247,0.5)" animate="float" /><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
   if (showSetup) return <SetupScreen onFinish={gameState.finishSetup} theme={THEMES[state?.selectedTheme] || THEMES["default"]} />;
 
   const theme = (state?.selectedTheme === "custom" && state?.customThemeData)
@@ -348,7 +353,7 @@ function App({ initialHunterName, onLogout }) {
           <div key={i} style={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", border: "2px solid #f59e0b66", animation: `portalRipple 2s ease-out ${i * 0.3}s infinite` }} />
         ))}
         {/* Central Portal */}
-        <div style={{ marginBottom: 32, animation: "portalGate 1.5s cubic-bezier(0.4,0,0.2,1) forwards" }}><GameIcon src={NAV_ICONS.guild} fallback="🌐" size={72} glow glowColor="rgba(245,158,11,0.8)" /></div>
+        <div style={{ marginBottom: 32, animation: "portalGate 1.5s cubic-bezier(0.4,0,0.2,1) forwards" }}><GameIcon src={NAV_ICONS.guild} fallback="📋" size={72} glow glowColor="rgba(245,158,11,0.8)" /></div>
         {/* Text */}
         <div style={{ fontSize: 11, letterSpacing: 6, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, animation: "portalText 1.5s ease-out 0.3s both" }}>{text}</div>
         {/* Ambient glow */}
@@ -398,7 +403,7 @@ function App({ initialHunterName, onLogout }) {
 
 
   return (
-    <div style={{ minHeight: "100vh", background: penaltyActive ? `linear-gradient(180deg,${theme.bg},rgba(20,4,4,0.95))` : theme.bg, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: penaltyActive ? `linear-gradient(180deg,${theme.bg},rgba(20,4,4,0.95))` : theme.bg, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", position: "relative", overflow: "hidden", animation: questCinematic && questCinematic.difficulty !== 'easy' ? `qcShake 400ms ease-out` : "none" }}>
       <style>{CSS(theme)}</style>
       {/* Cosmic ambient glow */}
       <div style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", width: "120%", height: "50%", background: `radial-gradient(ellipse at 50% 0%,${theme.primary}12,transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
@@ -409,6 +414,12 @@ function App({ initialHunterName, onLogout }) {
       {notifications.map(n => <SystemNotification key={n.id} message={n.msg} type={n.type} onDone={() => removeNotif(n.id)} />)}
       {achQueue.slice(0, 1).map(a => <AchievementToast key={a.id} achievement={a} onDone={() => setAchQueue(prev => prev.slice(1))} />)}
       {xpFloats.map(f => <XpFloat key={f.id} x={f.x} y={f.y} xp={f.xp} gold={f.gold} />)}
+      {questCinematic && (
+        <QuestCompletionCinematic
+          data={questCinematic}
+          onDone={() => setQuestCinematic(null)}
+        />
+      )}
       {levelUp && <LevelUpCinematic levelData={levelUp} rank={getRank(levelUp.level || levelUp)} oldRank={prevRank} onClose={() => setLevelUp(null)} />}
       {ariseTarget && <AriseCinematic shadow={ariseTarget} onClose={() => setAriseTarget(null)} />}
       {state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
@@ -488,7 +499,7 @@ function App({ initialHunterName, onLogout }) {
         <div onClick={() => setShowHiddenQuestModal(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(1,0,6,0.96)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.4s", cursor: "pointer" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 360, animation: "scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ marginBottom: 12 }}><GameIcon src={QUEST_ICONS.hidden} fallback="❓" size={56} glow glowColor="#6366f1" animate="float" /></div>
+              <div style={{ marginBottom: 12 }}><GameIcon src={QUEST_ICONS.hidden} fallback="�“" size={56} glow glowColor="#6366f1" animate="float" /></div>
               <div style={{ fontSize: 9, letterSpacing: 5, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>VERBORGENE QUEST ENTHÜLLT</div>
               <h2 style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginBottom: 6, textShadow: "0 0 30px #6366f188" }}>{showHiddenQuestModal.title}</h2>
               <p style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>{showHiddenQuestModal.discoveryMsg}</p>
@@ -558,7 +569,7 @@ function App({ initialHunterName, onLogout }) {
                   cursor: "pointer", fontSize: 10, fontWeight: 700,
                   animation: state.soulLink.bothActive ? "pulse 2s infinite" : "none"
                 }}>
-                  <img src={SHADOW_ICONS.knight} alt="Link" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(1.3)" }} /> {state.soulLink.partnerName ? state.soulLink.partnerName.slice(0, 6) : "…"}
+                  <img src={SHADOW_ICONS.knight} alt="Link" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(1.3)" }} /> {state.soulLink.partnerName ? state.soulLink.partnerName.slice(0, 6) : "–"}
                   {state.soulLink.partnerStreak > 0 && <span><img src={STAT_ICONS.str} alt="fire" style={{ width: 10, height: 10, objectFit: "contain" }} />{state.soulLink.partnerStreak}</span>}
                 </button>
               )}
@@ -572,7 +583,7 @@ function App({ initialHunterName, onLogout }) {
                 }} title={SEASONS[state.seasons.currentSeason]?.name}>
                   {SEASONS[state.seasons.currentSeason]?.iconSrc
                     ? <img src={SEASONS[state.seasons.currentSeason].iconSrc} alt={SEASONS[state.seasons.currentSeason].name} style={{ width: 18, height: 18, objectFit: "contain" }} />
-                    : (SEASONS[state.seasons.currentSeason]?.icon || "🌐")}
+                    : (SEASONS[state.seasons.currentSeason]?.icon || "📋")}
                 </button>
               )}
             </div>
@@ -591,7 +602,7 @@ function App({ initialHunterName, onLogout }) {
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(34,211,153,0.05)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))"; }}
                 title="Inner Sanctum Base"
               >
-                <GameIcon src={NAV_ICONS.timer} fallback="🏛️" size={16} glow glowColor="rgba(34,211,153,0.5)" /> <span className="hide-on-mobile">SANCTUM</span>
+                <GameIcon src={NAV_ICONS.timer} fallback="⏰" size={16} glow glowColor="rgba(34,211,153,0.5)" /> <span className="hide-on-mobile">SANCTUM</span>
               </button>}
               {can('focus_mode') && <button
                 onClick={() => setShowFocusMode(true)}
@@ -606,7 +617,7 @@ function App({ initialHunterName, onLogout }) {
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(168,85,247,0.05)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))"; }}
                 title="Focus Mode starten"
               >
-                <GameIcon src={NAV_ICONS.timer} fallback="⚡" size={16} glow glowColor="rgba(168,85,247,0.5)" /> <span className="hide-on-mobile">FOCUS</span>
+                <GameIcon src={NAV_ICONS.timer} fallback="âš¡" size={16} glow glowColor="rgba(168,85,247,0.5)" /> <span className="hide-on-mobile">FOCUS</span>
               </button>}
               {can('dawn_dusk') && <button
                 onClick={() => setShowDawnDusk(true)}
@@ -644,7 +655,7 @@ function App({ initialHunterName, onLogout }) {
                   cursor: "pointer", fontSize: 18, transition: "all 0.3s"
                 }}
               >
-                {isMusicPlaying ? "♫" : "♪"}
+                {isMusicPlaying ? "\u266B" : "\u266A"}
               </button>}
 
               {can('multiplayer') && <button
@@ -661,7 +672,7 @@ function App({ initialHunterName, onLogout }) {
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = '#f59e0b55'; }}
                 title="Hunter Association"
               >
-                <GameIcon src={NAV_ICONS.guild} fallback="🏛️" size={20} glow glowColor="rgba(245,158,11,0.5)" />
+                <GameIcon src={NAV_ICONS.guild} fallback="🚪" size={20} glow glowColor="rgba(245,158,11,0.5)" />
               </button>}
             </div>
           </div>
@@ -704,7 +715,7 @@ function App({ initialHunterName, onLogout }) {
               <div style={{ width: `${((state.shadowRegression.questsCompleted || 0) / 3) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #991b1b, #dc2626, #ef4444)", transition: "width 0.6s ease", boxShadow: "0 0 8px rgba(220,38,38,0.4)" }} />
             </div>
             <div style={{ fontSize: 10, color: "#a855f7", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4, position: "relative" }}>
-              <span style={{ color: "#475569" }}>Abschluss →</span> <img src={STAT_ICONS.str} alt="fire" style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle" }} />{Math.floor((state.shadowRegression.previousStreak || 0) * 0.5)} Tage Streak wiederhergestellt
+              <span style={{ color: "#475569" }}>Abschluss â†’</span> <img src={STAT_ICONS.str} alt="fire" style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle" }} />{Math.floor((state.shadowRegression.previousStreak || 0) * 0.5)} Tage Streak wiederhergestellt
             </div>
           </div>
         ) : penaltyActive ? (
@@ -742,12 +753,12 @@ function App({ initialHunterName, onLogout }) {
                 </div>
                 {worldEvent && (
                   <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>
-                    {worldEvent.iconSrc ? <img src={worldEvent.iconSrc} alt={worldEvent.name} style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle", marginRight: 3 }} /> : worldEvent.icon} {worldEvent.name}: {worldEvent.desc.split(" ").slice(0, 5).join(" ")}…
+                    {worldEvent.iconSrc ? <img src={worldEvent.iconSrc} alt={worldEvent.name} style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle", marginRight: 3 }} /> : worldEvent.icon} {worldEvent.name}: {worldEvent.desc.split(" ").slice(0, 5).join(" ")}–
                   </div>
                 )}
               </div>
               <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
-                DETAILS ▸
+                DETAILS ›
               </div>
             </div>
           );
@@ -771,188 +782,26 @@ function App({ initialHunterName, onLogout }) {
 
         <NotificationBanner state={state} theme={theme} />
 
-        {/* ═══ DASHBOARD ═══ */}
+        {/* â•â•â• DASHBOARD â•â•â• */}
         {view === "dashboard" && (
-          <div style={{ animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
+          <DashboardView
+            state={state} theme={theme} can={can}
+            showDashboardStats={showDashboardStats} setShowDashboardStats={setShowDashboardStats}
+            streakBonus={streakBonus} formationBonus={formationBonus} equipBonuses={equipBonuses}
+            xpPercent={xpPercent} xpNeeded={xpNeeded}
+            filteredQuests={filteredQuests} hiddenQuestCount={hiddenQuestCount}
+            questFilter={questFilter} setQuestFilter={setQuestFilter}
+            completeQuest={completeQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
+            completeEmergencyQuest={completeEmergencyQuest}
+            setShowCreate={setShowCreate}
+            nextLevel={nextLevel} getUnlocksAtLevel={getUnlocksAtLevel}
+            notify={notify} persist={persist}
+            setIsCreatingEntry={setIsCreatingEntry}
+            getActiveGemBoosters={getActiveGemBoosters}
+          />
+        )}
 
-            {/* GEM BOOSTER BANNER */}
-            {can('gem_shop') && <GemBoosterBanner activeBoosters={getActiveGemBoosters ? getActiveGemBoosters() : []} theme={theme} />}
-
-            {/* ── PLAYER STATS (LEVEL & RADAR) ── */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0 16px" }}>
-              <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
-              <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER STATUS</div>
-              <button
-                onClick={() => setShowDashboardStats(!showDashboardStats)}
-                style={{ background: showDashboardStats ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg,${theme.primary}22,${theme.primary}0a)`, border: `1px solid ${theme.primary}55`, borderRadius: 12, padding: "4px 10px", fontSize: 9, color: showDashboardStats ? "#94a3b8" : theme.primary, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", transition: "all 0.2s" }}
-              >
-                {showDashboardStats ? "VERBERGEN ▲" : "ANZEIGEN ▼"}
-              </button>
-              <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
-            </div>
-
-            {showDashboardStats && (
-              <div style={{ animation: "slideDown 0.3s ease" }}>
-                <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "24px 22px 20px", marginBottom: 16, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)` }}>
-                  <div style={{ position: "absolute", top: 0, right: 0, width: "60%", height: "100%", background: `radial-gradient(circle at 100% 30%,${theme.primary}0a,transparent 70%)`, pointerEvents: "none" }} />
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, position: "relative" }}>
-                    <div>
-                      <div style={{ fontSize: 9, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10, letterSpacing: 1, animation: "pulse 2s infinite" }}>&gt; SYSTEM ONLINE. WILLKOMMEN, {state.hunterName.toUpperCase()}.</div>
-                      <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 4, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>HUNTER LEVEL</div>
-                      <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 40px ${theme.primary}33` }}>{state.level}</div>
-                      {streakBonus > 0 && <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}><img src={STAT_ICONS.str} alt="Streak" style={{ width: 12, height: 12, objectFit: "contain", filter: "drop-shadow(0 0 4px #f59e0b88)" }} /> +{streakBonus}% XP</div>}
-                      {formationBonus.dungeonBonus > 0 && <div style={{ fontSize: 10, color: "#a78bfa", marginTop: 3, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}><img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "drop-shadow(0 0 4px #a78bfa88) brightness(0.6) invert(1)" }} /> +{formationBonus.dungeonBonus}% Dungeon</div>}
-                    </div>
-                    <StatRadar stats={state.stats} theme={theme} size={110} />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>
-                    <span style={{ letterSpacing: 2 }}>EXP</span><span>{state.xp.toLocaleString()} / {xpNeeded.toLocaleString()}</span>
-                  </div>
-                  <div style={{ height: 10, background: "rgba(15,15,30,0.9)", borderRadius: 5, overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.04)" }}>
-                    <div style={{ width: `${xpPercent}%`, height: "100%", borderRadius: 5, background: `linear-gradient(90deg,${theme.primary},${theme.accent})`, boxShadow: `0 0 16px ${theme.glow},0 2px 8px ${theme.primary}44`, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", position: "relative", overflow: "hidden" }}>
-                      <div style={{ position: "absolute", top: 0, left: "-100%", width: "60%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)", animation: "shimmer 2.5s ease-in-out infinite" }} />
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8, marginBottom: 24 }}>
-                  {CATEGORIES.map((cat, i) => (
-                    <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}20`, borderRadius: 16, padding: "12px 4px 10px", textAlign: "center", backdropFilter: "blur(8px)", animation: `slideUp 0.3s ease ${i * 0.05}s both`, transition: "border-color 0.3s,transform 0.2s,box-shadow 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${cat.color}18`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "20"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
-                      <div style={{ width: 44, height: 44, margin: "0 auto", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "50%", background: `radial-gradient(circle, ${cat.color}18 0%, ${cat.color}08 70%, transparent 100%)`, border: `1.5px solid ${cat.color}30`, overflow: "hidden", boxShadow: `0 0 20px ${cat.color}20, inset 0 0 12px ${cat.color}10` }}>
-                        {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "110%", height: "110%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 6px ${cat.color}66)`, transform: "scale(1.15)" }} /> : <span style={{ fontSize: 20 }}>{cat.icon}</span>}
-                      </div>
-                      <div style={{ fontSize: 9, color: cat.color, marginTop: 5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1.5, textShadow: `0 0 8px ${cat.color}44` }}>{cat.stat}</div>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 2, textShadow: "0 0 12px rgba(255,255,255,0.1)" }}>{(state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0)}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── HUNTER QUESTS ── */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0 16px" }}>
-              <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
-              <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
-              <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
-            </div>
-
-            {/* ── EMERGENCY QUEST ── */}
-            {
-              can('emergency_quests') && state.emergencyQuest && (
-                <EmergencyQuestCard
-                  quest={state.emergencyQuest}
-                  done={state.emergencyDone}
-                  failed={state.emergencyFailed}
-                  onComplete={completeEmergencyQuest}
-                  theme={theme}
-                />
-              )
-            }
-
-            {/* ── QUEST FILTERS + ADD ── */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 6, flexWrap: "wrap" }}>
-              {can('quest_filters') && <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 2, flex: 1 }}>
-                {[
-                  { key: "all", label: "Alle", color: theme.accent },
-                  { key: "daily", label: "Daily", color: "#22d3ee" },
-                  { key: "side", label: "Side", color: "#a78bfa" },
-                  ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly", color: "#8b5cf6" }] : []),
-                  ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
-                  ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: hiddenQuestCount, color: "#6366f1", icon: QUEST_ICONS.hidden }] : []),
-                ].map(f => (
-                  <button key={f.key} onClick={() => setQuestFilter(f.key)} style={{
-                    padding: "5px 10px", borderRadius: 8, fontSize: 10, fontWeight: 600, flexShrink: 0,
-                    background: questFilter === f.key ? f.color + "22" : "transparent",
-                    color: questFilter === f.key ? f.color : "#475569",
-                    border: `1px solid ${questFilter === f.key ? f.color + "44" : "transparent"}`,
-                    transition: "all 0.25s", fontFamily: "'JetBrains Mono',monospace"
-                  }}>
-                    {f.icon
-                      ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src={f.icon} alt="" style={{ width: 12, height: 12, objectFit: "contain" }} />{f.label}</span>
-                      : f.label}
-                  </button>
-                ))}
-              </div>}
-              <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 12, fontSize: 11, fontWeight: 900, background: `linear-gradient(135deg,${theme.primary},${theme.secondary})`, color: "#fff", border: "none", boxShadow: `0 4px 16px ${theme.glow}`, textShadow: "0 1px 4px rgba(0,0,0,0.4)", fontFamily: "'Cinzel',serif", letterSpacing: 1.5, display: "flex", alignItems: "center", gap: 6, flexShrink: 0, transition: "all 0.3s", transform: "translateY(-1px)", animation: "float 3s ease-in-out infinite" }}>+ QUEST</button>
-            </div>
-
-            {
-              filteredQuests.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)", marginBottom: 24 }}>
-                  <div style={{ marginBottom: 10, animation: "float 3s ease-in-out infinite", display: "flex", justifyContent: "center" }}>
-                    <img src="/icons/skill_attack.png" alt="no quests" style={{ width: 44, height: 44, objectFit: "contain", opacity: 0.4, filter: "drop-shadow(0 0 10px rgba(100,116,139,0.4))" }} />
-                  </div>
-                  <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
-                  <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
-                </div>
-              ) : <div style={{ marginBottom: 24 }}>{filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}</div>
-            }
-
-            {/* ── VISION BOARD ── */}
-            {can('vision_board') && (
-            <div style={{ marginBottom: 24, padding: "18px", borderRadius: 16, background: "linear-gradient(135deg,rgba(168,85,247,0.05),rgba(124,58,237,0.08))", border: "1px solid #7c3aed33", position: "relative", overflow: "hidden", backdropFilter: "blur(4px)" }}>
-              <div style={{ position: "absolute", right: -20, top: -20, opacity: 0.05, pointerEvents: "none", animation: "float 4s ease-in-out infinite" }}><img src={STAT_ICONS.int} alt="vision" style={{ width: 80, height: 80, objectFit: "contain" }} /></div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <img src={STAT_ICONS.int} alt="Vision Board" style={{ width: 24, height: 24, objectFit: "contain", filter: "drop-shadow(0 0 6px #a855f788)" }} />
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: "#a855f7", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>VISION BOARD</div>
-                  <div style={{ fontSize: 9, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>MANIFESTIERE DEIN SCHICKSAL</div>
-                </div>
-              </div>
-              <ul style={{ margin: 0, padding: "0 0 0 20px", color: "#e2e8f0", fontSize: 13, lineHeight: 1.8, fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
-                <li style={{ paddingBottom: 4 }}>Ich levele jeden Tag auf – körperlich, geistig und finanziell.</li>
-                <li style={{ paddingBottom: 4 }}>Mein Disziplin-Stat wächst mit jeder abgeschlossenen Quest.</li>
-                <li style={{ paddingBottom: 4 }}>Ich ziehe Erfolg und Fülle wie magische Drops an.</li>
-                <li style={{ paddingBottom: 4 }}>Meine Shadow Army bekämpft meine Ausreden in meinem Rücken.</li>
-                <li>Ich bin der Architekt meines eigenen Systems.</li>
-              </ul>
-            </div>
-            )}
-
-            {/* ── HABITS & DAILY ROUTINE ── */}
-            {can('habit_tracker') && (
-            <div style={{ marginBottom: 24 }}>
-              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
-            </div>
-            )}
-
-            {/* ── MICRO-HABITS ── */}
-            {can('micro_habits') && (
-            <div style={{ marginBottom: 24 }}>
-              <MicroHabits state={state} persist={persist} notify={notify} theme={theme} />
-            </div>
-            )}
-
-            {/* ── NEXT UNLOCK TEASER ── */}
-            {nextLevel ? (
-              <div style={{ marginBottom: 24, padding: "14px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(99,102,241,0.02))", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ animation: "pulse 2s infinite" }}><img src={GATE_ICONS.normal} alt="locked" style={{ width: 28, height: 28, objectFit: "contain", filter: "grayscale(80%) brightness(0.5)" }} /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>NÄCHSTES SYSTEM-UPDATE</div>
-                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3, lineHeight: 1.4 }}>
-                    {getUnlocksAtLevel(nextLevel).map(f => f.label).join(" · ")}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace" }}>LVL {nextLevel}</div>
-                  <div style={{ width: 48, height: 3, borderRadius: 2, background: "rgba(99,102,241,0.15)", marginTop: 4, overflow: "hidden" }}>
-                    <div style={{ height: "100%", borderRadius: 2, background: "#6366f1", width: `${Math.min(100, (state.level / nextLevel) * 100)}%`, transition: "width 0.5s" }} />
-                  </div>
-                </div>
-              </div>
-            ) : state.level >= 36 ? (
-              <div style={{ marginBottom: 24, padding: "14px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(34,211,153,0.06), rgba(34,211,153,0.02))", border: "1px solid rgba(34,211,153,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
-                <div><img src={GATE_ICONS.normal} alt="all unlocked" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #34d39988) hue-rotate(90deg)" }} /></div>
-                <div>
-                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#34d399", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>ALL SYSTEMS ONLINE</div>
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Alle Features freigeschaltet. Volle Kontrolle, Hunter.</div>
-                </div>
-              </div>
-            ) : null}
-          </div >
-        )
-        }
-
-        {/* ═══ DUNGEONS ═══ */}
+        {/* â•â•â• DUNGEONS â•â•â• */}
         {
           view === "dungeon" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -962,7 +811,7 @@ function App({ initialHunterName, onLogout }) {
                   Reset in {hoursUntilMidnight()}h · {modifier?.id !== "none" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{modifier?.iconSrc ? <img src={modifier.iconSrc} alt={modifier.name} style={{ width: 14, height: 14, objectFit: "contain", verticalAlign: "middle" }} /> : modifier?.icon} {modifier?.name}</span> : "Stable Gates"}
                 </div>
               </div>
-              {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ marginBottom: 10 }}><GameIcon src={GATE_ICONS.normal} fallback="🌀" size={48} glow glowColor={theme.primary} animate="float" /></div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
+              {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ marginBottom: 10 }}><GameIcon src={GATE_ICONS.normal} fallback="🚪" size={48} glow glowColor={theme.primary} animate="float" /></div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
               {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} modifier={modifier} /></div>)}
               {(state.dungeons || []).filter(d => d.cleared).length > 0 && (
                 <div style={{ marginTop: 20 }}>
@@ -974,270 +823,29 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* ═══ STATS ═══ */}
+        {/* â•â•â• STATS â•â•â• */}
         {
           view === "stats" && (
-            <div style={{ animation: "fadeIn 0.35s ease" }}>
-              <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "20px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", backdropFilter: "blur(12px)", position: "relative" }}>
-                {state.statPoints > 0 && (
-                  <div style={{ position: "absolute", top: 12, right: 12, background: "#f59e0b22", border: "1px solid #f59e0b44", padding: "4px 10px", borderRadius: 20, fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, animation: "pulse 1.5s infinite" }}>
-                    {state.statPoints} PUNKTE VERFÜGBAR
-                  </div>
-                )}
-                <StatRadar stats={state.stats} theme={theme} size={200} />
-                <div style={{ display: "flex", gap: 0, flexWrap: "wrap", justifyContent: "center", marginTop: 4, width: "100%", background: "rgba(0,0,0,0.2)", borderRadius: 12, overflow: "hidden" }}>
-                  {[{ label: "TOTAL XP", value: (state.totalXpEarned || 0).toLocaleString(), color: theme.accent }, { label: "QUESTS", value: state.totalQuestsCompleted || 0, color: theme.accent }, { label: "STREAK", value: `${state.streak}d`, color: "#f59e0b" }, { label: "PWR LVL", value: powerLevel, color: "#e879f9" }, { label: "CLEARED", value: (state.dungeonHistory || []).filter(d => d.won).length, color: "#22d3ee" }].map((s, i) => (
-                    <div key={i} style={{ textAlign: "center", padding: "10px 10px", flex: "1 0 33%", background: `radial-gradient(135deg, ${s.color}08 0%, transparent 100%)`, border: `1px solid ${s.color}15`, boxShadow: `inset 0 0 10px ${s.color}05` }}>
-                      <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, letterSpacing: 1.5 }}>{s.label}</div>
-                      <div style={{ fontSize: 16, fontWeight: 900, color: s.color, fontFamily: "'Cinzel',serif", textShadow: `0 0 12px ${s.color}66` }}>{s.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {CATEGORIES.map((cat, i) => {
-                const val = (state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0); const base = state.stats[cat.key] || 0; const maxD = Math.max(val, 50); return (
-                  <div key={cat.key} style={{ background: `radial-gradient(120% 100% at 50% 0%, ${cat.color}15 0%, rgba(10,10,24,0.7) 100%)`, border: `1px solid ${cat.color}25`, borderRadius: 16, padding: "16px", marginBottom: 12, backdropFilter: "blur(12px)", boxShadow: `0 8px 32px ${cat.color}0a, inset 0 1px 0 rgba(255,255,255,0.05)`, animation: `cardEnter 0.4s ease ${i * 0.06}s both`, transition: "all 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.boxShadow = `0 12px 40px ${cat.color}15, inset 0 1px 0 rgba(255,255,255,0.1)`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "25"; e.currentTarget.style.boxShadow = `0 8px 32px ${cat.color}0a, inset 0 1px 0 rgba(255,255,255,0.05)`; }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: `radial-gradient(circle, ${cat.color}18, transparent)`, border: `1px solid ${cat.color}25`, overflow: "hidden", flexShrink: 0 }}>
-                          {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "100%", height: "100%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 4px ${cat.color}55)`, transform: "scale(1.1)" }} /> : <span style={{ fontSize: 22 }}>{cat.icon}</span>}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{cat.label}</div>
-                          <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>{cat.full}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        {state.statPoints > 0 && (
-                          <button onClick={() => increaseStat(cat.key)} style={{ width: 26, height: 26, borderRadius: 6, background: cat.color + "22", border: `1px solid ${cat.color}44`, color: cat.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 16, cursor: "pointer", transition: "all 0.2s" }}>+</button>
-                        )}
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: 28, fontWeight: 900, color: cat.color, fontFamily: "'Cinzel',serif" }}>{val}</div>
-                          {equipBonuses[cat.key + "Bonus"] > 0 && <div style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace" }}>({base}+{equipBonuses[cat.key + "Bonus"]})</div>}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ width: `${Math.min((val / maxD) * 100, 100)}%`, height: "100%", borderRadius: 3, background: `linear-gradient(90deg,${cat.color}aa,${cat.color})`, boxShadow: `0 0 8px ${cat.color}44`, animation: "statBarFill 1s ease-out" }} />
-                    </div>
-                  </div>
-                );
-              })}
-              {unlockedSkills.length > 0 && (
-                <div style={{ marginTop: 20 }}>
-                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>UNLOCKED SKILLS ({unlockedSkills.length})</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {unlockedSkills.map((sk, i) => {
-                      const cat = CATEGORIES.find(c => c.key === sk.stat); return (
-                        <div key={sk.id} style={{ background: theme.card, border: `1px solid ${cat.color}22`, borderRadius: 12, padding: "12px", animation: `scaleIn 0.4s ease ${i * 0.07}s both` }}>
-                          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                            <span style={{ fontSize: 20 }}>{sk.icon}</span>
-                            <div>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: cat.color, fontFamily: "'Cinzel',serif" }}>{sk.name}</div>
-                              <div style={{ fontSize: 10, color: "#475569", marginTop: 2, lineHeight: 1.4 }}>{sk.desc}</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+            <StatsView
+              state={state} theme={theme}
+              equipBonuses={equipBonuses} powerLevel={powerLevel}
+              increaseStat={increaseStat}
+            />
+        )}
 
-              {/* ═══ ACHIEVEMENT BROWSER ═══ */}
-              <div style={{ marginTop: 28, animation: "fadeIn 0.6s ease 0.2s both" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>HALL OF RECORDS</div>
-                    <div style={{ fontSize: 13, color: "#e2e8f0", fontFamily: "'Cinzel',serif", fontWeight: 700 }}>Achievements</div>
-                  </div>
-                  <div style={{ fontSize: 9, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", padding: "4px 8px", background: theme.primary + "15", borderRadius: 8, border: `1px solid ${theme.primary}33` }}>
-                    {(state.achievements?.unlocked || []).length} / {ACHIEVEMENTS.length} UNLOCKED
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-                  {ACHIEVEMENTS.map((ach, i) => {
-                    const isUnlocked = (state.achievements?.unlocked || []).includes(ach.id);
-                    return (
-                      <div key={ach.id} style={{
-                        background: isUnlocked ? theme.card : "rgba(10,10,20,0.4)",
-                        border: `1px solid ${isUnlocked ? theme.primary + "44" : "#1e2940"}`,
-                        borderRadius: 14, padding: "12px 16px",
-                        opacity: isUnlocked ? 1 : 0.45,
-                        display: "flex", alignItems: "center", gap: 14,
-                        boxShadow: isUnlocked ? `0 0 15px ${theme.primary}11` : "none",
-                        transition: "all 0.3s"
-                      }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: isUnlocked ? theme.primary + "15" : "rgba(255,255,255,0.02)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: `1px solid ${isUnlocked ? theme.primary + "44" : "rgba(255,255,255,0.05)"}` }}>
-                          {isUnlocked ? (ach.iconSrc ? <img src={ach.iconSrc} alt={ach.name} style={{ width: 24, height: 24, objectFit: "contain", filter: `drop-shadow(0 0 6px ${theme.primary}88)` }} /> : ach.icon) : <img src={GATE_ICONS.normal} alt="locked" style={{ width: 22, height: 22, objectFit: "contain", filter: "grayscale(100%) brightness(0.4)" }} />}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: isUnlocked ? theme.primary : "#94a3b8", fontFamily: "'Cinzel',serif", marginBottom: 2 }}>{ach.name}</div>
-                          <div style={{ fontSize: 10, color: isUnlocked ? "#cbd5e1" : "#475569", lineHeight: 1.4 }}>{ach.desc}</div>
-                          <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                            {ach.reward.xp && <span style={{ fontSize: 8, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: "#a78bfa15" }}>+{ach.reward.xp} XP</span>}
-                            {ach.reward.gold && <span style={{ fontSize: 8, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: "#fbbf2415" }}>+{ach.reward.gold} Gold</span>}
-                            {ach.reward.title && <span style={{ fontSize: 8, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: theme.accent + "15", display: "inline-flex", alignItems: "center", gap: 3 }}><img src={STORY_ICONS.arise} alt="title" style={{ width: 8, height: 8, objectFit: "contain" }} /> {ach.reward.title}</span>}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-            </div>
-          )
-        }
-
-        {/* ═══ SHADOW ARMY ═══ */}
+        {/* â•â•â• SHADOW ARMY â•â•â• */}
         {
           view === "shadows" && (
-            <div style={{ animation: "fadeIn 0.35s ease" }}>
-              {/* Monarch's Banner */}
-              <div style={{ position: "relative", background: "linear-gradient(160deg,rgba(4,3,12,0.99) 0%,rgba(16,6,32,0.97) 100%)", border: "1px solid #7c3aed44", borderRadius: 20, padding: "22px 20px 16px", marginBottom: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(124,58,237,0.12), inset 0 1px 0 rgba(167,139,250,0.06)" }}>
-                {/* Rotating monarch rays */}
-                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 340, height: 340, background: "conic-gradient(from 0deg,transparent 0%,#7c3aed04 8%,transparent 16%)", animation: "monarchRays 25s linear infinite", pointerEvents: "none" }} />
-                {/* Central glow */}
-                <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%,-50%)", width: 200, height: 200, background: "radial-gradient(circle,#7c3aed0d 0%,transparent 70%)", pointerEvents: "none" }} />
-
-                <div style={{ position: "relative" }}>
-                  {/* Crown header */}
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                        <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,transparent,#7c3aed66)" }} />
-                        <div style={{ fontSize: 7, letterSpacing: 5, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>SHADOW MONARCHIE</div>
-                        <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,#7c3aed66,transparent)" }} />
-                      </div>
-                      <div style={{ fontSize: 26, fontWeight: 900, color: "#e2e8f0", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 30px #7c3aed55, 0 2px 4px rgba(0,0,0,0.8)" }}>Schattenarmee</div>
-                      {namedShadows.length > 0 && (
-                        <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>
-                          <span style={{ animation: "namedGlow 2s ease-in-out infinite", filter: "drop-shadow(0 0 4px #f59e0b88)", fontSize: 10 }}>★</span>
-                          {namedShadows.length} Named Shadow{namedShadows.length > 1 ? "s" : ""}
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ textAlign: "center", padding: "10px 16px", background: "rgba(124,58,237,0.08)", border: "1px solid #7c3aed33", borderRadius: 14 }}>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: "#a78bfa", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 20px #7c3aed88" }}>{totalShadows}</div>
-                      <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 2 }}>/{shadowArmy.capacity} KAPAZITÄT</div>
-                    </div>
-                  </div>
-
-                  {/* Stats orbs */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-                    {[
-                      { label: "Stationiert", value: shadowArmy.shadows.filter(s => s.isDeployed).length, color: "#22c55e", icon: "🌑", iconSrc: SHADOW_ICONS.soldier },
-                      { label: "Dungeon-Boost", value: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", icon: "⚔️", iconSrc: SKILL_ICONS.attack },
-                      { label: "XP-Boost", value: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", icon: "✦", iconSrc: STAT_ICONS.int }
-                    ].map(({ label, value, color, icon, iconSrc }) => (
-                      <div key={label} style={{ padding: "10px 6px", background: `radial-gradient(circle at 50% 0%,${color}14,${color}04)`, borderRadius: 12, border: `1px solid ${color}25`, textAlign: "center" }}>
-                        <div style={{ fontSize: 13, marginBottom: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {iconSrc ? <img src={iconSrc} alt={label} style={{ width: 16, height: 16, objectFit: "contain", filter: `drop-shadow(0 0 4px ${color}88)` }} /> : icon}
-                        </div>
-                        <div style={{ fontSize: 14, fontWeight: 900, color, fontFamily: "'Cinzel',serif", lineHeight: 1 }}>{value}</div>
-                        <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 3, letterSpacing: 0.5 }}>{label.toUpperCase()}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Capacity bar */}
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ height: 3, background: "rgba(6,4,16,0.9)", borderRadius: 2, overflow: "hidden" }}>
-                      <div style={{ width: `${(totalShadows / shadowArmy.capacity) * 100}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#7c3aed,#a78bfa)", transition: "width 0.6s ease", boxShadow: "0 0 8px #7c3aed88" }} />
-                    </div>
-                  </div>
-
-                  {/* Sub nav */}
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {[{ key: "army", label: "Armee", icon: "🌑", iconSrc: SHADOW_ICONS.soldier }, { key: "formation", label: "Formation", icon: "⚔️", iconSrc: SKILL_ICONS.attack }, { key: "named", label: "Named", icon: "★" }].map(sv => (
-                      <button key={sv.key} onClick={() => setShadowSubView(sv.key)} style={{ flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: shadowSubView === sv.key ? "linear-gradient(135deg,#7c3aed22,#a78bfa08)" : "transparent", color: shadowSubView === sv.key ? "#a78bfa" : "#334155", border: `1px solid ${shadowSubView === sv.key ? "#7c3aed55" : "#1a1e30"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "all 0.2s", boxShadow: shadowSubView === sv.key ? "0 0 14px #7c3aed20" : "none", cursor: "pointer" }}>
-                        {sv.iconSrc ? <img src={sv.iconSrc} alt={sv.label} style={{ width: 13, height: 13, objectFit: "contain", filter: shadowSubView === sv.key ? "drop-shadow(0 0 4px #a78bfa88)" : "brightness(0.5)" }} /> : <span style={{ fontSize: 11 }}>{sv.icon}</span>}
-                        <span>{sv.label.toUpperCase()}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* ARMY sub-view */}
-              {shadowSubView === "army" && (
-                totalShadows === 0 ? (
-                  <div style={{ textAlign: "center", padding: "52px 24px", background: "linear-gradient(160deg,rgba(4,3,12,0.98),rgba(12,6,24,0.95))", borderRadius: 18, border: "1px dashed #7c3aed28", position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 180, height: 180, background: "radial-gradient(circle,#7c3aed08,transparent 70%)", pointerEvents: "none" }} />
-                    <div style={{ marginBottom: 16, opacity: 0.2, animation: "float 3s ease-in-out infinite" }}><img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 56, height: 56, objectFit: "contain", filter: "drop-shadow(0 0 20px #7c3aed) brightness(0.5) invert(1)" }} /></div>
-                    <div style={{ fontSize: 14, color: "#334155", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>Keine Schatten erweckt</div>
-                    <div style={{ fontSize: 11, color: "#1e293b", lineHeight: 1.7 }}>Schließe <span style={{ color: "#7c3aed88" }}>Boss-Quests</span> ab,<br />um Schatten zu beschwören</div>
-                  </div>
-                ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    {shadowArmy.shadows.map((s, i) => <ShadowCard key={s.id} shadow={s} theme={theme} index={i} onClick={() => setSelectedShadow(s)} />)}
-                  </div>
-                )
-              )}
-
-              {/* FORMATION sub-view */}
-              {shadowSubView === "formation" && (
-                <FormationEditor shadowArmy={shadowArmy} theme={theme} onDeploy={deployShadow} onUndeploy={undeployShadow} formationBonus={formationBonus} />
-              )}
-
-              {/* NAMED sub-view */}
-              {shadowSubView === "named" && (
-                <div>
-                  <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 14 }}>NAMED SHADOWS – FREISCHALTBAR</div>
-                  {Object.values(NAMED_SHADOWS).map((ns, i) => {
-                    const isOwned = shadowArmy.shadows.some(s => s.namedId === ns.id || s.id === ns.id);
-                    const cls = SHADOW_CLASSES[ns.class] || SHADOW_CLASSES.soldier;
-                    const tierData = SHADOW_TIERS[ns.tier] || SHADOW_TIERS[4];
-                    return (
-                      <div key={ns.id} style={{ background: isOwned ? "rgba(8,8,20,0.9)" : theme.card, border: `1px solid ${isOwned ? ns.glowColor + "44" : "#1e2940"}`, borderRadius: 16, padding: "16px", marginBottom: 10, opacity: isOwned ? 1 : 0.65, animation: `cardEnter 0.4s ease ${i * 0.08}s both`, boxShadow: isOwned ? `0 0 16px ${ns.glowColor}18` : "none" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                          <div style={{ width: 52, height: 52, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: isOwned ? ns.glowColor + "18" : "rgba(255,255,255,0.03)", border: `2px solid ${isOwned ? ns.glowColor + "66" : "#1e2940"}`, fontSize: 28 }}>
-                            {!isOwned ? <span style={{ opacity: 0.2 }}>?</span> : ns.iconSrc ? (
-                              <img src={ns.iconSrc} alt={ns.name} style={{ width: 38, height: 38, objectFit: "contain", filter: `drop-shadow(0 0 10px ${ns.glowColor}99) brightness(1.1)` }} />
-                            ) : ns.icon}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: isOwned ? ns.glowColor : "#475569", fontFamily: "'Cinzel',serif" }}>{isOwned ? ns.name : "???"}</div>
-                            <div style={{ fontSize: 10, color: isOwned ? ns.glowColor + "99" : "#334155", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginTop: 2 }}>{isOwned ? ns.title : "Unbekannt"}</div>
-                            <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
-                              <span style={{ fontSize: 9, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: cls.color + "15", display: "inline-flex", alignItems: "center", gap: 3 }}>{cls.iconSrc ? <img src={cls.iconSrc} alt={cls.name} style={{ width: 10, height: 10, objectFit: "contain" }} /> : cls.icon} {ns.class.toUpperCase()}</span>
-                              <span style={{ fontSize: 9, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: tierData.color + "15" }}>TIER {ns.tier}</span>
-                            </div>
-                          </div>
-                          {isOwned && <div style={{ fontSize: 9, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", borderRadius: 6, background: "#22c55e12", border: "1px solid #22c55e33" }}>OWNED</div>}
-                        </div>
-                        <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-                          <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>FREISCHALTBEDINGUNG</div>
-                          <div style={{ fontSize: 11, color: isOwned ? "#22c55e" : "#94a3b8", display: "flex", alignItems: "center", gap: 6 }}>
-                            {isOwned ? <span>✓</span> : <span style={{ opacity: 0.5 }}>○</span>}
-                            {ns.unlockCondition.desc}
-                          </div>
-                        </div>
-                        {isOwned && ns.uniqueAbility && (
-                          <div style={{ background: `${ns.glowColor}0a`, border: `1px solid ${ns.glowColor}22`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-                            <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>UNIQUE ABILITY</div>
-                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                              <span style={{ fontSize: 18 }}>{ns.uniqueAbility.icon}</span>
-                              <div>
-                                <div style={{ fontSize: 12, fontWeight: 700, color: ns.glowColor, fontFamily: "'Cinzel',serif" }}>{ns.uniqueAbility.name}</div>
-                                <div style={{ fontSize: 10, color: "#64748b", marginTop: 1 }}>{ns.uniqueAbility.effect}</div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {isOwned && <div style={{ fontStyle: "italic", fontSize: 11, color: "#475569", lineHeight: 1.6, borderLeft: `2px solid ${ns.glowColor}33`, paddingLeft: 10 }}>"{ns.lore}"</div>}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        }
-
-        {/* ═══ STORY ═══ */}
+            <ShadowArmyView
+              state={state} theme={theme}
+              shadowArmy={shadowArmy} formationBonus={formationBonus}
+              namedShadows={namedShadows} totalShadows={totalShadows}
+              shadowSubView={shadowSubView} setShadowSubView={setShadowSubView}
+              setSelectedShadow={setSelectedShadow}
+              deployShadow={deployShadow} undeployShadow={undeployShadow}
+            />
+        )}
+        {/* â•â•â• STORY â•â•â• */}
         {
           view === "story" && state && (
             <StoryView
@@ -1307,7 +915,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* ═══ JOBS ═══ */}
+        {/* â•â•â• JOBS â•â•â• */}
         {
           view === "jobs" && state && (
             <JobsView
@@ -1319,14 +927,14 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* ═══ EQUIPMENT ═══ */}
+        {/* â•â•â• EQUIPMENT â•â•â• */}
         {
           view === "equipment" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
               <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px", marginBottom: 16, backdropFilter: "blur(12px)" }}>
                 <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 14 }}>AUSGERÜSTET</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {[{ slot: "weapon", label: "WAFFE", icon: "🗡️", iconSrc: ITEM_ICONS.blade }, { slot: "armor", label: "RÜSTUNG", icon: "🛡️", iconSrc: ITEM_ICONS.armor }, { slot: "ring1", label: "RING 1", icon: "💍", iconSrc: ITEM_ICONS.ring }, { slot: "ring2", label: "RING 2", icon: "💍", iconSrc: ITEM_ICONS.ring }].map(({ slot, label, icon, iconSrc }) => {
+                  {[{ slot: "weapon", label: "WAFFE", icon: "📋", iconSrc: ITEM_ICONS.blade }, { slot: "armor", label: "RÜSTUNG", icon: "📋", iconSrc: ITEM_ICONS.armor }, { slot: "ring1", label: "RING 1", icon: "📋", iconSrc: ITEM_ICONS.ring }, { slot: "ring2", label: "RING 2", icon: "📋", iconSrc: ITEM_ICONS.ring }].map(({ slot, label, icon, iconSrc }) => {
                     const equipped = state.equipment?.slots?.[slot];
                     return (
                       <div key={slot} style={{ background: equipped ? `linear-gradient(135deg,${RARITY_COLORS[equipped.rarity]}10,transparent)` : theme.surface, border: `1px solid ${equipped ? RARITY_COLORS[equipped.rarity] + "33" : theme.primary + "12"}`, borderRadius: 12, padding: "12px", minHeight: 90 }}>
@@ -1395,7 +1003,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* ═══ ACHIEVEMENTS ═══ */}
+        {/* â•â•â• ACHIEVEMENTS â•â•â• */}
         {
           view === "achievements" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -1446,7 +1054,7 @@ function App({ initialHunterName, onLogout }) {
                             <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{ach.desc}</div>
                             {unlocked && ach.reward.title && <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 3, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3 }}><img src={STORY_ICONS.arise} alt="title" style={{ width: 9, height: 9, objectFit: "contain" }} /> "{ach.reward.title}" freigeschaltet</div>}
                           </div>
-                          {unlocked ? <div style={{ fontSize: 12, color: "#f59e0b" }}>✓</div> : <div style={{ textAlign: "right", fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}><div>+{ach.reward.xp} XP</div><div>{ach.reward.gold > 0 ? `+${ach.reward.gold}G` : ""}</div></div>}
+                          {unlocked ? <div style={{ fontSize: 12, color: "#f59e0b" }}>✏“</div> : <div style={{ textAlign: "right", fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}><div>+{ach.reward.xp} XP</div><div>{ach.reward.gold > 0 ? `+${ach.reward.gold}G` : ""}</div></div>}
                         </div>
                       );
                     })}
@@ -1457,7 +1065,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* ═══ SHOP ═══ */}
+        {/* â•â•â• SHOP â•â•â• */}
         {
           view === "shop" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -1539,7 +1147,7 @@ function App({ initialHunterName, onLogout }) {
                             const newQuest = {
                               id: genId(), title: `Codex meistern: ${item.rule}`,
                               category: item.stat, difficulty: item.tier === 1 ? "easy" : item.tier === 2 ? "normal" : "hard",
-                              type: "side", isCodexQuest: true, codexId: item.id, rewardStat: item.stat, createdAt: new Date().toISOString()
+                              type: "side", isCodexQuest: true, codexId: item.id, rewardStat: item.stat, createdAt: getToday(), createdAtMs: Date.now()
                             };
                             const nextState = {
                               ...state,
@@ -1548,7 +1156,7 @@ function App({ initialHunterName, onLogout }) {
                               quests: [...state.quests, newQuest]
                             };
                             persist(nextState);
-                            notify(`Codex gekauft! Schließe die neue Quest ab, um die Weisheit zu meistern.`, "success");
+                            notify(`Codex gekauft! Schlie\u00dfe die neue Quest ab, um die Weisheit zu meistern.`, "success");
                           }}
                             disabled={!canAfford || !rankOk}
                             style={{ padding: "8px 14px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: (canAfford && rankOk) ? "linear-gradient(135deg,#a855f722,#a855f70a)" : "transparent", color: (canAfford && rankOk) ? "#a855f7" : "#475569", border: `1px solid ${(canAfford && rankOk) ? "#a855f766" : "#1e2940"}`, cursor: (canAfford && rankOk) ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
@@ -1592,7 +1200,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* ═══ GEM SHOP ═══ */}
+        {/* â•â•â• GEM SHOP â•â•â• */}
         {
           view === "gem_shop" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -1611,35 +1219,35 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* ═══ ANALYTICS ═══ */}
+        {/* â•â•â• ANALYTICS â•â•â• */}
         {
           view === "analytics" && (
             <AnalyticsDashboard state={state} theme={theme} />
           )
         }
 
-        {/* ═══ GOALS ═══ */}
+        {/* â•â•â• GOALS â•â•â• */}
         {
           view === "goals" && (
             <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
           )
         }
 
-        {/* ═══ CALENDAR ═══ */}
+        {/* â•â•â• CALENDAR â•â•â• */}
         {
           view === "calendar" && (
             <CalendarSchedule state={state} persist={persist} notify={notify} theme={theme} />
           )
         }
 
-        {/* ═══ CHALLENGES ═══ */}
+        {/* â•â•â• CHALLENGES â•â•â• */}
         {
           view === "challenges" && (
             <ChallengesSystem state={state} persist={persist} notify={notify} theme={theme} />
           )
         }
 
-        {/* ═══ SETTINGS ═══ */}
+        {/* â•â•â• SETTINGS â•â•â• */}
         {
           view === "settings" && (
             <SettingsView state={state} persist={persist} theme={theme} />
@@ -1652,10 +1260,10 @@ function App({ initialHunterName, onLogout }) {
         <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
           {[
             { key: "dashboard", iconSrc: NAV_ICONS.dashboard, icon: "📋", label: "Heute" },
-            ...(can('training_tab') ? [{ key: "training", iconSrc: NAV_ICONS.goals, icon: "🎯", label: "Ziele" }] : []),
+            ...(can('training_tab') ? [{ key: "training", iconSrc: NAV_ICONS.goals, icon: "📋", label: "Ziele" }] : []),
             ...(can('dungeons') ? [{ key: "dungeon", icon: <img src="/icons/gate_normal.png" alt="Gate" style={{ width: 36, height: 36, objectFit: "contain", filter: "drop-shadow(0 0 8px #a78bfa88) brightness(1.3)" }} />, label: "Gates", badge: activeDungeons.length }] : []),
-            ...(can('story') ? [{ key: "story", iconSrc: STORY_ICONS.scroll, icon: "📖", label: "Story" }] : []),
-            { key: "system", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: "System" }
+            ...(can('story') ? [{ key: "story", iconSrc: STORY_ICONS.scroll, icon: "📋", label: "Story" }] : []),
+            { key: "system", iconSrc: NAV_ICONS.settings, icon: "âš™️", label: "System" }
           ].map(tab => (
             <button key={tab.key} onClick={() => {
               setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
@@ -1685,7 +1293,7 @@ function App({ initialHunterName, onLogout }) {
         </div>
       </nav >
 
-      {/* TRAINING HUB — unified view for habits/goals/calendar */}
+      {/* TRAINING HUB – unified view for habits/goals/calendar */}
       {
         view === "training" && (
           <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
@@ -1746,7 +1354,7 @@ function App({ initialHunterName, onLogout }) {
         )
       }
 
-      {/* SYSTEM MENU — themed module hub */}
+      {/* SYSTEM MENU – themed module hub */}
       {
         view === "system" && (
           <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
@@ -1760,34 +1368,34 @@ function App({ initialHunterName, onLogout }) {
 
               {/* HUNTER PROFILE SECTION */}
               {[{
-                title: "HUNTER INTEL", iconSrc: NAV_ICONS.analytics, icon: "📊", color: theme.accent,
+                title: "HUNTER INTEL", iconSrc: NAV_ICONS.analytics, icon: "📋", color: theme.accent,
                 items: [
-                  { key: "stats", iconSrc: STAT_ICONS.str, icon: "📊", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
-                  ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📈", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", icon: "📈", label: "Analytics", locked: true, unlockLevel: 8 }]),
-                  ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: "Achievements", locked: true, unlockLevel: 8 }]),
-                  ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "🎖️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", icon: "🎖️", label: "Events", locked: true, unlockLevel: 21 }]),
+                  { key: "stats", iconSrc: STAT_ICONS.str, icon: "📋", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
+                  ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📋", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", icon: "📋", label: "Analytics", locked: true, unlockLevel: 8 }]),
+                  ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "📋†", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, icon: "📋†", label: "Achievements", locked: true, unlockLevel: 8 }]),
+                  ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "📋–️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", icon: "📋–️", label: "Events", locked: true, unlockLevel: 21 }]),
                 ]
               }, {
-                title: "ARSENAL", iconSrc: NAV_ICONS.shop, icon: "🗡️", color: "#f59e0b",
+                title: "ARSENAL", iconSrc: NAV_ICONS.shop, icon: "📋", color: "#f59e0b",
                 items: [
-                  ...(can('shadow_army') ? [{ key: "shadows", iconSrc: SHADOW_ICONS.soldier, icon: "🌑", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", iconSrc: SHADOW_ICONS.soldier, icon: "🌑", label: "Shadow Army", locked: true, unlockLevel: 15 }]),
-                  ...(can('equipment') ? [{ key: "equipment", iconSrc: ITEM_ICONS.blade, icon: "🗡️", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", iconSrc: ITEM_ICONS.blade, icon: "🗡️", label: "Equipment", locked: true, unlockLevel: 11 }]),
-                  ...(can('jobs') ? [{ key: "jobs", iconSrc: NAV_ICONS.jobs, icon: "🎭", label: "Jobs", desc: "Hunter-Klassen" }] : [{ key: "jobs_locked", iconSrc: NAV_ICONS.jobs, icon: "🎭", label: "Jobs", locked: true, unlockLevel: 21 }]),
-                  ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, icon: "🛒", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` }] : [{ key: "shop_locked", icon: "🛒", label: "Shop", locked: true, unlockLevel: 11 }]),
-                  ...(can('gem_shop') ? [{ key: "gem_shop", iconSrc: GEM_ICONS.gem, icon: "💎", label: "Gem Shop", desc: `${(state.gems || 0).toLocaleString()} Gems` }] : [{ key: "gem_shop_locked", icon: "💎", label: "Gem Shop", locked: true, unlockLevel: 11 }]),
+                  ...(can('shadow_army') ? [{ key: "shadows", iconSrc: SHADOW_ICONS.soldier, icon: "📋‘", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", iconSrc: SHADOW_ICONS.soldier, icon: "📋‘", label: "Shadow Army", locked: true, unlockLevel: 15 }]),
+                  ...(can('equipment') ? [{ key: "equipment", iconSrc: ITEM_ICONS.blade, icon: "📋", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", iconSrc: ITEM_ICONS.blade, icon: "📋", label: "Equipment", locked: true, unlockLevel: 11 }]),
+                  ...(can('jobs') ? [{ key: "jobs", iconSrc: NAV_ICONS.jobs, icon: "📋", label: "Jobs", desc: "Hunter-Klassen" }] : [{ key: "jobs_locked", iconSrc: NAV_ICONS.jobs, icon: "📋", label: "Jobs", locked: true, unlockLevel: 21 }]),
+                  ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, icon: "📋", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` }] : [{ key: "shop_locked", icon: "📋", label: "Shop", locked: true, unlockLevel: 11 }]),
+                  ...(can('gem_shop') ? [{ key: "gem_shop", iconSrc: GEM_ICONS.gem, icon: "📋", label: "Gem Shop", desc: `${(state.gems || 0).toLocaleString()} Gems` }] : [{ key: "gem_shop_locked", icon: "📋", label: "Gem Shop", locked: true, unlockLevel: 11 }]),
                 ]
               }, {
-                title: "SOCIAL & SPECIAL", iconSrc: NAV_ICONS.guild, icon: "🔗", color: "#a855f7",
+                title: "SOCIAL & SPECIAL", iconSrc: NAV_ICONS.guild, icon: "📋", color: "#a855f7",
                 items: [
-                  ...(can('sanctum') ? [{ key: "sanctum", icon: "🏛️", label: "Inner Sanctum", desc: "Meditation & Willenskraft", isOverlay: false }] : [{ key: "sanctum_locked", icon: "🏛️", label: "Inner Sanctum", locked: true, unlockLevel: 11 }]),
+                  ...(can('sanctum') ? [{ key: "sanctum", icon: "📋›️", label: "Inner Sanctum", desc: "Meditation & Willenskraft", isOverlay: false }] : [{ key: "sanctum_locked", icon: "📋›️", label: "Inner Sanctum", locked: true, unlockLevel: 11 }]),
                   ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", icon: "⏰", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
-                  ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "🔗", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "🔗", label: "Soul Link", locked: true, unlockLevel: 30 }]),
-                  ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", iconSrc: CHA_ICONS.conversation, icon: "🎭", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", iconSrc: CHA_ICONS.conversation, icon: "🎭", label: "Charisma Dungeons", locked: true, unlockLevel: 30 }]),
+                  ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "📋", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "📋", label: "Soul Link", locked: true, unlockLevel: 30 }]),
+                  ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", iconSrc: CHA_ICONS.conversation, icon: "📋", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", iconSrc: CHA_ICONS.conversation, icon: "📋", label: "Charisma Dungeons", locked: true, unlockLevel: 30 }]),
                 ]
               }, {
-                title: "SYSTEM", iconSrc: NAV_ICONS.settings, icon: "⚙️", color: "#64748b",
+                title: "SYSTEM", iconSrc: NAV_ICONS.settings, icon: "âš™️", color: "#64748b",
                 items: [
-                  { key: "settings", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
+                  { key: "settings", iconSrc: NAV_ICONS.settings, icon: "âš™️", label: "Einstellungen", desc: "Theme, Export & mehr" },
                 ]
               }].map((section, si) => (
                 <div key={section.title} style={{ marginBottom: 20, animation: `slideUp 0.3s ease ${si * 0.08}s both` }}>
@@ -1853,12 +1461,12 @@ function App({ initialHunterName, onLogout }) {
                   onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b88"; e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(245,158,11,0.1)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "#f59e0b33"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
                 >
-                  <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b44", flexShrink: 0 }}><GameIcon src={NAV_ICONS.guild} fallback="🌐" size={28} glow glowColor="rgba(245,158,11,0.5)" /></div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b44", flexShrink: 0 }}><GameIcon src={NAV_ICONS.guild} fallback="📋" size={28} glow glowColor="rgba(245,158,11,0.5)" /></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fcd34d", fontFamily: "'Cinzel',serif" }}>Hunter Association</div>
                     <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>Multiplayer Portal betreten</div>
                   </div>
-                  <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>⟶</div>
+                  <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>âŸ¶</div>
                 </button>
               </div>
               )}
@@ -1908,7 +1516,7 @@ function App({ initialHunterName, onLogout }) {
                       style={{ width: 38, height: 38, borderRadius: 12, background: randomizing ? "rgba(245,158,11,0.25)" : "rgba(245,158,11,0.1)", border: `1px solid ${randomizing ? "#f59e0b88" : "#f59e0b33"}`, color: "#f59e0b", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s", cursor: "pointer", animation: randomizing ? "spin 0.5s ease" : "none" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.2)"; e.currentTarget.style.borderColor = "#f59e0b66"; }}
                       onMouseLeave={e => { if (!randomizing) { e.currentTarget.style.background = "rgba(245,158,11,0.1)"; e.currentTarget.style.borderColor = "#f59e0b33"; } }}
-                    >🎲</button>
+                    >📋</button>
                     <button onClick={() => { setShowCreate(false); setShowTemplates(false); }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#64748b", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", cursor: "pointer" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.borderColor = "#ef444444"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#64748b"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}>&#x2715;</button>
@@ -1916,7 +1524,7 @@ function App({ initialHunterName, onLogout }) {
                 </div>
                 {/* Mode tabs */}
                 <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-                  {[{ key: false, label: "✏️ Erstellen" }, { key: true, label: "💡 Ideen-Bibliothek" }].map(tab => (
+                  {[{ key: false, label: "\u270E\uFE0F Erstellen" }, { key: true, label: "💡 Ideen-Bibliothek" }].map(tab => (
                     <button key={String(tab.key)} onClick={() => setShowTemplates(tab.key)} style={{ flex: 1, padding: "8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: showTemplates === tab.key ? theme.primary + "22" : "transparent", color: showTemplates === tab.key ? theme.accent : "#475569", border: `1px solid ${showTemplates === tab.key ? theme.primary + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, transition: "all 0.25s", cursor: "pointer" }}>{tab.label}</button>
                   ))}
                 </div>
@@ -1926,7 +1534,7 @@ function App({ initialHunterName, onLogout }) {
               {/* Scrollable Content */}
               <div style={{ overflowY: "auto", padding: "0 24px", flex: 1 }}>
 
-                {/* ══ IDEEN-BIBLIOTHEK ══ */}
+                {/* â•â• IDEEN-BIBLIOTHEK â•â• */}
                 {showTemplates && (
                   <div style={{ paddingTop: 16, paddingBottom: 8 }}>
                     {/* Randomizer big button */}
@@ -1972,7 +1580,7 @@ function App({ initialHunterName, onLogout }) {
                   </div>
                 )}
 
-                {/* ══ ERSTELLEN-MODUS ══ */}
+                {/* â•â• ERSTELLEN-MODUS â•â• */}
                 {!showTemplates && <>
 
                   {/* Quest Title */}
@@ -1992,7 +1600,7 @@ function App({ initialHunterName, onLogout }) {
                       {[
                         { key: "side", label: "Side Quest", color: "#a78bfa", desc: "Kein Zeitlimit" },
                         { key: "daily", label: "Daily Quest", color: "#22d3ee", desc: "Täglich zurückgesetzt" },
-                        ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly Quest", color: "#8b5cf6", desc: "2× XP & Gold" }] : []),
+                        ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly Quest", color: "#8b5cf6", desc: "2Ã— XP & Gold" }] : []),
                         ...(can('chained_quests') ? [{ key: "chained", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" }] : []),
                       ].map(t => {
                         const active = qType === t.key;
@@ -2095,8 +1703,8 @@ function App({ initialHunterName, onLogout }) {
                             </div>
                           </div>
                         </div>
-                        {qDiff === "boss" && <div style={{ marginTop: 10, padding: "5px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid #ef444433", fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", textAlign: "center", animation: "pulse 2s infinite", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>⚠ <img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(0.6) invert(1) drop-shadow(0 0 4px #ef444488)" }} /> SCHATTEN BESCHWÖRUNGSCHANCE</div>}
-                        {qType === "chained" && <div style={{ marginTop: 6, padding: "5px 10px", background: "rgba(245,158,11,0.06)", borderRadius: 8, border: "1px solid #f59e0b22", fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>⛓️ 3-Schritte Kette · +25% XP pro Schritt</div>}
+                        {qDiff === "boss" && <div style={{ marginTop: 10, padding: "5px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid #ef444433", fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", textAlign: "center", animation: "pulse 2s infinite", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>âš  <img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(0.6) invert(1) drop-shadow(0 0 4px #ef444488)" }} /> SCHATTEN BESCHWÖRUNGSCHANCE</div>}
+                        {qType === "chained" && <div style={{ marginTop: 6, padding: "5px 10px", background: "rgba(245,158,11,0.06)", borderRadius: 8, border: "1px solid #f59e0b22", fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>â›“️ 3-Schritte Kette · +25% XP pro Schritt</div>}
                       </div>
                     );
                   })()}
@@ -2145,23 +1753,12 @@ function App({ initialHunterName, onLogout }) {
         />
       )}
 
-      {/* DAWN / DUSK PROTOCOL */}
-      {showDawnDusk && (
-        <DawnDuskProtocol
-          state={state}
-          theme={theme}
-          startDawnDuskRun={startDawnDuskRun}
-          completeProtocolFloor={completeProtocolFloor}
-          configureProtocolTasks={configureProtocolTasks}
-          abandonProtocolRun={abandonProtocolRun}
-          onClose={() => setShowDawnDusk(false)}
-        />
-      )}
+      {/* DAWN / DUSK PROTOCOL — rendered above as overlay (line ~451), this duplicate is intentionally removed */}
     </div >
   );
 }
 
-// ─── SETUP ────────────────────────────────────────────────────
+// â”€â”€â”€ SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SetupScreen({ onFinish, theme }) {
   const [name, setName] = useState("");
   const [phase, setPhase] = useState(0);
@@ -2188,4 +1785,5 @@ function SetupScreen({ onFinish, theme }) {
     </div>
   );
 }
+
 

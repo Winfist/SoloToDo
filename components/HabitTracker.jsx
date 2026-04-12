@@ -384,21 +384,22 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
             padding: 16, animation: "fadeIn 0.25s ease",
         }}>
             <div onClick={e => e.stopPropagation()} style={{
-                width: "100%", maxWidth: 440, maxHeight: "100dvh", overflowY: "auto",
+                width: "100%", maxWidth: 440, maxHeight: "92vh",
                 background: `linear-gradient(180deg,${theme?.card || "rgba(10,10,22,0.98)"},rgba(4,4,14,0.99))`,
                 border: `1px solid ${theme?.primary || "#22d3ee"}33`,
                 borderTop: `2px solid ${theme?.primary || "#22d3ee"}`,
-                borderRadius: 24, padding: 24,
-                animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                borderRadius: 24, padding: 0,
                 position: "relative", overflow: "hidden",
-                boxShadow: `0 0 80px ${theme?.glow || "rgba(34,211,238,0.14)"}, 0 24px 60px rgba(0,0,0,0.8)`,
+                boxShadow: `0 0 80px ${theme?.glow || "rgba(34,211,238,0.15)"}, 0 24px 60px rgba(0,0,0,0.8)`,
+                display: "flex", flexDirection: "column"
             }}>
                 {/* Grid overlay */}
                 <div style={{ position: "absolute", inset: 0, borderRadius: 24, pointerEvents: "none", backgroundImage: `linear-gradient(${theme?.primary || "#22d3ee"}07 1px, transparent 1px), linear-gradient(90deg, ${theme?.primary || "#22d3ee"}07 1px, transparent 1px)`, backgroundSize: "24px 24px", maskImage: "radial-gradient(ellipse at 50% 0%, black 30%, transparent 72%)", WebkitMaskImage: "radial-gradient(ellipse at 50% 0%, black 30%, transparent 72%)", zIndex: 0 }} />
 
-                <div style={{ position: "relative", zIndex: 1 }}>
+                {/* Header Sub-Component */}
+                <div style={{ position: "relative", padding: "24px 24px 10px", flexShrink: 0, zIndex: 1 }}>
                     {/* Header with diamond decoration */}
-                    <div style={{ position: "relative", marginBottom: 20, paddingTop: 4 }}>
+                    <div style={{ position: "relative", marginBottom: 10, paddingTop: 4 }}>
                         <div style={{ position: "absolute", top: -8, right: 0, width: 48, height: 48, background: `linear-gradient(135deg, ${theme?.primary || "#22d3ee"}14, transparent)`, clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", animation: "breathe 3s ease-in-out infinite", pointerEvents: "none" }} />
                         <div style={{ fontSize: 9, letterSpacing: 4, color: theme?.primary || "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>[ SYSTEM: {isEdit ? "HABIT ÄNDERN" : "NEUER HABIT"} ]</div>
                         <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 1, textShadow: `0 0 20px ${theme?.primary || "#22d3ee"}33` }}>
@@ -406,6 +407,11 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
                         </div>
                         <div style={{ height: 1, marginTop: 10, background: `linear-gradient(90deg, ${theme?.primary || "#22d3ee"}55, transparent)` }} />
                     </div>
+                </div>
+
+                {/* Scrollable Form Content Sub-Component */}
+                <div style={{ padding: "0 24px 24px", overflowY: "auto", flex: 1, position: "relative", zIndex: 1 }}>
+
 
                     {/* Title */}
                     <label style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 6 }}>TITEL</label>

@@ -1,0 +1,117 @@
+// ─── DEFAULT STATE ────────────────────────────────────────────
+// Extracted from data/constants.jsx
+
+export const DEFAULT_STATE = {
+  hunterName: "", level: 1, xp: 0, gold: 0, totalGoldEarned: 0,
+  gems: 0, totalGemsEarned: 0,
+  gemStreak: { current: 0, lastClaimDate: null },
+  activeGemBoosters: [],
+  gemPurchases: [],
+  adsWatchedToday: 0, lastAdWatchDate: null,
+  tutorialCompleted: false,
+  stats: { str: 0, int: 0, vit: 0, agi: 0, cha: 0 },
+  statPoints: 0,
+  quests: [], completedQuests: [], streak: 0, lastActiveDate: null, lastWelcomeDate: null,
+  shopPurchases: [], selectedTheme: "default", selectedTitle: "",
+  shadowArmy: { shadows: [], capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 },
+  totalXpEarned: 0, totalQuestsCompleted: 0,
+  dailyUserQuestsCreated: 0, extraDailySlots: 0, dailyUserXP: 0, integrityScore: 100,
+  dungeons: [], lastDungeonRefresh: null, dungeonHistory: [],
+  achievements: { unlocked: [], notified: [] },
+  skills: { unlocked: [] },
+  equipment: { slots: { weapon: null, armor: null, ring1: null, ring2: null }, inventory: [] },
+  penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },
+  todayModifier: null,
+  emergencyQuest: null,
+  emergencyDone: false,
+  emergencyFailed: false,
+  goals: [],
+  habits: [],
+  microHabits: { habits: null, daily: {} },
+  hiddenQuests: { discovered: [], completed: [] },
+  weeklyQuestReset: null,
+  lastSystemTaskTime: null,
+  jobs: {
+    current: null,
+    levels: {
+      berserker: 0,
+      archmage: 0,
+      guardian: 0,
+      assassin: 0,
+      monarch: 0,
+      necromancer: 0
+    },
+    xp: {
+      berserker: 0,
+      archmage: 0,
+      guardian: 0,
+      assassin: 0,
+      monarch: 0,
+      necromancer: 0
+    },
+    activeAbilityCooldowns: {}
+  },
+  story: {
+    completedChapters: [],
+    completedArcs: [],
+    defeatedBosses: [],
+    totalStoryXp: 0,
+  },
+  lifeDomains: [],
+  manifestations: [],
+  sanctum: {
+    level: 1,
+    willpower: 0,
+    totalMeditationMinutes: 0
+  },
+  multiplayer: {
+    activeRaid: null,
+    guild: null,
+    social: null,
+    publicStats: { totalXp: 0, dungeonsCleared: 0 }
+  },
+  shadowRegression: {
+    active: false,
+    previousStreak: 0,
+    redemptionQuests: [],
+    questsCompleted: 0,
+    completedAt: null,
+    regressionHistory: []
+  },
+  soulLink: {
+    linkCode: null,
+    partnerUid: null,
+    partnerName: null,
+    partnerStreak: 0,
+    partnerLevel: 0,
+    partnerQuestsToday: 0,
+    partnerLastActive: null,
+    bothActive: false,
+    revivesLeft: 3,
+    revivesReceived: 0,
+    linkedAt: null
+  },
+  seasons: {
+    currentSeason: null,
+    currentWorldEvent: null,
+    worldEventExpires: null,
+    seasonalCompletions: [],
+    seasonStartDate: null,
+    earnedSeasonalTitles: []
+  },
+  dawnDusk: {
+    morningTasks: [],
+    eveningTasks: [],
+    currentRun: null,
+    lastMorningRun: null,
+    lastEveningRun: null,
+    perfectRuns: 0,
+    runHistory: []
+  },
+  charismaDungeons: {
+    unlockedChains: ["social_exposure"],
+    activeChains: {},
+    completedChains: [],
+    stepHistory: []
+  }
+};

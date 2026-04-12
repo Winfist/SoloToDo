@@ -10,7 +10,7 @@ import {
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
-  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses,
+  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses, checkAllJobsLevel5,
   saveState, loadState, migrateState, calculateLevelUp, awardJobXp,
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests
 } from '../data/constants';
@@ -54,6 +54,7 @@ export function useGameState(initialHunterName, onLogout) {
   const [portalTransitioning, setPortalTransitioning] = useState(false);
   const [showShadowRegression, setShowShadowRegression] = useState(false);
   const [showDawnDusk, setShowDawnDusk] = useState(false);
+  const [questCinematic, setQuestCinematic] = useState(null);
 
   const notify = useCallback((msg, type = "info") => setNotifications(prev => [...prev, { id: genId(), msg, type }]), []);
   const persist = useCallback(s => {
@@ -376,7 +377,7 @@ export function useGameState(initialHunterName, onLogout) {
     }, xpBonus);
   }, []);
 
-  const computeXpGain = useCallback((quest, streakBonus, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses = {}) => {
+  const computeXpGain = useCallback((quest, streakBonus, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses = {}, gemBoosterMult = 1) => {
     const diff = DIFFICULTIES.find(d => d.key === quest.difficulty);
     let xp = diff.xp;
     xp *= (1 + streakBonus / 100);
@@ -396,6 +397,8 @@ export function useGameState(initialHunterName, onLogout) {
     xp *= (quest.chainMultiplier || 1);
     // Quest-specific xpMult (redemption, seasonal, charisma)
     xp *= (quest.xpMult || 1);
+    // Gem Booster multiplier (BUG FIX: was calculated but never applied)
+    xp *= gemBoosterMult;
     return Math.round(xp);
   }, []);
 
@@ -426,7 +429,9 @@ export function useGameState(initialHunterName, onLogout) {
     const penaltyActive = state.penaltyZone?.active;
     // BUG FIX: Apply Soul Link bonus BEFORE calculateLevelUp (was applied after, having no effect)
     const soulLinkActive = state.soulLink?.bothActive;
-    let xpGain = computeXpGain(quest, streakBonusPct, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses);
+    // BUG FIX: Apply active Gem Booster multiplier (was computed but never used)
+    const { xpMult: gemXpMult } = getGemBoosterMultipliers();
+    let xpGain = computeXpGain(quest, streakBonusPct, equipBonuses, skillBonuses, penaltyActive, formBonus, jobBonuses, gemXpMult);
     if (soulLinkActive) {
       xpGain = Math.round(xpGain * 1.25);
     }
@@ -567,7 +572,17 @@ export function useGameState(initialHunterName, onLogout) {
             createdAtMs: Date.now(),
           };
           extraQuests = [...extraQuests, nextQ];
-          newCharismaDungeons = { ...newCharismaDungeons, stepHistory };
+          newCharismaDungeons = {
+            ...newCharismaDungeons,
+            stepHistory,
+            activeChains: {
+              ...(newCharismaDungeons.activeChains || {}),
+              [chain.id]: {
+                ...(newCharismaDungeons.activeChains?.[chain.id] || {}),
+                currentStep: nextStepIdx + 1,  // BUG FIX: was never updated, progress bar always showed 0
+              }
+            }
+          };
           notify(`🎭 ${chain.name}: Etage ${quest.charismaStep} bezwungen! Weiter zu Etage ${nextStepIdx + 1}.`, "info");
         } else {
           // Chain complete!
@@ -762,6 +777,25 @@ export function useGameState(initialHunterName, onLogout) {
         }
       }
     } catch (e) { /* Graceful fallback */ }
+
+    // ── Quest Completion Cinematic ────────────────────────────────
+    const isFirstToday = !(state.completedQuests || []).some(q => q.completedAt === today);
+    setQuestCinematic({
+      quest,
+      xpGain,
+      goldGain,
+      statCategory: quest.category,
+      difficulty: quest.difficulty,
+      context: {
+        streak: finalStreak,
+        penaltyActive,
+        isFirstToday,
+        didLevelUp,
+        newLevel: didLevelUp ? newLevel : null,
+      },
+      rect,
+      timestamp: Date.now(),
+    });
   }, [state, persist, processAchievements, computeXpGain, notify]);
 
 
@@ -874,6 +908,29 @@ export function useGameState(initialHunterName, onLogout) {
         `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`
       ]);
     }
+
+    // ── Quest Completion Cinematic for Emergency Quest ────────────
+    setQuestCinematic({
+      quest: { ...eq, title: eq.title || "Notfallmission", type: "emergency" },
+      xpGain,
+      goldGain,
+      statCategory: eq.category,
+      difficulty: eq.difficulty || "hard",
+      context: {
+        streak: state.streak || 0,
+        penaltyActive: state.penaltyZone?.active,
+        isFirstToday: false,
+        didLevelUp,
+        newLevel: didLevelUp ? newLevel : null,
+      },
+      rect: null,
+      timestamp: Date.now(),
+    });
+
+    // ── Haptic Feedback ──
+    try {
+      if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
+    } catch (e) { /* Graceful fallback */ }
   }, [state, persist, processAchievements, notify]);
 
   const addChainedQuest = useCallback((title, category, difficulty) => {
@@ -959,7 +1016,7 @@ export function useGameState(initialHunterName, onLogout) {
       setLevelUp({ level: newLevel, earnedPoints });
       triggerSystemMessage("LEVEL UP BESTÄTIGT", [
         `Dungeon erfolgreich abgeschlossen.`,
-        `Sie haben Level ${newLevel} reached.`,
+        `Sie haben Level ${newLevel} erreicht.`,
         `${earnedPoints} Stat-Punkte wurden Ihrem Konto gutgeschrieben.`,
         "Verteilen Sie diese im Statistik-Menü."
       ]);
@@ -1529,6 +1586,8 @@ export function useGameState(initialHunterName, onLogout) {
     setShowShadowRegression,
     showDawnDusk,
     setShowDawnDusk,
+    questCinematic,
+    setQuestCinematic,
     notify,
     persist,
     triggerSystemMessage,
