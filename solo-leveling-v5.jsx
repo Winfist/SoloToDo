@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { JOBS } from "./data/jobs";
 import { JOB_QUESTS } from "./data/jobQuests";
 import { QUEST_POOL } from "./data/questPool";
@@ -37,7 +37,7 @@ import DashboardView from "./components/views/DashboardView.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
 import QuestCompletionCinematic from "./components/QuestCompletionCinematic.jsx";
 
-// â”€â”€â”€ RANKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬ RANKS Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬
 import {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
@@ -215,7 +215,7 @@ function App({ initialHunterName, onLogout }) {
     } catch { return true; }
   });
 
-  // â”€â”€ Page Transition State â”€â”€
+  // Ã¢”â‚¬Ã¢”â‚¬ Page Transition State Ã¢”â‚¬Ã¢”â‚¬
   const [isPageTransitioning, setIsPageTransitioning] = React.useState(false);
   const [transitionTargetView, setTransitionTargetView] = React.useState(null);
   const VIEW_LABELS = useMemo(() => ({
@@ -239,10 +239,10 @@ function App({ initialHunterName, onLogout }) {
     setTransitionTargetView(null);
   }, []);
 
-  // â”€â”€ Progressive Feature Unlock System â”€â”€
+  // Ã¢”â‚¬Ã¢”â‚¬ Progressive Feature Unlock System Ã¢”â‚¬Ã¢”â‚¬
   const { can, nextLevel } = useFeatureUnlocks(state?.level || 1);
 
-  // â”€â”€ View Guard: Reset to dashboard if current view is locked â”€â”€
+  // Ã¢”â‚¬Ã¢”â‚¬ View Guard: Reset to dashboard if current view is locked Ã¢”â‚¬Ã¢”â‚¬
   React.useEffect(() => {
     const viewToFeature = {
       training: 'training_tab', goals: 'goals', calendar: 'calendar',
@@ -263,7 +263,7 @@ function App({ initialHunterName, onLogout }) {
 
 
 
-  // â”€â”€ Adaptive System Coach: periodic intervention checks â”€â”€
+  // Ã¢”â‚¬Ã¢”â‚¬ Adaptive System Coach: periodic intervention checks Ã¢”â‚¬Ã¢”â‚¬
   const prevStateRef = useRef(null);
   useEffect(() => {
     if (!state || loading) return;
@@ -301,7 +301,7 @@ function App({ initialHunterName, onLogout }) {
     );
   }
 
-  if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><GameIcon src={NAV_ICONS.dashboard} fallback="âš”️" size={56} glow glowColor="rgba(79,110,247,0.5)" animate="float" /><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
+  if (loading) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080810" }}><div style={{ textAlign: "center" }}><GameIcon src={NAV_ICONS.dashboard} fallback="⚔️" size={56} glow glowColor="rgba(79,110,247,0.5)" animate="float" /><div style={{ marginTop: 12, fontSize: 12, letterSpacing: 4, color: "#4f6ef7", fontFamily: "'JetBrains Mono',monospace" }}>LOADING</div></div></div>;
   if (showSetup) return <SetupScreen onFinish={gameState.finishSetup} theme={THEMES[state?.selectedTheme] || THEMES["default"]} />;
 
   const theme = (state?.selectedTheme === "custom" && state?.customThemeData)
@@ -417,13 +417,13 @@ function App({ initialHunterName, onLogout }) {
       {questCinematic && (
         <QuestCompletionCinematic
           data={questCinematic}
-          onDone={() => setQuestCinematic(null)}
+          onDone={() => { if (questCinematic.commit) questCinematic.commit(); setQuestCinematic(null); }}
         />
       )}
-      {levelUp && <LevelUpCinematic levelData={levelUp} rank={getRank(levelUp.level || levelUp)} oldRank={prevRank} onClose={() => setLevelUp(null)} />}
-      {ariseTarget && <AriseCinematic shadow={ariseTarget} onClose={() => setAriseTarget(null)} />}
-      {state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
-      {state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
+      {!questCinematic && levelUp && <LevelUpCinematic levelData={levelUp} rank={getRank(levelUp.level || levelUp)} oldRank={prevRank} onClose={() => setLevelUp(null)} />}
+      {!questCinematic && !levelUp && ariseTarget && <AriseCinematic shadow={ariseTarget} onClose={() => setAriseTarget(null)} />}
+      {!questCinematic && !levelUp && !ariseTarget && state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
+      {!questCinematic && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
       {activeDungeon && (
         <div style={{ display: preview3DDungeon ? "none" : "block" }}>
           <DungeonBattle dungeon={activeDungeon} playerStats={state.stats} theme={theme} onResult={r => finishDungeon(activeDungeon, r)} onClose={() => setActiveDungeon(null)} skillBonuses={getSkillBonuses(null, state.stats)} modifier={modifier} formationBonus={formationBonus} state={state} persist={persist} notify={notify} onTrigger3D={() => setPreview3DDungeon(activeDungeon)} startAutomatically={battlePendingStart} onClearStartAuto={() => setBattlePendingStart(false)} />
@@ -437,9 +437,9 @@ function App({ initialHunterName, onLogout }) {
         />
       )}
       {selectedShadow && <ShadowDetailModal shadow={selectedShadow} theme={theme} gold={state.gold} onClose={() => setSelectedShadow(null)} onDeploy={deployShadow} onUndeploy={undeployShadow} onEvolve={evolveShadow} />}
-      {systemMessage && <SystemCLI message={systemMessage} onClose={() => setSystemMessage(null)} />}
+      {!questCinematic && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && <SystemCLI key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
 
-      {/* SHADOW MONARCH'S GATE – PAGE TRANSITION */}
+      {/* SHADOW MONARCH'S GATE — PAGE TRANSITION */}
       <PageTransition
         isActive={isPageTransitioning}
         targetLabel={VIEW_LABELS[transitionTargetView] || (transitionTargetView || "").toUpperCase()}
@@ -499,8 +499,8 @@ function App({ initialHunterName, onLogout }) {
         <div onClick={() => setShowHiddenQuestModal(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(1,0,6,0.96)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.4s", cursor: "pointer" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 360, animation: "scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ marginBottom: 12 }}><GameIcon src={QUEST_ICONS.hidden} fallback="�“" size={56} glow glowColor="#6366f1" animate="float" /></div>
-              <div style={{ fontSize: 9, letterSpacing: 5, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>VERBORGENE QUEST ENTHÜLLT</div>
+              <div style={{ marginBottom: 12 }}><GameIcon src={QUEST_ICONS.hidden} fallback="🔮" size={56} glow glowColor="#6366f1" animate="float" /></div>
+              <div style={{ fontSize: 9, letterSpacing: 5, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>VERBORGENE QUEST ENTHÃœLLT</div>
               <h2 style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginBottom: 6, textShadow: "0 0 30px #6366f188" }}>{showHiddenQuestModal.title}</h2>
               <p style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>{showHiddenQuestModal.discoveryMsg}</p>
             </div>
@@ -550,7 +550,7 @@ function App({ initialHunterName, onLogout }) {
               {can('gem_shop') && (
                 <button onClick={() => navigateTo("gem_shop")} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 10px", borderRadius: 8, background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.15)", color: "#c084fc", minWidth: 50, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = "#a855f755"; e.currentTarget.style.background = "rgba(124,58,237,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(124,58,237,0.15)"; e.currentTarget.style.background = "rgba(124,58,237,0.08)"; }}>
                   <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3 }}>
-                    <img src={GEM_ICONS.gem} style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 3px #a855f788)" }} alt="💎" />{(state.gems || 0).toLocaleString()}
+                    <img src={GEM_ICONS.gem} style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 3px #a855f788)" }} alt="ðŸ’Ž" />{(state.gems || 0).toLocaleString()}
                   </div>
                 </button>
               )}
@@ -569,7 +569,7 @@ function App({ initialHunterName, onLogout }) {
                   cursor: "pointer", fontSize: 10, fontWeight: 700,
                   animation: state.soulLink.bothActive ? "pulse 2s infinite" : "none"
                 }}>
-                  <img src={SHADOW_ICONS.knight} alt="Link" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(1.3)" }} /> {state.soulLink.partnerName ? state.soulLink.partnerName.slice(0, 6) : "–"}
+                  <img src={SHADOW_ICONS.knight} alt="Link" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(1.3)" }} /> {state.soulLink.partnerName ? state.soulLink.partnerName.slice(0, 6) : "—"}
                   {state.soulLink.partnerStreak > 0 && <span><img src={STAT_ICONS.str} alt="fire" style={{ width: 10, height: 10, objectFit: "contain" }} />{state.soulLink.partnerStreak}</span>}
                 </button>
               )}
@@ -602,7 +602,7 @@ function App({ initialHunterName, onLogout }) {
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(34,211,153,0.05)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))"; }}
                 title="Inner Sanctum Base"
               >
-                <GameIcon src={NAV_ICONS.timer} fallback="⏰" size={16} glow glowColor="rgba(34,211,153,0.5)" /> <span className="hide-on-mobile">SANCTUM</span>
+                <GameIcon src={NAV_ICONS.timer} fallback="â°" size={16} glow glowColor="rgba(34,211,153,0.5)" /> <span className="hide-on-mobile">SANCTUM</span>
               </button>}
               {can('focus_mode') && <button
                 onClick={() => setShowFocusMode(true)}
@@ -617,7 +617,7 @@ function App({ initialHunterName, onLogout }) {
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(168,85,247,0.05)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))"; }}
                 title="Focus Mode starten"
               >
-                <GameIcon src={NAV_ICONS.timer} fallback="âš¡" size={16} glow glowColor="rgba(168,85,247,0.5)" /> <span className="hide-on-mobile">FOCUS</span>
+                <GameIcon src={NAV_ICONS.timer} fallback="⚡" size={16} glow glowColor="rgba(168,85,247,0.5)" /> <span className="hide-on-mobile">FOCUS</span>
               </button>}
               {can('dawn_dusk') && <button
                 onClick={() => setShowDawnDusk(true)}
@@ -715,13 +715,13 @@ function App({ initialHunterName, onLogout }) {
               <div style={{ width: `${((state.shadowRegression.questsCompleted || 0) / 3) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #991b1b, #dc2626, #ef4444)", transition: "width 0.6s ease", boxShadow: "0 0 8px rgba(220,38,38,0.4)" }} />
             </div>
             <div style={{ fontSize: 10, color: "#a855f7", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4, position: "relative" }}>
-              <span style={{ color: "#475569" }}>Abschluss â†’</span> <img src={STAT_ICONS.str} alt="fire" style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle" }} />{Math.floor((state.shadowRegression.previousStreak || 0) * 0.5)} Tage Streak wiederhergestellt
+              <span style={{ color: "#475569" }}>Abschluss →</span> <img src={STAT_ICONS.str} alt="fire" style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle" }} />{Math.floor((state.shadowRegression.previousStreak || 0) * 0.5)} Tage Streak wiederhergestellt
             </div>
           </div>
         ) : penaltyActive ? (
           <div style={{ background: "rgba(20,4,4,0.9)", border: "1px solid #ef444433", borderLeft: "3px solid #ef4444", borderRadius: 14, padding: "14px 16px", marginBottom: 14, backdropFilter: "blur(8px)", animation: "glitch 4s ease-in-out infinite" }}>
             <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>PENALTY ZONE AKTIV</div>
-            <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: 500 }}>Das System bestraft Inaktivität. Schließe {Math.max(0, (state.penaltyZone?.redemptionLeft || 3) - (state.penaltyZone?.questsCompletedInPenalty || 0))} weitere Quests ab.</div>
+            <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: 500 }}>Das System bestraft Inaktivität. SchlieÃŸe {Math.max(0, (state.penaltyZone?.redemptionLeft || 3) - (state.penaltyZone?.questsCompletedInPenalty || 0))} weitere Quests ab.</div>
             <div style={{ fontSize: 10, color: "#ef4444", marginTop: 6, fontFamily: "'JetBrains Mono',monospace" }}>-20% XP aus allen Quests</div>
           </div>
         ) : null}
@@ -753,7 +753,7 @@ function App({ initialHunterName, onLogout }) {
                 </div>
                 {worldEvent && (
                   <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>
-                    {worldEvent.iconSrc ? <img src={worldEvent.iconSrc} alt={worldEvent.name} style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle", marginRight: 3 }} /> : worldEvent.icon} {worldEvent.name}: {worldEvent.desc.split(" ").slice(0, 5).join(" ")}–
+                    {worldEvent.iconSrc ? <img src={worldEvent.iconSrc} alt={worldEvent.name} style={{ width: 12, height: 12, objectFit: "contain", verticalAlign: "middle", marginRight: 3 }} /> : worldEvent.icon} {worldEvent.name}: {worldEvent.desc.split(" ").slice(0, 5).join(" ")}—
                   </div>
                 )}
               </div>
@@ -782,7 +782,7 @@ function App({ initialHunterName, onLogout }) {
 
         <NotificationBanner state={state} theme={theme} />
 
-        {/* â•â•â• DASHBOARD â•â•â• */}
+        {/* ◆◆◆ DASHBOARD ◆◆◆ */}
         {view === "dashboard" && (
           <DashboardView
             state={state} theme={theme} can={can}
@@ -801,7 +801,7 @@ function App({ initialHunterName, onLogout }) {
           />
         )}
 
-        {/* â•â•â• DUNGEONS â•â•â• */}
+        {/* ◆◆◆ DUNGEONS ◆◆◆ */}
         {
           view === "dungeon" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -823,7 +823,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* â•â•â• STATS â•â•â• */}
+        {/* ◆◆◆ STATS ◆◆◆ */}
         {
           view === "stats" && (
             <StatsView
@@ -833,7 +833,7 @@ function App({ initialHunterName, onLogout }) {
             />
         )}
 
-        {/* â•â•â• SHADOW ARMY â•â•â• */}
+        {/* ◆◆◆ SHADOW ARMY ◆◆◆ */}
         {
           view === "shadows" && (
             <ShadowArmyView
@@ -845,7 +845,7 @@ function App({ initialHunterName, onLogout }) {
               deployShadow={deployShadow} undeployShadow={undeployShadow}
             />
         )}
-        {/* â•â•â• STORY â•â•â• */}
+        {/* ◆◆◆ STORY ◆◆◆ */}
         {
           view === "story" && state && (
             <StoryView
@@ -915,7 +915,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* â•â•â• JOBS â•â•â• */}
+        {/* ◆◆◆ JOBS ◆◆◆ */}
         {
           view === "jobs" && state && (
             <JobsView
@@ -927,14 +927,14 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* â•â•â• EQUIPMENT â•â•â• */}
+        {/* ◆◆◆ EQUIPMENT ◆◆◆ */}
         {
           view === "equipment" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
               <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px", marginBottom: 16, backdropFilter: "blur(12px)" }}>
-                <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 14 }}>AUSGERÜSTET</div>
+                <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 14 }}>AUSGERÃœSTET</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {[{ slot: "weapon", label: "WAFFE", icon: "📋", iconSrc: ITEM_ICONS.blade }, { slot: "armor", label: "RÜSTUNG", icon: "📋", iconSrc: ITEM_ICONS.armor }, { slot: "ring1", label: "RING 1", icon: "📋", iconSrc: ITEM_ICONS.ring }, { slot: "ring2", label: "RING 2", icon: "📋", iconSrc: ITEM_ICONS.ring }].map(({ slot, label, icon, iconSrc }) => {
+                  {[{ slot: "weapon", label: "WAFFE", icon: "📋", iconSrc: ITEM_ICONS.blade }, { slot: "armor", label: "RÃœSTUNG", icon: "📋", iconSrc: ITEM_ICONS.armor }, { slot: "ring1", label: "RING 1", icon: "📋", iconSrc: ITEM_ICONS.ring }, { slot: "ring2", label: "RING 2", icon: "📋", iconSrc: ITEM_ICONS.ring }].map(({ slot, label, icon, iconSrc }) => {
                     const equipped = state.equipment?.slots?.[slot];
                     return (
                       <div key={slot} style={{ background: equipped ? `linear-gradient(135deg,${RARITY_COLORS[equipped.rarity]}10,transparent)` : theme.surface, border: `1px solid ${equipped ? RARITY_COLORS[equipped.rarity] + "33" : theme.primary + "12"}`, borderRadius: 12, padding: "12px", minHeight: 90 }}>
@@ -1003,7 +1003,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* â•â•â• ACHIEVEMENTS â•â•â• */}
+        {/* ◆◆◆ ACHIEVEMENTS ◆◆◆ */}
         {
           view === "achievements" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -1054,7 +1054,7 @@ function App({ initialHunterName, onLogout }) {
                             <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{ach.desc}</div>
                             {unlocked && ach.reward.title && <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 3, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3 }}><img src={STORY_ICONS.arise} alt="title" style={{ width: 9, height: 9, objectFit: "contain" }} /> "{ach.reward.title}" freigeschaltet</div>}
                           </div>
-                          {unlocked ? <div style={{ fontSize: 12, color: "#f59e0b" }}>✏“</div> : <div style={{ textAlign: "right", fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}><div>+{ach.reward.xp} XP</div><div>{ach.reward.gold > 0 ? `+${ach.reward.gold}G` : ""}</div></div>}
+                          {unlocked ? <div style={{ fontSize: 12, color: "#f59e0b" }}>âœ“</div> : <div style={{ textAlign: "right", fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}><div>+{ach.reward.xp} XP</div><div>{ach.reward.gold > 0 ? `+${ach.reward.gold}G` : ""}</div></div>}
                         </div>
                       );
                     })}
@@ -1065,7 +1065,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* â•â•â• SHOP â•â•â• */}
+        {/* ◆◆◆ SHOP ◆◆◆ */}
         {
           view === "shop" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -1082,7 +1082,7 @@ function App({ initialHunterName, onLogout }) {
               {!shopUnlocked && <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid #ef444422", borderRadius: 14, padding: "16px", marginBottom: 16, textAlign: "center", fontSize: 12, color: "#ef4444" }}>Shop ab D-Rang verfügbar</div>}
               {["consumable", "title", "theme"].map(type => (
                 <div key={type} style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>{type === "title" ? "TITEL" : type === "theme" ? "THEMES" : "VERBRAUCHSGÜTER"}</div>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>{type === "title" ? "TITEL" : type === "theme" ? "THEMES" : "VERBRAUCHSGÃœTER"}</div>
                   {SHOP_ITEMS.filter(i => i.type === type).map((item, idx) => {
                     const owned = state.shopPurchases.includes(item.id);
                     const canAfford = state.gold >= item.cost;
@@ -1200,7 +1200,7 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* â•â•â• GEM SHOP â•â•â• */}
+        {/* ◆◆◆ GEM SHOP ◆◆◆ */}
         {
           view === "gem_shop" && (
             <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -1219,35 +1219,35 @@ function App({ initialHunterName, onLogout }) {
           )
         }
 
-        {/* â•â•â• ANALYTICS â•â•â• */}
+        {/* ◆◆◆ ANALYTICS ◆◆◆ */}
         {
           view === "analytics" && (
             <AnalyticsDashboard state={state} theme={theme} />
           )
         }
 
-        {/* â•â•â• GOALS â•â•â• */}
+        {/* ◆◆◆ GOALS ◆◆◆ */}
         {
           view === "goals" && (
             <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
           )
         }
 
-        {/* â•â•â• CALENDAR â•â•â• */}
+        {/* ◆◆◆ CALENDAR ◆◆◆ */}
         {
           view === "calendar" && (
             <CalendarSchedule state={state} persist={persist} notify={notify} theme={theme} />
           )
         }
 
-        {/* â•â•â• CHALLENGES â•â•â• */}
+        {/* ◆◆◆ CHALLENGES ◆◆◆ */}
         {
           view === "challenges" && (
             <ChallengesSystem state={state} persist={persist} notify={notify} theme={theme} />
           )
         }
 
-        {/* â•â•â• SETTINGS â•â•â• */}
+        {/* ◆◆◆ SETTINGS ◆◆◆ */}
         {
           view === "settings" && (
             <SettingsView state={state} persist={persist} theme={theme} />
@@ -1263,7 +1263,7 @@ function App({ initialHunterName, onLogout }) {
             ...(can('training_tab') ? [{ key: "training", iconSrc: NAV_ICONS.goals, icon: "📋", label: "Ziele" }] : []),
             ...(can('dungeons') ? [{ key: "dungeon", icon: <img src="/icons/gate_normal.png" alt="Gate" style={{ width: 36, height: 36, objectFit: "contain", filter: "drop-shadow(0 0 8px #a78bfa88) brightness(1.3)" }} />, label: "Gates", badge: activeDungeons.length }] : []),
             ...(can('story') ? [{ key: "story", iconSrc: STORY_ICONS.scroll, icon: "📋", label: "Story" }] : []),
-            { key: "system", iconSrc: NAV_ICONS.settings, icon: "âš™️", label: "System" }
+            { key: "system", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: "System" }
           ].map(tab => (
             <button key={tab.key} onClick={() => {
               setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
@@ -1293,7 +1293,7 @@ function App({ initialHunterName, onLogout }) {
         </div>
       </nav >
 
-      {/* TRAINING HUB – unified view for habits/goals/calendar */}
+      {/* TRAINING HUB — unified view for habits/goals/calendar */}
       {
         view === "training" && (
           <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
@@ -1322,7 +1322,7 @@ function App({ initialHunterName, onLogout }) {
 
               <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
                 <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
-                <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>TÄGLICHES TRAINING</div>
+                <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>TÃ„GLICHES TRAINING</div>
                 <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
               </div>
 
@@ -1354,7 +1354,7 @@ function App({ initialHunterName, onLogout }) {
         )
       }
 
-      {/* SYSTEM MENU – themed module hub */}
+      {/* SYSTEM MENU — themed module hub */}
       {
         view === "system" && (
           <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
@@ -1372,8 +1372,8 @@ function App({ initialHunterName, onLogout }) {
                 items: [
                   { key: "stats", iconSrc: STAT_ICONS.str, icon: "📋", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
                   ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📋", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", icon: "📋", label: "Analytics", locked: true, unlockLevel: 8 }]),
-                  ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "📋†", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, icon: "📋†", label: "Achievements", locked: true, unlockLevel: 8 }]),
-                  ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "📋–️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", icon: "📋–️", label: "Events", locked: true, unlockLevel: 21 }]),
+                  ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "📋â€ ", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, icon: "📋â€ ", label: "Achievements", locked: true, unlockLevel: 8 }]),
+                  ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "📋—ï¸", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", icon: "📋—ï¸", label: "Events", locked: true, unlockLevel: 21 }]),
                 ]
               }, {
                 title: "ARSENAL", iconSrc: NAV_ICONS.shop, icon: "📋", color: "#f59e0b",
@@ -1387,15 +1387,15 @@ function App({ initialHunterName, onLogout }) {
               }, {
                 title: "SOCIAL & SPECIAL", iconSrc: NAV_ICONS.guild, icon: "📋", color: "#a855f7",
                 items: [
-                  ...(can('sanctum') ? [{ key: "sanctum", icon: "📋›️", label: "Inner Sanctum", desc: "Meditation & Willenskraft", isOverlay: false }] : [{ key: "sanctum_locked", icon: "📋›️", label: "Inner Sanctum", locked: true, unlockLevel: 11 }]),
-                  ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", icon: "⏰", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
+                  ...(can('sanctum') ? [{ key: "sanctum", icon: "🧘‍♂️", label: "Inner Sanctum", desc: "Meditation & Willenskraft", isOverlay: false }] : [{ key: "sanctum_locked", icon: "🧘‍♂️", label: "Inner Sanctum", locked: true, unlockLevel: 11 }]),
+                  ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "â°", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", icon: "â°", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
                   ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "📋", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "📋", label: "Soul Link", locked: true, unlockLevel: 30 }]),
                   ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", iconSrc: CHA_ICONS.conversation, icon: "📋", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", iconSrc: CHA_ICONS.conversation, icon: "📋", label: "Charisma Dungeons", locked: true, unlockLevel: 30 }]),
                 ]
               }, {
-                title: "SYSTEM", iconSrc: NAV_ICONS.settings, icon: "âš™️", color: "#64748b",
+                title: "SYSTEM", iconSrc: NAV_ICONS.settings, icon: "⚙️", color: "#64748b",
                 items: [
-                  { key: "settings", iconSrc: NAV_ICONS.settings, icon: "âš™️", label: "Einstellungen", desc: "Theme, Export & mehr" },
+                  { key: "settings", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
                 ]
               }].map((section, si) => (
                 <div key={section.title} style={{ marginBottom: 20, animation: `slideUp 0.3s ease ${si * 0.08}s both` }}>
@@ -1466,7 +1466,7 @@ function App({ initialHunterName, onLogout }) {
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fcd34d", fontFamily: "'Cinzel',serif" }}>Hunter Association</div>
                     <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>Multiplayer Portal betreten</div>
                   </div>
-                  <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>âŸ¶</div>
+                  <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>➤</div>
                 </button>
               </div>
               )}
@@ -1498,7 +1498,7 @@ function App({ initialHunterName, onLogout }) {
               <div style={{ padding: "20px 24px 0", flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                   <div>
-                    <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>SYSTEM: {editingQuestId ? "QUEST ÄNDERN" : "NEUE QUEST"}</div>
+                    <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>SYSTEM: {editingQuestId ? "QUEST Ã„NDERN" : "NEUE QUEST"}</div>
                     <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{editingQuestId ? "Quest anpassen" : "Quest erstellen"}</div>
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1524,7 +1524,7 @@ function App({ initialHunterName, onLogout }) {
                 </div>
                 {/* Mode tabs */}
                 <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-                  {[{ key: false, label: "\u270E\uFE0F Erstellen" }, { key: true, label: "💡 Ideen-Bibliothek" }].map(tab => (
+                  {[{ key: false, label: "\u270E\uFE0F Erstellen" }, { key: true, label: "ðŸ’¡ Ideen-Bibliothek" }].map(tab => (
                     <button key={String(tab.key)} onClick={() => setShowTemplates(tab.key)} style={{ flex: 1, padding: "8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: showTemplates === tab.key ? theme.primary + "22" : "transparent", color: showTemplates === tab.key ? theme.accent : "#475569", border: `1px solid ${showTemplates === tab.key ? theme.primary + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, transition: "all 0.25s", cursor: "pointer" }}>{tab.label}</button>
                   ))}
                 </div>
@@ -1534,7 +1534,7 @@ function App({ initialHunterName, onLogout }) {
               {/* Scrollable Content */}
               <div style={{ overflowY: "auto", padding: "0 24px", flex: 1 }}>
 
-                {/* â•â• IDEEN-BIBLIOTHEK â•â• */}
+                {/* ◆◆ IDEEN-BIBLIOTHEK ◆◆ */}
                 {showTemplates && (
                   <div style={{ paddingTop: 16, paddingBottom: 8 }}>
                     {/* Randomizer big button */}
@@ -1550,7 +1550,7 @@ function App({ initialHunterName, onLogout }) {
                       style={{ width: "100%", padding: "14px", borderRadius: 16, fontSize: 13, fontWeight: 900, background: "linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))", color: "#f59e0b", border: "1px solid #f59e0b44", fontFamily: "'Cinzel',serif", letterSpacing: 2, marginBottom: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "all 0.3s", boxShadow: "0 4px 20px rgba(245,158,11,0.15)" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg,rgba(245,158,11,0.3),rgba(245,158,11,0.12))"; e.currentTarget.style.transform = "translateY(-1px)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))"; e.currentTarget.style.transform = "none"; }}
-                    ><span style={{ fontSize: 22 }}>🎲</span> ZUFÄLLIGE QUEST WÜRFELN</button>
+                    ><span style={{ fontSize: 22 }}>ðŸŽ²</span> ZUFÃ„LLIGE QUEST WÃœRFELN</button>
 
                     {/* Category filter */}
                     <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
@@ -1580,7 +1580,7 @@ function App({ initialHunterName, onLogout }) {
                   </div>
                 )}
 
-                {/* â•â• ERSTELLEN-MODUS â•â• */}
+                {/* ◆◆ ERSTELLEN-MODUS ◆◆ */}
                 {!showTemplates && <>
 
                   {/* Quest Title */}
@@ -1600,7 +1600,7 @@ function App({ initialHunterName, onLogout }) {
                       {[
                         { key: "side", label: "Side Quest", color: "#a78bfa", desc: "Kein Zeitlimit" },
                         { key: "daily", label: "Daily Quest", color: "#22d3ee", desc: "Täglich zurückgesetzt" },
-                        ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly Quest", color: "#8b5cf6", desc: "2Ã— XP & Gold" }] : []),
+                        ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly Quest", color: "#8b5cf6", desc: "2Ãƒâ€” XP & Gold" }] : []),
                         ...(can('chained_quests') ? [{ key: "chained", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" }] : []),
                       ].map(t => {
                         const active = qType === t.key;
@@ -1703,8 +1703,8 @@ function App({ initialHunterName, onLogout }) {
                             </div>
                           </div>
                         </div>
-                        {qDiff === "boss" && <div style={{ marginTop: 10, padding: "5px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid #ef444433", fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", textAlign: "center", animation: "pulse 2s infinite", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>âš  <img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(0.6) invert(1) drop-shadow(0 0 4px #ef444488)" }} /> SCHATTEN BESCHWÖRUNGSCHANCE</div>}
-                        {qType === "chained" && <div style={{ marginTop: 6, padding: "5px 10px", background: "rgba(245,158,11,0.06)", borderRadius: 8, border: "1px solid #f59e0b22", fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>â›“️ 3-Schritte Kette · +25% XP pro Schritt</div>}
+                        {qDiff === "boss" && <div style={{ marginTop: 10, padding: "5px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid #ef444433", fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", textAlign: "center", animation: "pulse 2s infinite", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>⚠ <img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(0.6) invert(1) drop-shadow(0 0 4px #ef444488)" }} /> SCHATTEN BESCHWÖRUNGSCHANCE</div>}
+                        {qType === "chained" && <div style={{ marginTop: 6, padding: "5px 10px", background: "rgba(245,158,11,0.06)", borderRadius: 8, border: "1px solid #f59e0b22", fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>⛓️ 3-Schritte Kette · +25% XP pro Schritt</div>}
                       </div>
                     );
                   })()}
@@ -1732,7 +1732,7 @@ function App({ initialHunterName, onLogout }) {
                   }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(15,15,30,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)` : "none", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid #1e2940" }}
                     onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.filter = "brightness(1.1)"; } }}
                     onMouseLeave={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "none"; e.currentTarget.style.filter = "none"; } }}
-                  >{qTitle.trim() ? (editingQuestId ? "✦ SPEICHERN ✦" : "✦ QUEST ANNEHMEN ✦") : "Quest-Titel eingeben..."}</button>
+                  >{qTitle.trim() ? (editingQuestId ? "âœ¦ SPEICHERN âœ¦" : "âœ¦ QUEST ANNEHMEN âœ¦") : "Quest-Titel eingeben..."}</button>
                 </div>
               )}
 
@@ -1753,12 +1753,12 @@ function App({ initialHunterName, onLogout }) {
         />
       )}
 
-      {/* DAWN / DUSK PROTOCOL — rendered above as overlay (line ~451), this duplicate is intentionally removed */}
+      {/* DAWN / DUSK PROTOCOL â€” rendered above as overlay (line ~451), this duplicate is intentionally removed */}
     </div >
   );
 }
 
-// â”€â”€â”€ SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬ SETUP Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬
 function SetupScreen({ onFinish, theme }) {
   const [name, setName] = useState("");
   const [phase, setPhase] = useState(0);
@@ -1785,5 +1785,7 @@ function SetupScreen({ onFinish, theme }) {
     </div>
   );
 }
+
+
 
 

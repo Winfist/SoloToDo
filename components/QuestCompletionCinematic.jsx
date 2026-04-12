@@ -188,17 +188,17 @@ export default function QuestCompletionCinematic({ data, onDone }) {
     const textStart = t.windowDelay + 400 + rewardLines.length * t.rewardStagger + 200;
     timers.push(setTimeout(() => { if (!sk()) setPhase(4); }, textStart));
 
-    // Phase 5: Start fading
-    timers.push(setTimeout(() => {
-      if (!sk()) { setPhase(5); setFading(true); }
-    }, t.fadeStart));
+    // Phase 5: Start fading (disabled so it stays on screen)
+    // timers.push(setTimeout(() => {
+    //   if (!sk()) { setPhase(5); setFading(true); }
+    // }, t.fadeStart));
 
-    // Done
-    timers.push(setTimeout(() => { if (!sk()) onDone(); }, t.total));
+    // Done (disabled so user must click)
+    // timers.push(setTimeout(() => { if (!sk()) onDone(); }, t.total));
 
     timersRef.current = timers;
     return () => timers.forEach(clearTimeout);
-  }, [data, timing, rewardLines, onDone]);
+  }, [data, timing, rewardLines]); // Omit onDone to prevent restarting on dashboard re-render
 
   // Typewriter
   useEffect(() => {
@@ -581,3 +581,4 @@ export default function QuestCompletionCinematic({ data, onDone }) {
     </div>
   );
 }
+

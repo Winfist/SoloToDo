@@ -864,6 +864,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
   const goldGain = Math.round((diff?.gold || 25) * (quest.chainMultiplier || 1) * (typeCfg.goldMult || 1));
   const isHidden = quest.type === "hidden";
   const handleComplete = () => {
+    if (completing) return;
     // Check constraint before animating disappearance
     if (!quest.isSystem && quest.createdAtMs) {
       const waitHours = diff?.waitHours || 1;
@@ -1938,3 +1939,5 @@ export {
   EmergencyQuestCard, ChainedQuestProgress, QuestCard, DungeonGate, FloorProgressBar, BossPhaseUI, DungeonBattle,
   JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI
 };
+
+
