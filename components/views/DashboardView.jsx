@@ -17,7 +17,7 @@ export default function DashboardView({
   streakBonus, formationBonus, equipBonuses, xpPercent, xpNeeded,
   filteredQuests, hiddenQuestCount,
   questFilter, setQuestFilter,
-  completeQuest, startEditingQuest, deleteQuest,
+  completeQuest, completeSubQuest, startEditingQuest, deleteQuest,
   completeEmergencyQuest,
   setShowCreate,
   nextLevel, getUnlocksAtLevel: _getUnlocksAtLevel,
@@ -127,7 +127,7 @@ export default function DashboardView({
           <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
           <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
         </div>
-      ) : <div style={{ marginBottom: 24 }}>{filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}</div>}
+      ) : <div style={{ marginBottom: 24 }}>{filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />)}</div>}
 
       {/* ── VISION BOARD ── */}
       {can('vision_board') && (

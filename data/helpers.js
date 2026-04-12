@@ -101,15 +101,57 @@ export function generateDungeons(playerRankName) {
   return shuffled.slice(0, 3).map(d => ({ ...d, instanceId: genId(), cleared: false, expiresAt: expires }));
 }
 
-export function generateDailySystemQuests(count = 3) {
-  const shuffled = [...QUEST_POOL].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count).map(q => ({
-    ...q,
-    id: `sys_${genId()}`,
-    type: "daily",
-    isSystem: true,
-    createdAt: getToday()
-  }));
+export function generateDailySystemQuests(count = 3, state = null) {
+  const level = state?.level || 1;
+  const stats = state?.stats || { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
+  
+  // Pool nach Level filtern
+  const validPool = QUEST_POOL.filter(q => level >= (q.minLevel || 1));
+  
+  // Finde stärkste Defizite
+  let lowestStat = null;
+  let lowestVal = Infinity;
+  let highestVal = -1;
+  Object.entries(stats).forEach(([stat, val]) => {
+    if (val < lowestVal) { lowestVal = val; lowestStat = stat; }
+    if (val > highestVal) { highestVal = val; }
+  });
+
+  const needsDeficiencyFocus = (highestVal - lowestVal >= 3) || (level >= 5 && lowestStat);
+  
+  const selected = [];
+  const generatedIds = new Set();
+
+  if (needsDeficiencyFocus && lowestStat) {
+    const penaltyPool = validPool.filter(q => q.category === lowestStat);
+    if (penaltyPool.length > 0) {
+      const penaltyQ = penaltyPool[Math.floor(Math.random() * penaltyPool.length)];
+      generatedIds.add(penaltyQ.id);
+      selected.push({
+        ...penaltyQ,
+        id: `sys_${genId()}`,
+        type: "daily",
+        isSystem: true,
+        xpMult: 1.5,
+        systemMessage: `[SYSTEM-STRAFE] Vernachlässigung des Stats '${lowestStat.toUpperCase()}' erkannt. Zwangstraining aktiviert.`,
+        createdAt: getToday()
+      });
+    }
+  }
+
+  const shuffled = validPool.filter(q => !generatedIds.has(q.id)).sort(() => Math.random() - 0.5);
+  for (const q of shuffled) {
+    if (selected.length >= count) break;
+    selected.push({
+      ...q,
+      id: `sys_${genId()}`,
+      type: "daily",
+      isSystem: true,
+      createdAt: getToday()
+    });
+  }
+
+  return selected;
 }
 
 export function getJobBonuses(state) {

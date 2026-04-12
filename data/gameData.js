@@ -36,76 +36,7 @@ export const STRATEGIES = [
   { key: "agi", label: "Swift", desc: "Schnell, lautlos, unsichtbar", icon: "⚡", iconSrc: STYLE_ICONS.swift, color: "#f59e0b" },
 ];
 
-// ─── QUEST TEMPLATES LIBRARY ──────────────────────────────────
-export const QUEST_TEMPLATES = [
-  // STR
-  { t: "20 Liegestütze", c: "str", d: "easy", tp: "daily" }, { t: "50 Liegestütze", c: "str", d: "normal", tp: "daily" },
-  { t: "100 Liegestütze", c: "str", d: "hard", tp: "side" }, { t: "30 Kniebeugen", c: "str", d: "easy", tp: "daily" },
-  { t: "100 Kniebeugen", c: "str", d: "normal", tp: "daily" }, { t: "Plank 60 Sekunden halten", c: "str", d: "easy", tp: "daily" },
-  { t: "Plank 3 Minuten halten", c: "str", d: "hard", tp: "side" }, { t: "10-Minuten HIIT Training", c: "str", d: "normal", tp: "daily" },
-  { t: "30 Minuten Joggen", c: "str", d: "normal", tp: "daily" }, { t: "5km Laufen", c: "str", d: "hard", tp: "side" },
-  { t: "10km Laufen", c: "str", d: "boss", tp: "weekly" }, { t: "Klimmzüge – 3 Sätze", c: "str", d: "normal", tp: "daily" },
-  { t: "Gym Session 1 Stunde", c: "str", d: "hard", tp: "side" }, { t: "50 Situps", c: "str", d: "easy", tp: "daily" },
-  { t: "20 Burpees", c: "str", d: "normal", tp: "daily" }, { t: "Fahrrad fahren 30 Min", c: "str", d: "normal", tp: "daily" },
-  { t: "Schwimmen 500m", c: "str", d: "hard", tp: "side" }, { t: "Seilspringen 5 Minuten", c: "str", d: "normal", tp: "daily" },
-  { t: "Morgen-Stretching 10 Min", c: "str", d: "easy", tp: "daily" }, { t: "Yoga-Session 20 Min", c: "str", d: "easy", tp: "daily" },
-  { t: "8000 Schritte gehen", c: "str", d: "normal", tp: "daily" }, { t: "10.000 Schritte Challenge", c: "str", d: "boss", tp: "weekly" },
-  { t: "Sprint-Intervalle 10x30s", c: "str", d: "hard", tp: "side" }, { t: "Treppensteigen 10 Etagen", c: "str", d: "normal", tp: "daily" },
-  { t: "Dips 30 Stück", c: "str", d: "normal", tp: "daily" }, { t: "Wandern 2 Stunden", c: "str", d: "hard", tp: "weekly" },
-  // INT
-  { t: "30 Minuten lesen", c: "int", d: "easy", tp: "daily" }, { t: "1 Stunde lesen", c: "int", d: "normal", tp: "daily" },
-  { t: "Buchkapitel lesen", c: "int", d: "easy", tp: "daily" }, { t: "Buch komplett auslesen", c: "int", d: "boss", tp: "weekly" },
-  { t: "Neue Sprache lernen 30 Min", c: "int", d: "normal", tp: "daily" }, { t: "20 Vokabeln lernen", c: "int", d: "easy", tp: "daily" },
-  { t: "Online-Kurs Einheit", c: "int", d: "normal", tp: "daily" }, { t: "Lehrreichen Podcast hören", c: "int", d: "easy", tp: "daily" },
-  { t: "Dokumentation schauen", c: "int", d: "easy", tp: "daily" }, { t: "Fachtext lesen", c: "int", d: "easy", tp: "daily" },
-  { t: "Notizen zusammenfassen", c: "int", d: "easy", tp: "daily" }, { t: "Neues Thema 1h recherchieren", c: "int", d: "normal", tp: "daily" },
-  { t: "20 Flashcards erstellen", c: "int", d: "normal", tp: "side" }, { t: "Text auswendig lernen", c: "int", d: "hard", tp: "side" },
-  { t: "Programmieren 1 Stunde", c: "int", d: "normal", tp: "daily" }, { t: "Mathe-Rätsel lösen", c: "int", d: "normal", tp: "daily" },
-  { t: "500 Wörter schreiben", c: "int", d: "normal", tp: "daily" }, { t: "Mind-Map erstellen", c: "int", d: "easy", tp: "daily" },
-  { t: "Philosophischen Text lesen", c: "int", d: "hard", tp: "side" }, { t: "Wissenschaftliche Studie lesen", c: "int", d: "hard", tp: "side" },
-  { t: "Tagesrückblick journalen", c: "int", d: "easy", tp: "daily" }, { t: "Kreatives Schreiben 1h", c: "int", d: "normal", tp: "daily" },
-  { t: "5 Fakten über neues Thema lernen", c: "int", d: "easy", tp: "daily" }, { t: "Essay schreiben", c: "int", d: "hard", tp: "side" },
-  { t: "Sprachkurs-Modul abschließen", c: "int", d: "hard", tp: "weekly" }, { t: "TED-Talk ansehen und notieren", c: "int", d: "normal", tp: "daily" },
-  // VIT
-  { t: "8 Gläser Wasser trinken", c: "vit", d: "easy", tp: "daily" }, { t: "Früh schlafen gehen", c: "vit", d: "easy", tp: "daily" },
-  { t: "8 Stunden schlafen", c: "vit", d: "normal", tp: "daily" }, { t: "Kein Bildschirm 1h vor Schlaf", c: "vit", d: "normal", tp: "daily" },
-  { t: "Gesunde Mahlzeit kochen", c: "vit", d: "normal", tp: "daily" }, { t: "Kein Junkfood heute", c: "vit", d: "normal", tp: "daily" },
-  { t: "10 Minuten meditieren", c: "vit", d: "easy", tp: "daily" }, { t: "Tiefenentspannung 20 Min", c: "vit", d: "easy", tp: "daily" },
-  { t: "Kalt duschen", c: "vit", d: "normal", tp: "daily" }, { t: "30 Minuten frische Luft", c: "vit", d: "easy", tp: "daily" },
-  { t: "Handy-freie Stunde", c: "vit", d: "normal", tp: "daily" }, { t: "Kein Zucker heute", c: "vit", d: "hard", tp: "side" },
-  { t: "Kein Alkohol diese Woche", c: "vit", d: "boss", tp: "weekly" }, { t: "Vitamine einnehmen", c: "vit", d: "easy", tp: "daily" },
-  { t: "5 Portionen Obst & Gemüse", c: "vit", d: "normal", tp: "daily" }, { t: "Intermittent Fasting 16h", c: "vit", d: "hard", tp: "side" },
-  { t: "Natur-Wanderung 1h", c: "vit", d: "normal", tp: "side" }, { t: "Sauna oder Bad entspannen", c: "vit", d: "easy", tp: "side" },
-  { t: "Box Breathing 5 Minuten", c: "vit", d: "easy", tp: "daily" }, { t: "Bildschirmzeit unter 2h", c: "vit", d: "hard", tp: "daily" },
-  { t: "Frühstück nicht überspringen", c: "vit", d: "easy", tp: "daily" }, { t: "Schlafzeit regulieren", c: "vit", d: "normal", tp: "weekly" },
-  { t: "Abends spazieren gehen", c: "vit", d: "easy", tp: "daily" }, { t: "Digitaler Detox halber Tag", c: "vit", d: "boss", tp: "weekly" },
-  // AGI
-  { t: "To-Do Liste erstellen", c: "agi", d: "easy", tp: "daily" }, { t: "Aufgeschobene Aufgabe erledigen", c: "agi", d: "normal", tp: "daily" },
-  { t: "Schreibtisch aufräumen", c: "agi", d: "easy", tp: "daily" }, { t: "E-Mails beantworten", c: "agi", d: "easy", tp: "daily" },
-  { t: "25-Min Pomodoro", c: "agi", d: "easy", tp: "daily" }, { t: "4 Pomodoros am Stück", c: "agi", d: "hard", tp: "side" },
-  { t: "Wochenziel setzen", c: "agi", d: "easy", tp: "weekly" }, { t: "Zimmer aufräumen", c: "agi", d: "normal", tp: "daily" },
-  { t: "Wohnung putzen", c: "agi", d: "hard", tp: "weekly" }, { t: "Projekt-Plan schreiben", c: "agi", d: "normal", tp: "side" },
-  { t: "Digitale Dateien sortieren", c: "agi", d: "easy", tp: "daily" }, { t: "Rucksack ausmisten", c: "agi", d: "easy", tp: "daily" },
-  { t: "Budget überprüfen", c: "agi", d: "normal", tp: "weekly" }, { t: "Einkaufen gehen", c: "agi", d: "easy", tp: "daily" },
-  { t: "Wichtige Telefonate erledigen", c: "agi", d: "normal", tp: "daily" }, { t: "Vor 7 Uhr aufstehen", c: "agi", d: "hard", tp: "daily" },
-  { t: "Deep Work Session 2h", c: "agi", d: "boss", tp: "weekly" }, { t: "Inbox Zero erreichen", c: "agi", d: "hard", tp: "side" },
-  { t: "Kleiderschrank sortieren", c: "agi", d: "normal", tp: "side" }, { t: "Wunschliste schreiben", c: "agi", d: "easy", tp: "side" },
-  { t: "Routine für morgen planen", c: "agi", d: "easy", tp: "daily" }, { t: "Prokrastinierte Aufgabe JETZT", c: "agi", d: "boss", tp: "daily" },
-  { t: "Wichtigstes Ziel priorisieren", c: "agi", d: "normal", tp: "daily" }, { t: "Arbeitsplatz optimieren", c: "agi", d: "normal", tp: "side" },
-  // CHA
-  { t: "Freund anschreiben", c: "cha", d: "easy", tp: "daily" }, { t: "Familie anrufen", c: "cha", d: "easy", tp: "daily" },
-  { t: "Jemanden zum Essen einladen", c: "cha", d: "normal", tp: "side" }, { t: "Neuen Kontakt knüpfen", c: "cha", d: "normal", tp: "side" },
-  { t: "Jemandem ein Kompliment machen", c: "cha", d: "easy", tp: "daily" }, { t: "Jemanden um Hilfe bitten", c: "cha", d: "normal", tp: "daily" },
-  { t: "Jemanden aktiv unterstützen", c: "cha", d: "easy", tp: "daily" }, { t: "Social Media Pause 1 Tag", c: "cha", d: "hard", tp: "daily" },
-  { t: "Öffentlich reden", c: "cha", d: "boss", tp: "weekly" }, { t: "Ehrenamtliche Stunde", c: "cha", d: "normal", tp: "weekly" },
-  { t: "3x aufrichtig Danke sagen", c: "cha", d: "easy", tp: "daily" }, { t: "Konflikt aktiv lösen", c: "cha", d: "hard", tp: "side" },
-  { t: "Konstruktives Feedback geben", c: "cha", d: "normal", tp: "daily" }, { t: "Netzwerk-Event besuchen", c: "cha", d: "hard", tp: "weekly" },
-  { t: "Handgeschriebenen Brief schreiben", c: "cha", d: "normal", tp: "side" }, { t: "Mit Fremdem Gespräch führen", c: "cha", d: "normal", tp: "daily" },
-  { t: "Positives teilen", c: "cha", d: "easy", tp: "daily" }, { t: "Experten um Rat fragen", c: "cha", d: "hard", tp: "side" },
-  { t: "Zusammen Sport machen", c: "cha", d: "normal", tp: "side" }, { t: "Jemanden überraschen", c: "cha", d: "normal", tp: "side" },
-  { t: "Alten Freund wiederfinden", c: "cha", d: "hard", tp: "weekly" }, { t: "Gruppenaktivität organisieren", c: "cha", d: "boss", tp: "weekly" },
-  { t: "Selbst-Gespräch / Affirmation", c: "cha", d: "easy", tp: "daily" }, { t: "Postkarte schicken", c: "cha", d: "easy", tp: "side" },
-];
+
 
 // ─── SHADOW ARMY DATA ─────────────────────────────────────────
 export const SHADOW_CLASSES = {

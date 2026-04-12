@@ -1,10 +1,10 @@
-﻿
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { db, auth } from "../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { QUEST_POOL } from "../data/questPool.js";
 import {
-  RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
+  RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
@@ -54,6 +54,12 @@ export function useGameState(initialHunterName, onLogout) {
   const [qCat, setQCat] = useState("agi");
   const [qType, setQType] = useState("side");
   const [qSyncHabit, setQSyncHabit] = useState(false);
+  const [qDescription, setQDescription] = useState("");
+  const [qSubQuests, setQSubQuests] = useState([]);
+  const [qSaveToPool, setQSaveToPool] = useState(false);
+  const [qFromTemplate, setQFromTemplate] = useState(null);
+  const [qTags, setQTags] = useState("");
+  const [showDetails, setShowDetails] = useState(false);
   const [editingQuestId, setEditingQuestId] = useState(null);
   const [showHiddenQuestModal, setShowHiddenQuestModal] = useState(null);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -109,10 +115,10 @@ export function useGameState(initialHunterName, onLogout) {
     const user = auth.currentUser;
     if (!user) return;
 
-    console.log("System: Cloud-Synchronisierung aktiviert für", user.uid);
+    console.log("System: Cloud-Synchronisierung aktiviert fÃ¼r", user.uid);
     const docRef = doc(db, "users", user.uid);
 
-    // Listen for remote changes â€” only apply cloud data when local state is absent
+    // Listen for remote changes Ã¢â‚¬â€ only apply cloud data when local state is absent
     // (e.g. first load on a new device). Never overwrite an active session to
     // prevent cloud overwrites from wiping locally-created quests/habits/goals.
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
@@ -167,14 +173,14 @@ export function useGameState(initialHunterName, onLogout) {
           // Rest-State Mechanics
           if (s.lastInteractionTimeMs && (Date.now() - s.lastInteractionTimeMs >= 8 * 3600 * 1000)) {
             s.restBuff = { active: true, date: today };
-            setTimeout(() => notify("Inner Sanctum Buff: +10% XP für heute (8h offline)", "success"), 2500);
+            setTimeout(() => notify("Inner Sanctum Buff: +10% XP fÃ¼r heute (8h offline)", "success"), 2500);
           }
           if (s.restBuff?.active && s.restBuff.date !== today) {
             s.restBuff = { active: false, date: null };
           }
           s.lastInteractionTimeMs = Date.now();
 
-          // Local state belongs to this user â€” preserve it as-is.
+          // Local state belongs to this user Ã¢â‚¬â€ preserve it as-is.
 
           if (s.lastActiveDate && s.lastActiveDate !== today) {
             const diff = Math.floor((new Date(today) - new Date(s.lastActiveDate)) / 86400000);
@@ -205,7 +211,7 @@ export function useGameState(initialHunterName, onLogout) {
             // BUG FIX: Keep redemption quests alive if shadow regression is still active
             const regressionActive = s.shadowRegression?.active;
             s.quests = (s.quests || []).filter(q => !q.isSystem && !q.isSeasonal && !(q.isRedemption && !regressionActive));
-            const newSysQuests = generateDailySystemQuests(3);
+            const newSysQuests = generateDailySystemQuests(3, s);
             s.quests = [...s.quests, ...newSysQuests];
             s.emergencyQuest = null;
             s.emergencyDone = false;
@@ -218,7 +224,7 @@ export function useGameState(initialHunterName, onLogout) {
               if (isFeatureUnlocked('seasons', s.level || 1)) {
                 const nextEvent = getNextWorldEvent(s.seasons?.currentWorldEvent || null);
                 s.seasons = { ...(s.seasons || {}), currentWorldEvent: nextEvent.key, worldEventExpires: getNextMonday() };
-                setTimeout(() => notify(`ðŸŒ Neues World-Event: ${nextEvent.icon} ${nextEvent.name} — ${nextEvent.desc}`, "named"), 3000);
+                setTimeout(() => notify(`Ã°Å¸Å’Â Neues World-Event: ${nextEvent.icon} ${nextEvent.name} â€” ${nextEvent.desc}`, "named"), 3000);
               }
             }
             // Season detection (only if seasons feature unlocked)
@@ -235,7 +241,7 @@ export function useGameState(initialHunterName, onLogout) {
                 const seasonalQs = generateSeasonalQuests(detectedSeason);
                 s.quests = [...s.quests, ...seasonalQs];
                 if (oldSeason) {
-                  setTimeout(() => notify(`ðŸŒ¸ Neue Saison: ${SEASONS[detectedSeason].icon} ${SEASONS[detectedSeason].name}! Saison-Quests wurden hinzugefügt.`, "named"), 2000);
+                  setTimeout(() => notify(`Ã°Å¸Å’Â¸ Neue Saison: ${SEASONS[detectedSeason].icon} ${SEASONS[detectedSeason].name}! Saison-Quests wurden hinzugefÃ¼gt.`, "named"), 2000);
                 }
               } else {
                 // Ensure seasonal quests still exist
@@ -261,7 +267,7 @@ export function useGameState(initialHunterName, onLogout) {
                 triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
                   "ACHTUNG: Eine temporale Anomalie wurde registriert.",
                   `Mission: ${s.emergencyQuest.title}`,
-                  "Die Belohnungen für diese Aufgabe wurden verdoppelt.",
+                  "Die Belohnungen fÃ¼r diese Aufgabe wurden verdoppelt.",
                   "Versagen wird nicht toleriert."
                 ]);
               }, 2500);
@@ -278,9 +284,9 @@ export function useGameState(initialHunterName, onLogout) {
           }
           setTimeout(() => {
             const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
-            const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "âš ï¸ NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
+            const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "Ã¢Å¡Â Ã¯Â¸Â NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
             triggerSystemMessage("STATUS-CHECK", [
-              `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`,
+              `Willkommen zurÃ¼ck, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`,
               `Aktive Tages-Quests: ${activeDailies.length}`,
               urgentMsg
             ]);
@@ -365,7 +371,7 @@ export function useGameState(initialHunterName, onLogout) {
         triggerSystemMessage("NEUE AUFGABE", [
           "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
           `"${randTask.title}"`,
-          "SchlieÃŸen Sie diese zeitnah ab, Hunter."
+          "SchlieÃƒÅ¸en Sie diese zeitnah ab, Hunter."
         ]);
 
         persist({
@@ -393,7 +399,7 @@ export function useGameState(initialHunterName, onLogout) {
 
   const removeNotif = useCallback(id => setNotifications(prev => prev.filter(n => n.id !== id)), []);
 
-  // Pure version — returns { nextState, newAchievements }, never calls setAchQueue
+  // Pure version â€” returns { nextState, newAchievements }, never calls setAchQueue
   const processAchievementsPure = useCallback(nextState => {
     const newAchs = checkAchievements(nextState);
     if (!newAchs.length) return { nextState, newAchievements: [] };
@@ -413,7 +419,7 @@ export function useGameState(initialHunterName, onLogout) {
     };
   }, []);
 
-  // Legacy impure version — for minor callers (evolveShadow, buyItem, equipItem, buyGemItem)
+  // Legacy impure version â€” for minor callers (evolveShadow, buyItem, equipItem, buyGemItem)
   // that immediately persist and don't need RewardFlow sequencing
   const processAchievements = useCallback(nextState => {
     const { nextState: resolved, newAchievements } = processAchievementsPure(nextState);
@@ -488,6 +494,9 @@ export function useGameState(initialHunterName, onLogout) {
   const startEditingQuest = useCallback((quest) => {
     setEditingQuestId(quest.id);
     setQTitle(quest.title);
+    setQDescription(quest.description || "");
+    setQSubQuests((quest.subQuests || []).map(sq => ({ title: sq.title })));
+    setQTags("");
     setQDiff(quest.difficulty);
     setQCat(quest.category);
     setQType(quest.type);
@@ -499,13 +508,22 @@ export function useGameState(initialHunterName, onLogout) {
     if (!qTitle.trim()) return;
 
     if (editingQuestId) {
+      const editSubQuests = qSubQuests
+        .filter(sq => sq.title.trim())
+        .map((sq, i) => ({
+          id: genId(),
+          title: sq.title.trim(),
+          completed: false,
+          completedAt: null,
+          order: i + 1,
+        }));
       const updatedQuests = state.quests.map(q =>
         q.id === editingQuestId
-          ? { ...q, title: qTitle.trim(), difficulty: qDiff, category: qCat, type: qType }
+          ? { ...q, title: qTitle.trim(), description: qDescription.trim(), subQuests: editSubQuests.length > 0 ? editSubQuests : (q.subQuests || []), difficulty: qDiff, category: qCat, type: qType }
           : q
       );
       persist({ ...state, quests: updatedQuests });
-      setQTitle("");
+      setQTitle(""); setQDescription(""); setQSubQuests([]); setQSaveToPool(false); setQFromTemplate(null);
       setEditingQuestId(null);
       setShowCreate(false);
       return;
@@ -515,7 +533,7 @@ export function useGameState(initialHunterName, onLogout) {
     const extraSlots = state.extraDailySlots || 0;
     const maxAllowed = 4 + extraSlots;
     if (createdCount >= maxAllowed) {
-      notify("Tägliches Quest-Limit erreicht! Kaufe weitere Slots im Shop.", "warning");
+      notify("Quest-Limit erreicht! Kaufe weitere Slots im Shop.", "warning");
       return;
     }
 
@@ -530,15 +548,64 @@ export function useGameState(initialHunterName, onLogout) {
     const habitId = ((qType === "daily" || qType === "weekly") && qSyncHabit) ? genId() : null;
     let finalDiff = qDiff;
     const tLower = qTitle.trim().toLowerCase();
-    const isSimple = tLower.includes("liegestütz") || tLower.includes("situp") || tLower.includes("kniebeuge") || tLower.includes("wasser");
+    const isSimple = tLower.includes("liegest\u00FCtz") || tLower.includes("situp") || tLower.includes("kniebeuge") || tLower.includes("wasser");
     const numMatch = tLower.match(/\d+/);
     if (isSimple && numMatch && parseInt(numMatch[0], 10) <= 20) {
       finalDiff = "easy";
     }
 
-    const quest = { id: genId(), title: qTitle.trim(), difficulty: finalDiff, category: qCat, type: qType, createdAt: getToday(), createdAtMs: Date.now(), ...(timeLimit ? { timeLimit } : {}), ...(habitId ? { linkedHabitId: habitId } : {}) };
+    // Build sub-quests
+    const subQuestList = qSubQuests
+      .filter(sq => sq.title.trim())
+      .map((sq, i) => ({
+        id: genId(),
+        title: sq.title.trim(),
+        completed: false,
+        completedAt: null,
+        order: i + 1,
+      }));
+
+    const quest = {
+      id: genId(), title: qTitle.trim(),
+      description: qDescription.trim() || undefined,
+      subQuests: subQuestList.length > 0 ? subQuestList : undefined,
+      fromTemplate: qFromTemplate || undefined,
+      difficulty: finalDiff, category: qCat, type: qType,
+      createdAt: getToday(), createdAtMs: Date.now(),
+      ...(timeLimit ? { timeLimit } : {}),
+      ...(habitId ? { linkedHabitId: habitId } : {}),
+    };
 
     let nextState = { ...state, quests: [...state.quests, quest], dailyUserQuestsCreated: createdCount + 1 };
+
+    // Save to custom pool if requested
+    if (qSaveToPool) {
+      const pool = state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
+      if (pool.templates.length < 50) {
+        const template = {
+          id: genId(),
+          title: quest.title,
+          description: quest.description || "",
+          category: quest.category,
+          difficulty: quest.difficulty,
+          type: quest.type,
+          subQuestTitles: subQuestList.map(sq => sq.title),
+          tags: qTags ? qTags.split(',').map(t => t.trim()).filter(Boolean) : [],
+          createdAt: getToday(),
+          usageCount: 1,
+          collectionId: null,
+        };
+        nextState.customQuestPool = {
+          ...pool,
+          templates: [...pool.templates, template],
+        };
+      }
+    }
+
+    // Update recently used
+    const pool = nextState.customQuestPool || state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
+    const recent = [quest.title, ...(pool.recentlyUsed || []).filter(t => t !== quest.title)].slice(0, 10);
+    nextState.customQuestPool = { ...pool, ...(nextState.customQuestPool || {}), recentlyUsed: recent };
 
     if (habitId) {
       const linkedHabit = {
@@ -558,7 +625,8 @@ export function useGameState(initialHunterName, onLogout) {
     }
 
     persist(nextState);
-    setQTitle(""); setShowCreate(false);
+    setQTitle(""); setQDescription(""); setQSubQuests([]); setQSaveToPool(false); setQFromTemplate(null);
+    setShowCreate(false);
   };
 
   const completeEmergencyQuest = useCallback((eq) => {
@@ -577,8 +645,115 @@ export function useGameState(initialHunterName, onLogout) {
     const totalSteps = 3;
     const firstQuest = generateChainedQuest(title, category, difficulty, 1, totalSteps);
     persist({ ...state, quests: [...state.quests, firstQuest] });
-    notify(`â›“ï¸ Quest-Kette gestartet! ${totalSteps} Schritte · Multiplikator steigt mit jedem Erfolg.`, "info");
+    notify(`Ã¢â€ºâ€œÃ¯Â¸Â Quest-Kette gestartet! ${totalSteps} Schritte Â· Multiplikator steigt mit jedem Erfolg.`, "info");
   }, [state, persist, notify]);
+
+  // ─── SUB-QUEST COMPLETION ─────────────────────────────────────
+  const completeSubQuest = useCallback((questId, subQuestId) => {
+    if (!state) return;
+    const quest = state.quests.find(q => q.id === questId);
+    if (!quest || !quest.subQuests?.length) return;
+    const subQuest = quest.subQuests.find(sq => sq.id === subQuestId);
+    if (!subQuest || subQuest.completed) return;
+
+    const updatedSubQuests = quest.subQuests.map(sq =>
+      sq.id === subQuestId ? { ...sq, completed: true, completedAt: Date.now() } : sq
+    );
+
+    // XP: proportional share of base quest XP
+    const diff = DIFFICULTIES.find(d => d.key === quest.difficulty);
+    const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
+    const totalBaseXp = Math.round((diff?.xp || 5) * (typeCfg.xpMult || 1));
+    const subQuestXp = Math.max(1, Math.round(totalBaseXp / quest.subQuests.length));
+
+    let nextState = calculateLevelUp({ ...state }, subQuestXp);
+    nextState.quests = nextState.quests.map(q =>
+      q.id === questId ? { ...q, subQuests: updatedSubQuests } : q
+    );
+    nextState.totalXpEarned = (nextState.totalXpEarned || 0) + subQuestXp;
+
+    setXpFloats(prev => [...prev, { id: genId(), amount: subQuestXp, ts: Date.now() }]);
+    persist(nextState);
+    notify(`Etappe abgeschlossen: ${subQuest.title} (+${subQuestXp} XP)`, "success");
+    try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+  }, [state, persist, notify]);
+
+  // ─── QUEST POOL MANAGEMENT ────────────────────────────────────
+  const createQuestFromTemplate = useCallback((template) => {
+    if (!state) return;
+    const createdCount = state.dailyUserQuestsCreated || 0;
+    const extraSlots = state.extraDailySlots || 0;
+    const maxAllowed = 4 + extraSlots;
+    if (createdCount >= maxAllowed) {
+      notify("Quest-Limit erreicht!", "warning");
+      return;
+    }
+
+    const subQuestList = (template.subQuestTitles || []).map((title, i) => ({
+      id: genId(), title, completed: false, completedAt: null, order: i + 1,
+    }));
+
+    const quest = {
+      id: genId(),
+      title: template.title,
+      description: template.description || "",
+      subQuests: subQuestList.length > 0 ? subQuestList : undefined,
+      fromTemplate: template.id,
+      difficulty: template.difficulty,
+      category: template.category,
+      type: template.type,
+      createdAt: getToday(),
+      createdAtMs: Date.now(),
+    };
+
+    const pool = state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
+    const updatedTemplates = pool.templates.map(t =>
+      t.id === template.id ? { ...t, usageCount: (t.usageCount || 0) + 1 } : t
+    );
+
+    persist({
+      ...state,
+      quests: [...state.quests, quest],
+      dailyUserQuestsCreated: createdCount + 1,
+      customQuestPool: {
+        ...pool,
+        templates: updatedTemplates,
+        recentlyUsed: [template.title, ...(pool.recentlyUsed || []).filter(t => t !== template.title)].slice(0, 10),
+      },
+    });
+    notify(`Quest aus Pool erstellt: ${template.title}`, "success");
+  }, [state, persist, notify]);
+
+  const removeFromPool = useCallback((templateId) => {
+    if (!state) return;
+    const pool = state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
+    persist({
+      ...state,
+      customQuestPool: {
+        ...pool,
+        templates: pool.templates.filter(t => t.id !== templateId),
+      },
+    });
+    notify("Template entfernt.", "info");
+  }, [state, persist, notify]);
+
+  const toggleFavoriteTemplate = useCallback((templateId) => {
+    if (!state) return;
+    const pool = state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
+    let newFavs = pool.favorites || [];
+    if (newFavs.includes(templateId)) {
+      newFavs = newFavs.filter(id => id !== templateId);
+    } else {
+      newFavs = [...newFavs, templateId];
+    }
+    persist({
+      ...state,
+      customQuestPool: {
+        ...pool,
+        favorites: newFavs,
+      },
+    });
+  }, [state, persist]);
 
   const finishDungeon = useCallback((dungeon, result) => {
     const oldLevel = state.level;
@@ -675,7 +850,7 @@ export function useGameState(initialHunterName, onLogout) {
   const undeployShadow = useCallback((shadowId) => {
     const newShadows = (state.shadowArmy.shadows || []).map(s => s.id === shadowId ? { ...s, isDeployed: false, deploymentSlot: null } : s);
     persist({ ...state, shadowArmy: { ...state.shadowArmy, shadows: newShadows } });
-    notify("Shadow zurückgerufen.", "info");
+    notify("Shadow zurÃ¼ckgerufen.", "info");
   }, [state, persist, notify]);
 
   const evolveShadow = useCallback((shadowId) => {
@@ -720,7 +895,7 @@ export function useGameState(initialHunterName, onLogout) {
         };
         setTimeout(() => triggerSystemMessage("SYSTEM RECOVERY", [
           "Elixir of Recovery konsumiert.",
-          "Verlorene Vitalität vollständig wiederhergestellt.",
+          "Verlorene VitalitÃ¤t vollstÃ¤ndig wiederhergestellt.",
           `Streak auf ${recoverStreak} gesetzt.`,
           "Strafzonen-Status aufgehoben."
         ]), 600);
@@ -739,7 +914,7 @@ export function useGameState(initialHunterName, onLogout) {
     notify(`${item.name} erworben!`, item.id === "potion_heal" ? "success" : "gold");
   };
 
-  const equipItem = (item, slot) => { const newSlots = { ...state.equipment.slots, [slot]: item }; let next = { ...state, equipment: { ...state.equipment, slots: newSlots } }; next = processAchievements(next); persist(next); notify(`${item.name} ausgerüstet!`, "info"); };
+  const equipItem = (item, slot) => { const newSlots = { ...state.equipment.slots, [slot]: item }; let next = { ...state, equipment: { ...state.equipment, slots: newSlots } }; next = processAchievements(next); persist(next); notify(`${item.name} ausgerÃ¼stet!`, "info"); };
   const unequipItem = slot => persist({ ...state, equipment: { ...state.equipment, slots: { ...state.equipment.slots, [slot]: null } } });
 
   const switchJob = useCallback((jobKey) => {
@@ -748,12 +923,12 @@ export function useGameState(initialHunterName, onLogout) {
 
     const req = jobDef.unlockRequirement;
     if (state.level < req.level) {
-      notify(`Mindestlevel ${req.level} erforderlich für ${jobDef.name}.`, "info");
+      notify(`Mindestlevel ${req.level} erforderlich fÃ¼r ${jobDef.name}.`, "info");
       return;
     }
 
     if (req.allJobsLevel5 && !checkAllJobsLevel5(state)) {
-      notify("Alle anderen Jobs müssen Level 5 sein.", "info");
+      notify("Alle anderen Jobs mÃ¼ssen Level 5 sein.", "info");
       return;
     }
 
@@ -774,7 +949,7 @@ export function useGameState(initialHunterName, onLogout) {
     const level = state.jobs.levels[jobKey] || 0;
 
     if (level < ability.unlockLevel) {
-      notify(`${jobDef.name} Level ${ability.unlockLevel} benötigt.`, "info");
+      notify(`${jobDef.name} Level ${ability.unlockLevel} benÃ¶tigt.`, "info");
       return;
     }
 
@@ -821,7 +996,7 @@ export function useGameState(initialHunterName, onLogout) {
       }
     };
     persist(next);
-    notify(`${CATEGORIES.find(c => c.key === statKey)?.label} erhöht!`, "success");
+    notify(`${CATEGORIES.find(c => c.key === statKey)?.label} erhÃ¶ht!`, "success");
   }, [state, persist, notify]);
 
 
@@ -831,7 +1006,7 @@ export function useGameState(initialHunterName, onLogout) {
       ...DEFAULT_STATE,
       hunterName: name || "Hunter",
       lastActiveDate: getToday(),
-      quests: generateDailySystemQuests(3),
+      quests: generateDailySystemQuests(3, DEFAULT_STATE),
       dungeons: generateDungeons("E"),
       lastDungeonRefresh: getToday(),
       achievements: { unlocked: [], notified: [] },
@@ -853,7 +1028,7 @@ export function useGameState(initialHunterName, onLogout) {
     persist(s); setShowSetup(false);
   };
 
-  // â”€â”€â”€ DAWN/DUSK PROTOCOL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ DAWN/DUSK PROTOCOL Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   const startDawnDuskRun = useCallback((type) => {
     if (!state) return;
     const tasks = type === "dawn" ? (state.dawnDusk?.morningTasks || []) : (state.dawnDusk?.eveningTasks || []);
@@ -870,10 +1045,10 @@ export function useGameState(initialHunterName, onLogout) {
     };
     persist({ ...state, dawnDusk: { ...state.dawnDusk, currentRun: run } });
     triggerSystemMessage(type === "dawn" ? "DAWN PROTOCOL AKTIVIERT" : "DUSK PROTOCOL AKTIVIERT", [
-      type === "dawn" ? "Die Morgendämmerung beginnt." : "Das Dunkel fällt herab.",
+      type === "dawn" ? "Die MorgendÃ¤mmerung beginnt." : "Das Dunkel fÃ¤llt herab.",
       `${tasks.length} Etagen stehen vor dir.`,
       `Timer: ${type === "dawn" ? "90" : "60"} Minuten.`,
-      "Vollständiger Abschluss = PERFECT RUN Belohnung."
+      "VollstÃ¤ndiger Abschluss = PERFECT RUN Belohnung."
     ]);
   }, [state, persist, notify, triggerSystemMessage]);
 
@@ -907,7 +1082,7 @@ export function useGameState(initialHunterName, onLogout) {
       if (isPerfect) {
         enqueueRewardFlow(buildProtocolRewardFlow(run, xpGain, true, elapsed));
       } else {
-        notify(`✅ Protokoll abgeschlossen! +${xpGain} XP`, "success");
+        notify(`âœ… Protokoll abgeschlossen! +${xpGain} XP`, "success");
       }
     } else {
       nextState.dawnDusk = {
@@ -931,7 +1106,7 @@ export function useGameState(initialHunterName, onLogout) {
     notify("Protokoll abgebrochen.", "warning");
   }, [state, persist, notify]);
 
-  // â”€â”€â”€ CHARISMA DUNGEONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ CHARISMA DUNGEONS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   const startCharismaChain = useCallback((chainId) => {
     if (!state) return;
     const chain = CHARISMA_CHAINS.find(c => c.id === chainId);
@@ -963,17 +1138,17 @@ export function useGameState(initialHunterName, onLogout) {
         activeChains: { ...(state.charismaDungeons?.activeChains || {}), [chainId]: { currentStep: 1, startedAt: getToday() } }
       }
     });
-    notify(`ðŸŽ­ ${chain.name} gestartet! Etage 1 von ${chain.steps.length}: ${step.title}`, "info");
+    notify(`Ã°Å¸Å½Â­ ${chain.name} gestartet! Etage 1 von ${chain.steps.length}: ${step.title}`, "info");
   }, [state, persist, notify]);
 
-  // â”€â”€â”€ SOUL LINK (Firestore-backed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SOUL LINK (Firestore-backed) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   const createSoulLinkCode = useCallback(async () => {
     if (!state) return;
     try {
       const { createSoulLink } = await import('../multiplayer/soulLinkFirebase.js');
       const { linkCode } = await createSoulLink(state, auth.currentUser);
       persist({ ...state, soulLink: { ...(state.soulLink || {}), linkCode, linkedAt: getToday() } });
-      notify(`ðŸ”— Soul Link erstellt! Dein Code: ${linkCode}`, "success");
+      notify(`Ã°Å¸â€â€” Soul Link erstellt! Dein Code: ${linkCode}`, "success");
       return linkCode;
     } catch (e) { notify("Soul Link konnte nicht erstellt werden.", "warning"); }
   }, [state, persist, notify]);
@@ -985,7 +1160,7 @@ export function useGameState(initialHunterName, onLogout) {
       const result = await joinSoulLink(code.toUpperCase(), state, auth.currentUser);
       if (!result) { notify("Code nicht gefunden oder bereits voll.", "warning"); return; }
       persist({ ...state, soulLink: { ...(state.soulLink || {}), ...result, linkCode: code.toUpperCase(), linkedAt: getToday() } });
-      notify(`ðŸ”— Soul Link verbunden mit ${result.partnerName}!`, "success");
+      notify(`Ã°Å¸â€â€” Soul Link verbunden mit ${result.partnerName}!`, "success");
     } catch (e) { notify("Verbindung fehlgeschlagen.", "warning"); }
   }, [state, persist, notify]);
 
@@ -1005,14 +1180,14 @@ export function useGameState(initialHunterName, onLogout) {
       const { sendRevive } = await import('../multiplayer/soulLinkFirebase.js');
       await sendRevive(state.soulLink.linkCode, auth.currentUser.uid, state.soulLink.partnerUid);
       persist({ ...state, soulLink: { ...state.soulLink, revivesLeft: Math.max(0, (state.soulLink.revivesLeft || 0) - 1) } });
-      notify(`ðŸ’“ Streak-Revive an ${state.soulLink.partnerName} gesendet!`, "success");
+      notify(`Ã°Å¸â€™â€œ Streak-Revive an ${state.soulLink.partnerName} gesendet!`, "success");
     } catch (_) { notify("Revive fehlgeschlagen.", "warning"); }
   }, [state, persist, notify]);
 
   const theme = useMemo(() => THEMES[state?.selectedTheme || "default"], [state?.selectedTheme]);
   const modifier = state?.todayModifier || getDailyModifier();
 
-  // â”€â”€â”€ GEM SYSTEM FUNCTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ GEM SYSTEM FUNCTIONS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   // Get active (non-expired) gem boosters
   const getActiveGemBoosters = useCallback(() => {
@@ -1037,7 +1212,7 @@ export function useGameState(initialHunterName, onLogout) {
     const today = getToday();
     const adsToday = state.lastAdWatchDate === today ? (state.adsWatchedToday || 0) : 0;
     if (adsToday >= 5) {
-      notify("Tägliches Werbe-Limit erreicht (5/5). Morgen wieder verfügbar!", "warning");
+      notify("TÃ¤gliches Werbe-Limit erreicht (5/5). Morgen wieder verfÃ¼gbar!", "warning");
       return false;
     }
     const gemReward = 3 + Math.floor(Math.random() * 3); // 3-5 gems
@@ -1048,7 +1223,7 @@ export function useGameState(initialHunterName, onLogout) {
       adsWatchedToday: adsToday + 1,
       lastAdWatchDate: today,
     });
-    notify(`+${gemReward} ðŸ’Ž Gems erhalten!`, "named");
+    notify(`+${gemReward} Ã°Å¸â€™Å½ Gems erhalten!`, "named");
     return gemReward;
   }, [state, persist, notify]);
 
@@ -1077,9 +1252,9 @@ export function useGameState(initialHunterName, onLogout) {
       gemStreak: { current: newStreak, lastClaimDate: today },
     });
     if (isDay7) {
-      notify(`ðŸ’Ž Tag-7-Bonus! +${gemReward} Gems (Streak: ${newStreak} Tage)`, "named");
+      notify(`Ã°Å¸â€™Å½ Tag-7-Bonus! +${gemReward} Gems (Streak: ${newStreak} Tage)`, "named");
     } else {
-      notify(`+${gemReward} ðŸ’Ž Daily Gem Bonus (Streak: ${newStreak})`, "success");
+      notify(`+${gemReward} Ã°Å¸â€™Å½ Daily Gem Bonus (Streak: ${newStreak})`, "success");
     }
     return gemReward;
   }, [state, persist, notify]);
@@ -1111,7 +1286,7 @@ export function useGameState(initialHunterName, onLogout) {
         `${item.name} wurde eingesetzt!`,
         `${item.desc}`,
         `Dauer: ${Math.round(item.duration / 3600000)} Stunden.`,
-        "Möge die Macht mit dir sein, Hunter."
+        "MÃ¶ge die Macht mit dir sein, Hunter."
       ]);
     } else if (item.type === "theme") {
       effects.selectedTheme = item.themeKey;
@@ -1130,13 +1305,13 @@ export function useGameState(initialHunterName, onLogout) {
         effects.stats = { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
         effects.statPoints = (state.statPoints || 0) + totalStatPoints;
         triggerSystemMessage("STAT RESET", [
-          "Alle Stat-Punkte wurden zurückgesetzt.",
-          `${totalStatPoints + (state.statPoints || 0)} Punkte stehen zur Verfügung.`,
+          "Alle Stat-Punkte wurden zurÃ¼ckgesetzt.",
+          `${totalStatPoints + (state.statPoints || 0)} Punkte stehen zur VerfÃ¼gung.`,
           "Verteile sie weise, Hunter."
         ]);
       }
     } else if (item.type === "cosmetic") {
-      // Shadow cosmetics stored in gemPurchases â€” applied via lookup
+      // Shadow cosmetics stored in gemPurchases Ã¢â‚¬â€ applied via lookup
     }
 
     const newPurchases = item.repeatable ? (state.gemPurchases || []) : [...(state.gemPurchases || []), item.id];
@@ -1150,7 +1325,7 @@ export function useGameState(initialHunterName, onLogout) {
     next = processAchievements(next);
     persist(next);
     if (item.type !== "consumable" || !item.id.startsWith("gem_stat_reset")) {
-      notify(`${item.name} erworben! ðŸ’Ž`, item.type === "booster" ? "success" : "named");
+      notify(`${item.name} erworben! Ã°Å¸â€™Å½`, item.type === "booster" ? "success" : "named");
     }
   }, [state, persist, processAchievements, notify, triggerSystemMessage]);
 
@@ -1198,6 +1373,18 @@ export function useGameState(initialHunterName, onLogout) {
     setQType,
     qSyncHabit,
     setQSyncHabit,
+    qDescription,
+    setQDescription,
+    qSubQuests,
+    setQSubQuests,
+    qSaveToPool,
+    setQSaveToPool,
+    qFromTemplate,
+    setQFromTemplate,
+    qTags,
+    setQTags,
+    showDetails,
+    setShowDetails,
     editingQuestId,
     setEditingQuestId,
     startEditingQuest,
@@ -1236,10 +1423,14 @@ export function useGameState(initialHunterName, onLogout) {
     processAchievements,
     computeXpGain,
     completeQuest,
+    completeSubQuest,
     deleteQuest,
     createQuest,
     completeEmergencyQuest,
     addChainedQuest,
+    createQuestFromTemplate,
+    removeFromPool,
+    toggleFavoriteTemplate,
     finishDungeon,
     deployShadow,
     undeployShadow,

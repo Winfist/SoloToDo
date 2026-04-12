@@ -113,5 +113,11 @@ export const DEFAULT_STATE = {
     activeChains: {},
     completedChains: [],
     stepHistory: []
-  }
+  },
+  customQuestPool: {
+    templates: [],
+    favorites: [],
+    recentlyUsed: [],
+    collections: [],
+  },
 };

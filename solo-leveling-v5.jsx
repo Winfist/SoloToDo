@@ -41,7 +41,7 @@ import { buildStoryChapterRewardFlow, buildStoryBossRewardFlow } from "./hooks/r
 
 // Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬ RANKS Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬Ã¢”â‚¬
 import {
-  RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
+  RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
@@ -141,6 +141,18 @@ function App({ initialHunterName, onLogout }) {
     setQType,
     qSyncHabit,
     setQSyncHabit,
+    qDescription,
+    setQDescription,
+    qSubQuests,
+    setQSubQuests,
+    qSaveToPool,
+    setQSaveToPool,
+    qFromTemplate,
+    setQFromTemplate,
+    qTags,
+    setQTags,
+    showDetails,
+    setShowDetails,
     editingQuestId,
     setEditingQuestId,
     startEditingQuest,
@@ -177,10 +189,14 @@ function App({ initialHunterName, onLogout }) {
     processAchievements,
     computeXpGain,
     completeQuest,
+    completeSubQuest,
     deleteQuest,
     createQuest,
     completeEmergencyQuest,
     addChainedQuest,
+    createQuestFromTemplate,
+    removeFromPool,
+    toggleFavoriteTemplate,
     finishDungeon,
     deployShadow,
     undeployShadow,
@@ -207,6 +223,7 @@ function App({ initialHunterName, onLogout }) {
     getActiveGemBoosters,
     getGemBoosterMultipliers,
   } = gameState;
+  const [forgeTab, setForgeTab] = useState("create");
   // ── Animation Controller (Phase 5) ───────────────────────────────────────────
   const animationControllerRef = useRef({ queue: [], index: 0, flow: null, active: false });
 
@@ -924,7 +941,7 @@ function App({ initialHunterName, onLogout }) {
             xpPercent={xpPercent} xpNeeded={xpNeeded}
             filteredQuests={filteredQuests} hiddenQuestCount={hiddenQuestCount}
             questFilter={questFilter} setQuestFilter={setQuestFilter}
-            completeQuest={completeQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
+            completeQuest={completeQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
             completeEmergencyQuest={completeEmergencyQuest}
             setShowCreate={setShowCreate}
             nextLevel={nextLevel} getUnlocksAtLevel={getUnlocksAtLevel}
@@ -1622,7 +1639,7 @@ function App({ initialHunterName, onLogout }) {
         </div>
       )}
 
-      {/* QUEST CREATE MODAL */}
+            {/* QUEST FORGE MODAL */}
       {
         showCreate && (
           <div onClick={() => { setShowCreate(false); setShowTemplates(false); }} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(2,2,10,0.9)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)", padding: "16px 12px" }}>
@@ -1631,8 +1648,8 @@ function App({ initialHunterName, onLogout }) {
               <div style={{ padding: "20px 24px 0", flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                   <div>
-                    <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>SYSTEM: {editingQuestId ? "QUEST Ã„NDERN" : "NEUE QUEST"}</div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{editingQuestId ? "Quest anpassen" : "Quest erstellen"}</div>
+                    <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>QUEST FORGE</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{editingQuestId ? "Quest anpassen" : "Quest schmieden"}</div>
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {/* RANDOMIZER BUTTON */}
@@ -1649,211 +1666,375 @@ function App({ initialHunterName, onLogout }) {
                       style={{ width: 38, height: 38, borderRadius: 12, background: randomizing ? "rgba(245,158,11,0.25)" : "rgba(245,158,11,0.1)", border: `1px solid ${randomizing ? "#f59e0b88" : "#f59e0b33"}`, color: "#f59e0b", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s", cursor: "pointer", animation: randomizing ? "spin 0.5s ease" : "none" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.2)"; e.currentTarget.style.borderColor = "#f59e0b66"; }}
                       onMouseLeave={e => { if (!randomizing) { e.currentTarget.style.background = "rgba(245,158,11,0.1)"; e.currentTarget.style.borderColor = "#f59e0b33"; } }}
-                    >📋</button>
-                    <button onClick={() => { setShowCreate(false); setShowTemplates(false); }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#64748b", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", cursor: "pointer" }}
+                    >🎲</button>
+                    <button onClick={() => { setShowCreate(false); setShowTemplates(false); setQDescription(""); setQSubQuests([]); setQSaveToPool(false); }} style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#64748b", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", cursor: "pointer" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.borderColor = "#ef444444"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#64748b"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}>&#x2715;</button>
                   </div>
                 </div>
-                {/* Mode tabs */}
-                <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-                  {[{ key: false, label: "\u270E\uFE0F Erstellen" }, { key: true, label: "ðŸ’¡ Ideen-Bibliothek" }].map(tab => (
-                    <button key={String(tab.key)} onClick={() => setShowTemplates(tab.key)} style={{ flex: 1, padding: "8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: showTemplates === tab.key ? theme.primary + "22" : "transparent", color: showTemplates === tab.key ? theme.accent : "#475569", border: `1px solid ${showTemplates === tab.key ? theme.primary + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, transition: "all 0.25s", cursor: "pointer" }}>{tab.label}</button>
+                {/* 3 Mode tabs: Erstellen / Mein Pool / Bibliothek */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+                  {[
+                    { key: "create", label: "✏️ Erstellen" },
+                    { key: "pool", label: "📦 Mein Pool" },
+                    { key: "library", label: "💡 Bibliothek" },
+                  ].map(tab => (
+                    <button key={tab.key} onClick={() => setForgeTab(tab.key)} style={{
+                      flex: 1, padding: "10px 6px", fontSize: 11, fontWeight: 900,
+                      background: forgeTab === tab.key ? `linear-gradient(135deg, ${theme.primary}25 0%, ${theme.primary}05 100%)` : "rgba(255,255,255,0.015)",
+                      color: forgeTab === tab.key ? theme.primary : "#475569",
+                      border: `1px solid ${forgeTab === tab.key ? theme.primary + "aa" : "rgba(255,255,255,0.05)"}`,
+                      borderRadius: forgeTab === tab.key ? "14px 3px 14px 3px" : "8px",
+                      boxShadow: forgeTab === tab.key ? `0 8px 24px ${theme.primary}33, inset 0 0 16px ${theme.primary}28` : "none",
+                      transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)", cursor: "pointer", fontFamily: "'Cinzel',serif", letterSpacing: 1, textTransform: "uppercase",
+                      position: "relative", zIndex: forgeTab === tab.key ? 10 : 1, transform: forgeTab === tab.key ? "scale(1.02) translateY(-1px)" : "scale(1)",
+                      textShadow: forgeTab === tab.key ? `0 0 10px ${theme.primary}aa` : "none"
+                    }}
+                      onMouseEnter={e => { if (forgeTab !== tab.key) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+                      onMouseLeave={e => { if (forgeTab !== tab.key) { e.currentTarget.style.background = "rgba(255,255,255,0.015)"; e.currentTarget.style.transform = "none"; } }}
+                    >{tab.label}</button>
                   ))}
                 </div>
-                <div style={{ height: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55,transparent)` }} />
               </div>
 
-              {/* Scrollable Content */}
-              <div style={{ overflowY: "auto", padding: "0 24px", flex: 1 }}>
-
-                {/* ◆◆ IDEEN-BIBLIOTHEK ◆◆ */}
-                {showTemplates && (
-                  <div style={{ paddingTop: 16, paddingBottom: 8 }}>
-                    {/* Randomizer big button */}
-                    <button
-                      onClick={() => {
-                        const pool = QUEST_TEMPLATES;
-                        const pick = pool[Math.floor(Math.random() * pool.length)];
-                        setRandomizing(true);
-                        setQTitle(pick.t); setQCat(pick.c); setQDiff(pick.d); setQType(pick.tp);
-                        setShowTemplates(false);
-                        setTimeout(() => setRandomizing(false), 600);
-                      }}
-                      style={{ width: "100%", padding: "14px", borderRadius: 16, fontSize: 13, fontWeight: 900, background: "linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))", color: "#f59e0b", border: "1px solid #f59e0b44", fontFamily: "'Cinzel',serif", letterSpacing: 2, marginBottom: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "all 0.3s", boxShadow: "0 4px 20px rgba(245,158,11,0.15)" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg,rgba(245,158,11,0.3),rgba(245,158,11,0.12))"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.08))"; e.currentTarget.style.transform = "none"; }}
-                    ><span style={{ fontSize: 22 }}>ðŸŽ²</span> ZUFÃ„LLIGE QUEST WÃœRFELN</button>
-
-                    {/* Category filter */}
-                    <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
-                      {[{ key: "all", label: "Alle", color: theme.accent }, ...CATEGORIES.map(c => ({ key: c.key, label: <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{c.iconSrc ? <img src={c.iconSrc} alt={c.stat} style={{ width: 12, height: 12, mixBlendMode: "screen" }} /> : c.icon} {c.stat}</span>, color: c.color }))].map(f => (
-                        <button key={f.key} onClick={() => setTemplateFilter(f.key)} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 10, fontWeight: 700, flexShrink: 0, background: templateFilter === f.key ? f.color + "22" : "transparent", color: templateFilter === f.key ? f.color : "#475569", border: `1px solid ${templateFilter === f.key ? f.color + "55" : "#1e2940"}`, fontFamily: "'JetBrains Mono',monospace", transition: "all 0.2s", cursor: "pointer" }}>{f.label}</button>
+              {/* Scrollable content */}
+              <div style={{ flex: 1, overflow: "auto", padding: "0 24px 6px", scrollbarWidth: "thin", scrollbarColor: `${theme.primary}44 transparent` }}>
+                {forgeTab === "library" ? (
+                  /* ─── BIBLIOTHEK TAB ─── */
+                  <>
+                    <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", paddingBottom: 2 }}>
+                      {[{ key: "all", label: "Alle" }, { key: "favorites", label: "⭐ Favoriten", color: "#fbbf24" }, ...CATEGORIES.map(c => ({ key: c.key, label: c.stat, color: c.color }))].map(f => (
+                        <button key={f.key} onClick={() => setTemplateFilter(f.key)} style={{
+                          padding: "5px 10px", borderRadius: 8, fontSize: 10, fontWeight: 600, flexShrink: 0,
+                          background: templateFilter === f.key ? (f.color || theme.primary) + "22" : "transparent",
+                          color: templateFilter === f.key ? (f.color || theme.primary) : "#475569",
+                          border: `1px solid ${templateFilter === f.key ? (f.color || theme.primary) + "44" : "transparent"}`,
+                          transition: "all 0.25s", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer"
+                        }}>{f.label}</button>
                       ))}
                     </div>
-
-                    {/* Template grid */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, paddingBottom: 16 }}>
-                      {QUEST_TEMPLATES.filter(tmpl => templateFilter === "all" || tmpl.c === templateFilter).map((tmpl, i) => {
-                        const cat = CATEGORIES.find(c => c.key === tmpl.c) || CATEGORIES[0];
-                        const diff = DIFFICULTIES.find(d => d.key === tmpl.d) || DIFFICULTIES[1];
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {QUEST_POOL.filter(t => templateFilter === "all" || t.category === templateFilter || (templateFilter === "favorites" && state.customQuestPool?.favorites?.includes(t.title))).map((t, i) => {
+                        const cat = CATEGORIES.find(c => c.key === t.category);
+                        const diff = DIFFICULTIES.find(d => d.key === t.difficulty);
                         return (
-                          <button key={i} onClick={() => { setQTitle(tmpl.t); setQCat(tmpl.c); setQDiff(tmpl.d); setQType(tmpl.tp); setShowTemplates(false); }} style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(10,10,24,0.8)", border: `1px solid ${cat.color}22`, textAlign: "left", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 5 }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.background = cat.color + "0d"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "22"; e.currentTarget.style.background = "rgba(10,10,24,0.8)"; e.currentTarget.style.transform = "none"; }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.3 }}>{tmpl.t}</div>
-                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                              <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "15", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 10, height: 10, mixBlendMode: "screen" }} /> : cat.icon}<span>{cat.stat}</span></span>
-                              <span style={{ fontSize: 8, color: diff.color, padding: "1px 5px", borderRadius: 4, background: diff.color + "15", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 2 }}>{diff.iconSrc ? <img src={diff.iconSrc} alt={diff.label} style={{ width: 9, height: 9, objectFit: "contain" }} /> : diff.icon}{diff.label}</span>
-                            </div>
+                          <button key={i} onClick={() => { 
+                            setQTitle(t.title); 
+                            setQCat(t.category); 
+                            setQDiff(t.difficulty); 
+                            setQType("side"); 
+                            setQDescription(t.desc || "");
+                            setQSubQuests(t.subQuests ? [...t.subQuests] : []);
+                            setQTags(t.tags ? t.tags.join(", ") : "");
+                            setForgeTab("create"); 
+                          }}
+                            style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s" }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = (cat?.color || theme.primary) + "44"; e.currentTarget.style.background = (cat?.color || theme.primary) + "08"; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}>
+                            <span style={{ fontSize: 9, color: cat?.color, fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 6, background: (cat?.color || "#888") + "15" }}>{cat?.stat}</span>
+                            <span style={{ color: "#e2e8f0", fontSize: 13, fontFamily: "'Outfit',sans-serif", flex: 1 }}>{t.title}</span>
+                            {t.tags?.length > 0 && <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{t.tags.length} Tags</span>}
+                            <span style={{ fontSize: 9, color: diff?.color, fontFamily: "'JetBrains Mono',monospace" }}>{diff?.label}</span>
+                            <button onClick={(e) => { e.stopPropagation(); toggleFavoriteTemplate(t.title); }} style={{ background: "transparent", border: "none", color: state.customQuestPool?.favorites?.includes(t.title) ? "#fbbf24" : "#475569", fontSize: 14, cursor: "pointer", opacity: state.customQuestPool?.favorites?.includes(t.title) ? 1 : 0.4 }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = state.customQuestPool?.favorites?.includes(t.title) ? 1 : 0.4}>{state.customQuestPool?.favorites?.includes(t.title) ? "⭐" : "☆"}</button>
                           </button>
                         );
                       })}
                     </div>
-                  </div>
-                )}
+                  </>
+                ) : forgeTab === "pool" ? (
+                  /* ─── MEIN POOL TAB ─── */
+                  <>
+                    {state.customQuestPool?.recentlyUsed?.length > 0 && (
+                      <div style={{ marginBottom: 18 }}>
+                        <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>ZULETZT VERWENDET</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {state.customQuestPool.recentlyUsed.map((title, i) => (
+                            <button key={i} onClick={() => { setQTitle(title); setForgeTab("create"); }} style={{ padding: "6px 12px", borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8", fontSize: 11, fontFamily: "'Outfit',sans-serif", cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}>
+                              {title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>DEINE VORLAGEN</div>
+                    </div>
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {state.customQuestPool?.templates?.length > 0 ? (
+                        state.customQuestPool.templates.map((t) => {
+                          const cat = CATEGORIES.find(c => c.key === t.category);
+                          const diff = DIFFICULTIES.find(d => d.key === t.difficulty);
+                          return (
+                            <button key={t.id} onClick={() => createQuestFromTemplate(t)}
+                              style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s", position: "relative" }}
+                              onMouseEnter={e => { e.currentTarget.style.borderColor = (cat?.color || theme.primary) + "44"; e.currentTarget.style.background = (cat?.color || theme.primary) + "08"; }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}>
+                              <span style={{ fontSize: 9, color: cat?.color, fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 6, background: (cat?.color || "#888") + "15" }}>{cat?.stat}</span>
+                              <span style={{ color: "#e2e8f0", fontSize: 13, fontFamily: "'Outfit',sans-serif", flex: 1 }}>{t.title}</span>
+                              {t.tags?.length > 0 && <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{t.tags.length} Tags</span>}
+                              <button onClick={(e) => { e.stopPropagation(); toggleFavoriteTemplate(t.id); }} style={{ background: "transparent", border: "none", color: state.customQuestPool?.favorites?.includes(t.id) ? "#fbbf24" : "#475569", fontSize: 14, cursor: "pointer", opacity: state.customQuestPool?.favorites?.includes(t.id) ? 1 : 0.4 }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = state.customQuestPool?.favorites?.includes(t.id) ? 1 : 0.4}>{state.customQuestPool?.favorites?.includes(t.id) ? "⭐" : "☆"}</button>
+                              <button onClick={(e) => { e.stopPropagation(); removeFromPool(t.id); }} style={{ background: "transparent", border: "none", color: "#ef4444", fontSize: 14, cursor: "pointer", padding: 2, opacity: 0.6 }} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0.6}>✕</button>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div style={{ textAlign: "center", padding: "30px 20px", color: "#64748b", fontSize: 12, fontFamily: "'Outfit',sans-serif", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px dashed rgba(255,255,255,0.1)" }}>
+                          Dein Pool ist leer.<br/><br/>Aktiviere beim Erstellen einer Quest das Häkchen "In meinen Pool speichern".
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  /* ─── ERSTELLEN TAB ─── */
+                  <>
+                    {/* QUEST TITLE */}
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>QUEST-TITEL</div>
+                      <input
+                        value={qTitle} onChange={e => setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..."
+                        style={{ width: "100%", boxSizing: "border-box", padding: "14px 16px", borderRadius: 14, background: "rgba(10,10,24,0.8)", border: `1px solid ${qTitle.trim() ? theme.primary + "66" : "rgba(255,255,255,0.08)"}`, color: "#fff", fontSize: 16, fontFamily: "'Outfit',sans-serif", transition: "all 0.3s", outline: "none", boxShadow: qTitle.trim() ? `0 0 16px ${theme.primary}22` : "inset 0 2px 4px rgba(0,0,0,0.5)" }}
+                        onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.boxShadow = `0 0 20px ${theme.primary}44`; e.currentTarget.style.background = "rgba(15,15,30,0.95)"; }}
+                        onBlur={e => { e.currentTarget.style.borderColor = qTitle.trim() ? theme.primary + "66" : "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = qTitle.trim() ? `0 0 16px ${theme.primary}22` : "inset 0 2px 4px rgba(0,0,0,0.5)"; e.currentTarget.style.background = "rgba(10,10,24,0.8)"; }}
+                      />
+                    </div>
 
-                {/* ◆◆ ERSTELLEN-MODUS ◆◆ */}
-                {!showTemplates && <>
-
-                  {/* Quest Title */}
-                  <div style={{ marginTop: 16, marginBottom: 18 }}>
-                    <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 8 }}>QUEST TITEL</label>
-                    <input value={qTitle} onChange={e => setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..." autoFocus
-                      style={{ width: "100%", padding: "14px 18px", borderRadius: 14, fontSize: 15, background: "rgba(4,4,12,0.9)", border: `1px solid ${randomizing ? "#f59e0b88" : theme.primary + "44"}`, color: "#fff", outline: "none", fontFamily: "'Outfit',sans-serif", letterSpacing: 0.5, transition: "all 0.3s", boxShadow: randomizing ? `0 0 20px rgba(245,158,11,0.25)` : `inset 0 2px 10px rgba(0,0,0,0.5)`, boxSizing: "border-box" }}
-                      onFocus={e => { e.target.style.borderColor = theme.primary; e.target.style.boxShadow = `inset 0 2px 10px rgba(0,0,0,0.5), 0 0 20px ${theme.glow}, 0 0 0 1px ${theme.primary}`; e.target.style.outline = "none"; }}
-                      onBlur={e => { e.target.style.borderColor = `${theme.primary}44`; e.target.style.boxShadow = `inset 0 2px 10px rgba(0,0,0,0.5)`; e.target.style.outline = "none"; }}
-                      onKeyDown={e => e.key === "Enter" && qTitle.trim() && createQuest()} />
-                  </div>
-
-                  {/* Quest Type */}
-                  <div style={{ marginBottom: 18 }}>
-                    <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>QUEST TYP</label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      {[
-                        { key: "side", label: "Side Quest", color: "#a78bfa", desc: "Kein Zeitlimit" },
-                        { key: "daily", label: "Daily Quest", color: "#22d3ee", desc: "Täglich zurückgesetzt" },
-                        ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly Quest", color: "#8b5cf6", desc: "2Ãƒâ€” XP & Gold" }] : []),
-                        ...(can('chained_quests') ? [{ key: "chained", label: "Chained Quest", color: "#f59e0b", desc: "3 Schritte · +25% je" }] : []),
-                      ].map(t => {
-                        const active = qType === t.key;
-                        return (
+                    {/* TYPE */}
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>TYP</div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {[
+                          { key: "side", label: "Side", color: "#94a3b8" },
+                          { key: "daily", label: "Daily", color: "#22d3ee" },
+                          ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly", color: "#8b5cf6" }] : []),
+                          ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
+                        ].map(t => {
+                          const conf = QUEST_TYPES_CONFIG[t.key] || QUEST_TYPES_CONFIG.side;
+                          return (
                           <button key={t.key} onClick={() => setQType(t.key)} style={{
-                            padding: "11px 12px", borderRadius: 14, fontSize: 12, fontWeight: 700,
-                            background: active ? `linear-gradient(135deg,${t.color}22,${t.color}0d)` : "rgba(12,12,26,0.6)",
-                            color: active ? t.color : "#475569",
-                            border: `1px solid ${active ? t.color + "55" : "#1e2940"}`,
-                            transition: "all 0.25s", fontFamily: "'Outfit',sans-serif",
-                            display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3,
-                            boxShadow: active ? `0 4px 16px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.05)` : "none",
-                            cursor: "pointer", textAlign: "left"
+                            flex: 1, padding: "8px 4px", fontSize: 10, fontWeight: 900,
+                            background: qType === t.key ? `linear-gradient(145deg, ${t.color}25 0%, ${t.color}05 100%)` : "rgba(255,255,255,0.02)",
+                            color: qType === t.key ? t.color : "#475569",
+                            border: `1px solid ${qType === t.key ? t.color + "aa" : "rgba(255,255,255,0.04)"}`,
+                            borderRadius: qType === t.key ? "12px 2px 12px 2px" : "6px",
+                            boxShadow: qType === t.key ? `0 8px 24px ${t.color}33, inset 0 0 16px ${t.color}28` : "none",
+                            transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)", cursor: "pointer", fontFamily: "'Cinzel',serif", letterSpacing: 1, textTransform: "uppercase",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                            transform: qType === t.key ? "scale(1.04)" : "scale(1)",
+                            zIndex: qType === t.key ? 10 : 1, position: "relative"
                           }}
-                            onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = t.color + "33"; e.currentTarget.style.color = t.color + "cc"; } }}
-                            onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
+                            onMouseEnter={e => { if (qType !== t.key) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "translateY(-2px)"; } }}
+                            onMouseLeave={e => { if (qType !== t.key) { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.transform = "none"; } }}
                           >
-                            <span style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-                              <div style={{ width: 6, height: 6, borderRadius: "50%", background: active ? t.color : "#475569", boxShadow: active ? `0 0 6px ${t.color}` : "none" }} />
-                              {t.label}
-                            </span>
-                            <span style={{ fontSize: 9, opacity: active ? 0.8 : 0.45, fontWeight: 400, fontFamily: "'JetBrains Mono',monospace" }}>{t.desc}</span>
+                            <img src={conf.iconSrc} alt={t.label} style={{ width: 28, height: 28, objectFit: "contain", filter: qType === t.key ? `drop-shadow(0 0 8px ${t.color}) brightness(1.3)` : "grayscale(90%) opacity(40%)", transition: "all 0.3s" }} />
+                            <span>{t.label}</span>
                           </button>
-                        );
-                      })}
+                        )})}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Difficulty */}
-                  <div style={{ marginBottom: 18 }}>
-                    <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>SCHWIERIGKEIT</label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-                      {DIFFICULTIES.map(d => {
-                        const active = qDiff === d.key;
-                        const typeCfg = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
-                        const xpVal = Math.round(d.xp * (typeCfg.xpMult || 1));
-                        return (
+                    {/* DIFFICULTY */}
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>SCHWIERIGKEIT</div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {DIFFICULTIES.map(d => (
                           <button key={d.key} onClick={() => setQDiff(d.key)} style={{
-                            padding: "12px 4px", borderRadius: 14, fontSize: 13,
-                            background: active ? `linear-gradient(135deg,${d.color}22,${d.color}0d)` : "rgba(12,12,26,0.6)",
-                            color: active ? d.color : "#475569",
-                            border: `1px solid ${active ? d.color + "55" : "#1e2940"}`,
-                            transition: "all 0.25s", display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                            boxShadow: active ? `0 4px 12px ${d.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : "none",
-                            cursor: "pointer"
+                            flex: 1, padding: "8px 4px", fontSize: 10, fontWeight: 900,
+                            background: qDiff === d.key ? `linear-gradient(145deg, ${d.color}25 0%, ${d.color}05 100%)` : "rgba(255,255,255,0.02)",
+                            color: qDiff === d.key ? d.color : "#475569",
+                            border: `1px solid ${qDiff === d.key ? d.color + "aa" : "rgba(255,255,255,0.04)"}`,
+                            borderRadius: qDiff === d.key ? "12px 2px 12px 2px" : "6px",
+                            boxShadow: qDiff === d.key ? `0 8px 24px ${d.color}33, inset 0 0 16px ${d.color}28` : "none",
+                            transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)", cursor: "pointer", fontFamily: "'Cinzel',serif", letterSpacing: 1, textTransform: "uppercase",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                            transform: qDiff === d.key ? "scale(1.06)" : "scale(1)",
+                            zIndex: qDiff === d.key ? 10 : 1, position: "relative"
                           }}
-                            onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = d.color + "44"; e.currentTarget.style.color = d.color + "cc"; } }}
-                            onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
+                            onMouseEnter={e => { if (qDiff !== d.key) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "translateY(-2px)"; } }}
+                            onMouseLeave={e => { if (qDiff !== d.key) { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.transform = "none"; } }}
                           >
-                            {d.iconSrc ? (
-                              <img src={d.iconSrc} alt={d.label} style={{ width: 22, height: 22, objectFit: "contain", filter: active ? `drop-shadow(0 0 6px ${d.color}88) brightness(1.15)` : "brightness(0.6) saturate(0.5)" }} />
-                            ) : (
-                              <span style={{ fontSize: 18, lineHeight: 1 }}>{d.icon}</span>
-                            )}
-                            <span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{d.label.toUpperCase()}</span>
-                            <span style={{ fontSize: 9, opacity: 0.75, fontFamily: "'JetBrains Mono',monospace" }}>+{xpVal} XP</span>
-                            <span style={{ fontSize: 8, opacity: 0.5, fontFamily: "'JetBrains Mono',monospace" }}>{d.waitHours}h Timer</span>
+                            <img src={d.iconSrc} alt={d.label} style={{ width: 34, height: 34, objectFit: "contain", filter: qDiff === d.key ? `drop-shadow(0 0 8px ${d.color}) brightness(1.3)` : "grayscale(90%) opacity(40%)", transition: "all 0.3s" }} />
+                            <span>{d.label}</span>
                           </button>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Category */}
-                  <div style={{ marginBottom: 18 }}>
-                    <label style={{ fontSize: 10, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", display: "block", marginBottom: 10 }}>STATS KATEGORIE</label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                      {CATEGORIES.map(c => { const active = qCat === c.key; return (<button key={c.key} onClick={() => setQCat(c.key)} style={{ padding: "11px 6px", borderRadius: 14, fontSize: 12, background: active ? `linear-gradient(135deg,${c.color}22,${c.color}0d)` : "rgba(12,12,26,0.6)", color: active ? c.color : "#475569", border: `1px solid ${active ? c.color + "55" : "#1e2940"}`, transition: "all 0.25s", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, boxShadow: active ? `0 4px 12px ${c.color}33, inset 0 1px 0 rgba(255,255,255,0.05)` : "none", cursor: "pointer" }} onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = c.color + "44"; e.currentTarget.style.color = c.color + "cc"; } }} onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}>  <div style={{ width: 28, height: 28, borderRadius: "50%", background: `${c.color}15`, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${c.color}33` }}>{c.iconSrc ? <img src={c.iconSrc} alt={c.stat} style={{ width: 20, height: 20, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 4px ${c.color}55)`, transform: "scale(1.1)" }} /> : <span style={{ fontSize: 16 }}>{c.icon}</span>}</div><span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>{c.stat}</span><span style={{ fontSize: 9, opacity: active ? 0.8 : 0.4, fontFamily: "'Outfit',sans-serif", textAlign: "center", lineHeight: 1.2 }}>{c.label}</span></button>); })}
+                    {/* CATEGORY */}
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>KATEGORIE</div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {CATEGORIES.map(c => (
+                          <button key={c.key} onClick={() => setQCat(c.key)} style={{
+                            flex: 1, padding: "8px 4px", fontSize: 10, fontWeight: 900,
+                            background: qCat === c.key ? `linear-gradient(145deg, ${c.color}25 0%, ${c.color}05 100%)` : "rgba(255,255,255,0.02)",
+                            color: qCat === c.key ? c.color : "#475569",
+                            border: `1px solid ${qCat === c.key ? c.color + "aa" : "rgba(255,255,255,0.04)"}`,
+                            borderRadius: qCat === c.key ? "12px 2px 12px 2px" : "6px",
+                            boxShadow: qCat === c.key ? `0 8px 24px ${c.color}33, inset 0 0 16px ${c.color}28` : "none",
+                            transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)", cursor: "pointer", fontFamily: "'Cinzel',serif", letterSpacing: 1, textTransform: "uppercase",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                            transform: qCat === c.key ? "scale(1.05)" : "scale(1)",
+                            zIndex: qCat === c.key ? 10 : 1, position: "relative"
+                          }}
+                            onMouseEnter={e => { if (qCat !== c.key) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "translateY(-2px)"; } }}
+                            onMouseLeave={e => { if (qCat !== c.key) { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.transform = "none"; } }}
+                          >
+                            <img src={c.iconSrc} alt={c.stat} style={{ width: 28, height: 28, objectFit: "contain", mixBlendMode: "screen", filter: qCat === c.key ? `brightness(1.5) drop-shadow(0 0 8px ${c.color})` : "grayscale(90%) opacity(40%)", transition: "all 0.3s" }} />
+                            <span>{c.stat}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Reward Preview */}
-                  {(() => {
-                    const typeCfg = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
-                    const diff = DIFFICULTIES.find(d => d.key === qDiff);
-                    const cat = CATEGORIES.find(c => c.key === qCat);
-                    const baseXp = Math.round(diff.xp * (typeCfg.xpMult || 1));
-                    const baseGold = Math.round(diff.gold * (typeCfg.goldMult || 1));
-                    return (
-                      <div style={{ background: "rgba(8,8,20,0.95)", borderRadius: 16, padding: "14px 16px", marginBottom: 16, border: `1px solid ${theme.primary}1a`, borderLeft: `3px solid ${diff.color}`, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03)` }}>
-                        <div style={{ fontSize: 9, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>VORSCHAU BELOHNUNG</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr auto 1fr", gap: 0, alignItems: "center" }}>
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>SCHWIERIG</div>
-                            <div style={{ fontSize: 12, color: diff.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>{diff.iconSrc ? <img src={diff.iconSrc} alt={diff.label} style={{ width: 12, height: 12, objectFit: "contain" }} /> : diff.icon} {diff.label}</div>
+                    {/* ── DETAILS TOGGLE ── */}
+                    <button onClick={() => setShowDetails(!showDetails)} style={{
+                      width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 11, fontWeight: 700,
+                      background: showDetails ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : "rgba(255,255,255,0.02)",
+                      color: showDetails ? theme.primary : "#64748b",
+                      border: `1px solid ${showDetails ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
+                      boxShadow: showDetails ? `inset 0 0 10px ${theme.primary}11` : "none",
+                      cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5,
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14,
+                      transition: "all 0.3s"
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.background = showDetails ? `linear-gradient(90deg, ${theme.primary}22, transparent)` : "rgba(255,255,255,0.04)"; e.currentTarget.style.color = showDetails ? theme.primary : "#94a3b8"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = showDetails ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : "rgba(255,255,255,0.02)"; e.currentTarget.style.color = showDetails ? theme.primary : "#64748b"; }}
+                    >
+                      <span style={{ transform: showDetails ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▼</span>
+                      DETAILS HINZUFÜGEN
+                      <span style={{ fontSize: 9, color: showDetails ? theme.primary : "#475569" }}>{(qDescription.trim() || qSubQuests.length > 0) ? "●" : ""}</span>
+                    </button>
+
+                    {/* ── DETAILS PANEL ── */}
+                    {showDetails && (
+                      <div style={{ animation: "slideDown 0.3s ease", marginBottom: 14, padding: "16px", borderRadius: 16, background: "rgba(255,255,255,0.015)", border: `1px solid ${theme.primary}15` }}>
+                        {/* PHOTO IMPORT PLACEHOLDER */}
+                        <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
+                           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px dashed ${theme.primary}55`, background: `linear-gradient(90deg, ${theme.primary}11, transparent)`, opacity: 0.8, cursor: "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
+                             <span style={{ fontSize: 14 }}>📸</span>
+                             <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: theme.primary, fontWeight: 700, letterSpacing: 1 }}>FOTO-IMPORT (COMING SOON)</span>
+                           </div>
+                        </div>
+
+                        {/* DESCRIPTION */}
+                        <div style={{ marginBottom: 16 }}>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, marginBottom: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>MISSIONSDETAILS</div>
+                          <textarea
+                            value={qDescription}
+                            onChange={e => { if (e.target.value.length <= 300) setQDescription(e.target.value); }}
+                            placeholder="Beschreibe deine Quest genauer..."
+                            rows={3}
+                            style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 12, background: "rgba(10,10,24,0.8)", border: `1px solid rgba(255,255,255,0.08)`, color: "#e2e8f0", fontSize: 13, fontFamily: "'Outfit',sans-serif", resize: "vertical", minHeight: 60, maxHeight: 120, outline: "none", transition: "all 0.3s" }}
+                            onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.boxShadow = `0 0 16px ${theme.primary}33`; }}
+                            onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; }}
+                          />
+                          <div style={{ fontSize: 9, color: qDescription.length >= 280 ? "#ef4444" : "#334155", textAlign: "right", marginTop: 4, fontFamily: "'JetBrains Mono',monospace" }}>{qDescription.length}/300</div>
+                        </div>
+
+                        {/* SUB-QUESTS / ETAPPEN */}
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, marginBottom: 8, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span>ETAPPEN (SUB-QUESTS)</span>
+                            <span style={{ color: "#475569", fontWeight: 400 }}>{qSubQuests.length}/5</span>
                           </div>
-                          <div style={{ width: 1, height: 28, background: "#1e2940", margin: "0 8px" }} />
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>BELOHNUNG</div>
-                            <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", gap: 6, justifyContent: "center" }}>
-                              <span style={{ color: "#67e8f9" }}>+{baseXp} XP</span>
-                              {baseGold > 0 && <span style={{ color: "#fbbf24", display: "flex", alignItems: "center", gap: 3 }}>+{baseGold} <img src="/icon/coin.png" style={{ width: 12, height: 12, opacity: 0.8 }} alt="G" /></span>}
+                          {qSubQuests.map((sq, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                              <div style={{ width: 22, height: 22, borderRadius: 6, background: `${theme.primary}15`, border: `1px solid ${theme.primary}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", flexShrink: 0 }}>{i + 1}</div>
+                              <input
+                                value={sq.title}
+                                onChange={e => { const next = [...qSubQuests]; next[i] = { ...next[i], title: e.target.value }; setQSubQuests(next); }}
+                                placeholder={`Etappe ${i + 1}...`}
+                                style={{ flex: 1, padding: "8px 12px", borderRadius: 10, background: "rgba(10,10,24,0.8)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontSize: 12, fontFamily: "'Outfit',sans-serif", outline: "none", transition: "all 0.2s" }}
+                                onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.boxShadow = `0 0 12px ${theme.primary}33`; e.currentTarget.style.background = "rgba(15,15,30,0.95)"; }}
+                                onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "rgba(10,10,24,0.8)"; }}
+                              />
+                              <button onClick={() => setQSubQuests(qSubQuests.filter((_, j) => j !== i))} style={{ width: 24, height: 24, borderRadius: 6, background: "transparent", border: "1px solid #ef444433", color: "#ef4444", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.2s" }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "#ef444418"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                              >✕</button>
                             </div>
-                          </div>
-                          <div style={{ width: 1, height: 28, background: "#1e2940", margin: "0 8px" }} />
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>KATEGORIE</div>
-                            <div style={{ fontSize: 12, color: cat.color, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 16, height: 16, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} <span>{cat.stat}</span></span>
-                            </div>
+                          ))}
+                          {qSubQuests.length < 5 && (
+                            <button onClick={() => setQSubQuests([...qSubQuests, { title: "" }])} style={{
+                              width: "100%", padding: "8px", borderRadius: 10, fontSize: 11, fontWeight: 600,
+                              background: "transparent", border: `1px dashed ${theme.primary}33`,
+                              color: theme.primary, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace",
+                              transition: "all 0.2s", letterSpacing: 1,
+                            }}
+                              onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}0a`; e.currentTarget.style.borderColor = `${theme.primary}66`; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = `${theme.primary}33`; }}
+                            >+ ETAPPE HINZUFÜGEN</button>
+                          )}
+                        </div>
+
+                        {/* SAVE TO POOL CHECKBOX */}
+                        {!editingQuestId && (
+                          <>
+                            <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: qSaveToPool ? `${theme.primary}0a` : "transparent", border: `1px solid ${qSaveToPool ? theme.primary + "33" : "rgba(255,255,255,0.04)"}`, cursor: "pointer", transition: "all 0.2s" }}>
+                              <div onClick={() => setQSaveToPool(!qSaveToPool)} style={{
+                                width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
+                                background: qSaveToPool ? theme.primary + "22" : "transparent",
+                                border: `2px solid ${qSaveToPool ? theme.primary : "#334155"}`,
+                                color: theme.primary, fontSize: 12, transition: "all 0.2s"
+                              }}>{qSaveToPool ? "✓" : ""}</div>
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: qSaveToPool ? theme.primary : "#e2e8f0" }}>In meinen Pool speichern</div>
+                                <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Quest als Vorlage für später wiederverwenden.</div>
+                              </div>
+                            </label>
+                            {qSaveToPool && (
+                              <div style={{ marginTop: 8, padding: "0 4px", animation: "slideDown 0.3s ease" }}>
+                                <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>TAGS (KOMMA GETRENNT)</div>
+                                <input
+                                  value={qTags} onChange={e => setQTags(e.target.value)} placeholder="z.B. workout, morgens, fokussiert"
+                                  style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, background: "rgba(10,10,24,0.8)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontSize: 12, fontFamily: "'Outfit',sans-serif", outline: "none", transition: "all 0.2s" }}
+                                  onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.boxShadow = `0 0 12px ${theme.primary}33`; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; }}
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* HABIT SYNC */}
+                    {(qType === "daily" || qType === "weekly") && can('habit_tracker') && (
+                      <label style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 14, background: qSyncHabit ? `${theme.primary}0c` : "rgba(255,255,255,0.02)", border: `1px solid ${qSyncHabit ? theme.primary + "33" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", transition: "all 0.2s", marginBottom: 14 }}>
+                        <div onClick={() => setQSyncHabit(!qSyncHabit)} style={{
+                          width: 22, height: 22, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                          background: qSyncHabit ? theme.primary + "22" : "transparent",
+                          border: `2px solid ${qSyncHabit ? theme.primary : "#334155"}`,
+                          color: theme.primary, fontSize: 13, transition: "all 0.2s"
+                        }}>{qSyncHabit ? "✓" : ""}</div>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>Mit Habit-Tracker verknüpfen</div>
+                          <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Erstellt automatisch eine Routine zum Tracken des Streaks.</div>
+                        </div>
+                      </label>
+                    )}
+
+                    {/* XP PREVIEW */}
+                    {qTitle.trim() && (() => {
+                      const previewDiff = DIFFICULTIES.find(d => d.key === qDiff);
+                      const previewType = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
+                      const previewXp = Math.round((previewDiff?.xp || 5) * (previewType.xpMult || 1));
+                      const previewGold = Math.round((previewDiff?.gold || 5) * (previewType.goldMult || 1));
+                      const subs = qSubQuests.filter(sq => sq.title.trim()).length;
+                      return (
+                        <div style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: `1px solid ${theme.primary}15`, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>BELOHNUNG</div>
+                          <div style={{ display: "flex", gap: 12, fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>
+                            <span style={{ color: "#a78bfa" }}>+{subs > 0 ? Math.round(previewXp * 1.2) : previewXp} XP</span>
+                            <span style={{ color: "#fbbf24" }}>+{previewGold} G</span>
+                            {subs > 0 && <span style={{ color: theme.primary, fontSize: 9 }}>{subs}× Etappen</span>}
                           </div>
                         </div>
-                        {qDiff === "boss" && <div style={{ marginTop: 10, padding: "5px 10px", background: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid #ef444433", fontSize: 10, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", textAlign: "center", animation: "pulse 2s infinite", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>⚠ <img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(0.6) invert(1) drop-shadow(0 0 4px #ef444488)" }} /> SCHATTEN BESCHWÖRUNGSCHANCE</div>}
-                        {qType === "chained" && <div style={{ marginTop: 6, padding: "5px 10px", background: "rgba(245,158,11,0.06)", borderRadius: 8, border: "1px solid #f59e0b22", fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>⛓️ 3-Schritte Kette · +25% XP pro Schritt</div>}
-                      </div>
-                    );
-                  })()}
+                      );
+                    })()}
 
-                  {/* Habit Sync Toggle */}
-                  {(qType === "daily" || qType === "weekly") && (
-                    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: "rgba(10,10,24,0.6)", padding: "12px 14px", borderRadius: 12, border: `1px solid ${qSyncHabit ? theme.primary + "55" : "#1e2940"}`, transition: "all 0.2s", marginBottom: 16 }}>
-                      <input type="checkbox" checked={qSyncHabit} onChange={e => setQSyncHabit(e.target.checked)} style={{ accentColor: theme.primary, width: 16, height: 16, cursor: "pointer" }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>Mit Habit-Tracker verknüpfen</div>
-                        <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Erstellt automatisch eine Routine zum Tracken des Streaks.</div>
-                      </div>
-                    </label>
-                  )}
-
-                </>}
+                  </>
+                )}
               </div>
 
               {!showTemplates && (
@@ -1861,11 +2042,11 @@ function App({ initialHunterName, onLogout }) {
                   <button onClick={() => {
                     if (qType === "chained") addChainedQuest(qTitle, qCat, qDiff);
                     else createQuest();
-                    setQTitle(""); setShowCreate(false); setShowTemplates(false);
-                  }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(15,15,30,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 8px 32px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.2)` : "none", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid #1e2940" }}
-                    onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.filter = "brightness(1.1)"; } }}
-                    onMouseLeave={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "none"; e.currentTarget.style.filter = "none"; } }}
-                  >{qTitle.trim() ? (editingQuestId ? "âœ¦ SPEICHERN âœ¦" : "âœ¦ QUEST ANNEHMEN âœ¦") : "Quest-Titel eingeben..."}</button>
+                    setForgeTab("create");
+                  }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(10,10,24,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 6px 30px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.3)` : "inset 0 2px 4px rgba(0,0,0,0.5)", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid rgba(255,255,255,0.04)" }}
+                    onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-3px) scale(1.01)"; e.currentTarget.style.boxShadow = `0 12px 40px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.4)`; } }}
+                    onMouseLeave={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 6px 30px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.3)`; } }}
+                  >{qTitle.trim() ? (editingQuestId ? "✦ SPEICHERN ✦" : "✦ QUEST ANNEHMEN ✦") : "Quest-Titel eingeben..."}</button>
                 </div>
               )}
 
@@ -1873,6 +2054,7 @@ function App({ initialHunterName, onLogout }) {
           </div>
         )
       }
+
 
       {/* REWARDED AD MODAL */}
       {showAdModal && (

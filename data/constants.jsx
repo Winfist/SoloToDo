@@ -1,20 +1,20 @@
-// â”€â”€â”€ BARREL FILE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────────────────────────
 // data/constants.jsx – Re-export barrel
 // All imports of './data/constants' continue to work unchanged.
 // The actual code has been split into focused modules:
-//   gameData.js       â†’ RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES, SHADOW_CLASSES, etc.
-//   defaultState.js   â†’ DEFAULT_STATE
-//   helpers.js        â†’ getRank, genId, getToday, calculateLevelUp, shadow helpers, dungeon helpers, etc.
-//   protocolHelpers.js â†’ generateRedemptionQuests, isDawnWindow/isDuskWindow, calculateProtocolXp, generateSeasonalQuests
-//   storage.js        â†’ loadState, saveState, migrateState
-//   css.js            â†’ CSS template literal
+//   gameData.js       → RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, SHADOW_CLASSES, etc.
+//   defaultState.js   → DEFAULT_STATE
+//   helpers.js        → getRank, genId, getToday, calculateLevelUp, shadow helpers, dungeon helpers, etc.
+//   protocolHelpers.js → generateRedemptionQuests, isDawnWindow/isDuskWindow, calculateProtocolXp, generateSeasonalQuests
+//   storage.js        → loadState, saveState, migrateState
+//   css.js            → CSS template literal
 // The React UI components remain in this file to avoid splitting JSX dependencies.
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
 // â”€â”€â”€ RE-EXPORTS FROM SPLIT MODULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export {
-  RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES, QUEST_TEMPLATES,
+  RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES,
   SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, FORMATION_SLOTS,
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES,
@@ -852,10 +852,11 @@ function ChainedQuestProgress({ quest }) {
 }
 
 // ═══ QUEST CARD ═══════════════════════════════════════════════
-function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
+function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest }) {
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [hover, setHover] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const cardRef = useRef(null);
   const diff = DIFFICULTIES.find(d => d.key === quest.difficulty) || DIFFICULTIES[0];
   const cat = CATEGORIES.find(c => c.key === quest.category) || CATEGORIES[0];
@@ -863,32 +864,26 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
   const xpGain = Math.round((diff?.xp || 50) * (quest.chainMultiplier || 1) * (typeCfg.xpMult || 1));
   const goldGain = Math.round((diff?.gold || 25) * (quest.chainMultiplier || 1) * (typeCfg.goldMult || 1));
   const isHidden = quest.type === "hidden";
+  const subQuests = quest.subQuests || [];
+  const completedSubs = subQuests.filter(sq => sq.completed).length;
+  const allSubsDone = subQuests.length > 0 && completedSubs === subQuests.length;
+  const hasDetails = (quest.description && quest.description.trim()) || subQuests.length > 0;
   const handleComplete = () => {
     if (completing) return;
-    // Check constraint before animating disappearance
+    if (subQuests.length > 0 && !allSubsDone) { setExpanded(true); return; }
     if (!quest.isSystem && quest.createdAtMs) {
       const waitHours = diff?.waitHours || 1;
       const elapsedMs = Date.now() - quest.createdAtMs;
       const requiredMs = waitHours * 3600 * 1000;
-      if (elapsedMs < requiredMs) {
-        onComplete(quest.id, null); // Trigger the notification in App
-        return;
-      }
+      if (elapsedMs < requiredMs) { onComplete(quest.id, null); return; }
     }
-
-    if (!confirming) {
-      setConfirming(true);
-      setTimeout(() => setConfirming(false), 3000); // 3 seconds to confirm
-      return;
-    }
+    if (!confirming) { setConfirming(true); setTimeout(() => setConfirming(false), 3000); return; }
     setCompleting(true); const rect = cardRef.current?.getBoundingClientRect(); setTimeout(() => onComplete(quest.id, rect ? { x: rect.left + rect.width / 2, y: rect.top } : null), 500);
   };
   return (
     <div ref={cardRef} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{
       background: completing ? `linear-gradient(135deg,${diff.color}15,transparent)` : `linear-gradient(135deg,rgba(15,15,20,0.95),rgba(5,5,10,0.9)), url(${quest.difficulty === 'boss' ? BACKGROUNDS.boss : BACKGROUNDS.standard})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundBlendMode: "overlay",
+      backgroundSize: "cover", backgroundPosition: "center", backgroundBlendMode: "overlay",
       border: `1px solid ${hover ? diff.color + "44" : isHidden ? typeCfg.color + "33" : theme.primary + "18"}`, borderRadius: 14, padding: "14px 16px", marginBottom: 8,
       borderLeft: `3px solid ${isHidden ? typeCfg.color : diff.color}${hover ? "cc" : "66"}`,
       animation: completing ? "fadeOut 0.5s ease forwards" : `cardEnter 0.4s ease ${index * 0.06}s both`,
@@ -899,25 +894,81 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete }) {
       <button onClick={handleComplete} style={{
         width: confirming ? 46 : 38, height: 38, borderRadius: 10, flexShrink: 0, marginTop: 2,
         background: completing ? diff.color + "22" : confirming ? "#f59e0b22" : "transparent",
-        border: `2px solid ${completing ? diff.color : confirming ? "#f59e0b" : diff.color + "44"}`,
-        color: confirming ? "#f59e0b" : diff.color, fontSize: confirming ? 11 : 15, display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", transform: completing ? "scale(1.1)" : confirming ? "scale(1.05)" : hover ? "scale(1.05)" : "scale(1)"
+        border: `2px solid ${completing ? diff.color : confirming ? "#f59e0b" : subQuests.length > 0 && !allSubsDone ? "#334155" : diff.color + "44"}`,
+        color: confirming ? "#f59e0b" : subQuests.length > 0 && !allSubsDone ? "#334155" : diff.color, fontSize: confirming ? 11 : 15, display: "flex", alignItems: "center", justifyContent: "center",
+        transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", transform: completing ? "scale(1.1)" : confirming ? "scale(1.05)" : hover ? "scale(1.05)" : "scale(1)",
+        cursor: subQuests.length > 0 && !allSubsDone ? "default" : "pointer",
       }}>
-        {completing ? <span style={{ animation: "checkPop 0.4s ease forwards", display: "inline-block" }}>✓</span> : confirming ? <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>JA?</span> : <span style={{ opacity: 0.5 }}>✓</span>}
+        {completing ? <span style={{ animation: "checkPop 0.4s ease forwards", display: "inline-block" }}>✓</span> : confirming ? <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>JA?</span> : subQuests.length > 0 && !allSubsDone ? <span style={{ opacity: 0.4, fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>{completedSubs}/{subQuests.length}</span> : <span style={{ opacity: 0.5 }}>✓</span>}
       </button>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
           <QuestTypeBadge type={quest.type} />
           <span style={{ color: diff.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: diff.color + "15", fontSize: 9, display: "inline-flex", alignItems: "center", gap: 3 }}>{diff.iconSrc ? <img src={diff.iconSrc} alt={diff.label} style={{ width: 10, height: 10, objectFit: "contain" }} /> : diff.icon} {diff.label}</span>
           <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: cat.color + "15", color: cat.color, fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 10, height: 10, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} <span>{cat.stat}</span></span>
+          {quest.tags?.map((t, i) => (
+            <span key={i} style={{ padding: "1px 6px", borderRadius: 4, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 8, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase" }}>#{t}</span>
+          ))}
           {quest.type === "weekly" && quest.timeLimit && <QuestTimer expiresAt={quest.timeLimit} color="#8b5cf6" />}
         </div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: completing ? "#64748b" : "#e2e8f0", textDecoration: completing ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>{quest.title}</div>
+        {quest.systemMessage && (
+          <div style={{ fontSize: 9, letterSpacing: 1, color: "#f87171", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, background: "rgba(248,113,113,0.1)", padding: "4px 6px", borderRadius: 6, borderLeft: "2px solid #f87171" }}>
+            ⚠ {quest.systemMessage}
+          </div>
+        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div onClick={() => hasDetails && setExpanded(!expanded)} style={{ fontSize: 14, fontWeight: 600, color: completing ? "#64748b" : "#e2e8f0", textDecoration: completing ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: expanded ? "normal" : "nowrap", fontFamily: "'Outfit',sans-serif", cursor: hasDetails ? "pointer" : "default", flex: 1 }}>{quest.title}</div>
+          {hasDetails && <button onClick={() => setExpanded(!expanded)} style={{ background: "transparent", border: "none", color: "#475569", fontSize: 10, cursor: "pointer", padding: "2px 4px", transition: "transform 0.2s", transform: expanded ? "rotate(180deg)" : "none", flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>▼</button>}
+        </div>
+        {quest.description && quest.description.trim() && !expanded && (
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif", fontStyle: "italic" }}>{quest.description}</div>
+        )}
         {quest.type === "chained" && <ChainedQuestProgress quest={quest} />}
+        {subQuests.length > 0 && !expanded && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+            <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 2, background: allSubsDone ? "#22c55e" : `linear-gradient(90deg,${theme.primary},${theme.accent})`, width: `${subQuests.length > 0 ? (completedSubs / subQuests.length) * 100 : 0}%`, transition: "width 0.4s ease", boxShadow: `0 0 6px ${allSubsDone ? "#22c55e44" : theme.glow}` }} />
+            </div>
+            <span style={{ fontSize: 9, color: allSubsDone ? "#22c55e" : "#64748b", fontFamily: "'JetBrains Mono',monospace", flexShrink: 0 }}>{completedSubs}/{subQuests.length}</span>
+          </div>
+        )}
+        {expanded && (
+          <div style={{ marginTop: 8, animation: "slideDown 0.25s ease", overflow: "hidden" }}>
+            {quest.description && quest.description.trim() && (
+              <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5, marginBottom: 10, fontFamily: "'Outfit',sans-serif", fontStyle: "italic", padding: "8px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 10, borderLeft: `2px solid ${diff.color}44` }}>{quest.description}</div>
+            )}
+            {subQuests.length > 0 && (
+              <div style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginBottom: 6 }}>ETAPPEN</div>
+                {subQuests.map((sq, si) => (
+                  <div key={sq.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", marginBottom: 3, borderRadius: 8, background: sq.completed ? "rgba(34,197,94,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${sq.completed ? "#22c55e22" : "rgba(255,255,255,0.04)"}`, transition: "all 0.2s" }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); if (!sq.completed && onCompleteSubQuest) onCompleteSubQuest(quest.id, sq.id); }}
+                      disabled={sq.completed}
+                      style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, background: sq.completed ? "#22c55e22" : "transparent", border: `1.5px solid ${sq.completed ? "#22c55e" : diff.color + "44"}`, color: sq.completed ? "#22c55e" : diff.color + "66", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: sq.completed ? "default" : "pointer", transition: "all 0.2s" }}
+                    >
+                      {sq.completed ? "✓" : ""}
+                    </button>
+                    <span style={{ fontSize: 12, color: sq.completed ? "#64748b" : "#e2e8f0", textDecoration: sq.completed ? "line-through" : "none", fontFamily: "'Outfit',sans-serif", flex: 1 }}>{sq.title}</span>
+                    <span style={{ fontSize: 8, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>{si + 1}/{subQuests.length}</span>
+                  </div>
+                ))}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                    <div style={{ height: "100%", borderRadius: 2, background: allSubsDone ? "#22c55e" : `linear-gradient(90deg,${theme.primary},${theme.accent})`, width: `${(completedSubs / subQuests.length) * 100}%`, transition: "width 0.4s ease" }} />
+                  </div>
+                  <span style={{ fontSize: 9, color: allSubsDone ? "#22c55e" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace" }}>{allSubsDone ? "ALLE ETAPPEN ERLEDIGT ✓" : `${completedSubs}/${subQuests.length} Etappen`}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 4 }}>
           <span style={{ color: "#a78bfa" }}>+{xpGain} XP</span>
           <span style={{ margin: "0 5px", color: "#1e293b" }}>·</span>
           <span style={{ color: "#fbbf24" }}>+{goldGain} G</span>
+          {subQuests.length > 0 && <span style={{ margin: "0 5px", color: "#334155" }}>·</span>}
+          {subQuests.length > 0 && <span style={{ color: theme.primary, fontSize: 9 }}>{subQuests.length} Etappen</span>}
           {isHidden && <span style={{ margin: "0 5px", color: typeCfg.color }}>· ✨ Verborgene Belohnung</span>}
         </div>
       </div>
