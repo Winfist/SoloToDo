@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "public_deploy",
+    "public": "dist_firebase",
     "cleanUrls": true,
     "trailingSlash": true,
     "ignore": [
