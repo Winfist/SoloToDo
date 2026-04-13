@@ -20,6 +20,7 @@ export const FEATURE_UNLOCKS = {
   micro_habits:       { level: 5,  tier: 2, label: "Micro-Habits",     desc: "Kleine tägliche Gewohnheiten" },
   vision_board:       { level: 5,  tier: 2, label: "Vision Board",     desc: "Manifestiere dein Schicksal" },
   focus_mode:         { level: 5,  tier: 2, label: "Focus Mode",       desc: "Tiefe Konzentration aktivieren" },
+  ai_quest_desc:      { level: 5,  tier: 2, label: "KI Quest-Hilfe",   desc: "KI generiert Quest-Beschreibungen" },
 
   // ─── STUFE 3 — Level 8: Tracking & Routinen ────────────────
   achievements:       { level: 8,  tier: 3, label: "Achievements",     desc: "Meilensteine & Belohnungen" },
@@ -27,6 +28,8 @@ export const FEATURE_UNLOCKS = {
   analytics:          { level: 8,  tier: 3, label: "Analytics",        desc: "Fortschritts-Auswertung" },
   dawn_dusk:          { level: 8,  tier: 3, label: "Dawn/Dusk Protocol", desc: "Morgen- & Abendroutinen" },
   calendar:           { level: 8,  tier: 3, label: "Kalender",         desc: "Quest-Kalender & Planung" },
+  ai_coach:           { level: 8,  tier: 3, label: "KI-Coach",         desc: "Das System spricht zu dir" },
+  ai_task_scan:       { level: 8,  tier: 3, label: "Task-Scanner",     desc: "Fotografiere deine Aufgaben" },
 
   // ─── STUFE 4 — Level 11: D-Rang (Dungeons & Shop) ──────────
   dungeons:           { level: 11, tier: 4, label: "Dungeon Gates",    desc: "Besiege magische Portale" },
@@ -36,10 +39,12 @@ export const FEATURE_UNLOCKS = {
   chained_quests:     { level: 11, tier: 4, label: "Chained Quests",   desc: "Mehrteilige Ketten-Quests" },
   story:              { level: 11, tier: 4, label: "Story",            desc: "Deine Heldenreise als Hunter" },
   sanctum:            { level: 11, tier: 4, label: "Inner Sanctum",    desc: "Meditation & Willenskraft" },
+  ai_verification:    { level: 11, tier: 4, label: "Quest-Verifikation", desc: "Beweise deine Quests mit Fotos" },
 
   // ─── STUFE 5 — Level 15: Schatten-Erweckung ────────────────
   shadow_army:        { level: 15, tier: 5, label: "Shadow Army",      desc: "Erwecke besiegte Gegner als Schatten" },
   codex:              { level: 15, tier: 5, label: "Hunter's Codex",   desc: "Verlorene Weisheiten entdecken" },
+  ai_dynamic_quests:  { level: 15, tier: 5, label: "KI-Quests",        desc: "KI generiert personalisierte Quests" },
 
   // ─── STUFE 6 — Level 21: C-Rang (Advanced) ─────────────────
   jobs:               { level: 21, tier: 6, label: "Jobs",             desc: "Hunter-Klassen & Spezialisierung" },

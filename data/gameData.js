@@ -169,6 +169,11 @@ export const ACHIEVEMENTS = [
   { id: "challenge_master", name: "Veteran der Gilde", icon: "🌍", iconSrc: NAV_ICONS.guild, desc: "Schließe 5 Challenges ab", cat: "quests", check: s => (s.completedChallenges || []).length >= 5, reward: { xp: 1500, gold: 600, title: "Guild Veteran" } },
   { id: "focus_10", name: "Tiefen Fokus", icon: "⏳", iconSrc: HABIT_ICONS.timer, desc: "Nutze den Focus Mode für insgesamt 10 Sessions", cat: "streaks", check: s => (s.stats?.focusSessions || 0) >= 10, reward: { xp: 500, gold: 200 } },
   { id: "micro_100", name: "Drop-by-Drop", icon: "💧", iconSrc: MICRO_ICONS.water, desc: "Absolviere 100 Micro-Habit Taps", cat: "habits", check: s => (s.microHabits?.totalTaps || 0) >= 100, reward: { xp: 400, gold: 150 } },
+  // ─── KI-Achievements ──────────────────────────────────────────
+  { id: "ai_verify_1",  name: "Ehrlicher Hunter",      icon: "📸", iconSrc: QUEST_ICONS.daily,     desc: "Beweise eine Quest mit einem Foto",   cat: "misc",   check: s => (s.ai?.verifiedQuests || 0) >= 1,  reward: { xp: 100, gold: 50 } },
+  { id: "ai_verify_10", name: "Transparenter Krieger", icon: "🏅", iconSrc: NAV_ICONS.achievements, desc: "Beweise 10 Quests mit Fotos",          cat: "misc",   check: s => (s.ai?.verifiedQuests || 0) >= 10, reward: { xp: 500, gold: 200, title: "Verified Hunter" } },
+  { id: "ai_scan_1",    name: "Digitaler Scanner",     icon: "🔍", iconSrc: QUEST_ICONS.chain,      desc: "Scanne Aufgaben von einem Foto",      cat: "misc",   check: s => (s.ai?.scannedTasks || 0) >= 1,    reward: { xp: 100, gold: 50 } },
+  { id: "ai_scan_10",   name: "Paperless Hunter",      icon: "📱", iconSrc: NAV_ICONS.analytics,   desc: "Scanne 10 Aufgabenblätter",           cat: "misc",   check: s => (s.ai?.scannedTasks || 0) >= 10,   reward: { xp: 500, gold: 200 } },
 ];
 
 // ─── SKILLS ───────────────────────────────────────────────────

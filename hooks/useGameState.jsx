@@ -452,7 +452,7 @@ export function useGameState(initialHunterName, onLogout) {
     return Math.round(xp);
   }, []);
 
-  const completeQuest = useCallback((questId, rect) => {
+  const completeQuest = useCallback((questId, rect, verificationBonus = false) => {
     if (!state) return;
     const quest = state.quests.find(q => q.id === questId);
     if (!quest) return;
@@ -480,7 +480,7 @@ export function useGameState(initialHunterName, onLogout) {
     } catch (e) { /* Graceful fallback */ }
 
     const { xpMult: gemBoosterMult } = getGemBoosterMultipliers();
-    const result = buildCompleteQuestState(questId, state, processAchievementsPure, gemBoosterMult);
+    const result = buildCompleteQuestState(questId, state, processAchievementsPure, gemBoosterMult, verificationBonus);
     if (!result) return;
 
     persist(result.nextState);

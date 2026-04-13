@@ -288,3 +288,73 @@ export function runCoachChecks(state, prevState) {
 
     return messages;
 }
+
+// ── AI Enrichment (optional, async) ─────────────────────────
+// Replaces the lines[] of the top-priority message with AI-generated text.
+// Falls back to the original hardcoded lines on any error or timeout.
+// Session-limited: max 5 AI messages per day (tracked in sessionStorage).
+
+const AI_SESSION_KEY = "coach_ai_calls_today";
+const AI_SESSION_DATE_KEY = "coach_ai_calls_date";
+const MAX_AI_COACH_CALLS = 5;
+
+function getAICallsToday() {
+    const today = new Date().toISOString().slice(0, 10);
+    const stored = sessionStorage.getItem(AI_SESSION_DATE_KEY);
+    if (stored !== today) {
+        sessionStorage.setItem(AI_SESSION_DATE_KEY, today);
+        sessionStorage.setItem(AI_SESSION_KEY, "0");
+        return 0;
+    }
+    return parseInt(sessionStorage.getItem(AI_SESSION_KEY) || "0", 10);
+}
+
+function incrementAICallsToday() {
+    const current = getAICallsToday();
+    sessionStorage.setItem(AI_SESSION_KEY, String(current + 1));
+}
+
+const MESSAGE_TYPE_MAP = {
+    "warning": "streak_danger",
+    "coaching": "inactivity",
+    "celebration": "milestone",
+};
+
+/**
+ * Optionally enrich the top coach message with AI-generated lines.
+ * @param {Array} messages - Result from runCoachChecks()
+ * @param {object} state - Current game state
+ * @param {Function} generateFn - generateSystemMsg(context, type) from useGeminiAI
+ * @returns {Promise<Array>} - Same messages array, top message potentially enriched
+ */
+export async function enrichCoachMessagesAsync(messages, state, generateFn) {
+    if (!messages.length || !generateFn) return messages;
+    if (getAICallsToday() >= MAX_AI_COACH_CALLS) return messages;
+
+    const top = messages[0];
+    const messageType = MESSAGE_TYPE_MAP[top.type] || "inactivity";
+    const statSummary = state?.stats
+        ? `STR ${state.stats.str || 0} INT ${state.stats.int || 0} VIT ${state.stats.vit || 0} AGI ${state.stats.agi || 0} CHA ${state.stats.cha || 0}`
+        : "";
+    const context = `${top.lines.join(" ")} Hunter: Level ${state?.level || 1}, Streak ${state?.streak || 0}. ${statSummary}`;
+
+    try {
+        // 3s timeout so it never blocks the UI
+        const aiResult = await Promise.race([
+            generateFn(context, messageType),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+        ]);
+
+        if (aiResult?.lines?.length > 0) {
+            incrementAICallsToday();
+            return [
+                { ...top, title: aiResult.title || top.title, lines: aiResult.lines },
+                ...messages.slice(1),
+            ];
+        }
+    } catch {
+        // Fallback to hardcoded lines silently
+    }
+
+    return messages;
+}

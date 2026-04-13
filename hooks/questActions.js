@@ -42,7 +42,7 @@ export function computeXpGain(quest, streakBonus, equipBonuses, skillBonuses, pe
  * Handle completing a regular quest.
  * Returns { nextState, sideEffects } – sideEffects contains UI triggers.
  */
-export function buildCompleteQuestState(questId, state, processAchievements, gemBoosterMult = 1) {
+export function buildCompleteQuestState(questId, state, processAchievements, gemBoosterMult = 1, verificationBonus = false) {
   const quest = state.quests.find(q => q.id === questId);
   if (!quest) return null;
 
@@ -61,6 +61,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   xpGain = Math.round(xpGain * gemBoosterMult);
   if (soulLinkActive) xpGain = Math.round(xpGain * 1.25);
   if (state.restBuff?.active) xpGain = Math.round(xpGain * 1.1);
+  if (verificationBonus) xpGain = Math.round(xpGain * 1.2);
 
   let finalSysIntegrity = state.integrityScore !== undefined ? state.integrityScore : 100;
   const notifications = [];
@@ -82,7 +83,8 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   const diff = DIFFICULTIES.find(d => d.key === quest.difficulty);
   const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
   let goldMult = (1 + (equipBonuses.goldBonus || 0) + (skillBonuses.goldBonus || 0) + (formBonus?.goldBonus || 0)) * (typeCfg.goldMult || 1) * (quest.chainMultiplier || 1);
-  const goldGain = Math.round(diff.gold * goldMult);
+  let goldGain = Math.round(diff.gold * goldMult);
+  if (verificationBonus) goldGain = Math.round(goldGain * 1.1);
 
   let next = calculateLevelUp(state, xpGain);
   const didLevelUp = next._didLevelUp;
@@ -304,6 +306,12 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
       next.shadowArmy.shadows = [...next.shadowArmy.shadows, namedShadow];
       notifications.push({ msg: `${ns.name} – ${ns.title} – ist erwacht!`, type: "named" });
     });
+  }
+
+  // Apply verification bonus tracking before achievement check
+  if (verificationBonus) {
+    next.ai = { ...(next.ai || {}), verifiedQuests: ((next.ai?.verifiedQuests) || 0) + 1 };
+    notifications.push({ msg: "📸 Beweis-Bonus: +20% XP & +10% Gold!", type: "success" });
   }
 
   const { nextState: afterAch, newAchievements } = processAchievements(next);

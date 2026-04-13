@@ -154,6 +154,40 @@ export function generateDailySystemQuests(count = 3, state = null) {
   return selected;
 }
 
+/**
+ * Async variant: tries to generate quests via AI, falls back to static pool.
+ * @param {number} count
+ * @param {object} state
+ * @param {Function|null} generateFn - async fn from useGeminiAI, returns { quests }
+ * @returns {Promise<Array>}
+ */
+export async function generateDailySystemQuestsAsync(count = 3, state = null, generateFn = null) {
+  if (!generateFn) return generateDailySystemQuests(count, state);
+
+  try {
+    const aiResult = await Promise.race([
+      generateFn(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+    ]);
+
+    if (aiResult?.quests?.length > 0) {
+      const today = getToday();
+      return aiResult.quests.slice(0, count).map(q => ({
+        ...q,
+        id: `sys_ai_${genId()}`,
+        type: "daily",
+        isSystem: true,
+        aiGenerated: true,
+        createdAt: today,
+      }));
+    }
+  } catch {
+    // Fall through to static pool
+  }
+
+  return generateDailySystemQuests(count, state);
+}
+
 export function getJobBonuses(state) {
   const bonuses = {
     xpGlobal: 0,

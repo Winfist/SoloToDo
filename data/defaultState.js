@@ -120,4 +120,12 @@ export const DEFAULT_STATE = {
     recentlyUsed: [],
     collections: [],
   },
+  ai: {
+    enabled: true,
+    verificationEnabled: true,
+    dynamicMessagesEnabled: true,
+    coachEnabled: true,
+    verifiedQuests: 0,
+    scannedTasks: 0,
+  },
 };

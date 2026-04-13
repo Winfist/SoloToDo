@@ -19,7 +19,7 @@ export default function DashboardView({
   questFilter, setQuestFilter,
   completeQuest, completeSubQuest, startEditingQuest, deleteQuest,
   completeEmergencyQuest,
-  setShowCreate,
+  setShowCreate, setShowTaskScan,
   nextLevel, getUnlocksAtLevel: _getUnlocksAtLevel,
   notify, persist,
   setIsCreatingEntry,
@@ -116,6 +116,9 @@ export default function DashboardView({
             </button>
           ))}
         </div>}
+        {can('ai_task_scan') && setShowTaskScan && (
+          <button onClick={() => setShowTaskScan(true)} style={{ padding: "8px 12px", borderRadius: 12, fontSize: 11, fontWeight: 700, background: "rgba(0,200,255,0.1)", color: "#0af", border: "1px solid rgba(0,200,255,0.3)", fontFamily: "'Courier New',monospace", letterSpacing: 1, display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>📷 SCAN</button>
+        )}
         <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 12, fontSize: 11, fontWeight: 900, background: `linear-gradient(135deg,${theme.primary},${theme.secondary})`, color: "#fff", border: "none", boxShadow: `0 4px 16px ${theme.glow}`, textShadow: "0 1px 4px rgba(0,0,0,0.4)", fontFamily: "'Cinzel',serif", letterSpacing: 1.5, display: "flex", alignItems: "center", gap: 6, flexShrink: 0, transition: "all 0.3s", transform: "translateY(-1px)", animation: "float 3s ease-in-out infinite" }}>+ QUEST</button>
       </div>
 

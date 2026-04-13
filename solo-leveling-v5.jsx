@@ -9,7 +9,7 @@ import DoubleDungeonTutorial from "./components/DoubleDungeonTutorial.jsx";
 import HabitTracker from "./components/HabitTracker.jsx";
 import MicroHabits from "./components/MicroHabits.jsx";
 import AnalyticsDashboard from "./components/AnalyticsDashboard.jsx";
-import { runCoachChecks } from "./components/SystemCoach.jsx";
+import { runCoachChecks, enrichCoachMessagesAsync } from "./components/SystemCoach.jsx";
 import { NotificationBanner } from "./components/NotificationManager.jsx";
 import GoalFramework from "./components/GoalFramework.jsx";
 import CalendarSchedule from "./components/CalendarSchedule.jsx";
@@ -56,6 +56,10 @@ import {
 import { useGameState } from './hooks/useGameState.jsx';
 import { useFeatureUnlocks } from './hooks/useFeatureUnlocks.js';
 import { getNextUnlockLevel, getUnlocksAtLevel } from './data/featureUnlocks.js';
+import { useGeminiAI } from './hooks/useGeminiAI.js';
+import { QuestVerifyModal } from './components/QuestVerifyModal.jsx';
+import { TaskScanModal } from './components/TaskScanModal.jsx';
+import { AIChatWidget } from './components/AIChatWidget.jsx';
 function hoursUntilMidnight() {
   const now = new Date();
   const midnight = new Date(now);
@@ -338,6 +342,42 @@ function App({ initialHunterName, onLogout }) {
   // ─ Progressive Feature Unlock System ─
   const { can, nextLevel } = useFeatureUnlocks(state?.level || 1);
 
+  // ─ Gemini AI ─
+  const geminiAI = useGeminiAI(state);
+  const [verifyingQuest, setVerifyingQuest] = useState(null);
+  const [showTaskScan, setShowTaskScan] = useState(false);
+
+  // Intercept completeQuest to offer photo verification if unlocked
+  const handleCompleteQuest = useCallback((questId) => {
+    if (can('ai_verification') && state?.ai?.verificationEnabled && state?.ai?.enabled) {
+      const quest = state.quests?.find(q => q.id === questId);
+      if (quest) { setVerifyingQuest(quest); return; }
+    }
+    completeQuest(questId);
+  }, [can, state, completeQuest]);
+
+  // ─ AI: Replace static system quests with AI-generated ones after daily reset ─
+  const lastActiveDateRef = useRef(null);
+  useEffect(() => {
+    if (!state || loading) return;
+    const today = state.lastActiveDate;
+    if (lastActiveDateRef.current === today) return; // no reset yet
+    lastActiveDateRef.current = today;
+    if (!can('ai_dynamic_quests') || !state.ai?.enabled || !state.ai?.dynamicMessagesEnabled) return;
+
+    // Small delay so static quests render first, then swap silently
+    const timer = setTimeout(async () => {
+      const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
+      const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
+      if (!aiQuests?.length) return;
+      const isAI = aiQuests.some(q => q.aiGenerated);
+      if (!isAI) return; // No AI result — keep static quests
+      const withoutOldSystem = (state.quests || []).filter(q => !q.isSystem);
+      persist({ ...state, quests: [...withoutOldSystem, ...aiQuests] });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [state?.lastActiveDate, loading]);
+
   // ─ View Guard: Reset to dashboard if current view is locked ─
   React.useEffect(() => {
     const viewToFeature = {
@@ -363,8 +403,11 @@ function App({ initialHunterName, onLogout }) {
   const prevStateRef = useRef(null);
   useEffect(() => {
     if (!state || loading) return;
-    const checkCoach = () => {
-      const messages = runCoachChecks(state, prevStateRef.current);
+    const checkCoach = async () => {
+      let messages = runCoachChecks(state, prevStateRef.current);
+      if (messages.length > 0 && can('ai_coach') && state?.ai?.dynamicMessagesEnabled && state?.ai?.enabled) {
+        messages = await enrichCoachMessagesAsync(messages, state, geminiAI.generateSystemMsg);
+      }
       if (messages.length > 0) {
         const top = messages[0];
         notify(`${top.icon} ${top.lines[0]}`, top.type === "warning" ? "warning" : "info");
@@ -600,6 +643,38 @@ function App({ initialHunterName, onLogout }) {
 
       {/* FOCUS MODE */}
       {showFocusMode && <FocusMode state={state} persist={persist} notify={notify} onExit={() => setShowFocusMode(false)} theme={theme} />}
+
+      {/* AI: QUEST PHOTO VERIFICATION */}
+      {verifyingQuest && (
+        <QuestVerifyModal
+          quest={verifyingQuest}
+          geminiAI={geminiAI}
+          onComplete={(verified) => {
+            const questId = verifyingQuest.id;
+            setVerifyingQuest(null);
+            completeQuest(questId, null, verified);
+          }}
+          onSkip={() => {
+            const questId = verifyingQuest.id;
+            setVerifyingQuest(null);
+            completeQuest(questId, null, false);
+          }}
+        />
+      )}
+
+      {/* AI: TASK SCAN MODAL */}
+      {showTaskScan && (
+        <TaskScanModal
+          geminiAI={geminiAI}
+          onConfirm={(tasks) => {
+            tasks.forEach(t => createQuest({ title: t.title, category: t.category, difficulty: t.difficulty, type: "side" }));
+            const scannedCount = (state?.ai?.scannedTasks || 0) + 1;
+            persist({ ...state, ai: { ...(state?.ai || {}), scannedTasks: scannedCount } });
+            setShowTaskScan(false);
+          }}
+          onClose={() => setShowTaskScan(false)}
+        />
+      )}
 
       {/* SHADOW REGRESSION CINEMATIC */}
       {showShadowRegression && state?.shadowRegression?.active && (
@@ -941,9 +1016,10 @@ function App({ initialHunterName, onLogout }) {
             xpPercent={xpPercent} xpNeeded={xpNeeded}
             filteredQuests={filteredQuests} hiddenQuestCount={hiddenQuestCount}
             questFilter={questFilter} setQuestFilter={setQuestFilter}
-            completeQuest={completeQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
+            completeQuest={handleCompleteQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
             completeEmergencyQuest={completeEmergencyQuest}
             setShowCreate={setShowCreate}
+            setShowTaskScan={setShowTaskScan}
             nextLevel={nextLevel} getUnlocksAtLevel={getUnlocksAtLevel}
             notify={notify} persist={persist}
             setIsCreatingEntry={setIsCreatingEntry}
@@ -1400,7 +1476,7 @@ function App({ initialHunterName, onLogout }) {
         {/* ◆◆◆ SETTINGS ◆◆◆ */}
         {
           view === "settings" && (
-            <SettingsView state={state} persist={persist} theme={theme} />
+            <SettingsView state={state} persist={persist} theme={theme} can={can} />
           )
         }
       </main >
@@ -1498,7 +1574,7 @@ function App({ initialHunterName, onLogout }) {
                   <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
                   <div style={{ fontSize: 11, color: "#334155" }}>Erstelle Quests auf dem Heute-Tab.</div>
                 </div>
-              ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}
+              ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleCompleteQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}
             </div>
           </div>
         )
@@ -1919,7 +1995,23 @@ function App({ initialHunterName, onLogout }) {
 
                         {/* DESCRIPTION */}
                         <div style={{ marginBottom: 16 }}>
-                          <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, marginBottom: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>MISSIONSDETAILS</div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, marginBottom: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span>MISSIONSDETAILS</span>
+                            {can('ai_quest_desc') && state?.ai?.enabled && qTitle.trim() && (
+                              <button
+                                disabled={geminiAI.isLoading}
+                                onClick={async () => {
+                                  const result = await geminiAI.generateQuestDesc(qTitle, qCat);
+                                  if (!result) return;
+                                  if (result.description) setQDescription(result.description.slice(0, 300));
+                                  if (result.subQuests?.length > 0) setQSubQuests(result.subQuests.slice(0, 5).map(s => ({ title: s })));
+                                }}
+                                style={{ background: "rgba(0,200,255,0.08)", border: "1px solid rgba(0,200,255,0.25)", borderRadius: 4, color: geminiAI.isLoading ? "#334" : "#0af", padding: "2px 8px", fontFamily: "'Courier New',monospace", fontSize: 8, letterSpacing: 1, cursor: "pointer" }}
+                              >
+                                {geminiAI.isLoading ? "..." : "✨ KI"}
+                              </button>
+                            )}
+                          </div>
                           <textarea
                             value={qDescription}
                             onChange={e => { if (e.target.value.length <= 300) setQDescription(e.target.value); }}
@@ -2070,6 +2162,11 @@ function App({ initialHunterName, onLogout }) {
       )}
 
       {/* DAWN / DUSK PROTOCOL — rendered above as overlay (line ~451), this duplicate is intentionally removed */}
+
+      {/* AI COACH WIDGET — floating bottom-right, unlocked at Level 8 */}
+      {can('ai_coach') && state?.ai?.enabled && state?.ai?.coachEnabled && (
+        <AIChatWidget geminiAI={geminiAI} state={state} />
+      )}
     </div >
   );
 }

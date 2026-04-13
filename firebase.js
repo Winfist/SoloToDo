@@ -2,7 +2,8 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 // Replace with your Firebase config
 const firebaseConfig = {
@@ -19,6 +20,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-// const analytics = getAnalytics(app);
+const functions = getFunctions(app, "europe-west1");
 
-export { auth, db };
+// App Check — protects Cloud Functions from abuse
+// Requires VITE_RECAPTCHA_SITE_KEY in .env.local and App Check registered in Firebase Console
+if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
+
+// Connect to local emulator in development
+if (import.meta.env.DEV) {
+  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+}
+
+export { auth, db, functions };
