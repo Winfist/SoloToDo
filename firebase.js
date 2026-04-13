@@ -33,7 +33,7 @@ if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
 
 // Connect to local emulator in development
 if (import.meta.env.DEV) {
-  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+  // connectFunctionsEmulator(functions, "127.0.0.1", 5001); // DISABLED: connecting to live backend to use Blaze plan
 }
 
 export { auth, db, functions };
