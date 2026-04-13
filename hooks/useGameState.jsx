@@ -115,10 +115,10 @@ export function useGameState(initialHunterName, onLogout) {
     const user = auth.currentUser;
     if (!user) return;
 
-    console.log("System: Cloud-Synchronisierung aktiviert fÃ¼r", user.uid);
+    console.log("System: Cloud-Synchronisierung aktiviert für", user.uid);
     const docRef = doc(db, "users", user.uid);
 
-    // Listen for remote changes Ã¢â‚¬â€ only apply cloud data when local state is absent
+    // Listen for remote changes ─ only apply cloud data when local state is absent
     // (e.g. first load on a new device). Never overwrite an active session to
     // prevent cloud overwrites from wiping locally-created quests/habits/goals.
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
@@ -173,14 +173,14 @@ export function useGameState(initialHunterName, onLogout) {
           // Rest-State Mechanics
           if (s.lastInteractionTimeMs && (Date.now() - s.lastInteractionTimeMs >= 8 * 3600 * 1000)) {
             s.restBuff = { active: true, date: today };
-            setTimeout(() => notify("Inner Sanctum Buff: +10% XP fÃ¼r heute (8h offline)", "success"), 2500);
+            setTimeout(() => notify("Inner Sanctum Buff: +10% XP für heute (8h offline)", "success"), 2500);
           }
           if (s.restBuff?.active && s.restBuff.date !== today) {
             s.restBuff = { active: false, date: null };
           }
           s.lastInteractionTimeMs = Date.now();
 
-          // Local state belongs to this user Ã¢â‚¬â€ preserve it as-is.
+          // Local state belongs to this user ─ preserve it as-is.
 
           if (s.lastActiveDate && s.lastActiveDate !== today) {
             const diff = Math.floor((new Date(today) - new Date(s.lastActiveDate)) / 86400000);
@@ -224,7 +224,7 @@ export function useGameState(initialHunterName, onLogout) {
               if (isFeatureUnlocked('seasons', s.level || 1)) {
                 const nextEvent = getNextWorldEvent(s.seasons?.currentWorldEvent || null);
                 s.seasons = { ...(s.seasons || {}), currentWorldEvent: nextEvent.key, worldEventExpires: getNextMonday() };
-                setTimeout(() => notify(`Ã°Å¸Å’Â Neues World-Event: ${nextEvent.icon} ${nextEvent.name} â€” ${nextEvent.desc}`, "named"), 3000);
+                setTimeout(() => notify(`⚡ Neues World-Event: ${nextEvent.icon} ${nextEvent.name} — ${nextEvent.desc}`, "named"), 3000);
               }
             }
             // Season detection (only if seasons feature unlocked)
@@ -241,7 +241,7 @@ export function useGameState(initialHunterName, onLogout) {
                 const seasonalQs = generateSeasonalQuests(detectedSeason);
                 s.quests = [...s.quests, ...seasonalQs];
                 if (oldSeason) {
-                  setTimeout(() => notify(`Ã°Å¸Å’Â¸ Neue Saison: ${SEASONS[detectedSeason].icon} ${SEASONS[detectedSeason].name}! Saison-Quests wurden hinzugefÃ¼gt.`, "named"), 2000);
+                  setTimeout(() => notify(`⚡ Neue Saison: ${SEASONS[detectedSeason].icon} ${SEASONS[detectedSeason].name}! Saison-Quests wurden hinzugefügt.`, "named"), 2000);
                 }
               } else {
                 // Ensure seasonal quests still exist
@@ -267,7 +267,7 @@ export function useGameState(initialHunterName, onLogout) {
                 triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
                   "ACHTUNG: Eine temporale Anomalie wurde registriert.",
                   `Mission: ${s.emergencyQuest.title}`,
-                  "Die Belohnungen fÃ¼r diese Aufgabe wurden verdoppelt.",
+                  "Die Belohnungen für diese Aufgabe wurden verdoppelt.",
                   "Versagen wird nicht toleriert."
                 ]);
               }, 2500);
@@ -284,9 +284,9 @@ export function useGameState(initialHunterName, onLogout) {
           }
           setTimeout(() => {
             const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
-            const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "Ã¢Å¡Â Ã¯Â¸Â NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
+            const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "⚠️ NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
             triggerSystemMessage("STATUS-CHECK", [
-              `Willkommen zurÃ¼ck, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`,
+              `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`,
               `Aktive Tages-Quests: ${activeDailies.length}`,
               urgentMsg
             ]);
@@ -371,7 +371,7 @@ export function useGameState(initialHunterName, onLogout) {
         triggerSystemMessage("NEUE AUFGABE", [
           "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
           `"${randTask.title}"`,
-          "SchlieÃƒÅ¸en Sie diese zeitnah ab, Hunter."
+          "SchlieÅ¸en Sie diese zeitnah ab, Hunter."
         ]);
 
         persist({
@@ -399,7 +399,7 @@ export function useGameState(initialHunterName, onLogout) {
 
   const removeNotif = useCallback(id => setNotifications(prev => prev.filter(n => n.id !== id)), []);
 
-  // Pure version â€” returns { nextState, newAchievements }, never calls setAchQueue
+  // Pure version — returns { nextState, newAchievements }, never calls setAchQueue
   const processAchievementsPure = useCallback(nextState => {
     const newAchs = checkAchievements(nextState);
     if (!newAchs.length) return { nextState, newAchievements: [] };
@@ -419,7 +419,7 @@ export function useGameState(initialHunterName, onLogout) {
     };
   }, []);
 
-  // Legacy impure version â€” for minor callers (evolveShadow, buyItem, equipItem, buyGemItem)
+  // Legacy impure version — for minor callers (evolveShadow, buyItem, equipItem, buyGemItem)
   // that immediately persist and don't need RewardFlow sequencing
   const processAchievements = useCallback(nextState => {
     const { nextState: resolved, newAchievements } = processAchievementsPure(nextState);
@@ -645,7 +645,7 @@ export function useGameState(initialHunterName, onLogout) {
     const totalSteps = 3;
     const firstQuest = generateChainedQuest(title, category, difficulty, 1, totalSteps);
     persist({ ...state, quests: [...state.quests, firstQuest] });
-    notify(`Ã¢â€ºâ€œÃ¯Â¸Â Quest-Kette gestartet! ${totalSteps} Schritte Â· Multiplikator steigt mit jedem Erfolg.`, "info");
+    notify(`─ Quest-Kette gestartet! ${totalSteps} Schritte Â· Multiplikator steigt mit jedem Erfolg.`, "info");
   }, [state, persist, notify]);
 
   // ─── SUB-QUEST COMPLETION ─────────────────────────────────────
@@ -850,7 +850,7 @@ export function useGameState(initialHunterName, onLogout) {
   const undeployShadow = useCallback((shadowId) => {
     const newShadows = (state.shadowArmy.shadows || []).map(s => s.id === shadowId ? { ...s, isDeployed: false, deploymentSlot: null } : s);
     persist({ ...state, shadowArmy: { ...state.shadowArmy, shadows: newShadows } });
-    notify("Shadow zurÃ¼ckgerufen.", "info");
+    notify("Shadow zurückgerufen.", "info");
   }, [state, persist, notify]);
 
   const evolveShadow = useCallback((shadowId) => {
@@ -895,7 +895,7 @@ export function useGameState(initialHunterName, onLogout) {
         };
         setTimeout(() => triggerSystemMessage("SYSTEM RECOVERY", [
           "Elixir of Recovery konsumiert.",
-          "Verlorene VitalitÃ¤t vollstÃ¤ndig wiederhergestellt.",
+          "Verlorene Vitalität vollständig wiederhergestellt.",
           `Streak auf ${recoverStreak} gesetzt.`,
           "Strafzonen-Status aufgehoben."
         ]), 600);
@@ -914,7 +914,7 @@ export function useGameState(initialHunterName, onLogout) {
     notify(`${item.name} erworben!`, item.id === "potion_heal" ? "success" : "gold");
   };
 
-  const equipItem = (item, slot) => { const newSlots = { ...state.equipment.slots, [slot]: item }; let next = { ...state, equipment: { ...state.equipment, slots: newSlots } }; next = processAchievements(next); persist(next); notify(`${item.name} ausgerÃ¼stet!`, "info"); };
+  const equipItem = (item, slot) => { const newSlots = { ...state.equipment.slots, [slot]: item }; let next = { ...state, equipment: { ...state.equipment, slots: newSlots } }; next = processAchievements(next); persist(next); notify(`${item.name} ausgerüstet!`, "info"); };
   const unequipItem = slot => persist({ ...state, equipment: { ...state.equipment, slots: { ...state.equipment.slots, [slot]: null } } });
 
   const switchJob = useCallback((jobKey) => {
@@ -923,12 +923,12 @@ export function useGameState(initialHunterName, onLogout) {
 
     const req = jobDef.unlockRequirement;
     if (state.level < req.level) {
-      notify(`Mindestlevel ${req.level} erforderlich fÃ¼r ${jobDef.name}.`, "info");
+      notify(`Mindestlevel ${req.level} erforderlich für ${jobDef.name}.`, "info");
       return;
     }
 
     if (req.allJobsLevel5 && !checkAllJobsLevel5(state)) {
-      notify("Alle anderen Jobs mÃ¼ssen Level 5 sein.", "info");
+      notify("Alle anderen Jobs müssen Level 5 sein.", "info");
       return;
     }
 
@@ -949,7 +949,7 @@ export function useGameState(initialHunterName, onLogout) {
     const level = state.jobs.levels[jobKey] || 0;
 
     if (level < ability.unlockLevel) {
-      notify(`${jobDef.name} Level ${ability.unlockLevel} benÃ¶tigt.`, "info");
+      notify(`${jobDef.name} Level ${ability.unlockLevel} benötigt.`, "info");
       return;
     }
 
@@ -996,7 +996,7 @@ export function useGameState(initialHunterName, onLogout) {
       }
     };
     persist(next);
-    notify(`${CATEGORIES.find(c => c.key === statKey)?.label} erhÃ¶ht!`, "success");
+    notify(`${CATEGORIES.find(c => c.key === statKey)?.label} erhöht!`, "success");
   }, [state, persist, notify]);
 
 
@@ -1028,7 +1028,7 @@ export function useGameState(initialHunterName, onLogout) {
     persist(s); setShowSetup(false);
   };
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ DAWN/DUSK PROTOCOL Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ─ DAWN/DUSK PROTOCOL ─
   const startDawnDuskRun = useCallback((type) => {
     if (!state) return;
     const tasks = type === "dawn" ? (state.dawnDusk?.morningTasks || []) : (state.dawnDusk?.eveningTasks || []);
@@ -1045,10 +1045,10 @@ export function useGameState(initialHunterName, onLogout) {
     };
     persist({ ...state, dawnDusk: { ...state.dawnDusk, currentRun: run } });
     triggerSystemMessage(type === "dawn" ? "DAWN PROTOCOL AKTIVIERT" : "DUSK PROTOCOL AKTIVIERT", [
-      type === "dawn" ? "Die MorgendÃ¤mmerung beginnt." : "Das Dunkel fÃ¤llt herab.",
+      type === "dawn" ? "Die Morgendämmerung beginnt." : "Das Dunkel fällt herab.",
       `${tasks.length} Etagen stehen vor dir.`,
       `Timer: ${type === "dawn" ? "90" : "60"} Minuten.`,
-      "VollstÃ¤ndiger Abschluss = PERFECT RUN Belohnung."
+      "Vollständiger Abschluss = PERFECT RUN Belohnung."
     ]);
   }, [state, persist, notify, triggerSystemMessage]);
 
@@ -1106,7 +1106,7 @@ export function useGameState(initialHunterName, onLogout) {
     notify("Protokoll abgebrochen.", "warning");
   }, [state, persist, notify]);
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ CHARISMA DUNGEONS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ─ CHARISMA DUNGEONS ─
   const startCharismaChain = useCallback((chainId) => {
     if (!state) return;
     const chain = CHARISMA_CHAINS.find(c => c.id === chainId);
@@ -1138,17 +1138,17 @@ export function useGameState(initialHunterName, onLogout) {
         activeChains: { ...(state.charismaDungeons?.activeChains || {}), [chainId]: { currentStep: 1, startedAt: getToday() } }
       }
     });
-    notify(`Ã°Å¸Å½Â­ ${chain.name} gestartet! Etage 1 von ${chain.steps.length}: ${step.title}`, "info");
+    notify(`⚡ ${chain.name} gestartet! Etage 1 von ${chain.steps.length}: ${step.title}`, "info");
   }, [state, persist, notify]);
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SOUL LINK (Firestore-backed) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ─ SOUL LINK (Firestore-backed) ─
   const createSoulLinkCode = useCallback(async () => {
     if (!state) return;
     try {
       const { createSoulLink } = await import('../multiplayer/soulLinkFirebase.js');
       const { linkCode } = await createSoulLink(state, auth.currentUser);
       persist({ ...state, soulLink: { ...(state.soulLink || {}), linkCode, linkedAt: getToday() } });
-      notify(`Ã°Å¸â€â€” Soul Link erstellt! Dein Code: ${linkCode}`, "success");
+      notify(`⚡ Soul Link erstellt! Dein Code: ${linkCode}`, "success");
       return linkCode;
     } catch (e) { notify("Soul Link konnte nicht erstellt werden.", "warning"); }
   }, [state, persist, notify]);
@@ -1160,7 +1160,7 @@ export function useGameState(initialHunterName, onLogout) {
       const result = await joinSoulLink(code.toUpperCase(), state, auth.currentUser);
       if (!result) { notify("Code nicht gefunden oder bereits voll.", "warning"); return; }
       persist({ ...state, soulLink: { ...(state.soulLink || {}), ...result, linkCode: code.toUpperCase(), linkedAt: getToday() } });
-      notify(`Ã°Å¸â€â€” Soul Link verbunden mit ${result.partnerName}!`, "success");
+      notify(`⚡ Soul Link verbunden mit ${result.partnerName}!`, "success");
     } catch (e) { notify("Verbindung fehlgeschlagen.", "warning"); }
   }, [state, persist, notify]);
 
@@ -1180,14 +1180,14 @@ export function useGameState(initialHunterName, onLogout) {
       const { sendRevive } = await import('../multiplayer/soulLinkFirebase.js');
       await sendRevive(state.soulLink.linkCode, auth.currentUser.uid, state.soulLink.partnerUid);
       persist({ ...state, soulLink: { ...state.soulLink, revivesLeft: Math.max(0, (state.soulLink.revivesLeft || 0) - 1) } });
-      notify(`Ã°Å¸â€™â€œ Streak-Revive an ${state.soulLink.partnerName} gesendet!`, "success");
+      notify(`⚡ Streak-Revive an ${state.soulLink.partnerName} gesendet!`, "success");
     } catch (_) { notify("Revive fehlgeschlagen.", "warning"); }
   }, [state, persist, notify]);
 
   const theme = useMemo(() => THEMES[state?.selectedTheme || "default"], [state?.selectedTheme]);
   const modifier = state?.todayModifier || getDailyModifier();
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ GEM SYSTEM FUNCTIONS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ─ GEM SYSTEM FUNCTIONS ─
 
   // Get active (non-expired) gem boosters
   const getActiveGemBoosters = useCallback(() => {
@@ -1212,7 +1212,7 @@ export function useGameState(initialHunterName, onLogout) {
     const today = getToday();
     const adsToday = state.lastAdWatchDate === today ? (state.adsWatchedToday || 0) : 0;
     if (adsToday >= 5) {
-      notify("TÃ¤gliches Werbe-Limit erreicht (5/5). Morgen wieder verfÃ¼gbar!", "warning");
+      notify("Tägliches Werbe-Limit erreicht (5/5). Morgen wieder verfügbar!", "warning");
       return false;
     }
     const gemReward = 3 + Math.floor(Math.random() * 3); // 3-5 gems
@@ -1223,7 +1223,7 @@ export function useGameState(initialHunterName, onLogout) {
       adsWatchedToday: adsToday + 1,
       lastAdWatchDate: today,
     });
-    notify(`+${gemReward} Ã°Å¸â€™Å½ Gems erhalten!`, "named");
+    notify(`+${gemReward} ⚡ Gems erhalten!`, "named");
     return gemReward;
   }, [state, persist, notify]);
 
@@ -1252,9 +1252,9 @@ export function useGameState(initialHunterName, onLogout) {
       gemStreak: { current: newStreak, lastClaimDate: today },
     });
     if (isDay7) {
-      notify(`Ã°Å¸â€™Å½ Tag-7-Bonus! +${gemReward} Gems (Streak: ${newStreak} Tage)`, "named");
+      notify(`⚡ Tag-7-Bonus! +${gemReward} Gems (Streak: ${newStreak} Tage)`, "named");
     } else {
-      notify(`+${gemReward} Ã°Å¸â€™Å½ Daily Gem Bonus (Streak: ${newStreak})`, "success");
+      notify(`+${gemReward} ⚡ Daily Gem Bonus (Streak: ${newStreak})`, "success");
     }
     return gemReward;
   }, [state, persist, notify]);
@@ -1286,7 +1286,7 @@ export function useGameState(initialHunterName, onLogout) {
         `${item.name} wurde eingesetzt!`,
         `${item.desc}`,
         `Dauer: ${Math.round(item.duration / 3600000)} Stunden.`,
-        "MÃ¶ge die Macht mit dir sein, Hunter."
+        "Möge die Macht mit dir sein, Hunter."
       ]);
     } else if (item.type === "theme") {
       effects.selectedTheme = item.themeKey;
@@ -1305,13 +1305,13 @@ export function useGameState(initialHunterName, onLogout) {
         effects.stats = { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
         effects.statPoints = (state.statPoints || 0) + totalStatPoints;
         triggerSystemMessage("STAT RESET", [
-          "Alle Stat-Punkte wurden zurÃ¼ckgesetzt.",
-          `${totalStatPoints + (state.statPoints || 0)} Punkte stehen zur VerfÃ¼gung.`,
+          "Alle Stat-Punkte wurden zurückgesetzt.",
+          `${totalStatPoints + (state.statPoints || 0)} Punkte stehen zur Verfügung.`,
           "Verteile sie weise, Hunter."
         ]);
       }
     } else if (item.type === "cosmetic") {
-      // Shadow cosmetics stored in gemPurchases Ã¢â‚¬â€ applied via lookup
+      // Shadow cosmetics stored in gemPurchases ─ applied via lookup
     }
 
     const newPurchases = item.repeatable ? (state.gemPurchases || []) : [...(state.gemPurchases || []), item.id];
@@ -1325,7 +1325,7 @@ export function useGameState(initialHunterName, onLogout) {
     next = processAchievements(next);
     persist(next);
     if (item.type !== "consumable" || !item.id.startsWith("gem_stat_reset")) {
-      notify(`${item.name} erworben! Ã°Å¸â€™Å½`, item.type === "booster" ? "success" : "named");
+      notify(`${item.name} erworben! ⚡`, item.type === "booster" ? "success" : "named");
     }
   }, [state, persist, processAchievements, notify, triggerSystemMessage]);
 
