@@ -1,6 +1,7 @@
 // geminiService.js — Gemini API wrapper using @google/genai SDK
 
 const { GoogleGenAI } = require("@google/genai");
+const { HttpsError } = require("firebase-functions/v2/https");
 
 const MODEL = "gemini-2.0-flash";
 
@@ -21,28 +22,44 @@ function stripMarkdown(text) {
 
 // Text-only generation
 async function callGemini(prompt) {
-  const response = await getAI().models.generateContent({
-    model: MODEL,
-    contents: prompt,
-  });
-  return stripMarkdown(response.text);
+  try {
+    const response = await getAI().models.generateContent({
+      model: MODEL,
+      contents: prompt,
+    });
+    return stripMarkdown(response.text);
+  } catch (err) {
+    if (err?.status === 429 || err?.message?.includes("429") || err?.message?.includes("quota")) {
+      throw new HttpsError("resource-exhausted", "Tageslimit der KI erreicht (429).");
+    }
+    console.error("Gemini API Error:", err);
+    throw new HttpsError("internal", "KI-Backend Fehler.");
+  }
 }
 
 // Multimodal generation (text + image)
 async function callGeminiWithImage(prompt, imageBase64, mimeType = "image/jpeg") {
-  const response = await getAI().models.generateContent({
-    model: MODEL,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { text: prompt },
-          { inlineData: { mimeType, data: imageBase64 } },
-        ],
-      },
-    ],
-  });
-  return stripMarkdown(response.text);
+  try {
+    const response = await getAI().models.generateContent({
+      model: MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType, data: imageBase64 } },
+          ],
+        },
+      ],
+    });
+    return stripMarkdown(response.text);
+  } catch (err) {
+    if (err?.status === 429 || err?.message?.includes("429") || err?.message?.includes("quota")) {
+      throw new HttpsError("resource-exhausted", "Tageslimit der KI erreicht (429).");
+    }
+    console.error("Gemini API Image Error:", err);
+    throw new HttpsError("internal", "KI-Backend Bild-Fehler.");
+  }
 }
 
 // Safe JSON parse with fallback
