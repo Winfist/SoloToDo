@@ -15,7 +15,7 @@ import GoalFramework from "./components/GoalFramework.jsx";
 import CalendarSchedule from "./components/CalendarSchedule.jsx";
 import FocusMode from "./components/FocusMode.jsx";
 import ChallengesSystem from "./components/ChallengesSystem.jsx";
-import SettingsView from "./components/SettingsView.jsx";
+import SettingsView, { ALL_NAV_TABS, DEFAULT_NAV_KEYS } from "./components/SettingsView.jsx";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
 import LifeDomainsOnboarding from "./components/LifeDomainsOnboarding.jsx";
@@ -558,7 +558,7 @@ function App({ initialHunterName, onLogout }) {
       {/* Cosmic ambient glow */}
       <div style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", width: "120%", height: "50%", background: `radial-gradient(ellipse at 50% 0%,${theme.primary}12,transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
       <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "120%", height: "40%", background: `radial-gradient(ellipse at 50% 100%,${theme.secondary}0a,transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
-      <ParticleField theme={theme} />
+      {(state.settings?.particles !== false) && <ParticleField theme={theme} />}
       <MusicPlayer play={isMusicPlaying} />
       {penaltyActive && <div style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", border: "2px solid #ef444422", animation: "penaltyPulse 2s infinite" }} />}
       {/* ── Independent reward UI — silenced while a RewardFlow is active ── */}
@@ -1500,48 +1500,70 @@ function App({ initialHunterName, onLogout }) {
         {/* ◆◆◆ SETTINGS ◆◆◆ */}
         {
           view === "settings" && (
-            <SettingsView state={state} persist={persist} theme={theme} can={can} />
+            <SettingsView state={state} persist={persist} theme={theme} can={can} onLogout={onLogout} />
           )
         }
       </main >
 
-      {/* BOTTOM NAV */}
-      < nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
-        <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
-          {[
-            { key: "dashboard", iconSrc: NAV_ICONS.dashboard, icon: "📋", label: "Heute" },
-            ...(can('training_tab') ? [{ key: "training", iconSrc: NAV_ICONS.goals, icon: "📋", label: "Ziele" }] : []),
-            ...(can('dungeons') ? [{ key: "dungeon", icon: <img src="/icons/gate_normal.png" alt="Gate" style={{ width: 36, height: 36, objectFit: "contain", filter: "drop-shadow(0 0 8px #a78bfa88) brightness(1.3)" }} />, label: "Gates", badge: activeDungeons.length }] : []),
-            ...(can('story') ? [{ key: "story", iconSrc: STORY_ICONS.scroll, icon: "📋", label: "Story" }] : []),
-            { key: "system", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: "System" }
-          ].map(tab => (
-            <button key={tab.key} onClick={() => {
-              setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
-              tab.isOverlay ? tab.action?.() : navigateTo(tab.key);
-            }} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: tab.isOverlay ? "#9ca3af" : view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "gem_shop", "analytics", "challenges", "settings", "more"].includes(view)) ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
-              {(view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "gem_shop", "analytics", "challenges", "settings", "more"].includes(view))) && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
-              <div style={{ position: "relative" }}>
-                {tab.iconSrc ? (
-                  <img src={tab.iconSrc} alt={tab.label} style={{
-                    width: 26, height: 26,
-                    objectFit: "contain",
-                    display: "block",
-                    transition: "all 0.3s",
-                    transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "gem_shop", "analytics", "challenges", "settings", "more"].includes(view))) ? "scale(1.18) translateY(-2px)" : "scale(1)",
-                    filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "gem_shop", "analytics", "challenges", "settings", "more"].includes(view)))
-                      ? `brightness(1.35) drop-shadow(0 0 8px ${theme.glow}) saturate(1.3)`
-                      : "brightness(0.55) saturate(0.4)",
-                  }} />
-                ) : (
-                  <span style={{ fontSize: 18, transition: "all 0.3s", transform: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "gem_shop", "analytics", "challenges", "settings", "more"].includes(view))) ? "scale(1.2) translateY(-2px)" : "scale(1)", display: "block", filter: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "gem_shop", "analytics", "challenges", "settings", "more"].includes(view))) ? `drop-shadow(0 0 8px ${theme.glow})` : "grayscale(0.6)" }}>{tab.icon}</span>
-                )}
-                {tab.badge > 0 && <div style={{ position: "absolute", top: -6, right: -8, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono',monospace", border: "2px solid #000", animation: "pulse 2s infinite" }}>{tab.badge}</div>}
-              </div>
-              <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: (view === tab.key || (tab.key === "training" && ["goals", "calendar"].includes(view)) || (tab.key === "system" && ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "gem_shop", "analytics", "challenges", "settings", "more"].includes(view))) ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
-            </button>
-          ))}
-        </div>
-      </nav >
+      {/* BOTTOM NAV — reads from state.navbarConfig (customizable in Settings) */}
+      {(() => {
+        // Build tab list from user config or defaults
+        const SYSTEM_SUB_VIEWS = ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "gem_shop", "analytics", "challenges", "settings", "more"];
+        const TRAINING_SUB_VIEWS = ["goals", "calendar"];
+        const TAB_FEATURE_MAP = { training: "training_tab", dungeon: "dungeons", story: "story", stats: "stats_view", analytics: "analytics", achievements: "achievements", challenges: "challenges", shadows: "shadow_army", equipment: "equipment", jobs: "jobs", shop: "shop", gem_shop: "gem_shop", goals: "goals", calendar: "calendar", sanctum: "sanctum" };
+        const configKeys = state.navbarConfig?.tabs || DEFAULT_NAV_KEYS;
+        const navTabs = configKeys
+          .map(key => {
+            const def = ALL_NAV_TABS.find(t => t.key === key);
+            if (!def) return null;
+            const feat = TAB_FEATURE_MAP[key];
+            if (feat && !can(feat)) return null;
+            // Dynamic badges
+            let badge = 0;
+            if (key === "dungeon") badge = activeDungeons.length;
+            if (key === "stats" && state.statPoints > 0) badge = state.statPoints;
+            return { ...def, badge };
+          })
+          .filter(Boolean);
+
+        // Determine active tab highlight: direct match first, then parent hubs
+        const isTabActive = (tabKey) => {
+          if (view === tabKey) return true;
+          // "system" hub highlights for sub-views, but only if that sub-view doesn't have its own tab
+          if (tabKey === "system" && SYSTEM_SUB_VIEWS.includes(view) && !configKeys.includes(view)) return true;
+          if (tabKey === "training" && TRAINING_SUB_VIEWS.includes(view) && !configKeys.includes(view)) return true;
+          return false;
+        };
+
+        return (
+          <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
+            <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
+              {navTabs.map(tab => {
+                const active = isTabActive(tab.key);
+                const iconSize = tab.isGate ? 36 : 26;
+                return (
+                  <button key={tab.key} onClick={() => {
+                    setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
+                    navigateTo(tab.key);
+                  }} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: active ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
+                    {active && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
+                    <div style={{ position: "relative" }}>
+                      <img src={tab.iconSrc} alt={tab.label} style={{
+                        width: iconSize, height: iconSize, objectFit: "contain", display: "block",
+                        transition: "all 0.3s",
+                        transform: active ? "scale(1.18) translateY(-2px)" : "scale(1)",
+                        filter: active ? `brightness(1.35) drop-shadow(0 0 8px ${theme.glow}) saturate(1.3)` : "brightness(0.55) saturate(0.4)",
+                      }} />
+                      {tab.badge > 0 && <div style={{ position: "absolute", top: -6, right: -8, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono',monospace", border: "2px solid #000", animation: "pulse 2s infinite" }}>{tab.badge}</div>}
+                    </div>
+                    <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: active ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        );
+      })()}
 
       {/* TRAINING HUB — unified view for habits/goals/calendar */}
       {
