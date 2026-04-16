@@ -103,6 +103,23 @@ function checkDungeonReset(state) {
     return null;
 }
 
+function checkCustomReminders(state) {
+    const reminders = state?.reminders || [];
+    const now = Date.now();
+    for (const r of reminders) {
+        if (r.fired) continue;
+        if (now >= new Date(r.reminderAt).getTime()) {
+            return {
+                title: r.title,
+                body: r.questId ? "Quest-Erinnerung" : "Erinnerung",
+                tag: `reminder-${r.id}`,
+                reminderId: r.id,
+            };
+        }
+    }
+    return null;
+}
+
 function checkWeeklySummary(state) {
     const day = new Date().getDay();
     const hour = new Date().getHours();
@@ -126,6 +143,7 @@ function checkWeeklySummary(state) {
 
 export function runReminderChecks(state) {
     const checks = [
+        checkCustomReminders,
         checkStreakProtection,
         checkEmergencyQuest,
         checkHabitNudge,
@@ -145,7 +163,7 @@ export function runReminderChecks(state) {
 
 // ── Permission Banner Component ─────────────────────────────
 
-export function NotificationBanner({ state, theme }) {
+export function NotificationBanner({ state, theme, onUpdateReminder }) {
     const [permission, setPermission] = useState(
         typeof window !== "undefined" && "Notification" in window
             ? Notification.permission
@@ -157,9 +175,13 @@ export function NotificationBanner({ state, theme }) {
     useEffect(() => {
         if (permission !== "granted" || !state) return;
         // Check every 15 minutes
-        const interval = setInterval(() => runReminderChecks(state), 15 * 60 * 1000);
+        const handleCheck = () => {
+            const result = runReminderChecks(state);
+            if (result?.reminderId && onUpdateReminder) onUpdateReminder(result.reminderId);
+        };
+        const interval = setInterval(handleCheck, 15 * 60 * 1000);
         // Initial check after 5 minutes
-        const initial = setTimeout(() => runReminderChecks(state), 5 * 60 * 1000);
+        const initial = setTimeout(handleCheck, 5 * 60 * 1000);
         return () => { clearInterval(interval); clearTimeout(initial); };
     }, [permission, state?.streak, state?.emergencyQuest, (state?.habits || []).length]);
 

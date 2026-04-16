@@ -334,6 +334,20 @@ input,select{font-family:inherit}
   0%, 100% { opacity: 1; text-shadow: 0 0 12px rgba(52, 211, 153, 0.5) }
   50% { opacity: 0.85; text-shadow: 0 0 20px rgba(52, 211, 153, 0.8) }
 }
+@keyframes systemBadgePulse {
+  0%, 100% { box-shadow: 0 0 4px #06b6d422; }
+  50% { box-shadow: 0 0 10px #06b6d466, 0 0 18px #06b6d422; }
+}
+@keyframes systemPulse {
+  0%, 100% { box-shadow: 0 0 20px ${t.primary}1a, inset 0 0 40px ${t.primary}05; }
+  50% { box-shadow: 0 0 40px ${t.primary}40, inset 0 0 60px ${t.primary}0f; }
+}
+@keyframes ratingModalIn {
+  0% { opacity: 0; transform: scale(0.88) translateY(20px); filter: blur(8px); }
+  50% { opacity: 0.9; filter: blur(1px); }
+  75% { transform: scale(1.02) translateY(-2px); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
 
 @media (max-width: 440px) {
   .header-hide-mobile { display: none !important; }

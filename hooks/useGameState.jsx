@@ -59,6 +59,7 @@ export function useGameState(initialHunterName, onLogout) {
   const [qSaveToPool, setQSaveToPool] = useState(false);
   const [qFromTemplate, setQFromTemplate] = useState(null);
   const [qTags, setQTags] = useState("");
+  const [qDueDate, setQDueDate] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const [editingQuestId, setEditingQuestId] = useState(null);
   const [showHiddenQuestModal, setShowHiddenQuestModal] = useState(null);
@@ -74,6 +75,7 @@ export function useGameState(initialHunterName, onLogout) {
   const [rewardFlowActive, setRewardFlowActive] = useState(false);
   const [rewardFlowQueue, setRewardFlowQueue] = useState([]);
   const [showingModal, setShowingModal] = useState(false);
+  const [pendingRatingQuest, setPendingRatingQuest] = useState(null);
 
   const enqueueRewardFlow = useCallback((flow) => {
     setRewardFlowQueue(prev => [...prev, flow]);
@@ -109,6 +111,15 @@ export function useGameState(initialHunterName, onLogout) {
       }).catch(() => { });
     }
   }, []);
+
+  const rateCompletedQuest = useCallback((questId, ratingData) => {
+    if (!state) return;
+    const updatedCompleted = (state.completedQuests || []).map(q =>
+      q.id === questId ? { ...q, ...ratingData } : q
+    );
+    persist({ ...state, completedQuests: updatedCompleted });
+    setPendingRatingQuest(null);
+  }, [state, persist]);
 
   // Real-time Cloud Sync
   useEffect(() => {
@@ -486,6 +497,7 @@ export function useGameState(initialHunterName, onLogout) {
     persist(result.nextState);
     const flow = buildQuestRewardFlow(result, state.level, rect);
     enqueueRewardFlow(flow);
+    setPendingRatingQuest(quest);
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify]);
 
 
@@ -574,6 +586,7 @@ export function useGameState(initialHunterName, onLogout) {
       createdAt: getToday(), createdAtMs: Date.now(),
       ...(timeLimit ? { timeLimit } : {}),
       ...(habitId ? { linkedHabitId: habitId } : {}),
+      ...(qDueDate ? { dueDate: qDueDate } : {}),
     };
 
     let nextState = { ...state, quests: [...state.quests, quest], dailyUserQuestsCreated: createdCount + 1 };
@@ -625,7 +638,7 @@ export function useGameState(initialHunterName, onLogout) {
     }
 
     persist(nextState);
-    setQTitle(""); setQDescription(""); setQSubQuests([]); setQSaveToPool(false); setQFromTemplate(null);
+    setQTitle(""); setQDescription(""); setQSubQuests([]); setQSaveToPool(false); setQFromTemplate(null); setQDueDate("");
     setShowCreate(false);
   };
 
@@ -1383,6 +1396,8 @@ export function useGameState(initialHunterName, onLogout) {
     setQFromTemplate,
     qTags,
     setQTags,
+    qDueDate,
+    setQDueDate,
     showDetails,
     setShowDetails,
     editingQuestId,
@@ -1463,6 +1478,10 @@ export function useGameState(initialHunterName, onLogout) {
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     GEM_SHOP_ITEMS,
+    // Rating system
+    rateCompletedQuest,
+    pendingRatingQuest,
+    setPendingRatingQuest,
   };
 }
 

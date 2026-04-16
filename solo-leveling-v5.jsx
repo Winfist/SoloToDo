@@ -37,6 +37,7 @@ import DashboardView from "./components/views/DashboardView.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
 import QuestCompletionCinematic from "./components/QuestCompletionCinematic.jsx";
 import UnifiedResultModal from "./components/UnifiedResultModal.jsx";
+import QuestRatingModal from "./components/QuestRatingModal.jsx";
 import { buildStoryChapterRewardFlow, buildStoryBossRewardFlow } from "./hooks/rewardFlowBuilders.js";
 
 // ─ RANKS ─
@@ -155,6 +156,8 @@ function App({ initialHunterName, onLogout }) {
     setQFromTemplate,
     qTags,
     setQTags,
+    qDueDate,
+    setQDueDate,
     showDetails,
     setShowDetails,
     editingQuestId,
@@ -226,6 +229,10 @@ function App({ initialHunterName, onLogout }) {
     claimDailyGemBonus,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
+    // Rating system
+    rateCompletedQuest,
+    pendingRatingQuest,
+    setPendingRatingQuest,
   } = gameState;
   const [forgeTab, setForgeTab] = useState("create");
   // ── Animation Controller (Phase 5) ───────────────────────────────────────────
@@ -357,13 +364,17 @@ function App({ initialHunterName, onLogout }) {
   }, [can, state, completeQuest]);
 
   // ─ AI: Replace static system quests with AI-generated ones after daily reset ─
+  // Uses localStorage so the guard survives page reloads — prevents one call per reload
   const lastActiveDateRef = useRef(null);
   useEffect(() => {
     if (!state || loading) return;
     const today = state.lastActiveDate;
-    if (lastActiveDateRef.current === today) return; // no reset yet
+    const storageKey = 'sl_ai_quest_gen_date';
+    const alreadyGenToday = localStorage.getItem(storageKey) === today;
+    if (lastActiveDateRef.current === today || alreadyGenToday) return;
     lastActiveDateRef.current = today;
-    if (!can('ai_dynamic_quests') || !state.ai?.enabled || !state.ai?.dynamicMessagesEnabled) return;
+    localStorage.setItem(storageKey, today);
+    if (!can('ai_dynamic_quests') || !state.ai?.enabled || !state.ai?.dynamicMessagesEnabled || geminiAI.isRateLimited()) return;
 
     // Small delay so static quests render first, then swap silently
     const timer = setTimeout(async () => {
@@ -405,7 +416,7 @@ function App({ initialHunterName, onLogout }) {
     if (!state || loading) return;
     const checkCoach = async () => {
       let messages = runCoachChecks(state, prevStateRef.current);
-      if (messages.length > 0 && can('ai_coach') && state?.ai?.dynamicMessagesEnabled && state?.ai?.enabled) {
+      if (messages.length > 0 && can('ai_coach') && state?.ai?.dynamicMessagesEnabled && state?.ai?.enabled && !geminiAI.isRateLimited()) {
         messages = await enrichCoachMessagesAsync(messages, state, geminiAI.generateSystemMsg);
       }
       if (messages.length > 0) {
@@ -617,6 +628,16 @@ function App({ initialHunterName, onLogout }) {
       {!rewardFlowActive && !levelUp && !ariseTarget && state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
       {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
       {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && <SystemCLI key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
+
+      {/* ── Quest Rating Modal – appears after all reward animations finish ── */}
+      {pendingRatingQuest && !rewardFlowActive && !showingModal && (
+        <QuestRatingModal
+          quest={pendingRatingQuest}
+          theme={theme}
+          onSubmit={(ratingData) => rateCompletedQuest(pendingRatingQuest.id, ratingData)}
+          onSkip={() => setPendingRatingQuest(null)}
+        />
+      )}
 
       {activeDungeon && (
         <div style={{ display: preview3DDungeon ? "none" : "block" }}>
@@ -1005,7 +1026,10 @@ function App({ initialHunterName, onLogout }) {
           </div>
         )}
 
-        <NotificationBanner state={state} theme={theme} />
+        <NotificationBanner state={state} theme={theme} onUpdateReminder={(id) => {
+          const updated = (state.reminders || []).map(r => r.id === id ? { ...r, fired: true } : r);
+          persist({ ...state, reminders: updated });
+        }} />
 
         {/* ◆◆◆ DASHBOARD ◆◆◆ */}
         {view === "dashboard" && (
@@ -1017,7 +1041,7 @@ function App({ initialHunterName, onLogout }) {
             filteredQuests={filteredQuests} hiddenQuestCount={hiddenQuestCount}
             questFilter={questFilter} setQuestFilter={setQuestFilter}
             completeQuest={handleCompleteQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
-            completeEmergencyQuest={completeEmergencyQuest}
+            completeEmergencyQuest={completeEmergencyQuest} createQuest={createQuest}
             setShowCreate={setShowCreate}
             setShowTaskScan={setShowTaskScan}
             nextLevel={nextLevel} getUnlocksAtLevel={getUnlocksAtLevel}
@@ -2006,9 +2030,9 @@ function App({ initialHunterName, onLogout }) {
                                   if (result.description) setQDescription(result.description.slice(0, 300));
                                   if (result.subQuests?.length > 0) setQSubQuests(result.subQuests.slice(0, 5).map(s => ({ title: s })));
                                 }}
-                                style={{ background: "rgba(0,200,255,0.08)", border: "1px solid rgba(0,200,255,0.25)", borderRadius: 4, color: geminiAI.isLoading ? "#334" : "#0af", padding: "2px 8px", fontFamily: "'Courier New',monospace", fontSize: 8, letterSpacing: 1, cursor: "pointer" }}
+                                style={{ background: geminiAI.isLoading ? "rgba(0,200,255,0.04)" : `rgba(0,200,255,0.1)`, border: `1px solid ${geminiAI.isLoading ? "rgba(0,200,255,0.12)" : "rgba(0,200,255,0.4)"}`, borderRadius: 3, color: geminiAI.isLoading ? "#2a4455" : "#00c8ff", padding: "3px 9px", fontFamily: "'JetBrains Mono','Courier New',monospace", fontSize: 8, letterSpacing: 2, cursor: geminiAI.isLoading ? "default" : "pointer", textTransform: "uppercase", boxShadow: geminiAI.isLoading ? "none" : "0 0 8px rgba(0,200,255,0.2)", transition: "all 0.2s" }}
                               >
-                                {geminiAI.isLoading ? "..." : "✨ KI"}
+                                {geminiAI.isLoading ? "· · ·" : "> KI.GEN"}
                               </button>
                             )}
                           </div>
@@ -2091,6 +2115,25 @@ function App({ initialHunterName, onLogout }) {
                       </div>
                     )}
 
+                    {/* DUE DATE */}
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>FÄLLIG BIS</div>
+                      <input
+                        type="date"
+                        value={qDueDate}
+                        onChange={e => setQDueDate(e.target.value)}
+                        style={{
+                          width: "100%", padding: "8px 12px", borderRadius: 8,
+                          background: "rgba(255,255,255,0.03)",
+                          border: `1px solid ${qDueDate ? theme.primary + "44" : "rgba(255,255,255,0.08)"}`,
+                          color: qDueDate ? "#e2e8f0" : "#475569",
+                          fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
+                          colorScheme: "dark", outline: "none", boxSizing: "border-box",
+                          transition: "border-color 0.2s",
+                        }}
+                      />
+                    </div>
+
                     {/* HABIT SYNC */}
                     {(qType === "daily" || qType === "weekly") && can('habit_tracker') && (
                       <label style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 14, background: qSyncHabit ? `${theme.primary}0c` : "rgba(255,255,255,0.02)", border: `1px solid ${qSyncHabit ? theme.primary + "33" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", transition: "all 0.2s", marginBottom: 14 }}>
@@ -2165,7 +2208,7 @@ function App({ initialHunterName, onLogout }) {
 
       {/* AI COACH WIDGET — floating bottom-right, unlocked at Level 8 */}
       {can('ai_coach') && state?.ai?.enabled && state?.ai?.coachEnabled && (
-        <AIChatWidget geminiAI={geminiAI} state={state} />
+        <AIChatWidget geminiAI={geminiAI} state={state} theme={theme} />
       )}
     </div >
   );

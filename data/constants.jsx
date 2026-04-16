@@ -864,6 +864,10 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   const xpGain = Math.round((diff?.xp || 50) * (quest.chainMultiplier || 1) * (typeCfg.xpMult || 1));
   const goldGain = Math.round((diff?.gold || 25) * (quest.chainMultiplier || 1) * (typeCfg.goldMult || 1));
   const isHidden = quest.type === "hidden";
+  const isSystemQuest = quest.isSystem === true;
+  const originBadge = isSystemQuest
+    ? { label: "SYSTEM", color: "#06b6d4", icon: "⚙" }
+    : { label: "EIGENE", color: "#f59e0b", icon: "✦" };
   const subQuests = quest.subQuests || [];
   const completedSubs = subQuests.filter(sq => sq.completed).length;
   const allSubsDone = subQuests.length > 0 && completedSubs === subQuests.length;
@@ -882,10 +886,10 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   };
   return (
     <div ref={cardRef} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{
-      background: completing ? `linear-gradient(135deg,${diff.color}15,transparent)` : `linear-gradient(135deg,rgba(15,15,20,0.95),rgba(5,5,10,0.9)), url(${quest.difficulty === 'boss' ? BACKGROUNDS.boss : BACKGROUNDS.standard})`,
+      background: completing ? `linear-gradient(135deg,${diff.color}15,transparent)` : `linear-gradient(135deg,rgba(15,15,20,0.95),${isSystemQuest ? "rgba(6,30,40,0.9)" : "rgba(25,20,10,0.9)"}), url(${quest.difficulty === 'boss' ? BACKGROUNDS.boss : BACKGROUNDS.standard})`,
       backgroundSize: "cover", backgroundPosition: "center", backgroundBlendMode: "overlay",
       border: `1px solid ${hover ? diff.color + "44" : isHidden ? typeCfg.color + "33" : theme.primary + "18"}`, borderRadius: 14, padding: "14px 16px", marginBottom: 8,
-      borderLeft: `3px solid ${isHidden ? typeCfg.color : diff.color}${hover ? "cc" : "66"}`,
+      borderLeft: `3px solid ${isHidden ? typeCfg.color : isSystemQuest ? "#06b6d4" : diff.color}${hover ? "cc" : "66"}`,
       animation: completing ? "fadeOut 0.5s ease forwards" : `cardEnter 0.4s ease ${index * 0.06}s both`,
       display: "flex", alignItems: "flex-start", gap: 12, transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)",
       transform: hover && !completing ? "translateX(4px)" : "none", backdropFilter: "blur(8px)",
@@ -904,6 +908,23 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
           <QuestTypeBadge type={quest.type} />
+          <span style={{
+            color: originBadge.color,
+            fontFamily: "'JetBrains Mono',monospace",
+            fontWeight: 700,
+            padding: "2px 8px",
+            borderRadius: 6,
+            background: originBadge.color + "15",
+            fontSize: 9,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 3,
+            border: `1px solid ${originBadge.color}44`,
+            animation: isSystemQuest ? "systemBadgePulse 2s ease-in-out infinite" : "none",
+            letterSpacing: 1,
+          }}>
+            {originBadge.icon} {originBadge.label}
+          </span>
           <span style={{ color: diff.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: diff.color + "15", fontSize: 9, display: "inline-flex", alignItems: "center", gap: 3 }}>{diff.iconSrc ? <img src={diff.iconSrc} alt={diff.label} style={{ width: 10, height: 10, objectFit: "contain" }} /> : diff.icon} {diff.label}</span>
           <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: cat.color + "15", color: cat.color, fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4 }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 10, height: 10, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} <span>{cat.stat}</span></span>
           {quest.tags?.map((t, i) => (

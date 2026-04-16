@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { CATEGORIES, ACHIEVEMENTS } from "../../data/gameData.js";
 import { getUnlocksAtLevel } from "../../data/featureUnlocks.js";
 import { STAT_ICONS, GATE_ICONS, QUEST_ICONS, SHADOW_ICONS } from "../../data/icons.js";
@@ -18,7 +18,7 @@ export default function DashboardView({
   filteredQuests, hiddenQuestCount,
   questFilter, setQuestFilter,
   completeQuest, completeSubQuest, startEditingQuest, deleteQuest,
-  completeEmergencyQuest,
+  completeEmergencyQuest, createQuest,
   setShowCreate, setShowTaskScan,
   nextLevel, getUnlocksAtLevel: _getUnlocksAtLevel,
   notify, persist,
@@ -26,6 +26,43 @@ export default function DashboardView({
   getActiveGemBoosters,
 }) {
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
+  const [originFilter, setOriginFilter] = useState("all"); // "all" | "system" | "custom"
+  const [collapsedSections, setCollapsedSections] = useState({});
+  const [quickAddMode, setQuickAddMode] = useState(false);
+  const [quickAddTitle, setQuickAddTitle] = useState("");
+
+  const toggleSection = (key) => setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
+
+  // Apply origin filter on top of type-filtered quests
+  const visibleQuests = originFilter === "system"
+    ? filteredQuests.filter(q => q.isSystem)
+    : originFilter === "custom"
+      ? filteredQuests.filter(q => !q.isSystem)
+      : filteredQuests;
+
+  const diffOrder = { boss: 0, hard: 1, normal: 2, easy: 3 };
+  const sortByDiff = (a, b) => (diffOrder[a.difficulty] ?? 2) - (diffOrder[b.difficulty] ?? 2);
+  const systemQuests = visibleQuests.filter(q => q.isSystem).sort(sortByDiff);
+  const userQuests = visibleQuests.filter(q => !q.isSystem).sort(sortByDiff);
+  const showGrouped = originFilter === "all" && (systemQuests.length > 0 && userQuests.length > 0);
+
+  const SectionHeader = ({ title, icon, color, count, sectionKey }) => (
+    <div onClick={() => toggleSection(sectionKey)} style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "7px 12px", marginBottom: 6, cursor: "pointer",
+      background: `linear-gradient(90deg, ${color}0c, transparent)`,
+      borderLeft: `2px solid ${color}55`, borderRadius: 8,
+      transition: "background 0.2s", userSelect: "none",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontSize: 12 }}>{icon}</span>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color, fontFamily: "'JetBrains Mono',monospace" }}>{title}</span>
+        <span style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>[{count}]</span>
+      </div>
+      <span style={{ fontSize: 9, color, transition: "transform 0.25s", transform: collapsedSections[sectionKey] ? "rotate(-90deg)" : "rotate(0deg)", display: "inline-block" }}>▼</span>
+    </div>
+  );
+
   return (
     <div style={{ animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
 
@@ -95,7 +132,7 @@ export default function DashboardView({
       )}
 
       {/* ── QUEST FILTERS + ADD ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 6, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 6, flexWrap: "wrap" }}>
         {can('quest_filters') && <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 2, flex: 1 }}>
           {[
             { key: "all", label: "Alle", color: theme.accent },
@@ -122,7 +159,63 @@ export default function DashboardView({
         <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 12, fontSize: 11, fontWeight: 900, background: `linear-gradient(135deg,${theme.primary},${theme.secondary})`, color: "#fff", border: "none", boxShadow: `0 4px 16px ${theme.glow}`, textShadow: "0 1px 4px rgba(0,0,0,0.4)", fontFamily: "'Cinzel',serif", letterSpacing: 1.5, display: "flex", alignItems: "center", gap: 6, flexShrink: 0, transition: "all 0.3s", transform: "translateY(-1px)", animation: "float 3s ease-in-out infinite" }}>+ QUEST</button>
       </div>
 
-      {filteredQuests.length === 0 ? (
+      {/* ── ORIGIN FILTER + QUICK ADD ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
+        {[
+          { key: "all", label: "◈ ALLE", color: "#64748b" },
+          { key: "system", label: "⚙ SYSTEM", color: "#06b6d4" },
+          { key: "custom", label: "✦ EIGENE", color: "#f59e0b" },
+        ].map(f => (
+          <button key={f.key} onClick={() => setOriginFilter(f.key)} style={{
+            padding: "4px 10px", borderRadius: 7, fontSize: 9, fontWeight: 700,
+            background: originFilter === f.key ? f.color + "1a" : "transparent",
+            color: originFilter === f.key ? f.color : "#334155",
+            border: `1px solid ${originFilter === f.key ? f.color + "44" : "rgba(255,255,255,0.05)"}`,
+            fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1,
+            transition: "all 0.2s", cursor: "pointer",
+          }}>{f.label}</button>
+        ))}
+        <div style={{ flex: 1 }} />
+        {createQuest && (
+          <button onClick={() => { setQuickAddMode(v => !v); setQuickAddTitle(""); }} style={{
+            padding: "4px 10px", borderRadius: 7, fontSize: 13, fontWeight: 700,
+            background: quickAddMode ? theme.primary + "1a" : "transparent",
+            color: quickAddMode ? theme.primary : "#475569",
+            border: `1px solid ${quickAddMode ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
+            fontFamily: "'JetBrains Mono',monospace", lineHeight: 1,
+            transition: "all 0.2s", cursor: "pointer",
+          }}>+</button>
+        )}
+      </div>
+
+      {/* ── QUICK ADD INPUT ── */}
+      {quickAddMode && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 10, animation: "slideDown 0.2s ease" }}>
+          <input
+            autoFocus
+            value={quickAddTitle}
+            onChange={e => setQuickAddTitle(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && quickAddTitle.trim()) {
+                createQuest({ title: quickAddTitle.trim(), difficulty: "normal", category: "str", type: "side" });
+                setQuickAddTitle(""); setQuickAddMode(false);
+              }
+              if (e.key === "Escape") { setQuickAddTitle(""); setQuickAddMode(false); }
+            }}
+            placeholder="Quest-Titel... [Enter] ✓  [Esc] ✗"
+            style={{
+              flex: 1, padding: "8px 12px", borderRadius: 8,
+              background: "rgba(255,255,255,0.03)",
+              border: `1px solid ${theme.primary}44`,
+              color: "#e2e8f0", fontFamily: "'JetBrains Mono',monospace",
+              fontSize: 11, outline: "none",
+            }}
+          />
+        </div>
+      )}
+
+      {/* ── QUEST LIST (GROUPED OR FLAT) ── */}
+      {visibleQuests.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)", marginBottom: 24 }}>
           <div style={{ marginBottom: 10, animation: "float 3s ease-in-out infinite", display: "flex", justifyContent: "center" }}>
             <img src="/icons/skill_attack.png" alt="no quests" style={{ width: 44, height: 44, objectFit: "contain", opacity: 0.4, filter: "drop-shadow(0 0 10px rgba(100,116,139,0.4))" }} />
@@ -130,7 +223,34 @@ export default function DashboardView({
           <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
           <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
         </div>
-      ) : <div style={{ marginBottom: 24 }}>{filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />)}</div>}
+      ) : (
+        <div style={{ marginBottom: 24 }}>
+          {showGrouped ? (
+            <>
+              {systemQuests.length > 0 && (
+                <>
+                  <SectionHeader title="SYSTEM-AUFTRÄGE" icon="⚙" color="#06b6d4" count={systemQuests.length} sectionKey="system" />
+                  {!collapsedSections.system && systemQuests.map((q, i) => (
+                    <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />
+                  ))}
+                </>
+              )}
+              {userQuests.length > 0 && (
+                <>
+                  <SectionHeader title="DEINE QUESTS" icon="✦" color="#f59e0b" count={userQuests.length} sectionKey="user" />
+                  {!collapsedSections.user && userQuests.map((q, i) => (
+                    <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />
+                  ))}
+                </>
+              )}
+            </>
+          ) : (
+            visibleQuests.map((q, i) => (
+              <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />
+            ))
+          )}
+        </div>
+      )}
 
       {/* ── VISION BOARD ── */}
       {can('vision_board') && (

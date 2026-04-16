@@ -27,6 +27,7 @@ export const DEFAULT_STATE = {
   emergencyFailed: false,
   goals: [],
   habits: [],
+  reminders: [],
   microHabits: { habits: null, daily: {} },
   hiddenQuests: { discovered: [], completed: [] },
   weeklyQuestReset: null,

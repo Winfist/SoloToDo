@@ -1,73 +1,103 @@
-// geminiService.js — Gemini API wrapper using @google/genai SDK
-
-const { GoogleGenAI } = require("@google/genai");
+// geminiService.js — Google AI SDK wrapper for SoloToDo (v2.0)
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { HttpsError } = require("firebase-functions/v2/https");
 
-const MODEL = "gemini-2.0-flash";
+const MODEL_NAME = "gemini-2.0-flash";
 
-let _ai = null;
-function getAI() {
-  if (!_ai) {
+let _model = null;
+
+function getModel() {
+  if (!_model) {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY environment variable is not set.");
-    _ai = new GoogleGenAI({ apiKey });
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY environment variable is not set.");
+    }
+    console.log(`[GeminiService] Initializing Google AI SDK: Model=${MODEL_NAME}`);
+    const client = new GoogleGenerativeAI(apiKey);
+    _model = client.getGenerativeModel({
+      model: MODEL_NAME,
+      generationConfig: {
+        maxOutputTokens: 2048,
+        temperature: 0.7,
+      },
+    });
   }
-  return _ai;
+  return _model;
 }
 
 // Strip markdown code fences if Gemini wraps JSON in them
 function stripMarkdown(text) {
+  if (!text) return "";
   return text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
 }
 
-// Text-only generation
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function is429(err) {
+  return err?.status === 429 || (err?.message && err.message.includes("429"));
+}
+
+/**
+ * Text-only generation (retries once after 15s on transient 429)
+ */
 async function callGemini(prompt) {
-  try {
-    const response = await getAI().models.generateContent({
-      model: MODEL,
-      contents: prompt,
-    });
-    return stripMarkdown(response.text);
-  } catch (err) {
-    if (err?.status === 429 || err?.message?.includes("429") || err?.message?.includes("quota")) {
-      throw new HttpsError("resource-exhausted", "Tageslimit der KI erreicht (429).");
+  const model = getModel();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      return stripMarkdown(result.response.text());
+    } catch (err) {
+      if (is429(err) && attempt === 0) {
+        console.warn("[GeminiService] 429 RPM limit — retry in 15s…");
+        await sleep(15000);
+        continue;
+      }
+      console.error("Gemini Text Error [Full]:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
+      if (is429(err)) {
+        throw new HttpsError("resource-exhausted", "KI-Fehler: Kurzes Rate Limit. Bitte in 2-3 Minuten erneut versuchen.");
+      }
+      const errorDetails = err.message || JSON.stringify(err);
+      throw new HttpsError("unknown", `KI-Fehler: ${errorDetails}`);
     }
-    console.error("Gemini API Error:", err);
-    throw new HttpsError("internal", "KI-Backend Fehler.");
   }
 }
 
-// Multimodal generation (text + image)
+/**
+ * Multimodal generation (text + image, retries once after 15s on transient 429)
+ */
 async function callGeminiWithImage(prompt, imageBase64, mimeType = "image/jpeg") {
-  try {
-    const response = await getAI().models.generateContent({
-      model: MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType, data: imageBase64 } },
-          ],
-        },
-      ],
-    });
-    return stripMarkdown(response.text);
-  } catch (err) {
-    if (err?.status === 429 || err?.message?.includes("429") || err?.message?.includes("quota")) {
-      throw new HttpsError("resource-exhausted", "Tageslimit der KI erreicht (429).");
+  const model = getModel();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await model.generateContent([
+        prompt,
+        { inlineData: { mimeType, data: imageBase64 } },
+      ]);
+      return stripMarkdown(result.response.text());
+    } catch (err) {
+      if (is429(err) && attempt === 0) {
+        console.warn("[GeminiService] 429 RPM limit (image) — retry in 15s…");
+        await sleep(15000);
+        continue;
+      }
+      console.error("Gemini Vision Error [Full]:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
+      if (is429(err)) {
+        throw new HttpsError("resource-exhausted", "KI-Bild-Fehler: Kurzes Rate Limit. Bitte in 2-3 Minuten erneut versuchen.");
+      }
+      const errorDetails = err.message || JSON.stringify(err);
+      throw new HttpsError("unknown", `KI-Bild-Fehler: ${errorDetails}`);
     }
-    console.error("Gemini API Image Error:", err);
-    throw new HttpsError("internal", "KI-Backend Bild-Fehler.");
   }
 }
 
-// Safe JSON parse with fallback
+/**
+ * Safe JSON parse with fallback
+ */
 function parseJSON(text, fallback = null) {
+  if (!text) return fallback;
   try {
     return JSON.parse(text);
   } catch {
-    // Try extracting JSON from the text
     const match = text.match(/\{[\s\S]*\}/);
     if (match) {
       try {

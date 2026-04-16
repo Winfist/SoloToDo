@@ -1,6 +1,6 @@
 // useGeminiAI.js — React hook for all Gemini AI Cloud Function calls
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
 
@@ -18,24 +18,73 @@ export async function fileToBase64(file) {
   });
 }
 
+const RATE_LIMIT_KEY = "sl_ai_rate_limit_until";
+
+function getRateLimitExpiry() {
+  const v = localStorage.getItem(RATE_LIMIT_KEY);
+  return v ? parseInt(v, 10) : 0;
+}
+
+function setRateLimitExpiry(ms = 60 * 60 * 1000) {
+  const expiry = new Date(Date.now() + ms);
+  localStorage.setItem(RATE_LIMIT_KEY, String(expiry.getTime()));
+  return expiry;
+}
+
+function clearRateLimitExpiry() {
+  localStorage.removeItem(RATE_LIMIT_KEY);
+}
+
+function isRateLimitActive() {
+  return Date.now() < getRateLimitExpiry();
+}
+
 export function useGeminiAI(state) {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [rateLimitError, setRateLimitError] = useState(false);
+  // Initialize from localStorage so rate limit message persists across page reloads
+  const [error, setError] = useState(() => {
+    if (!isRateLimitActive()) return null;
+    const minsLeft = Math.ceil((getRateLimitExpiry() - Date.now()) / 60000);
+    const label = minsLeft > 10 ? "Tageslimit erreicht. Zurücksetzen um Mitternacht UTC." : `Kurze Pause (~${minsLeft} Min.). Gemini braucht kurz Luft.`;
+    return `${label} (✕ zum sofortigen Zurücksetzen)`;
+  });
+  const [rateLimitError, setRateLimitError] = useState(() => isRateLimitActive());
+  // Ref so callbacks always read the latest value (avoids stale closure in useCallback)
+  const rateLimitErrorRef = useRef(isRateLimitActive());
+
+  function isRateLimitErr(err) {
+    if (!err) return false;
+    if (err?.code === "resource-exhausted" || err?.code === "functions/resource-exhausted") return true;
+    const msg = err?.message || "";
+    return msg.includes("Rate Limit") || msg.includes("resource-exhausted") || msg.includes("429") || msg.includes("quota");
+  }
 
   function handleError(err) {
-    if (err?.code === "resource-exhausted" || err?.code === "functions/resource-exhausted") {
+    console.error("[useGeminiAI]", err);
+    if (isRateLimitErr(err)) {
+      rateLimitErrorRef.current = true;
       setRateLimitError(true);
-      setError("Tageslimit erreicht. Komm morgen wieder, Hunter.");
+      const msg = err?.message || "";
+      const isDailyLimit = msg.includes("Tageslimit");
+      // Daily limit → 60 min lockout; transient RPM spike → 3 min lockout
+      const lockMs = isDailyLimit ? 60 * 60 * 1000 : 3 * 60 * 1000;
+      const expiry = setRateLimitExpiry(lockMs);
+      const minsLeft = Math.ceil((expiry - Date.now()) / 60000);
+      const errorMsg = isDailyLimit
+        ? `Tageslimit erreicht. Zurücksetzen um Mitternacht UTC. (✕ zum sofortigen Zurücksetzen)`
+        : `Kurze Pause (~${minsLeft} Min.). Gemini braucht kurz Luft. (✕ zum sofortigen Zurücksetzen)`;
+      setError(errorMsg);
+    } else if (err?.message && err.message.includes("KI-Fehler")) {
+      setError(err.message);
     } else {
       setError(err?.message || "Unbekannter Fehler.");
     }
-    console.error("[useGeminiAI]", err);
   }
 
   // ─── Feature A: Quest photo verification ─────────────────────────────────
 
   const verifyQuest = useCallback(async (imageFile, questTitle, questDesc = "") => {
+    if (rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
@@ -54,6 +103,7 @@ export function useGeminiAI(state) {
   // ─── Feature C: Scan task photo ───────────────────────────────────────────
 
   const scanTaskPhoto = useCallback(async (imageFile) => {
+    if (rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
@@ -72,7 +122,7 @@ export function useGeminiAI(state) {
   // ─── Feature B1: Generate dynamic daily quests ────────────────────────────
 
   const generateQuests = useCallback(async () => {
-    if (!state) return null;
+    if (!state || rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
@@ -103,7 +153,7 @@ export function useGeminiAI(state) {
   // ─── Feature B2: Generate system message ─────────────────────────────────
 
   const generateSystemMsg = useCallback(async (context, messageType) => {
-    if (!state) return null;
+    if (!state || rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
@@ -127,7 +177,7 @@ export function useGeminiAI(state) {
   // ─── Feature D: Ask coach ─────────────────────────────────────────────────
 
   const askCoach = useCallback(async (question) => {
-    if (!state) return null;
+    if (!state || rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
@@ -157,6 +207,7 @@ export function useGeminiAI(state) {
   // ─── Feature E: Generate quest description ────────────────────────────────
 
   const generateQuestDesc = useCallback(async (title, category) => {
+    if (rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
@@ -175,7 +226,8 @@ export function useGeminiAI(state) {
     isLoading,
     error,
     rateLimitError,
-    clearError: () => { setError(null); setRateLimitError(false); },
+    isRateLimited: () => rateLimitErrorRef.current,
+    clearError: () => { setError(null); rateLimitErrorRef.current = false; setRateLimitError(false); clearRateLimitExpiry(); },
     verifyQuest,
     scanTaskPhoto,
     generateQuests,

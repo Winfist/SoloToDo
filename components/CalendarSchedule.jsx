@@ -9,6 +9,7 @@ function getToday() { return new Date().toISOString().slice(0, 10); }
 
 export default function CalendarSchedule({ state, persist, notify, theme }) {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [calView, setCalView] = useState("month"); // "month" | "week"
 
     const selectedDateStr = currentDate.toISOString().slice(0, 10);
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -37,6 +38,84 @@ export default function CalendarSchedule({ state, persist, notify, theme }) {
 
     const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
     const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+
+    // Week view helpers
+    const getWeekDays = () => {
+        const day = currentDate.getDay(); // 0=Sun
+        const monday = new Date(currentDate);
+        monday.setDate(currentDate.getDate() - ((day + 6) % 7)); // shift to Monday
+        return Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            return d;
+        });
+    };
+    const weekDayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+    const renderWeekView = () => {
+        const days = getWeekDays();
+        const todayStr = getToday();
+        const completedQuests = state?.completedQuests || [];
+        return (
+            <div style={{ display: "flex", gap: 4, overflowX: "auto" }}>
+                {days.map((d, i) => {
+                    const ds = d.toISOString().slice(0, 10);
+                    const isToday = ds === todayStr;
+                    const dayQuests = quests.filter(q => q.dueDate === ds || (q.type === "daily" && ds === todayStr));
+                    const dayHabits = habits.filter(h => h.active);
+                    const doneQuests = completedQuests.filter(q => q.completedAt === ds);
+                    return (
+                        <div key={ds} onClick={() => setCurrentDate(new Date(d))} style={{
+                            flex: "1 1 0", minWidth: 44, borderRadius: 10, cursor: "pointer",
+                            background: isToday
+                                ? `linear-gradient(180deg,${theme?.primary || "#22d3ee"}18,transparent)`
+                                : "rgba(255,255,255,0.02)",
+                            border: `1px solid ${isToday ? (theme?.primary || "#22d3ee") + "55" : "rgba(255,255,255,0.06)"}`,
+                            padding: "8px 4px 10px",
+                        }}>
+                            {/* Day header */}
+                            <div style={{ textAlign: "center", marginBottom: 6 }}>
+                                <div style={{ fontSize: 8, color: isToday ? theme?.primary || "#22d3ee" : "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginBottom: 2 }}>{weekDayLabels[i]}</div>
+                                <div style={{
+                                    fontSize: 14, fontWeight: isToday ? 900 : 600,
+                                    color: isToday ? theme?.primary || "#22d3ee" : "#94a3b8",
+                                    fontFamily: "'JetBrains Mono',monospace",
+                                }}>{d.getDate()}</div>
+                            </div>
+                            {/* Quest dots */}
+                            {dayQuests.map((q, qi) => (
+                                <div key={q.id + qi} style={{
+                                    margin: "2px 2px", padding: "3px 5px", borderRadius: 5,
+                                    background: (catColors[q.category] || "#64748b") + "22",
+                                    borderLeft: `2px solid ${catColors[q.category] || "#64748b"}`,
+                                    fontSize: 8, color: catColors[q.category] || "#94a3b8",
+                                    fontFamily: "'JetBrains Mono',monospace",
+                                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                }}>{q.title}</div>
+                            ))}
+                            {/* Habit dots (just count) */}
+                            {dayHabits.length > 0 && (
+                                <div style={{ margin: "2px 2px", padding: "3px 5px", borderRadius: 5, background: "#06b6d415", borderLeft: "2px solid #06b6d4", fontSize: 8, color: "#06b6d4", fontFamily: "'JetBrains Mono',monospace" }}>
+                                    {dayHabits.length} Habits
+                                </div>
+                            )}
+                            {/* Done quests */}
+                            {doneQuests.slice(0, 2).map((q, qi) => (
+                                <div key={q.id + "done" + qi} style={{
+                                    margin: "2px 2px", padding: "3px 5px", borderRadius: 5,
+                                    background: "rgba(34,197,94,0.06)", borderLeft: "2px solid #22c55e44",
+                                    fontSize: 8, color: "#22c55e66",
+                                    fontFamily: "'JetBrains Mono',monospace",
+                                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                    textDecoration: "line-through",
+                                }}>{q.title}</div>
+                            ))}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
 
     const selectDay = (day) => {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
@@ -88,6 +167,20 @@ export default function CalendarSchedule({ state, persist, notify, theme }) {
                 border: `1px solid ${theme?.primary || "#22d3ee"}15`,
                 borderRadius: 20, padding: 16, marginBottom: 20, backdropFilter: "blur(12px)",
             }}>
+                {/* View toggle */}
+                <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+                    {[["month", "MONAT"], ["week", "WOCHE"]].map(([v, label]) => (
+                        <button key={v} onClick={() => setCalView(v)} style={{
+                            padding: "4px 12px", borderRadius: 6, fontSize: 9, fontWeight: 700,
+                            fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
+                            background: calView === v ? (theme?.primary || "#22d3ee") + "22" : "transparent",
+                            color: calView === v ? (theme?.primary || "#22d3ee") : "#475569",
+                            border: `1px solid ${calView === v ? (theme?.primary || "#22d3ee") + "44" : "rgba(255,255,255,0.06)"}`,
+                            transition: "all 0.2s",
+                        }}>{label}</button>
+                    ))}
+                </div>
+
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <button onClick={prevMonth} style={{ padding: "8px", background: "transparent", border: "none", color: "#64748b", cursor: "pointer", fontSize: 18 }}>◀</button>
                     <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>
@@ -96,15 +189,18 @@ export default function CalendarSchedule({ state, persist, notify, theme }) {
                     <button onClick={nextMonth} style={{ padding: "8px", background: "transparent", border: "none", color: "#64748b", cursor: "pointer", fontSize: 18 }}>▶</button>
                 </div>
 
-                <div style={{ display: "flex", marginBottom: 8 }}>
-                    {["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"].map(day => (
-                        <div key={day} style={{ width: "14.28%", textAlign: "center", fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{day}</div>
-                    ))}
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", rowGap: 8 }}>
-                    {renderCalendarDays()}
-                </div>
+                {calView === "week" ? renderWeekView() : (
+                    <>
+                        <div style={{ display: "flex", marginBottom: 8 }}>
+                            {["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"].map(day => (
+                                <div key={day} style={{ width: "14.28%", textAlign: "center", fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{day}</div>
+                            ))}
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", rowGap: 8 }}>
+                            {renderCalendarDays()}
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* AGENDA SECTION */}

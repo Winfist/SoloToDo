@@ -1,4 +1,4 @@
-// index.js — Firebase Cloud Functions: Gemini AI proxy for SoloToDo
+// index.js — Firebase Cloud Functions: Gemini AI proxy for SoloToDo (v1.1)
 // All functions require Firebase Auth. App Check is enforced in production.
 // To disable App Check during local development: set enforceAppCheck: false
 
@@ -21,6 +21,7 @@ const CALL_OPTIONS = {
   // Set enforceAppCheck: true after registering your app in Firebase Console → App Check
   enforceAppCheck: false,
   region: "europe-west1",
+  timeoutSeconds: 120, // Extra room for Gemini retry (15s wait + 2× API call)
 };
 
 // ─── Helper ──────────────────────────────────────────────────────────────────

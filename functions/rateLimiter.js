@@ -3,7 +3,7 @@
 const admin = require("firebase-admin");
 const { HttpsError } = require("firebase-functions/v2/https");
 
-const MAX_DAILY_CALLS = 30;
+const MAX_DAILY_CALLS = 100; // Conservative limit to stay under Gemini free-tier quota
 
 function todayString() {
   return new Date().toISOString().split("T")[0]; // YYYY-MM-DD in UTC
@@ -14,11 +14,6 @@ function todayString() {
  * Throws HttpsError("resource-exhausted") if the limit is reached.
  */
 async function checkAndIncrementRateLimit(userId) {
-  if (process.env.FUNCTIONS_EMULATOR) {
-    console.log("[RateLimiter] Emulator detected, bypassing rate limit.");
-    return;
-  }
-
   const db = admin.firestore();
   const ref = db.collection("aiUsage").doc(userId);
   const today = todayString();
@@ -49,9 +44,10 @@ async function checkAndIncrementRateLimit(userId) {
       );
     });
   } catch (err) {
-    // Re-throw HttpsError (rate limit or transaction conflict), wrap others
-    if (err.code) throw err; // already an HttpsError
-    throw new HttpsError("internal", "Rate-Limiter Fehler.", err.message);
+    // Re-throw HttpsError (rate limit exceeded), log and ignore all other errors
+    // so that Firestore permission issues don't block the AI call.
+    if (err instanceof HttpsError) throw err;
+    console.warn("[RateLimiter] Fehler beim Rate-Limit-Check (wird ignoriert):", err.message || err);
   }
 }
 
