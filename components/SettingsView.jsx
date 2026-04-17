@@ -20,7 +20,6 @@ export const ALL_NAV_TABS = [
   { key: "equipment",    iconSrc: "/icons/item_blade.png",      label: "Arsenal",   desc: "Waffen & Rüstung",           requires: "equipment" },
   { key: "jobs",         iconSrc: "/icons/nav_jobs.png",        label: "Jobs",      desc: "Hunter-Klassen",             requires: "jobs" },
   { key: "shop",         iconSrc: "/icons/nav_shop.png",        label: "Shop",      desc: "Items & Themes kaufen",      requires: "shop" },
-  { key: "gem_shop",     iconSrc: "/icons/gem.png",             label: "Gems",      desc: "Premium Gem Shop",           requires: "gem_shop" },
   { key: "goals",        iconSrc: "/icons/nav_goals.png",       label: "Goals",     desc: "Langfristige Visionen",      requires: "goals" },
   { key: "calendar",     iconSrc: "/icons/nav_timer.png",       label: "Kalender",  desc: "Quest-Kalender & Planung",   requires: "calendar" },
   { key: "settings",     iconSrc: "/icons/nav_settings.png",    label: "Settings",  desc: "Einstellungen & Export" },

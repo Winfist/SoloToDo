@@ -114,7 +114,6 @@ export function AIChatWidget({ geminiAI, state, theme = {} }) {
     alignItems: "center",
     justifyContent: "center",
     gap: 2,
-    position: "fixed",
     boxShadow: fabHover || open
       ? `0 0 0 4px ${primary}22, 0 0 24px ${primary}55, 0 0 48px ${primary}22`
       : `0 0 0 2px ${primary}11, 0 0 16px ${primary}33`,
@@ -211,7 +210,6 @@ export function AIChatWidget({ geminiAI, state, theme = {} }) {
           animation: "slideUp 0.22s cubic-bezier(0.22,1,0.36,1)",
           maxHeight: "60vh",
           overflow: "hidden",
-          position: "fixed",
         }}>
           {/* Corner marks */}
           <PanelCorners color={primary + "88"} />

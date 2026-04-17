@@ -53,12 +53,12 @@ export { CSS } from "./css.js";
 import { STAT_ICONS, SHADOW_ICONS, GATE_ICONS, ITEM_ICONS, QUEST_ICONS, DIFF_ICONS, ROLE_ICONS, STYLE_ICONS, DUNGEON_ICONS, BACKGROUNDS, STORY_ICONS, HABIT_ICONS, NAV_ICONS, MICRO_ICONS, SHOP_ICONS, SKILL_ICONS, SYSTEM_ICONS, BOSS_ICONS, ABILITY_ICONS, JOB_ICONS } from "./icons.js";
 import { JOBS } from "./jobs.js";
 import { getRank as _getRank, getXpForLevel as _getXpForLevel, getRankIndex as _getRankIndex, genId as _genId, getToday as _getToday } from "./helpers.js";
-import { RANKS as _RANKS, DIFFICULTIES as _DIFFICULTIES, CATEGORIES as _CATEGORIES, SHADOW_CLASSES as _SHADOW_CLASSES, SHADOW_TIERS as _SHADOW_TIERS, NAMED_SHADOWS as _NAMED_SHADOWS, FORMATION_SLOTS as _FORMATION_SLOTS, ACHIEVEMENTS as _ACHIEVEMENTS, SKILLS as _SKILLS, DUNGEON_MODIFIERS as _DUNGEON_MODIFIERS, FLOOR_TYPES as _FLOOR_TYPES, BOSS_PHASES as _BOSS_PHASES, EQUIPMENT_POOL as _EQUIPMENT_POOL, RARITY_COLORS as _RARITY_COLORS, RARITY_LABELS as _RARITY_LABELS, DUNGEON_TEMPLATES as _DUNGEON_TEMPLATES, SHOP_ITEMS as _SHOP_ITEMS, GEM_SHOP_ITEMS as _GEM_SHOP_ITEMS, THEMES as _THEMES, QUEST_TYPES_CONFIG as _QUEST_TYPES_CONFIG } from "./gameData.js";
-import { calcShadowXpToNext as _calcShadowXpToNext, calcFormationBonus as _calcFormationBonus, assignShadowClass as _assignShadowClass, assignShadowTier as _assignShadowTier, createShadowFromQuest as _createShadowFromQuest, checkNamedShadowUnlocks as _checkNamedShadowUnlocks, generateFloorPlan as _generateFloorPlan, getFloorLogs as _getFloorLogs, getDungeonGateImage as _getDungeonGateImage, calcSuccessChance as _calcSuccessChance, getEquipBonuses as _getEquipBonuses, checkSkillUnlocks as _checkSkillUnlocks, getSkillBonuses as _getSkillBonuses, checkAchievements as _checkAchievements, generateDungeons as _generateDungeons, getEquipDropForDungeon as _getEquipDropForDungeon } from "./helpers.js";
+import { RANKS as _RANKS, DIFFICULTIES as _DIFFICULTIES, CATEGORIES as _CATEGORIES, STRATEGIES as _STRATEGIES, SHADOW_CLASSES as _SHADOW_CLASSES, SHADOW_TIERS as _SHADOW_TIERS, NAMED_SHADOWS as _NAMED_SHADOWS, FORMATION_SLOTS as _FORMATION_SLOTS, ACHIEVEMENTS as _ACHIEVEMENTS, SKILLS as _SKILLS, DUNGEON_MODIFIERS as _DUNGEON_MODIFIERS, FLOOR_TYPES as _FLOOR_TYPES, BOSS_PHASES as _BOSS_PHASES, EQUIPMENT_POOL as _EQUIPMENT_POOL, RARITY_COLORS as _RARITY_COLORS, RARITY_LABELS as _RARITY_LABELS, DUNGEON_TEMPLATES as _DUNGEON_TEMPLATES, SHOP_ITEMS as _SHOP_ITEMS, GEM_SHOP_ITEMS as _GEM_SHOP_ITEMS, THEMES as _THEMES, QUEST_TYPES_CONFIG as _QUEST_TYPES_CONFIG } from "./gameData.js";
+import { getJobBonuses as _getJobBonuses, calcShadowXpToNext as _calcShadowXpToNext, calcFormationBonus as _calcFormationBonus, assignShadowClass as _assignShadowClass, assignShadowTier as _assignShadowTier, createShadowFromQuest as _createShadowFromQuest, checkNamedShadowUnlocks as _checkNamedShadowUnlocks, generateFloorPlan as _generateFloorPlan, getFloorLogs as _getFloorLogs, getDungeonGateImage as _getDungeonGateImage, calcSuccessChance as _calcSuccessChance, getEquipBonuses as _getEquipBonuses, checkSkillUnlocks as _checkSkillUnlocks, getSkillBonuses as _getSkillBonuses, checkAchievements as _checkAchievements, generateDungeons as _generateDungeons, getEquipDropForDungeon as _getEquipDropForDungeon } from "./helpers.js";
 
 // Use short aliases for readability inside this file
 const getRank = _getRank, getXpForLevel = _getXpForLevel, getRankIndex = _getRankIndex, genId = _genId, getToday = _getToday;
-const RANKS = _RANKS, DIFFICULTIES = _DIFFICULTIES, CATEGORIES = _CATEGORIES;
+const RANKS = _RANKS, DIFFICULTIES = _DIFFICULTIES, CATEGORIES = _CATEGORIES, STRATEGIES = _STRATEGIES;
 const SHADOW_CLASSES = _SHADOW_CLASSES, SHADOW_TIERS = _SHADOW_TIERS, NAMED_SHADOWS = _NAMED_SHADOWS, FORMATION_SLOTS = _FORMATION_SLOTS;
 const ACHIEVEMENTS = _ACHIEVEMENTS, SKILLS = _SKILLS, DUNGEON_MODIFIERS = _DUNGEON_MODIFIERS, FLOOR_TYPES = _FLOOR_TYPES, BOSS_PHASES = _BOSS_PHASES;
 const EQUIPMENT_POOL = _EQUIPMENT_POOL, RARITY_COLORS = _RARITY_COLORS, RARITY_LABELS = _RARITY_LABELS, DUNGEON_TEMPLATES = _DUNGEON_TEMPLATES;
@@ -67,7 +67,7 @@ const calcShadowXpToNext = _calcShadowXpToNext, calcFormationBonus = _calcFormat
 const assignShadowClass = _assignShadowClass, assignShadowTier = _assignShadowTier, createShadowFromQuest = _createShadowFromQuest;
 const checkNamedShadowUnlocks = _checkNamedShadowUnlocks, generateFloorPlan = _generateFloorPlan, getFloorLogs = _getFloorLogs;
 const getDungeonGateImage = _getDungeonGateImage, calcSuccessChance = _calcSuccessChance;
-const getEquipBonuses = _getEquipBonuses, checkSkillUnlocks = _checkSkillUnlocks, getSkillBonuses = _getSkillBonuses;
+const getEquipBonuses = _getEquipBonuses, checkSkillUnlocks = _checkSkillUnlocks, getSkillBonuses = _getSkillBonuses, getJobBonuses = _getJobBonuses;
 const checkAchievements = _checkAchievements, generateDungeons = _generateDungeons, getEquipDropForDungeon = _getEquipDropForDungeon;
 
 

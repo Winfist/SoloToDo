@@ -349,6 +349,129 @@ input,select{font-family:inherit}
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* ── PREMIUM SHOP ANIMATIONS ─────────────────────────────────── */
+
+@keyframes shopHeaderGlow {
+  0%, 100% { box-shadow: 0 0 30px ${t.primary}22, inset 0 0 60px ${t.primary}08; }
+  50% { box-shadow: 0 0 60px ${t.primary}44, inset 0 0 80px ${t.primary}15, 0 0 120px ${t.primary}11; }
+}
+@keyframes gemFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  25% { transform: translateY(-12px) rotate(5deg) scale(1.05); }
+  50% { transform: translateY(-6px) rotate(0deg) scale(1.02); }
+  75% { transform: translateY(-14px) rotate(-5deg) scale(1.06); }
+}
+@keyframes coinSpin {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+@keyframes holoShimmer {
+  0% { background-position: -200% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes shopCardHover {
+  0% { transform: translateY(0) scale(1); box-shadow: none; }
+  100% { transform: translateY(-4px) scale(1.015); }
+}
+@keyframes rarityPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+@keyframes shopParticle {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { transform: translate(var(--sp-tx, 30px), var(--sp-ty, -60px)) scale(0); opacity: 0; }
+}
+@keyframes gemPulseRing {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+@keyframes shopBtnShine {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+@keyframes categoryGlow {
+  0%, 100% { box-shadow: 0 0 0 transparent; }
+  50% { box-shadow: 0 2px 16px var(--cat-glow, ${t.primary}44); }
+}
+@keyframes boosterOrb {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.15); filter: brightness(1.4); }
+}
+@keyframes priceTag {
+  0% { transform: scale(0.9); opacity: 0; }
+  60% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shopSectionIn {
+  0% { transform: translateY(20px); opacity: 0; filter: blur(4px); }
+  60% { transform: translateY(-2px); opacity: 0.9; filter: blur(0); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes gemCrystalRotate {
+  0% { transform: rotate3d(0, 1, 0.2, 0deg); }
+  100% { transform: rotate3d(0, 1, 0.2, 360deg); }
+}
+@keyframes codexGlow {
+  0%, 100% { text-shadow: 0 0 8px #7c3aed44; }
+  50% { text-shadow: 0 0 20px #7c3aed88, 0 0 40px #7c3aed44; }
+}
+@keyframes shopStarfield {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh); opacity: 0; }
+}
+@keyframes earnBtnPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes badgeShine {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes itemReveal {
+  0% { transform: translateX(-20px) scale(0.95); opacity: 0; filter: blur(4px); }
+  50% { filter: blur(0); }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+@keyframes comingSoonFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.02); }
+}
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes shopMask {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+.shop-card-hover:hover {
+  transform: translateY(-3px) scale(1.01) !important;
+  box-shadow: 0 8px 32px var(--card-glow, rgba(124,58,237,0.2)) !important;
+  border-color: var(--card-border-hover, #a855f744) !important;
+}
+.shop-card-hover {
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.shop-btn-hover:hover {
+  transform: translateY(-1px) scale(1.04) !important;
+  filter: brightness(1.2) !important;
+}
+.shop-btn-hover:active {
+  transform: scale(0.96) !important;
+}
+.shop-btn-hover {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.shop-tab-hover:hover {
+  transform: translateY(-2px) !important;
+  filter: brightness(1.15) !important;
+}
+
 @media (max-width: 440px) {
   .header-hide-mobile { display: none !important; }
   .header-compact { gap: 4px !important; }
