@@ -1,0 +1,836 @@
+/* ═══════════════════════════════════════════════════════════
+   Arise v2.0 — Base Styles
+   Import order: tokens.css → base.css → component styles
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: #e2e8f0;
+  background-color: var(--theme-bg, #06060e);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+img, svg, video {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* ── Typography ── */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-bold);
+  line-height: var(--leading-tight);
+}
+
+/* Tabular numbers for stats/counters */
+.tabular-nums,
+.stat-value,
+.xp-value,
+.gold-value,
+.gem-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-primary-22, rgba(34, 211, 238, 0.22));
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-primary-44, rgba(34, 211, 238, 0.44));
+}
+
+/* ── Focus Rings (accessibility) ── */
+:focus-visible {
+  outline: 2px solid var(--theme-primary, #22d3ee);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Glass Surface Utilities ── */
+.surface-glass {
+  background: var(--theme-card);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--theme-primary-12);
+  box-shadow: var(--shadow-inset), var(--shadow-card);
+}
+
+.surface-rift {
+  background: var(--theme-surface);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border: 1px solid var(--theme-primary-18);
+  box-shadow: var(--shadow-inset), var(--shadow-glow);
+}
+
+.surface-monarch {
+  background: linear-gradient(135deg, var(--theme-card), var(--theme-surface));
+  backdrop-filter: blur(32px) saturate(1.8);
+  -webkit-backdrop-filter: blur(32px) saturate(1.8);
+  border: 1px solid var(--theme-primary-22);
+  box-shadow: var(--shadow-inset), var(--shadow-glow), inset 0 0 40px var(--theme-primary-12);
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Safe Area Support ── */
+.safe-bottom {
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+}
+
+.safe-top {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+
+/* ── Hide on mobile / desktop ── */
+@media (max-width: 1023px) {
+  .hide-on-mobile { display: none !important; }
+}
+
+@media (min-width: 1024px) {
+  .hide-on-desktop { display: none !important; }
+}
+
+/* ── Skeleton Shimmer ── */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--theme-surface) 25%,
+    var(--theme-primary-12) 50%,
+    var(--theme-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Design 2.0 — Futuristic HUD System
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Holographic Border Shimmer ── */
+@keyframes holoEdge {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes scanLine {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
+}
+
+@keyframes neonPulse {
+  0%, 100% { opacity: 0.7; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.3); }
+}
+
+@keyframes borderGlow {
+  0%, 100% { box-shadow: 0 0 8px var(--glow-color, var(--theme-primary-22)), inset 0 1px 0 rgba(255,255,255,0.04); }
+  50% { box-shadow: 0 0 20px var(--glow-color, var(--theme-primary-44)), 0 0 40px var(--glow-color, var(--theme-primary-12)), inset 0 1px 0 rgba(255,255,255,0.06); }
+}
+
+@keyframes dataStream {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100px; }
+}
+
+@keyframes hudCornerPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes xpBarHead {
+  0%, 100% { box-shadow: 0 0 8px var(--theme-primary), 0 0 4px #fff; }
+  50% { box-shadow: 0 0 16px var(--theme-primary), 0 0 8px #fff, 0 0 24px var(--theme-primary); }
+}
+
+@keyframes numberFlash {
+  0% { color: inherit; text-shadow: none; }
+  20% { color: #67e8f9; text-shadow: 0 0 12px var(--theme-primary); }
+  100% { color: inherit; text-shadow: none; }
+}
+
+@keyframes staggerIn {
+  0% { opacity: 0; transform: translateY(12px) scale(0.97); filter: blur(4px); }
+  60% { opacity: 0.9; filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes expandFromCenter {
+  0% { transform: scaleX(0); opacity: 0; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+
+@keyframes tabGlow {
+  0%, 100% { box-shadow: 0 4px 16px transparent; }
+  50% { box-shadow: 0 4px 20px var(--theme-glow, rgba(34,211,238,0.3)); }
+}
+
+@keyframes radialReveal {
+  0% { opacity: 0; transform: scale(0.5); }
+  60% { opacity: 0.8; }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Glass Card System (Design 2.0) ── */
+.card-v2 {
+  position: relative;
+  background: var(--theme-card);
+  border: 1px solid var(--theme-primary-12);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.4),
+    0 0 0 1px rgba(255,255,255,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-v2::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.02),
+    transparent
+  );
+  animation: scanLine 8s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-v2:hover {
+  transform: translateY(-3px) scale(1.005);
+  border-color: var(--theme-primary-22);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.5),
+    0 0 24px var(--theme-primary-12),
+    0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Quest Card Difficulty Variants */
+.card-quest-boss {
+  --glow-color: rgba(239, 68, 68, 0.35);
+  border-color: rgba(239, 68, 68, 0.25);
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+.card-quest-boss::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at 20% 0%, rgba(239,68,68,0.06), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-quest-hard {
+  border-left: 3px solid rgba(249, 115, 22, 0.5);
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.4),
+    -4px 0 16px rgba(249, 115, 22, 0.06),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.card-quest-easy {
+  opacity: 0.85;
+  border-color: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px) saturate(1.2);
+}
+
+.card-quest-easy:hover {
+  opacity: 1;
+}
+
+/* ── HUD Corner Brackets ── */
+.hud-corners {
+  position: relative;
+}
+
+.hud-corners::before,
+.hud-corners::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.35;
+  transition: opacity 0.3s;
+}
+
+.hud-corners::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--theme-primary, #22d3ee);
+  border-left: 2px solid var(--theme-primary, #22d3ee);
+}
+
+.hud-corners::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--theme-primary, #22d3ee);
+  border-right: 2px solid var(--theme-primary, #22d3ee);
+}
+
+.hud-corners:hover::before,
+.hud-corners:hover::after {
+  opacity: 0.7;
+}
+
+/* Full 4-corner variant using child pseudo-elements */
+.hud-corners-full {
+  position: relative;
+}
+
+/* ── Neon Typography ── */
+.text-neon {
+  text-shadow:
+    0 0 7px var(--theme-primary),
+    0 0 10px var(--theme-primary),
+    0 0 21px var(--theme-primary);
+}
+
+.text-neon-subtle {
+  text-shadow: 0 0 10px var(--theme-primary-44, rgba(34,211,238,0.44));
+}
+
+.text-glow {
+  text-shadow: 0 0 20px currentColor;
+}
+
+/* ── Holographic Border (for Boss quests, special items) ── */
+.holo-border {
+  position: relative;
+  z-index: 0;
+}
+
+.holo-border::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(124,58,237,0.4),
+    rgba(34,211,238,0.4),
+    rgba(168,85,247,0.4),
+    rgba(99,102,241,0.4),
+    rgba(34,211,238,0.4)
+  );
+  background-size: 300% 300%;
+  animation: holoEdge 4s ease infinite;
+  z-index: -1;
+  opacity: 0.6;
+}
+
+/* ── Energy Line Separator ── */
+.energy-line {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--theme-primary-22) 20%,
+    var(--theme-primary-44) 50%,
+    var(--theme-primary-22) 80%,
+    transparent 100%
+  );
+}
+
+.energy-line::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--theme-primary-12) 30%,
+    var(--theme-glow, rgba(34,211,238,0.15)) 50%,
+    var(--theme-primary-12) 70%,
+    transparent 100%
+  );
+  filter: blur(2px);
+}
+
+/* ── Screen Vignette ── */
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 55%,
+    rgba(0,0,0,0.25) 100%
+  );
+}
+
+.vignette-intense {
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 40%,
+    rgba(0,0,0,0.4) 100%
+  );
+}
+
+/* ── Data Stream Texture (for backgrounds) ── */
+.data-stream {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 24px,
+    var(--theme-primary-12) 24px,
+    var(--theme-primary-12) 25px
+  );
+  background-size: 100% 25px;
+  animation: dataStream 3s linear infinite;
+  opacity: 0.3;
+}
+
+/* ── Micro-animation Stagger Delays ── */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+/* ── Interactive Press Feedback ── */
+.press-feedback {
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.press-feedback:active {
+  transform: scale(0.95);
+}
+
+/* ── XP Bar Premium ── */
+.xp-bar-v2 {
+  position: relative;
+  height: 10px;
+  background: rgba(15,15,30,0.9);
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.xp-bar-v2-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-accent, #67e8f9));
+  box-shadow: 0 0 16px var(--theme-glow), 0 2px 8px var(--theme-primary-44);
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+  overflow: hidden;
+}
+
+.xp-bar-v2-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+.xp-bar-v2-fill::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 8px;
+  height: calc(100% + 4px);
+  border-radius: var(--radius-full);
+  background: #fff;
+  animation: xpBarHead 1.5s ease-in-out infinite;
+}
+
+/* ── Stat Mini-Card ── */
+.stat-mini {
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: default;
+}
+
+.stat-mini:hover {
+  background: var(--theme-primary-12, rgba(34,211,238,0.12));
+  border-color: var(--theme-primary-22, rgba(34,211,238,0.22));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--theme-primary-12, rgba(34,211,238,0.12));
+}
+
+/* ── Nav Tab Active Glow ── */
+.nav-tab-active-glow {
+  position: relative;
+}
+
+.nav-tab-active-glow::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 20px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    var(--theme-glow, rgba(34,211,238,0.25)),
+    transparent 80%
+  );
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* ── Number animation helper ── */
+.num-flash {
+  animation: numberFlash 0.6s ease-out;
+}
+
+.num-up {
+  color: #34d399 !important;
+  transition: color 0.5s;
+}
+
+.num-down {
+  color: #ef4444 !important;
+  transition: color 0.5s;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Arise v3.0 — Animated Rarity Borders
+   Uses CSS @property for animatable conic-gradient rotation
+   ═══════════════════════════════════════════════════════════ */
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotateBorder {
+  to { --border-angle: 360deg; }
+}
+
+/* Rarity border wrapper: place around .card-v2 */
+.rarity-border {
+  position: relative;
+  border-radius: var(--radius-lg);
+  padding: 1.5px;
+  background: transparent;
+}
+
+.rarity-border > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Boss (Red-Orange flame rotation) ── */
+.rarity-border-boss {
+  background: conic-gradient(
+    from var(--border-angle),
+    #ef4444, #f97316, #fbbf24, #f97316, #ef4444, #dc2626, #ef4444
+  );
+  animation: rotateBorder 3s linear infinite;
+  box-shadow: 0 0 12px rgba(239,68,68,0.2), 0 0 32px rgba(239,68,68,0.08);
+}
+
+/* ── Hard (Gold-Purple shimmer) ── */
+.rarity-border-hard {
+  background: conic-gradient(
+    from var(--border-angle),
+    #a78bfa, #fbbf24, #f59e0b, #a78bfa, #7c3aed, #a78bfa
+  );
+  animation: rotateBorder 4s linear infinite;
+  box-shadow: 0 0 8px rgba(167,139,250,0.15), 0 0 24px rgba(251,191,36,0.06);
+}
+
+/* ── Normal (Blue subtle pulse) ── */
+.rarity-border-normal {
+  background: conic-gradient(
+    from var(--border-angle),
+    rgba(34,211,238,0.3), rgba(99,102,241,0.2), rgba(34,211,238,0.15), rgba(99,102,241,0.2), rgba(34,211,238,0.3)
+  );
+  animation: rotateBorder 6s linear infinite;
+  box-shadow: 0 0 6px rgba(34,211,238,0.08);
+}
+
+/* ── Easy (Gray shimmer) ── */
+.rarity-border-easy {
+  background: conic-gradient(
+    from var(--border-angle),
+    rgba(100,116,139,0.2), rgba(148,163,184,0.15), rgba(100,116,139,0.1), rgba(148,163,184,0.15), rgba(100,116,139,0.2)
+  );
+  animation: rotateBorder 8s linear infinite;
+}
+
+/* ── Hidden (Void mystery border) ── */
+.rarity-border-hidden {
+  background: conic-gradient(
+    from var(--border-angle),
+    #6366f1, #4f46e5, #7c3aed, #818cf8, #6366f1, #4338ca, #6366f1
+  );
+  animation: rotateBorder 2.5s linear infinite;
+  box-shadow: 0 0 16px rgba(99,102,241,0.25), 0 0 40px rgba(99,102,241,0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Arise v3.0 — Compact Header Transitions
+   ═══════════════════════════════════════════════════════════ */
+
+.header-v3 {
+  transition:
+    padding 0.35s cubic-bezier(0.22,1,0.36,1),
+    background 0.35s ease;
+}
+
+.header-v3-compact {
+  padding-top: 6px !important;
+  padding-bottom: 4px !important;
+}
+
+.header-v3-rank {
+  transition:
+    width 0.35s cubic-bezier(0.34,1.56,0.64,1),
+    height 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.header-v3-stats-row {
+  transition:
+    opacity 0.25s ease,
+    max-height 0.35s cubic-bezier(0.22,1,0.36,1),
+    margin 0.3s ease;
+  overflow: hidden;
+}
+
+.header-v3-stats-row.compact {
+  opacity: 0;
+  max-height: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Arise v3.0 — Ambient Atmosphere Layers
+   ═══════════════════════════════════════════════════════════ */
+
+@keyframes wispsFloat {
+  0%, 100% { transform: translateY(0) translateX(0) scale(1); }
+  25% { transform: translateY(-20px) translateX(10px) scale(1.1); }
+  50% { transform: translateY(-5px) translateX(-15px) scale(0.95); }
+  75% { transform: translateY(-15px) translateX(8px) scale(1.05); }
+}
+
+@keyframes streakGlow {
+  0%, 100% { opacity: 0; transform: translateY(0); }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.4; }
+  100% { opacity: 0; transform: translateY(-100vh); }
+}
+
+@keyframes levelUpPulse {
+  0%, 100% { opacity: 0.03; transform: scale(1); }
+  50% { opacity: 0.08; transform: scale(1.15); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Arise v3.0 — Glitch Text Utilities
+   ═══════════════════════════════════════════════════════════ */
+
+@keyframes textGlitchFlicker {
+  0%, 2%, 4%, 6%, 90%, 100% { opacity: 1; transform: none; }
+  1% { opacity: 0.5; transform: translateX(2px); }
+  3% { opacity: 0.7; transform: translateX(-1px) skewX(2deg); }
+  5% { opacity: 0.8; transform: translateX(1px); }
+}
+
+.text-glitch-subtle {
+  animation: textGlitchFlicker 8s ease-in-out infinite;
+}
+
+/* ── Ambient particles disabled hint ── */
+@media (prefers-reduced-motion: reduce) {
+  .rarity-border-boss,
+  .rarity-border-hard,
+  .rarity-border-normal,
+  .rarity-border-easy,
+  .rarity-border-hidden {
+    animation: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Arise v3.0 — Settings-Driven VFX Disable Overrides
+   Parent class toggles neutralize child effects via CSS.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Disable animated rarity borders */
+.vfx-no-borders .rarity-border {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.vfx-no-borders .rarity-border-boss,
+.vfx-no-borders .rarity-border-hard,
+.vfx-no-borders .rarity-border-hidden,
+.vfx-no-borders .rarity-border-normal,
+.vfx-no-borders .rarity-border-easy {
+  animation: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Disable scroll reveal animations */
+.vfx-no-reveal .scroll-reveal-hidden {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Disable 3D tilt cards */
+.vfx-no-tilt .tilt-card-inner {
+  transform: none !important;
+  transition: none !important;
+}
+.vfx-no-tilt .tilt-card-glare,
+.vfx-no-tilt .tilt-card-holographic {
+  display: none !important;
+}
+
+/* Disable glitch text effects */
+.vfx-no-glitch .glitch-text {
+  animation: none !important;
+}
+.vfx-no-glitch .glitch-text::before,
+.vfx-no-glitch .glitch-text::after {
+  display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Arise v3.0 Phase 2 — VFX Disable Overrides
+   ═══════════════════════════════════════════════════════════ */
+
+/* Disable letterbox overlays */
+.vfx-no-letterbox .letterbox-overlay {
+  display: none !important;
+}
+
+/* Disable XP particle trail canvas */
+.vfx-no-xptrail .xp-particle-canvas {
+  display: none !important;
+}
+
+/* Disable boot sequence */
+.vfx-no-boot .neural-boot-overlay {
+  display: none !important;
+}
+
+/* Disable HUD overlay */
+.vfx-no-hud .hud-overlay {
+  display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Arise v3.0 Phase 5 — Premium Scrollbar
+   ═══════════════════════════════════════════════════════════ */
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 15, 30, 0.3);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--theme-primary, #4f6ef7) 0%, var(--theme-accent, #a78bfa) 100%);
+  border-radius: 4px;
+  box-shadow: 0 0 8px var(--theme-glow, rgba(79,110,247,0.3));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--theme-primary, #4f6ef7) 0%, var(--theme-accent, #a78bfa) 50%, #22d3ee 100%);
+  box-shadow: 0 0 14px var(--theme-glow, rgba(79,110,247,0.5));
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-primary, #4f6ef7) rgba(15, 15, 30, 0.3);
+}

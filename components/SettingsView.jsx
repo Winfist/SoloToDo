@@ -575,6 +575,52 @@ export default function SettingsView({ state, persist, theme, can, onLogout }) {
         </div>
       </SettingsSection>
 
+      {/* ════════════════════════════════════════════════════════════
+           SECTION 1b: VISUELLE EFFEKTE (v3.0)
+         ════════════════════════════════════════════════════════════ */}
+      <SettingsSection title="Visuelle Effekte" icon="✨" color="#22d3ee" open={openSection === "vfx"} onToggle={() => toggleSection("vfx")} theme={theme} badge="ARISE v3.0">
+        <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, marginBottom: 14 }}>
+          Premium-Effekte für ein immersives Erlebnis. Deaktiviere einzelne Effekte für bessere Performance auf älteren Geräten.
+        </div>
+
+        <SettingRow label="3D Tilt-Karten" desc="Perspektivischer 3D-Effekt auf Hover/Touch" value={getSetting("tiltCards", true)} onChange={() => toggleSetting("tiltCards", true)} color="#22d3ee" theme={theme} />
+        <SettingRow label="Animierte Borders" desc="Rotierende Conic-Gradient Ränder bei Boss/Hard Quests" value={getSetting("rarityBorders", true)} onChange={() => toggleSetting("rarityBorders", true)} color="#a78bfa" theme={theme} />
+        <SettingRow label="Scroll-Animationen" desc="Viewport-basierte Einblend-Animationen" value={getSetting("scrollReveal", true)} onChange={() => toggleSetting("scrollReveal", true)} color="#3b82f6" theme={theme} />
+        <SettingRow label="Quest-Completion Effekte" desc="Konfetti & Shockwave bei Quest-Abschluss" value={getSetting("completionFx", true)} onChange={() => toggleSetting("completionFx", true)} color="#f59e0b" theme={theme} />
+        <SettingRow label="Atmosphärische Wisps" desc="Schwebende Lichtpartikel basierend auf Shadow Army" value={getSetting("atmosphericWisps", true)} onChange={() => toggleSetting("atmosphericWisps", true)} color="#6366f1" theme={theme} />
+        <SettingRow label="Tageszeit-Atmosphäre" desc="Hintergrund passt sich der Uhrzeit an" value={getSetting("timeOfDay", true)} onChange={() => toggleSetting("timeOfDay", true)} color="#f97316" theme={theme} />
+        <SettingRow label="Glitch-Text Effekte" desc="Cyberpunk Scan-Reveal für System-Nachrichten" value={getSetting("glitchText", true)} onChange={() => toggleSetting("glitchText", true)} color="#ef4444" theme={theme} />
+        <SettingRow label="Animierte Zahlen" desc="Smooth Counter-Animation für Level/XP/Stats" value={getSetting("animatedNumbers", true)} onChange={() => toggleSetting("animatedNumbers", true)} color="#22c55e" theme={theme} />
+
+        {/* v3.0 Phase 2 — New Effects */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>PHASE 2 EFFECTS</div>
+
+        <SettingRow label="Kino-Letterbox" desc="Cinematic Bars bei Level-Up & Arise" value={getSetting("letterboxMode", true)} onChange={() => toggleSetting("letterboxMode", true)} color="#f59e0b" theme={theme} />
+        <SettingRow label="XP-Partikel Trail" desc="Leuchtende Orbs fliegen zum Header bei Quest-Abschluss" value={getSetting("xpParticleTrail", true)} onChange={() => toggleSetting("xpParticleTrail", true)} color="#a78bfa" theme={theme} />
+        <SettingRow label="Boot-Sequenz" desc="Neural Interface Startup beim App-Start" value={getSetting("bootSequence", true)} onChange={() => toggleSetting("bootSequence", true)} color="#22d3ee" theme={theme} />
+
+        {/* v3.0 Phase 3 — Premium Effects */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>PHASE 3 EFFECTS</div>
+
+        <SettingRow label="Magnetischer Cursor" desc="Gradient-Glow folgt der Maus (nur Desktop)" value={getSetting("magneticCursor", true)} onChange={() => toggleSetting("magneticCursor", true)} color="#6366f1" theme={theme} />
+        <SettingRow label="Screen Shake" desc="Bildschirm-Erschütterung bei Boss/Hard Quests" value={getSetting("screenShake", true)} onChange={() => toggleSetting("screenShake", true)} color="#ef4444" theme={theme} />
+
+        {/* v3.0 Phase 4 — Ambient & Transitions */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>PHASE 4 EFFECTS</div>
+
+        <SettingRow label="Streak-Flamme" desc="Canvas-Feuereffekt neben dem Streak-Counter" value={getSetting("streakFlame", true)} onChange={() => toggleSetting("streakFlame", true)} color="#f97316" theme={theme} />
+        <SettingRow label="Motion Blur" desc="Übergangs-Blur beim View-Wechsel" value={getSetting("motionBlur", true)} onChange={() => toggleSetting("motionBlur", true)} color="#8b5cf6" theme={theme} />
+
+        {/* v3.0 Phase 5 — HUD & Polish */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>PHASE 5 EFFECTS</div>
+
+        <SettingRow label="HUD Overlay" desc="Corner-Brackets, Uhr, FPS, Rank-Info" value={getSetting("hudOverlay", true)} onChange={() => toggleSetting("hudOverlay", true)} color="#22d3ee" theme={theme} />
+      </SettingsSection>
+
 
       {/* ════════════════════════════════════════════════════════════
            SECTION 2: NAVIGATION ANPASSEN

@@ -7,6 +7,15 @@ import AuthScreen from './AuthScreen.jsx'
 import { auth } from "./firebase"
 import { onAuthStateChanged } from "firebase/auth"
 
+// Apply saved theme to root element before first render (avoids flash)
+try {
+  const _raw = localStorage.getItem("sl-todo-v5");
+  const _savedTheme = _raw ? (JSON.parse(_raw).selectedTheme || "default") : "default";
+  document.documentElement.dataset.theme = _savedTheme;
+} catch {
+  document.documentElement.dataset.theme = "default";
+}
+
 // Polyfill window.storage with localStorage
 if (!window.storage) {
   window.storage = {
@@ -62,34 +71,23 @@ function Root() {
   // Loading screen
   if (isAuthenticated === null) {
     return (
-      <div style={{
-        minHeight: "100vh",
-        background: "#060610",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
+      <div style={{ minHeight: "100vh", background: "var(--theme-bg, #06060e)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ marginBottom: 16 }}><img src={SYSTEM_ICONS.logo} alt="System" style={{ width: 56, height: 56, objectFit: "contain", animation: "pulse 1.5s ease-in-out infinite", filter: "drop-shadow(0 0 20px #7c3aed88)" }} /></div>
-          <div style={{
-            fontSize: 11,
-            letterSpacing: 4,
-            color: "#7c3aed",
-            fontFamily: "monospace",
-            animation: "pulse 1.5s ease-in-out infinite",
-          }}>
+          <img
+            src={SYSTEM_ICONS.logo}
+            alt="System lädt"
+            style={{ width: 56, height: 56, objectFit: "contain", marginBottom: 16, animation: "pulse 1.5s ease-in-out infinite", filter: "drop-shadow(0 0 20px var(--theme-glow, #7c3aed88))" }}
+          />
+          <div style={{ fontSize: "var(--text-xs, 11px)", letterSpacing: 4, color: "var(--theme-primary, #7c3aed)", fontFamily: "var(--font-mono, monospace)", animation: "pulse 1.5s ease-in-out infinite" }}>
             LOADING SYSTEM...
           </div>
         </div>
-        <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
       </div>
     );
   }
 
   return isAuthenticated ? (
-    <div style={{ position: 'relative' }}>
-      <App initialHunterName={hunterName} onLogout={handleLogout} />
-    </div>
+    <App initialHunterName={hunterName} onLogout={handleLogout} />
   ) : (
     <AuthScreen onAuthSuccess={handleAuthSuccess} />
   );

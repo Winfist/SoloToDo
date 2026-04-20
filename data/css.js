@@ -2,10 +2,9 @@
 // Extracted from data/constants.jsx
 // Global styles and keyframe animations for the app.
 
+// Fonts, reset, and scrollbar styles are now in index.html + styles/base.css.
+// This CSS function only injects theme-reactive styles and keyframes into <style> tags during migration.
 export const CSS = (t) => `
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700;800&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
-::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:${t.primary}44;border-radius:4px}
 button{cursor:pointer;border:none;font-family:inherit;-webkit-tap-highlight-color:transparent}
 input,select{font-family:inherit}

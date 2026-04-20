@@ -1,0 +1,209 @@
+      {/* HEADER */}
+      <header style={{
+        position: "sticky", top: 0, zIndex: 100,
+        backdropFilter: "blur(32px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(32px) saturate(1.6)",
+        background: penaltyActive
+          ? "linear-gradient(180deg, rgba(30,0,0,0.92) 0%, rgba(10,0,0,0.85) 100%)"
+          : `linear-gradient(180deg, ${theme.bg}f0 0%, ${theme.bg}cc 100%)`,
+        borderBottom: `1px solid ${penaltyActive ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.06)"}`,
+        boxShadow: penaltyActive
+          ? "0 1px 0 rgba(239,68,68,0.15), 0 8px 40px rgba(0,0,0,0.5)"
+          : `0 1px 0 rgba(255,255,255,0.04), 0 8px 40px rgba(0,0,0,0.35)`,
+        opacity: isCreatingEntry ? 0 : 1,
+        pointerEvents: isCreatingEntry ? "none" : "auto",
+        transition: "opacity 0.2s ease",
+      }}>
+        {/* Top edge light */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 1, pointerEvents: "none",
+          background: penaltyActive
+            ? "linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.6) 50%, transparent 100%)"
+            : `linear-gradient(90deg, transparent 0%, ${theme.primary}55 50%, transparent 100%)`,
+        }} />
+        <div style={{ maxWidth: 480, margin: "0 auto", padding: "10px 14px 12px", display: "flex", flexDirection: "column", gap: 9 }}>
+
+          {/* ROW 1: Rank badge + Hunter info + Action buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Rank Hexagon */}
+            <div style={{
+              width: 44, height: 44, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+              background: `linear-gradient(135deg, ${rank.color}35, ${rank.color}12)`,
+              boxShadow: `0 0 18px ${rank.color}44, inset 0 1px 0 ${rank.color}30`,
+              animation: "hexPulse 3s infinite",
+            }}>
+              <span style={{
+                fontSize: 13, fontWeight: 900, color: rank.color,
+                fontFamily: "'Cinzel',serif",
+                textShadow: `0 0 10px ${rank.color}cc`,
+                letterSpacing: 0.5,
+              }}>{rank.name}</span>
+            </div>
+
+            {/* Hunter name + title */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: 15, fontWeight: 900,
+                color: penaltyActive ? "#ef4444" : "#f1f5f9",
+                fontFamily: "'Outfit',sans-serif", letterSpacing: 0.3,
+                textShadow: penaltyActive ? "0 0 14px rgba(239,68,68,0.7)" : `0 0 14px ${theme.primary}55`,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>{state.hunterName}</div>
+              <div style={{
+                fontSize: 9, color: rank.color, fontFamily: "'JetBrains Mono',monospace",
+                letterSpacing: 2, opacity: 0.8, marginTop: 1,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>{state.selectedTitle || rank.label}</div>
+            </div>
+
+            {/* Compact icon buttons */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {can('sanctum') && (
+                <button onClick={() => navigateTo("sanctum")} title="Inner Sanctum" style={{
+                  width: 30, height: 30, borderRadius: 8, cursor: "pointer",
+                  border: "1px solid rgba(52,211,153,0.3)", background: "rgba(52,211,153,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+                }} onMouseEnter={e => { e.currentTarget.style.background = "rgba(52,211,153,0.2)"; e.currentTarget.style.boxShadow = "0 0 10px rgba(52,211,153,0.35)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(52,211,153,0.08)"; e.currentTarget.style.boxShadow = "none"; }}>
+                  <GameIcon src={NAV_ICONS.timer} fallback="⏱" size={13} glow glowColor="rgba(52,211,153,0.5)" />
+                </button>
+              )}
+              {can('focus_mode') && (
+                <button onClick={() => setShowFocusMode(true)} title="Focus Mode" style={{
+                  width: 30, height: 30, borderRadius: 8, cursor: "pointer",
+                  border: "1px solid rgba(168,85,247,0.3)", background: "rgba(168,85,247,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+                }} onMouseEnter={e => { e.currentTarget.style.background = "rgba(168,85,247,0.2)"; e.currentTarget.style.boxShadow = "0 0 10px rgba(168,85,247,0.35)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(168,85,247,0.08)"; e.currentTarget.style.boxShadow = "none"; }}>
+                  <GameIcon src={NAV_ICONS.timer} fallback="⚡" size={13} glow glowColor="rgba(168,85,247,0.5)" />
+                </button>
+              )}
+              {can('dawn_dusk') && (
+                <button onClick={() => setShowDawnDusk(true)} title="Dawn/Dusk Protocol" style={{
+                  width: 30, height: 30, borderRadius: 8, cursor: "pointer",
+                  border: `1px solid ${state?.dawnDusk?.currentRun ? "rgba(251,191,36,0.6)" : "rgba(251,191,36,0.2)"}`,
+                  background: state?.dawnDusk?.currentRun ? "rgba(251,191,36,0.18)" : "rgba(251,191,36,0.05)",
+                  display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+                  animation: state?.dawnDusk?.currentRun ? "pulse 2s infinite" : "none",
+                }}>
+                  <img src={NAV_ICONS.timer} alt="" style={{ width: 13, height: 13, objectFit: "contain", filter: new Date().getHours() >= 5 && new Date().getHours() < 11 ? "drop-shadow(0 0 3px #fbbf24)" : "drop-shadow(0 0 3px #6366f1)" }} />
+                </button>
+              )}
+              {can('music') && (
+                <button onClick={() => setIsMusicPlaying(prev => { const n = !prev; localStorage.setItem("soloMusicPlaying", n ? "true" : "false"); return n; })} style={{
+                  width: 30, height: 30, borderRadius: 8, cursor: "pointer",
+                  border: `1px solid ${isMusicPlaying ? theme.primary + "50" : "rgba(255,255,255,0.08)"}`,
+                  background: isMusicPlaying ? `${theme.primary}18` : "rgba(255,255,255,0.04)",
+                  color: isMusicPlaying ? theme.accent : "#475569",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, transition: "all 0.2s",
+                }}>
+                  {isMusicPlaying ? "♫" : "♪"}
+                </button>
+              )}
+              {can('multiplayer') && (
+                <button onClick={enterPortal} title="Hunter Association" style={{
+                  width: 30, height: 30, borderRadius: 8, cursor: "pointer",
+                  border: "1px solid rgba(245,158,11,0.35)", background: "rgba(245,158,11,0.08)",
+                  color: "#fcd34d", display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.2s",
+                }} onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 0 10px rgba(245,158,11,0.35)"; e.currentTarget.style.borderColor = "rgba(245,158,11,0.7)"; }} onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "rgba(245,158,11,0.35)"; }}>
+                  <GameIcon src={NAV_ICONS.guild} fallback="🚪" size={13} glow glowColor="rgba(245,158,11,0.5)" />
+                </button>
+              )}
+              <button onClick={onLogout} title="System beenden" style={{
+                width: 30, height: 30, borderRadius: 8, cursor: "pointer",
+                border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.07)",
+                color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 15, fontWeight: 700, transition: "all 0.2s",
+              }} onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.18)"; e.currentTarget.style.boxShadow = "0 0 8px rgba(239,68,68,0.3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.07)"; e.currentTarget.style.boxShadow = "none"; }}>
+                ×
+              </button>
+            </div>
+          </div>
+
+          {/* ROW 2: Stat chips */}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+            <div style={{
+              padding: "3px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
+              background: `${theme.primary}10`, border: `1px solid ${theme.primary}20`,
+              fontSize: 10, fontWeight: 800, color: theme.accent, fontFamily: "'JetBrains Mono',monospace",
+            }}>
+              <span style={{ fontSize: 7, opacity: 0.65, letterSpacing: 1 }}>PWR</span>{powerLevel.toLocaleString()}
+            </div>
+            <div onClick={() => { window.__SHOP_START_TAB = "gold"; navigateTo("shop"); }} style={{
+              padding: "3px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
+              background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.16)",
+              fontSize: 10, fontWeight: 800, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
+            }}>
+              <img src="/icon/coin.png" style={{ width: 11, height: 11 }} alt="" />{state.gold.toLocaleString()}
+            </div>
+            {can('gem_shop') && (
+              <button onClick={() => { window.__SHOP_START_TAB = "gems"; navigateTo("shop"); }} style={{
+                padding: "3px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
+                background: "rgba(124,58,237,0.09)", border: "1px solid rgba(124,58,237,0.18)",
+                fontSize: 10, fontWeight: 800, color: "#c084fc", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
+              }}>
+                <img src={GEM_ICONS.gem} style={{ width: 11, height: 11, objectFit: "contain", filter: "drop-shadow(0 0 3px #a855f788)" }} alt="" />{(state.gems || 0).toLocaleString()}
+              </button>
+            )}
+            <div style={{
+              padding: "3px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
+              background: state.streak >= 3 ? "rgba(249,115,22,0.09)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${state.streak >= 3 ? "rgba(249,115,22,0.18)" : "rgba(255,255,255,0.07)"}`,
+              fontSize: 10, fontWeight: 800,
+              color: state.streak >= 5 ? "#f97316" : state.streak >= 3 ? "#fb923c" : "#64748b",
+              fontFamily: "'JetBrains Mono',monospace",
+            }}>
+              <img src={STAT_ICONS.str} alt="" style={{ width: 11, height: 11, objectFit: "contain", filter: state.streak >= 3 ? "drop-shadow(0 0 3px #f9731688)" : "none" }} />
+              {state.streak}d
+            </div>
+            {can('soul_link') && state.soulLink?.linkCode && (
+              <button onClick={() => setShowSoulLink(true)} style={{
+                padding: "3px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 3, cursor: "pointer",
+                background: state.soulLink.bothActive ? "rgba(34,211,238,0.1)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${state.soulLink.bothActive ? "rgba(34,211,238,0.35)" : "rgba(255,255,255,0.08)"}`,
+                fontSize: 10, fontWeight: 700, color: state.soulLink.bothActive ? "#22d3ee" : "#6b7280",
+                fontFamily: "'JetBrains Mono',monospace",
+                animation: state.soulLink.bothActive ? "pulse 2s infinite" : "none",
+              }}>
+                <img src={SHADOW_ICONS.knight} alt="" style={{ width: 11, height: 11, objectFit: "contain" }} />
+                {state.soulLink.partnerName ? state.soulLink.partnerName.slice(0, 6) : "—"}
+              </button>
+            )}
+            {can('seasons') && state.seasons?.currentSeason && (
+              <button onClick={() => setShowSeasonView(true)} title={SEASONS[state.seasons.currentSeason]?.name} style={{
+                padding: "3px 7px", borderRadius: 6, display: "flex", alignItems: "center", cursor: "pointer",
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+              }}>
+                {SEASONS[state.seasons.currentSeason]?.iconSrc
+                  ? <img src={SEASONS[state.seasons.currentSeason].iconSrc} alt="" style={{ width: 13, height: 13, objectFit: "contain" }} />
+                  : <span style={{ fontSize: 11 }}>{SEASONS[state.seasons.currentSeason]?.icon || "📋"}</span>}
+              </button>
+            )}
+          </div>
+
+          {/* XP progress bar */}
+          <div style={{ position: "relative", height: 3, borderRadius: 99, background: "rgba(255,255,255,0.06)" }}>
+            <div style={{
+              position: "absolute", left: 0, top: 0, height: "100%", borderRadius: 99,
+              width: `${Math.min(100, (state.xp / Math.max(1, state.xpToNext)) * 100)}%`,
+              background: penaltyActive
+                ? "linear-gradient(90deg, #b91c1c, #ef4444)"
+                : `linear-gradient(90deg, ${theme.primary}, ${theme.secondary || theme.accent || theme.primary})`,
+              boxShadow: penaltyActive ? "0 0 6px rgba(239,68,68,0.7)" : `0 0 6px ${theme.primary}aa`,
+              transition: "width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            }} />
+            <div style={{
+              position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+              background: penaltyActive ? "#b91c1c" : theme.primary,
+              color: "#000", fontSize: 7, fontWeight: 900, letterSpacing: 0.5,
+              fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4,
+              boxShadow: `0 0 6px ${penaltyActive ? "rgba(239,68,68,0.6)" : theme.primary + "88"}`,
+              whiteSpace: "nowrap", lineHeight: 1.6,
+            }}>
+              Lv.{state.level} · {state.xp}/{state.xpToNext}xp
+            </div>
+          </div>
+        </div>
+      </header>

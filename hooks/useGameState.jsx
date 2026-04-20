@@ -1198,6 +1198,11 @@ export function useGameState(initialHunterName, onLogout) {
   }, [state, persist, notify]);
 
   const theme = useMemo(() => THEMES[state?.selectedTheme || "default"], [state?.selectedTheme]);
+
+  // Sync theme to CSS data-attribute so CSS custom properties (tokens.css) stay in sync
+  useEffect(() => {
+    document.documentElement.dataset.theme = state?.selectedTheme || "default";
+  }, [state?.selectedTheme]);
   const modifier = state?.todayModifier || getDailyModifier();
 
   // ─ GEM SYSTEM FUNCTIONS ─

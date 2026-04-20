@@ -1,5 +1,6 @@
 import React from "react";
 import { STAT_ICONS, NAV_ICONS, GATE_ICONS, SHADOW_ICONS, STORY_ICONS } from "../../data/icons.js";
+import StreakFlame from "../ui/StreakFlame.jsx";
 
 // ─── STREAK DISPLAY WIDGET ────────────────────────────────────
 export function StreakDisplayWidget({ state, theme }) {
@@ -68,6 +69,7 @@ export function StreakDisplayWidget({ state, theme }) {
               fontFamily: "'Cinzel',serif", lineHeight: 1,
               textShadow: `0 0 20px ${flameColor}44`,
             }}>{streak}</span>
+            <StreakFlame streak={streak} size={32} disabled={state.settings?.streakFlame === false} />
             <span style={{ fontSize: 11, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>
               {streak === 1 ? "Tag" : "Tage"}
             </span>

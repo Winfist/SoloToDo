@@ -1,0 +1,277 @@
+/* ═══════════════════════════════════════════════════════════
+   Arise v2.0 — Design Token System
+   All themes are defined as [data-theme="…"] blocks.
+   Set via: document.documentElement.dataset.theme = "default"
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Structural Tokens (theme-independent) ── */
+:root {
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: 'Cinzel', 'Outfit', serif;
+
+  --text-xs: 10px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
+
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-black: 900;
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.6;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* Motion */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-cinematic: 1200ms;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-Index */
+  --z-base: 0;
+  --z-card: 1;
+  --z-dropdown: 10;
+  --z-sticky: 50;
+  --z-nav: 50;
+  --z-modal: 100;
+  --z-toast: 200;
+  --z-tooltip: 300;
+  --z-overlay: 400;
+
+  /* Accessibility */
+  --min-touch: 44px;
+
+  /* Rank tint (overridden dynamically via JS) */
+  --rank-tint: transparent;
+  --rank-intensity: 0;
+}
+
+/* ── Theme: default (Cyan / Purple) ── */
+:root,
+[data-theme="default"] {
+  --theme-primary: #22d3ee;
+  --theme-secondary: #a855f7;
+  --theme-glow: rgba(34, 211, 238, 0.35);
+  --theme-accent: #67e8f9;
+  --theme-bg: #06060e;
+  --theme-card: rgba(10, 10, 22, 0.88);
+  --theme-surface: rgba(16, 16, 36, 0.6);
+
+  --theme-primary-12: rgba(34, 211, 238, 0.12);
+  --theme-primary-18: rgba(34, 211, 238, 0.18);
+  --theme-primary-22: rgba(34, 211, 238, 0.22);
+  --theme-primary-44: rgba(34, 211, 238, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(34, 211, 238, 0.35), 0 0 40px rgba(34, 211, 238, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 211, 238, 0.08);
+}
+
+/* ── Theme: crimson ── */
+[data-theme="crimson"] {
+  --theme-primary: #dc2626;
+  --theme-secondary: #991b1b;
+  --theme-glow: rgba(220, 38, 38, 0.35);
+  --theme-accent: #fca5a5;
+  --theme-bg: #0a0808;
+  --theme-card: rgba(24, 12, 12, 0.85);
+  --theme-surface: rgba(40, 20, 20, 0.6);
+
+  --theme-primary-12: rgba(220, 38, 38, 0.12);
+  --theme-primary-18: rgba(220, 38, 38, 0.18);
+  --theme-primary-22: rgba(220, 38, 38, 0.22);
+  --theme-primary-44: rgba(220, 38, 38, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(220, 38, 38, 0.35), 0 0 40px rgba(220, 38, 38, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(220, 38, 38, 0.08);
+}
+
+/* ── Theme: shadow ── */
+[data-theme="shadow"] {
+  --theme-primary: #6366f1;
+  --theme-secondary: #4338ca;
+  --theme-glow: rgba(99, 102, 241, 0.35);
+  --theme-accent: #a5b4fc;
+  --theme-bg: #06060f;
+  --theme-card: rgba(10, 10, 28, 0.85);
+  --theme-surface: rgba(18, 18, 42, 0.6);
+
+  --theme-primary-12: rgba(99, 102, 241, 0.12);
+  --theme-primary-18: rgba(99, 102, 241, 0.18);
+  --theme-primary-22: rgba(99, 102, 241, 0.22);
+  --theme-primary-44: rgba(99, 102, 241, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.35), 0 0 40px rgba(99, 102, 241, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.08);
+}
+
+/* ── Theme: ice ── */
+[data-theme="ice"] {
+  --theme-primary: #06b6d4;
+  --theme-secondary: #0891b2;
+  --theme-glow: rgba(6, 182, 212, 0.35);
+  --theme-accent: #a5f3fc;
+  --theme-bg: #060a0f;
+  --theme-card: rgba(10, 16, 28, 0.85);
+  --theme-surface: rgba(16, 24, 42, 0.6);
+
+  --theme-primary-12: rgba(6, 182, 212, 0.12);
+  --theme-primary-18: rgba(6, 182, 212, 0.18);
+  --theme-primary-22: rgba(6, 182, 212, 0.22);
+  --theme-primary-44: rgba(6, 182, 212, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.35), 0 0 40px rgba(6, 182, 212, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(6, 182, 212, 0.08);
+}
+
+/* ── Theme: golden ── */
+[data-theme="golden"] {
+  --theme-primary: #d97706;
+  --theme-secondary: #b45309;
+  --theme-glow: rgba(217, 119, 6, 0.35);
+  --theme-accent: #fde68a;
+  --theme-bg: #0a0806;
+  --theme-card: rgba(24, 20, 12, 0.85);
+  --theme-surface: rgba(40, 32, 18, 0.6);
+
+  --theme-primary-12: rgba(217, 119, 6, 0.12);
+  --theme-primary-18: rgba(217, 119, 6, 0.18);
+  --theme-primary-22: rgba(217, 119, 6, 0.22);
+  --theme-primary-44: rgba(217, 119, 6, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(217, 119, 6, 0.35), 0 0 40px rgba(217, 119, 6, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(217, 119, 6, 0.08);
+}
+
+/* ── Theme: celestial ── */
+[data-theme="celestial"] {
+  --theme-primary: #daa520;
+  --theme-secondary: #f5deb3;
+  --theme-glow: rgba(218, 165, 32, 0.35);
+  --theme-accent: #ffe4b5;
+  --theme-bg: #0a0806;
+  --theme-card: rgba(22, 18, 12, 0.88);
+  --theme-surface: rgba(36, 30, 20, 0.6);
+
+  --theme-primary-12: rgba(218, 165, 32, 0.12);
+  --theme-primary-18: rgba(218, 165, 32, 0.18);
+  --theme-primary-22: rgba(218, 165, 32, 0.22);
+  --theme-primary-44: rgba(218, 165, 32, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(218, 165, 32, 0.35), 0 0 40px rgba(218, 165, 32, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(218, 165, 32, 0.08);
+}
+
+/* ── Theme: void ── */
+[data-theme="void"] {
+  --theme-primary: #7c3aed;
+  --theme-secondary: #581c87;
+  --theme-glow: rgba(124, 58, 237, 0.35);
+  --theme-accent: #c4b5fd;
+  --theme-bg: #08060f;
+  --theme-card: rgba(14, 10, 28, 0.88);
+  --theme-surface: rgba(22, 16, 42, 0.6);
+
+  --theme-primary-12: rgba(124, 58, 237, 0.12);
+  --theme-primary-18: rgba(124, 58, 237, 0.18);
+  --theme-primary-22: rgba(124, 58, 237, 0.22);
+  --theme-primary-44: rgba(124, 58, 237, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.35), 0 0 40px rgba(124, 58, 237, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(124, 58, 237, 0.08);
+}
+
+/* ── Theme: dragon ── */
+[data-theme="dragon"] {
+  --theme-primary: #ea580c;
+  --theme-secondary: #9a3412;
+  --theme-glow: rgba(234, 88, 12, 0.35);
+  --theme-accent: #fdba74;
+  --theme-bg: #0a0604;
+  --theme-card: rgba(24, 14, 8, 0.88);
+  --theme-surface: rgba(38, 22, 14, 0.6);
+
+  --theme-primary-12: rgba(234, 88, 12, 0.12);
+  --theme-primary-18: rgba(234, 88, 12, 0.18);
+  --theme-primary-22: rgba(234, 88, 12, 0.22);
+  --theme-primary-44: rgba(234, 88, 12, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(234, 88, 12, 0.35), 0 0 40px rgba(234, 88, 12, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(234, 88, 12, 0.08);
+}
+
+/* ── Theme: starfall ── */
+[data-theme="starfall"] {
+  --theme-primary: #818cf8;
+  --theme-secondary: #4f46e5;
+  --theme-glow: rgba(129, 140, 248, 0.35);
+  --theme-accent: #e0e7ff;
+  --theme-bg: #060610;
+  --theme-card: rgba(10, 10, 26, 0.88);
+  --theme-surface: rgba(18, 18, 44, 0.6);
+
+  --theme-primary-12: rgba(129, 140, 248, 0.12);
+  --theme-primary-18: rgba(129, 140, 248, 0.18);
+  --theme-primary-22: rgba(129, 140, 248, 0.22);
+  --theme-primary-44: rgba(129, 140, 248, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(129, 140, 248, 0.35), 0 0 40px rgba(129, 140, 248, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(129, 140, 248, 0.08);
+}
+
+/* ── Theme: blood_sovereign ── */
+[data-theme="blood_sovereign"] {
+  --theme-primary: #be123c;
+  --theme-secondary: #881337;
+  --theme-glow: rgba(190, 18, 60, 0.35);
+  --theme-accent: #fda4af;
+  --theme-bg: #0a0406;
+  --theme-card: rgba(24, 10, 14, 0.88);
+  --theme-surface: rgba(38, 16, 22, 0.6);
+
+  --theme-primary-12: rgba(190, 18, 60, 0.12);
+  --theme-primary-18: rgba(190, 18, 60, 0.18);
+  --theme-primary-22: rgba(190, 18, 60, 0.22);
+  --theme-primary-44: rgba(190, 18, 60, 0.44);
+
+  --shadow-glow: 0 0 20px rgba(190, 18, 60, 0.35), 0 0 40px rgba(190, 18, 60, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(190, 18, 60, 0.08);
+}

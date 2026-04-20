@@ -3,13 +3,15 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { JOBS } from "./data/jobs";
 import { JOB_QUESTS } from "./data/jobQuests";
 import { QUEST_POOL } from "./data/questPool";
-import StoryView, { STORY_ARCS } from "./StoryView.jsx";
+import { STORY_ARCS } from "./StoryView.jsx";
 import { db, auth } from "./firebase";
-import MultiplayerMode from "./MultiplayerMode.jsx";
-import DoubleDungeonTutorial from "./components/DoubleDungeonTutorial.jsx";
 import HabitTracker from "./components/HabitTracker.jsx";
 import MicroHabits from "./components/MicroHabits.jsx";
-import AnalyticsDashboard from "./components/AnalyticsDashboard.jsx";
+// Lazy-loaded views and heavy components (Phase 6 — code splitting)
+const StoryView = React.lazy(() => import("./StoryView.jsx"));
+const MultiplayerMode = React.lazy(() => import("./MultiplayerMode.jsx"));
+const DoubleDungeonTutorial = React.lazy(() => import("./components/DoubleDungeonTutorial.jsx"));
+const AnalyticsDashboard = React.lazy(() => import("./components/AnalyticsDashboard.jsx"));
 import { runCoachChecks, enrichCoachMessagesAsync } from "./components/SystemCoach.jsx";
 import { NotificationBanner } from "./components/NotificationManager.jsx";
 import GoalFramework from "./components/GoalFramework.jsx";
@@ -17,28 +19,40 @@ import CalendarSchedule from "./components/CalendarSchedule.jsx";
 import FocusMode from "./components/FocusMode.jsx";
 import ChallengesSystem from "./components/ChallengesSystem.jsx";
 import SettingsView, { ALL_NAV_TABS, DEFAULT_NAV_KEYS } from "./components/SettingsView.jsx";
+import BottomNav from "./components/layout/BottomNav.jsx";
+import AuroraBackground from "./components/AuroraBackground.jsx";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
 import LifeDomainsOnboarding from "./components/LifeDomainsOnboarding.jsx";
-import InnerSanctum from "./components/InnerSanctum.jsx";
 import { HUNTER_CODEX } from "./data/hunterCodex.js";
-import ShadowRegressionCinematic from "./components/ShadowRegressionCinematic.jsx";
-import SoulLinkView from "./components/SoulLinkView.jsx";
-import SeasonView from "./components/SeasonView.jsx";
-import DawnDuskProtocol from "./components/DawnDuskProtocol.jsx";
-import CharismaDungeonsView from "./components/CharismaDungeonsView.jsx";
+const InnerSanctum = React.lazy(() => import("./components/InnerSanctum.jsx"));
+const ShadowRegressionCinematic = React.lazy(() => import("./components/ShadowRegressionCinematic.jsx"));
+const SoulLinkView = React.lazy(() => import("./components/SoulLinkView.jsx"));
+const SeasonView = React.lazy(() => import("./components/SeasonView.jsx"));
+const DawnDuskProtocol = React.lazy(() => import("./components/DawnDuskProtocol.jsx"));
+const CharismaDungeonsView = React.lazy(() => import("./components/CharismaDungeonsView.jsx"));
 import { SEASONS, WORLD_EVENTS } from "./data/seasons.js";
-import PageTransition from "./components/PageTransition.jsx";
+const PageTransition = React.lazy(() => import("./components/PageTransition.jsx"));
 import { NAV_ICONS, STAT_ICONS, GATE_ICONS, QUEST_ICONS, SEASON_ICONS, SHADOW_ICONS, STORY_ICONS, HABIT_ICONS, SKILL_ICONS, ITEM_ICONS, CHA_ICONS, SYSTEM_ICONS, SHOP_ICONS, BOSS_ICONS, GEM_ICONS } from "./data/icons.js";
 import GameIcon from "./components/GameIcon.jsx";
-import RewardedAdModal from "./components/RewardedAdModal.jsx";
+const RewardedAdModal = React.lazy(() => import("./components/RewardedAdModal.jsx"));
 import GemBoosterBanner from "./components/GemBoosterBanner.jsx";
 import DashboardView from "./components/views/DashboardView.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
-import QuestCompletionCinematic from "./components/QuestCompletionCinematic.jsx";
+const QuestCompletionCinematic = React.lazy(() => import("./components/QuestCompletionCinematic.jsx"));
 import UnifiedResultModal from "./components/UnifiedResultModal.jsx";
 import QuestRatingModal from "./components/QuestRatingModal.jsx";
 import { buildStoryChapterRewardFlow, buildStoryBossRewardFlow } from "./hooks/rewardFlowBuilders.js";
+import CompletionFX from "./components/ui/CompletionFX.jsx";
+import LetterboxOverlay, { triggerLetterbox } from "./components/ui/LetterboxOverlay.jsx";
+import XPParticleTrail from "./components/ui/XPParticleTrail.jsx";
+import NeuralBootSequence from "./components/ui/NeuralBootSequence.jsx";
+import MagneticCursor from "./components/ui/MagneticCursor.jsx";
+import ScreenShake from "./components/ui/ScreenShake.jsx";
+import MotionBlurTransition from "./components/ui/MotionBlurTransition.jsx";
+import HUDOverlay from "./components/ui/HUDOverlay.jsx";
+import { useStickyHeader } from "./hooks/useStickyHeader.js";
+import { useTimeOfDay } from "./hooks/useTimeOfDay.js";
 
 // ─ RANKS ─
 import {
@@ -235,6 +249,10 @@ function App({ initialHunterName, onLogout }) {
     setPendingRatingQuest,
   } = gameState;
   const [forgeTab, setForgeTab] = useState("create");
+  // ── v3.0 Neural Boot Sequence state (must be before any early returns) ──
+  const [bootComplete, setBootComplete] = React.useState(false);
+  // ── v3.0 Sticky Header (must be before any early returns) ──
+  const headerState = useStickyHeader({ compactThreshold: 60 });
   // ── Animation Controller (Phase 5) ───────────────────────────────────────────
   const animationControllerRef = useRef({ queue: [], index: 0, flow: null, active: false });
 
@@ -441,13 +459,15 @@ function App({ initialHunterName, onLogout }) {
   }
   if (!loading && state && !state.tutorialCompleted && !showSetup) {
     return (
-      <DoubleDungeonTutorial
-        hunterName={state.hunterName}
-        onComplete={() => {
-          console.log("System: Persisting tutorial completion...");
-          persist({ ...state, tutorialCompleted: true });
-        }}
-      />
+      <React.Suspense fallback={null}>
+        <DoubleDungeonTutorial
+          hunterName={state.hunterName}
+          onComplete={() => {
+            console.log("System: Persisting tutorial completion...");
+            persist({ ...state, tutorialCompleted: true });
+          }}
+        />
+      </React.Suspense>
     );
   }
 
@@ -514,11 +534,13 @@ function App({ initialHunterName, onLogout }) {
 
   if (isMultiplayerMode && state) {
     return (
-      <MultiplayerMode
-        playerState={state}
-        onExitMP={exitPortal}
-        onStateUpdate={gameState.persist}
-      />
+      <React.Suspense fallback={null}>
+        <MultiplayerMode
+          playerState={state}
+          onExitMP={exitPortal}
+          onStateUpdate={gameState.persist}
+        />
+      </React.Suspense>
     );
   }
 
@@ -553,12 +575,32 @@ function App({ initialHunterName, onLogout }) {
 
 
   return (
-    <div style={{ minHeight: "100vh", background: penaltyActive ? `linear-gradient(180deg,${theme.bg},rgba(20,4,4,0.95))` : theme.bg, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", position: "relative", overflow: "hidden" }}>
+    <ScreenShake disabled={state.settings?.screenShake === false}>
+    <div className={[
+      state.settings?.rarityBorders === false ? 'vfx-no-borders' : '',
+      state.settings?.scrollReveal === false ? 'vfx-no-reveal' : '',
+      state.settings?.tiltCards === false ? 'vfx-no-tilt' : '',
+      state.settings?.glitchText === false ? 'vfx-no-glitch' : '',
+      state.settings?.animatedNumbers === false ? 'vfx-no-counter' : '',
+    ].filter(Boolean).join(' ')} style={{ minHeight: "100vh", background: penaltyActive ? `linear-gradient(180deg,${theme.bg},rgba(20,4,4,0.95))` : theme.bg, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", position: "relative", overflowX: "hidden" }}>
       <style>{CSS(theme)}</style>
-      {/* Cosmic ambient glow */}
-      <div style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", width: "120%", height: "50%", background: `radial-gradient(ellipse at 50% 0%,${theme.primary}12,transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
-      <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "120%", height: "40%", background: `radial-gradient(ellipse at 50% 100%,${theme.secondary}0a,transparent 70%)`, pointerEvents: "none", zIndex: 0 }} />
+      {/* ── v3.0 Neural Boot Sequence ── */}
+      {!bootComplete && state.settings?.bootSequence !== false && (
+        <NeuralBootSequence
+          hunterName={state.hunterName}
+          rankName={rank.name}
+          level={state.level}
+          onComplete={() => setBootComplete(true)}
+          disabled={state.settings?.bootSequence === false}
+        />
+      )}
+      <AuroraBackground theme={theme} penaltyActive={penaltyActive} streak={state?.streak || 0} xpPercent={xpPercent} shadowCount={totalShadows} disableWisps={state.settings?.atmosphericWisps === false} disableTimeOfDay={state.settings?.timeOfDay === false} />
       {(state.settings?.particles !== false) && <ParticleField theme={theme} />}
+      <CompletionFX disabled={state.settings?.completionFx === false} />
+      <LetterboxOverlay disabled={state.settings?.letterboxMode === false} />
+      <XPParticleTrail disabled={state.settings?.xpParticleTrail === false} />
+      <MagneticCursor disabled={state.settings?.magneticCursor === false} color={theme.primary} />
+      <HUDOverlay rank={rank.name} level={state.level} streak={state.streak || 0} xpPercent={xpPercent} theme={theme} disabled={state.settings?.hudOverlay === false} />
       <MusicPlayer play={isMusicPlaying} />
       {penaltyActive && <div style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", border: "2px solid #ef444422", animation: "penaltyPulse 2s infinite" }} />}
       {/* ── Independent reward UI — silenced while a RewardFlow is active ── */}
@@ -585,6 +627,7 @@ function App({ initialHunterName, onLogout }) {
           oldRank={prevRank}
           onClose={() => {
             setLevelUp(null);
+            triggerLetterbox("LEVEL UP", 2500, getRank(levelUp.level || levelUp).color || "#22d3ee");
             if (animationControllerRef.current.active) advanceAnimationQueue();
           }}
         />
@@ -594,6 +637,7 @@ function App({ initialHunterName, onLogout }) {
           shadow={ariseTarget}
           onClose={() => {
             setAriseTarget(null);
+            triggerLetterbox("ARISE", 2200, "#a78bfa");
             if (animationControllerRef.current.active) advanceAnimationQueue();
           }}
         />
@@ -654,13 +698,15 @@ function App({ initialHunterName, onLogout }) {
       {selectedShadow && <ShadowDetailModal shadow={selectedShadow} theme={theme} gold={state.gold} onClose={() => setSelectedShadow(null)} onDeploy={deployShadow} onUndeploy={undeployShadow} onEvolve={evolveShadow} />}
 
       {/* SHADOW MONARCH'S GATE — PAGE TRANSITION */}
-      <PageTransition
-        isActive={isPageTransitioning}
-        targetLabel={VIEW_LABELS[transitionTargetView] || (transitionTargetView || "").toUpperCase()}
-        theme={theme}
-        onMidpoint={onTransitionMid}
-        onComplete={onTransitionEnd}
-      />
+      <React.Suspense fallback={null}>
+        <PageTransition
+          isActive={isPageTransitioning}
+          targetLabel={VIEW_LABELS[transitionTargetView] || (transitionTargetView || "").toUpperCase()}
+          theme={theme}
+          onMidpoint={onTransitionMid}
+          onComplete={onTransitionEnd}
+        />
+      </React.Suspense>
 
       {/* FOCUS MODE */}
       {showFocusMode && <FocusMode state={state} persist={persist} notify={notify} onExit={() => setShowFocusMode(false)} theme={theme} />}
@@ -697,48 +743,50 @@ function App({ initialHunterName, onLogout }) {
         />
       )}
 
-      {/* SHADOW REGRESSION CINEMATIC */}
-      {showShadowRegression && state?.shadowRegression?.active && (
-        <ShadowRegressionCinematic state={state} theme={theme} onClose={() => setShowShadowRegression(false)} />
-      )}
+      <React.Suspense fallback={null}>
+        {/* SHADOW REGRESSION CINEMATIC */}
+        {showShadowRegression && state?.shadowRegression?.active && (
+          <ShadowRegressionCinematic state={state} theme={theme} onClose={() => setShowShadowRegression(false)} />
+        )}
 
-      {/* DAWN/DUSK PROTOCOL */}
-      {(showDawnDusk || state?.dawnDusk?.currentRun) && (
-        <DawnDuskProtocol
-          state={state} theme={theme}
-          startDawnDuskRun={startDawnDuskRun}
-          completeProtocolFloor={completeProtocolFloor}
-          configureProtocolTasks={configureProtocolTasks}
-          abandonProtocolRun={abandonProtocolRun}
-          onClose={() => setShowDawnDusk(false)}
-        />
-      )}
+        {/* DAWN/DUSK PROTOCOL */}
+        {(showDawnDusk || state?.dawnDusk?.currentRun) && (
+          <DawnDuskProtocol
+            state={state} theme={theme}
+            startDawnDuskRun={startDawnDuskRun}
+            completeProtocolFloor={completeProtocolFloor}
+            configureProtocolTasks={configureProtocolTasks}
+            abandonProtocolRun={abandonProtocolRun}
+            onClose={() => setShowDawnDusk(false)}
+          />
+        )}
 
-      {/* SOUL LINK VIEW */}
-      {showSoulLink && (
-        <SoulLinkView
-          state={state} theme={theme}
-          createSoulLinkCode={createSoulLinkCode}
-          joinSoulLinkCode={joinSoulLinkCode}
-          breakSoulLinkCode={breakSoulLinkCode}
-          sendReviveToPartner={sendReviveToPartner}
-          onClose={() => setShowSoulLink(false)}
-        />
-      )}
+        {/* SOUL LINK VIEW */}
+        {showSoulLink && (
+          <SoulLinkView
+            state={state} theme={theme}
+            createSoulLinkCode={createSoulLinkCode}
+            joinSoulLinkCode={joinSoulLinkCode}
+            breakSoulLinkCode={breakSoulLinkCode}
+            sendReviveToPartner={sendReviveToPartner}
+            onClose={() => setShowSoulLink(false)}
+          />
+        )}
 
-      {/* SEASON VIEW */}
-      {showSeasonView && (
-        <SeasonView state={state} theme={theme} onClose={() => setShowSeasonView(false)} />
-      )}
+        {/* SEASON VIEW */}
+        {showSeasonView && (
+          <SeasonView state={state} theme={theme} onClose={() => setShowSeasonView(false)} />
+        )}
 
-      {/* CHARISMA DUNGEONS VIEW */}
-      {showCharismaView && (
-        <CharismaDungeonsView
-          state={state} theme={theme}
-          startCharismaChain={startCharismaChain}
-          onClose={() => setShowCharismaView(false)}
-        />
-      )}
+        {/* CHARISMA DUNGEONS VIEW */}
+        {showCharismaView && (
+          <CharismaDungeonsView
+            state={state} theme={theme}
+            startCharismaChain={startCharismaChain}
+            onClose={() => setShowCharismaView(false)}
+          />
+        )}
+      </React.Suspense>
 
       {/* HIDDEN QUEST DISCOVERY MODAL */}
       {showHiddenQuestModal && (
@@ -757,60 +805,77 @@ function App({ initialHunterName, onLogout }) {
                 <div style={{ textAlign: "center" }}><div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>GOLD MULT</div><div style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24", fontFamily: "'Cinzel',serif" }}>x{showHiddenQuestModal.reward?.goldMult || 2}</div></div>
               </div>
             </div>
-            <button onClick={() => setShowHiddenQuestModal(null)} style={{ width: "100%", padding: 14, borderRadius: 12, fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg,#6366f122,#6366f110)", color: "#a5b4fc", border: "1px solid #6366f144", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>QUEST ANNEHMEN</button>
+            <button onClick={() => setShowHiddenQuestModal(null)} className="press-feedback" style={{ width: "100%", padding: 14, borderRadius: 12, fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg,#6366f122,#6366f110)", color: "#a5b4fc", border: "1px solid #6366f144", fontFamily: "'Cinzel',serif", letterSpacing: 2, transition: "all 0.3s" }}>QUEST ANNEHMEN</button>
           </div>
         </div>
       )}
 
-      {/* HEADER */}
-      <header style={{ position: "sticky", top: 0, zIndex: 100, padding: "12px 16px", background: `linear-gradient(180deg,${theme.bg}f5,${theme.bg}e8)`, borderBottom: `1px solid ${penaltyActive ? "#ef444422" : theme.primary + "12"}`, backdropFilter: "blur(24px)", opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 480, margin: "0 auto", width: "100%" }}>
+      {/* ── SCREEN VIGNETTE (Design 2.0) ── */}
+      <div className="vignette" aria-hidden="true" />
+
+      {/* HEADER 3.0 — Futuristic HUD with Compact Scroll */}
+      <header className={`header-v3 ${headerState.isCompact ? 'header-v3-compact' : ''}`} style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, padding: headerState.isCompact ? "6px 16px 4px" : "14px 16px 10px", background: `linear-gradient(180deg,${theme.bg}f8,${theme.bg}e0)`, backdropFilter: "blur(28px) saturate(1.5)", WebkitBackdropFilter: "blur(28px) saturate(1.5)", opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "all 0.35s cubic-bezier(0.22,1,0.36,1)", borderBottom: headerState.isCompact ? `1px solid ${theme.primary}22` : '1px solid transparent', boxShadow: headerState.isCompact ? `0 4px 24px rgba(0,0,0,0.3), 0 1px 0 ${theme.primary}15` : 'none' }}>
+        {/* HUD corner brackets */}
+        <div style={{ position: "absolute", top: 0, left: 0, width: 18, height: 18, borderTop: `2px solid ${theme.primary}44`, borderLeft: `2px solid ${theme.primary}44`, pointerEvents: "none", zIndex: 2, opacity: 0.6 }} />
+        <div style={{ position: "absolute", top: 0, right: 0, width: 18, height: 18, borderTop: `2px solid ${theme.primary}44`, borderRight: `2px solid ${theme.primary}44`, pointerEvents: "none", zIndex: 2, opacity: 0.6 }} />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
           {/* TOP ROW: Rank + Name + Exit */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg,${rank.color}28,${rank.color}0a)`, border: `2px solid ${rank.color}66`, position: "relative", overflow: "hidden", clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", animation: "hexPulse 3s infinite", flexShrink: 0 }}>
-                <span style={{ fontSize: 18, fontWeight: 900, color: rank.color, fontFamily: "'Cinzel',serif", position: "relative", zIndex: 1, textShadow: `0 0 12px ${rank.color}88` }}>{rank.name}</span>
+              {/* Rank Hexagon with animated ring glow */}
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                {/* Outer glow ring */}
+                <div style={{ position: "absolute", inset: headerState.isCompact ? -3 : -4, clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: `linear-gradient(135deg, ${rank.color}20, ${rank.color}08)`, animation: "borderGlow 3s ease-in-out infinite", zIndex: 0, "--glow-color": `${rank.color}44`, transition: "inset 0.35s cubic-bezier(0.34,1.56,0.64,1)" }} />
+                <div className="header-v3-rank" style={{ width: headerState.isCompact ? 32 : 48, height: headerState.isCompact ? 32 : 48, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg,${rank.color}28,${rank.color}0a)`, border: `2px solid ${rank.color}66`, position: "relative", overflow: "hidden", clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", animation: "hexPulse 3s infinite", zIndex: 1 }}>
+                  <span style={{ fontSize: headerState.isCompact ? 12 : 18, fontWeight: 900, color: rank.color, fontFamily: "'Cinzel',serif", position: "relative", zIndex: 1, textShadow: `0 0 12px ${rank.color}88, 0 0 24px ${rank.color}44`, transition: "font-size 0.35s ease" }}>{rank.name}</span>
+                  {/* Scan line inside hexagon */}
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "100%", background: `linear-gradient(180deg, transparent 30%, ${rank.color}0a 50%, transparent 70%)`, animation: "rankShine 3s ease-in-out infinite", pointerEvents: "none" }} />
+                </div>
               </div>
               <div style={{ minWidth: 0, overflow: "hidden" }}>
-                <div style={{ fontSize: 16, fontWeight: 900, color: penaltyActive ? "#ef4444" : "#fff", fontFamily: "'Outfit',sans-serif", letterSpacing: 0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{state.hunterName}</div>
-                <div style={{ fontSize: 10, color: rank.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 1, opacity: 0.9, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{state.selectedTitle || rank.label}</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: penaltyActive ? "#ef4444" : "#fff", fontFamily: "'Outfit',sans-serif", letterSpacing: 0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: penaltyActive ? "0 0 12px #ef444488" : "none" }}>{state.hunterName}</div>
+                <div style={{ fontSize: 10, color: rank.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 1, opacity: 0.9, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: `0 0 8px ${rank.color}44` }}>{state.selectedTitle || rank.label}</div>
               </div>
             </div>
-            <button onClick={onLogout} style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#ef4444", fontSize: 10, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", padding: "6px 12px", fontWeight: 800, letterSpacing: 1, transition: "all 0.2s" }} title="System beenden" onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.25)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.15)"}>
+            <button onClick={onLogout} className="press-feedback" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, color: "#ef4444", fontSize: 10, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", padding: "6px 12px", fontWeight: 800, letterSpacing: 1, transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)" }} title="System beenden" onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.22)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"; e.currentTarget.style.boxShadow = "none"; }}>
               EXIT
             </button>
           </div>
 
+          {/* Energy Line Separator */}
+          <div className="energy-line" style={{ margin: "0 -16px", opacity: headerState.isCompact ? 0.3 : 1, transition: "opacity 0.3s" }} />
+
           {/* BOTTOM ROW: Stats + Icons */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", paddingTop: 4, borderTop: "1px solid rgba(255,255,255,0.03)" }}>
+          <div className={`header-v3-stats-row ${headerState.isCompact ? 'compact' : ''}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", paddingTop: 2, maxHeight: headerState.isCompact ? 0 : 50 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ textAlign: "center", padding: "4px 10px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ fontSize: 14, fontWeight: 900, color: theme.accent, fontFamily: "'JetBrains Mono',monospace" }}>{powerLevel.toLocaleString()}</div>
+              <div id="header-xp-target" className="stat-mini" style={{ background: `${theme.primary}08`, borderColor: `${theme.primary}15` }}>
+                <div style={{ fontSize: 14, fontWeight: 900, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", fontVariantNumeric: "tabular-nums" }}>{powerLevel.toLocaleString()}</div>
                 <div style={{ fontSize: 7, color: "#475569", letterSpacing: 1, fontFamily: "'JetBrains Mono',monospace", marginTop: 1 }}>PWR</div>
               </div>
-              <div onClick={() => { window.__SHOP_START_TAB = "gold"; navigateTo("shop"); }} style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 10px", borderRadius: 8, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.1)", color: "#fbbf24", minWidth: 60 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3 }}>
+              <div id="header-gold-target" className="stat-mini press-feedback" onClick={() => { window.__SHOP_START_TAB = "gold"; navigateTo("shop"); }} style={{ cursor: "pointer", background: "rgba(251,191,36,0.06)", borderColor: "rgba(251,191,36,0.1)", minWidth: 60 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3, fontVariantNumeric: "tabular-nums" }}>
                   <img src="/icon/coin.png" style={{ width: 14, height: 14 }} alt="G" />{state.gold.toLocaleString()}
                 </div>
               </div>
               {can('gem_shop') && (
-                <button onClick={() => { window.__SHOP_START_TAB = "gems"; navigateTo("shop"); }} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 10px", borderRadius: 8, background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.15)", color: "#c084fc", minWidth: 50, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = "#a855f755"; e.currentTarget.style.background = "rgba(124,58,237,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(124,58,237,0.15)"; e.currentTarget.style.background = "rgba(124,58,237,0.08)"; }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3 }}>
+                <button className="stat-mini press-feedback" onClick={() => { window.__SHOP_START_TAB = "gems"; navigateTo("shop"); }} style={{ cursor: "pointer", background: "rgba(124,58,237,0.08)", borderColor: "rgba(124,58,237,0.15)", minWidth: 50 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#c084fc", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3, fontVariantNumeric: "tabular-nums" }}>
                     <img src={GEM_ICONS.gem} style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 3px #a855f788)" }} alt="💎" />{(state.gems || 0).toLocaleString()}
                   </div>
                 </button>
               )}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 10px", borderRadius: 8, background: state.streak >= 3 ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${state.streak >= 3 ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.06)"}`, color: state.streak >= 5 ? "#f97316" : state.streak >= 3 ? "#fb923c" : "#94a3b8", minWidth: 40 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 2 }}>
+              <div className="stat-mini" style={{ background: state.streak >= 3 ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.03)", borderColor: state.streak >= 3 ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.06)", minWidth: 40 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: state.streak >= 5 ? "#f97316" : state.streak >= 3 ? "#fb923c" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 2, fontVariantNumeric: "tabular-nums" }}>
                   <span style={{ animation: state.streak >= 3 ? "pulse 1.5s infinite" : "none", display: "inline-flex", alignItems: "center" }}><img src={STAT_ICONS.str} alt="Streak" style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 4px #f9731688)" }} /></span>{state.streak}
                 </div>
               </div>
               {/* Soul Link Pill */}
               {can('soul_link') && state.soulLink?.linkCode && (
-                <button onClick={() => setShowSoulLink(true)} style={{
-                  display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
-                  borderRadius: 8, background: state.soulLink.bothActive ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${state.soulLink.bothActive ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.1)"}`,
+                <button className="stat-mini press-feedback" onClick={() => setShowSoulLink(true)} style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  background: state.soulLink.bothActive ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
+                  borderColor: state.soulLink.bothActive ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.1)",
                   color: state.soulLink.bothActive ? "#22d3ee" : "#6b7280",
                   cursor: "pointer", fontSize: 10, fontWeight: 700,
                   animation: state.soulLink.bothActive ? "pulse 2s infinite" : "none"
@@ -821,11 +886,9 @@ function App({ initialHunterName, onLogout }) {
               )}
               {/* Season Indicator */}
               {can('seasons') && state.seasons?.currentSeason && (
-                <button onClick={() => setShowSeasonView(true)} style={{
-                  display: "flex", alignItems: "center", gap: 3, padding: "4px 8px",
-                  borderRadius: 8, background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  color: "#9ca3af", cursor: "pointer", fontSize: 12
+                <button className="stat-mini press-feedback" onClick={() => setShowSeasonView(true)} style={{
+                  cursor: "pointer", fontSize: 12,
+                  background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "#9ca3af"
                 }} title={SEASONS[state.seasons.currentSeason]?.name}>
                   {SEASONS[state.seasons.currentSeason]?.iconSrc
                     ? <img src={SEASONS[state.seasons.currentSeason].iconSrc} alt={SEASONS[state.seasons.currentSeason].name} style={{ width: 18, height: 18, objectFit: "contain" }} />
@@ -834,32 +897,34 @@ function App({ initialHunterName, onLogout }) {
               )}
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {can('sanctum') && <button
                 onClick={() => navigateTo("sanctum")}
+                className="press-feedback"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
                   height: 32, borderRadius: 10, background: "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))",
                   border: "1px solid rgba(34,211,153,0.3)", color: "#34d399",
                   cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
-                  transition: "all 0.3s", letterSpacing: 1, boxShadow: "0 0 10px rgba(34,211,153,0.05)",
+                  transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", letterSpacing: 1, boxShadow: "0 0 10px rgba(34,211,153,0.05)",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(34,211,153,0.2)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.7)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.2), rgba(34,211,153,0.05))"; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(34,211,153,0.2)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.7)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.2), rgba(34,211,153,0.05))"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(34,211,153,0.05)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))"; }}
                 title="Inner Sanctum Base"
               >
-                <GameIcon src={NAV_ICONS.timer} fallback="â°" size={16} glow glowColor="rgba(34,211,153,0.5)" /> <span className="hide-on-mobile">SANCTUM</span>
+                <GameIcon src={NAV_ICONS.timer} fallback="⏰" size={16} glow glowColor="rgba(34,211,153,0.5)" /> <span className="hide-on-mobile">SANCTUM</span>
               </button>}
               {can('focus_mode') && <button
                 onClick={() => setShowFocusMode(true)}
+                className="press-feedback"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
                   height: 32, borderRadius: 10, background: "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))",
                   border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc",
                   cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
-                  transition: "all 0.3s", letterSpacing: 1, boxShadow: "0 0 10px rgba(168,85,247,0.05)",
+                  transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", letterSpacing: 1, boxShadow: "0 0 10px rgba(168,85,247,0.05)",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(168,85,247,0.2)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.7)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.05))"; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(168,85,247,0.2)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.7)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.05))"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(168,85,247,0.05)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))"; }}
                 title="Focus Mode starten"
               >
@@ -867,6 +932,7 @@ function App({ initialHunterName, onLogout }) {
               </button>}
               {can('dawn_dusk') && <button
                 onClick={() => setShowDawnDusk(true)}
+                className="press-feedback"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
                   height: 32, borderRadius: 10,
@@ -876,7 +942,7 @@ function App({ initialHunterName, onLogout }) {
                   border: `1px solid ${state?.dawnDusk?.currentRun ? "rgba(251,191,36,0.7)" : "rgba(251,191,36,0.25)"}`,
                   color: state?.dawnDusk?.currentRun ? "#fbbf24" : "#78716c",
                   cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
-                  transition: "all 0.3s", letterSpacing: 1,
+                  transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", letterSpacing: 1,
                   animation: state?.dawnDusk?.currentRun ? "pulse 2s infinite" : "none"
                 }}
                 title="Dawn/Dusk Protocol"
@@ -892,13 +958,14 @@ function App({ initialHunterName, onLogout }) {
                   localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
                   return next;
                 })}
+                className="press-feedback"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 34, height: 34, borderRadius: 10,
                   background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
                   border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
                   color: isMusicPlaying ? theme.accent : "#475569",
-                  cursor: "pointer", fontSize: 18, transition: "all 0.3s"
+                  cursor: "pointer", fontSize: 18, transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)"
                 }}
               >
                 {isMusicPlaying ? "\u266B" : "\u266A"}
@@ -906,16 +973,17 @@ function App({ initialHunterName, onLogout }) {
 
               {can('multiplayer') && <button
                 onClick={enterPortal}
+                className="press-feedback"
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 34, height: 34, borderRadius: 10,
                   background: `linear-gradient(135deg, #f59e0b15, #f59e0b25)`,
                   border: `1px solid #f59e0b55`,
-                  color: '#fcd34d', fontSize: 18, cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  color: '#fcd34d', fontSize: 18, cursor: "pointer", transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
                   boxShadow: `0 0 10px rgba(245,158,11,0.1)`,
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.borderColor = '#f59e0b'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = '#f59e0b55'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)'; e.currentTarget.style.borderColor = '#f59e0b'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.2)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = '#f59e0b55'; e.currentTarget.style.boxShadow = '0 0 10px rgba(245,158,11,0.1)'; }}
                 title="Hunter Association"
               >
                 <GameIcon src={NAV_ICONS.guild} fallback="🚪" size={20} glow glowColor="rgba(245,158,11,0.5)" />
@@ -926,7 +994,7 @@ function App({ initialHunterName, onLogout }) {
       </header>
 
       {/* MAIN */}
-      <main style={{ position: "relative", zIndex: 1, padding: "16px", maxWidth: 480, margin: "0 auto", paddingBottom: 92 }}>
+      <main style={{ position: "relative", zIndex: 1, padding: "16px", paddingTop: headerState.isCompact ? 60 : 108, maxWidth: 480, margin: "0 auto", paddingBottom: 92, transition: "padding-top 0.35s cubic-bezier(0.22,1,0.36,1)" }}>
 
         {/* SHADOW REGRESSION BANNER (replaces plain penalty banner) */}
         {penaltyActive && state.shadowRegression?.active && (state.shadowRegression.previousStreak || 0) > 0 ? (
@@ -1031,7 +1099,10 @@ function App({ initialHunterName, onLogout }) {
           persist({ ...state, reminders: updated });
         }} />
 
-        {/* ◆◆◆ DASHBOARD ◆◆◆ */}
+        {/* ── v3.0 Phase 4: Motion Blur Transition wrapper ── */}
+        <MotionBlurTransition viewKey={view} disabled={state.settings?.motionBlur === false}>
+
+        {/* ◆ ◆ ◆  DASHBOARD ◆ ◆ ◆  */}
         {view === "dashboard" && (
           <DashboardView
             state={state} theme={theme} can={can}
@@ -1098,70 +1169,72 @@ function App({ initialHunterName, onLogout }) {
         {/* ◆◆◆ STORY ◆◆◆ */}
         {
           view === "story" && state && (
-            <StoryView
-              gameState={state}
-              theme={theme}
-              onChapterComplete={(chapter) => {
-                const prev = state;
-                const completedChapters = [...(prev.story?.completedChapters || [])];
+            <React.Suspense fallback={null}>
+              <StoryView
+                gameState={state}
+                theme={theme}
+                onChapterComplete={(chapter) => {
+                  const prev = state;
+                  const completedChapters = [...(prev.story?.completedChapters || [])];
 
-                // Abuse Protection: Only give XP and Gold if chapter isn't already completed
-                if (!completedChapters.includes(chapter.id)) {
-                  completedChapters.push(chapter.id);
+                  // Abuse Protection: Only give XP and Gold if chapter isn't already completed
+                  if (!completedChapters.includes(chapter.id)) {
+                    completedChapters.push(chapter.id);
 
-                  const xpGain = chapter.rewards?.xp || 0;
-                  const goldGain = chapter.rewards?.gold || 0;
+                    const xpGain = chapter.rewards?.xp || 0;
+                    const goldGain = chapter.rewards?.gold || 0;
+                    let next = calculateLevelUp(prev, xpGain);
+                    const didLevelUp = next._didLevelUp;
+                    const earnedPoints = next._levelsGained;
+                    const newLevel = next.level;
+
+                    if (chapter.rewards?.title) next.selectedTitle = chapter.rewards.title;
+
+                    persist({
+                      ...next,
+                      gold: (prev.gold || 0) + goldGain,
+                      totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
+                      story: {
+                        ...prev.story,
+                        completedChapters,
+                        totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
+                      },
+                    });
+                    enqueueRewardFlow(buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelUp, newLevel, earnedPoints));
+                  } else {
+                    notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
+                  }
+                }}
+                onBossComplete={(boss, arcId) => {
+                  const prev = state;
+                  const defeatedBosses = [...(prev.story?.defeatedBosses || [])];
+                  if (defeatedBosses.includes(arcId)) {
+                    notify("Dieser Boss wurde bereits besiegt.", "info");
+                    return;
+                  }
+                  defeatedBosses.push(arcId);
+                  const xpGain = boss.rewards?.xp || 0;
+                  const goldGain = boss.rewards?.gold || 0;
                   let next = calculateLevelUp(prev, xpGain);
                   const didLevelUp = next._didLevelUp;
                   const earnedPoints = next._levelsGained;
                   const newLevel = next.level;
-
-                  if (chapter.rewards?.title) next.selectedTitle = chapter.rewards.title;
-
+                  const titleGranted = boss.rewards?.title || null;
+                  if (titleGranted) next.selectedTitle = titleGranted;
                   persist({
                     ...next,
                     gold: (prev.gold || 0) + goldGain,
                     totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
                     story: {
                       ...prev.story,
-                      completedChapters,
+                      defeatedBosses,
                       totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
                     },
                   });
-                  enqueueRewardFlow(buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelUp, newLevel, earnedPoints));
-                } else {
-                  notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
-                }
-              }}
-              onBossComplete={(boss, arcId) => {
-                const prev = state;
-                const defeatedBosses = [...(prev.story?.defeatedBosses || [])];
-                if (defeatedBosses.includes(arcId)) {
-                  notify("Dieser Boss wurde bereits besiegt.", "info");
-                  return;
-                }
-                defeatedBosses.push(arcId);
-                const xpGain = boss.rewards?.xp || 0;
-                const goldGain = boss.rewards?.gold || 0;
-                let next = calculateLevelUp(prev, xpGain);
-                const didLevelUp = next._didLevelUp;
-                const earnedPoints = next._levelsGained;
-                const newLevel = next.level;
-                const titleGranted = boss.rewards?.title || null;
-                if (titleGranted) next.selectedTitle = titleGranted;
-                persist({
-                  ...next,
-                  gold: (prev.gold || 0) + goldGain,
-                  totalGoldEarned: (prev.totalGoldEarned || 0) + goldGain,
-                  story: {
-                    ...prev.story,
-                    defeatedBosses,
-                    totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
-                  },
-                });
-                enqueueRewardFlow(buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, titleGranted));
-              }}
-            />
+                  enqueueRewardFlow(buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, titleGranted));
+                }}
+              />
+            </React.Suspense>
           )
         }
 
@@ -1338,7 +1411,9 @@ function App({ initialHunterName, onLogout }) {
         {/* ◆◆◆ ANALYTICS ◆◆◆ */}
         {
           view === "analytics" && (
-            <AnalyticsDashboard state={state} theme={theme} />
+            <React.Suspense fallback={null}>
+              <AnalyticsDashboard state={state} theme={theme} />
+            </React.Suspense>
           )
         }
 
@@ -1369,67 +1444,26 @@ function App({ initialHunterName, onLogout }) {
             <SettingsView state={state} persist={persist} theme={theme} can={can} onLogout={onLogout} />
           )
         }
+        </MotionBlurTransition>
       </main >
 
-      {/* BOTTOM NAV — reads from state.navbarConfig (customizable in Settings) */}
-      {(() => {
-        // Build tab list from user config or defaults
-        const SYSTEM_SUB_VIEWS = ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"];
-        const TRAINING_SUB_VIEWS = ["goals", "calendar"];
-        const TAB_FEATURE_MAP = { training: "training_tab", dungeon: "dungeons", story: "story", stats: "stats_view", analytics: "analytics", achievements: "achievements", challenges: "challenges", shadows: "shadow_army", equipment: "equipment", jobs: "jobs", shop: "shop", goals: "goals", calendar: "calendar", sanctum: "sanctum" };
-        const configKeys = state.navbarConfig?.tabs || DEFAULT_NAV_KEYS;
-        const navTabs = configKeys
-          .map(key => {
-            const def = ALL_NAV_TABS.find(t => t.key === key);
-            if (!def) return null;
-            const feat = TAB_FEATURE_MAP[key];
-            if (feat && !can(feat)) return null;
-            // Dynamic badges
-            let badge = 0;
-            if (key === "dungeon") badge = activeDungeons.length;
-            if (key === "stats" && state.statPoints > 0) badge = state.statPoints;
-            return { ...def, badge };
-          })
-          .filter(Boolean);
-
-        // Determine active tab highlight: direct match first, then parent hubs
-        const isTabActive = (tabKey) => {
-          if (view === tabKey) return true;
-          // "system" hub highlights for sub-views, but only if that sub-view doesn't have its own tab
-          if (tabKey === "system" && SYSTEM_SUB_VIEWS.includes(view) && !configKeys.includes(view)) return true;
-          if (tabKey === "training" && TRAINING_SUB_VIEWS.includes(view) && !configKeys.includes(view)) return true;
-          return false;
-        };
-
-        return (
-          <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: `linear-gradient(to top, rgba(6,6,16,0.98), rgba(10,10,26,0.85))`, borderTop: `1px solid ${penaltyActive ? "#ef444455" : theme.primary + "44"}`, backdropFilter: "blur(24px)", boxShadow: `0 -4px 32px ${theme.glow}`, opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "opacity 0.2s ease" }}>
-            <div style={{ display: "flex", justifyContent: "center", maxWidth: 540, margin: "0 auto", padding: "0 4px" }}>
-              {navTabs.map(tab => {
-                const active = isTabActive(tab.key);
-                const iconSize = tab.isGate ? 36 : 26;
-                return (
-                  <button key={tab.key} onClick={() => {
-                    setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
-                    navigateTo(tab.key);
-                  }} style={{ flex: 1, padding: "12px 0 10px", background: "transparent", color: active ? theme.accent : "#475569", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", transition: "all 0.3s" }}>
-                    {active && <div style={{ position: "absolute", top: -1, left: "10%", right: "10%", height: 3, background: `linear-gradient(90deg,transparent,${theme.accent},transparent)`, borderRadius: "0 0 4px 4px", boxShadow: `0 2px 12px ${theme.accent}, 0 0 20px ${theme.glow}` }} />}
-                    <div style={{ position: "relative" }}>
-                      <img src={tab.iconSrc} alt={tab.label} style={{
-                        width: iconSize, height: iconSize, objectFit: "contain", display: "block",
-                        transition: "all 0.3s",
-                        transform: active ? "scale(1.18) translateY(-2px)" : "scale(1)",
-                        filter: active ? `brightness(1.35) drop-shadow(0 0 8px ${theme.glow}) saturate(1.3)` : "brightness(0.55) saturate(0.4)",
-                      }} />
-                      {tab.badge > 0 && <div style={{ position: "absolute", top: -6, right: -8, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono',monospace", border: "2px solid #000", animation: "pulse 2s infinite" }}>{tab.badge}</div>}
-                    </div>
-                    <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, fontFamily: "'Outfit',sans-serif", opacity: active ? 1 : 0.6 }}>{tab.label.toUpperCase()}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
-        );
-      })()}
+      {/* BOTTOM NAV — v2.0 component */}
+      <BottomNav
+        view={view}
+        navConfig={state.navbarConfig}
+        allTabs={ALL_NAV_TABS}
+        defaultKeys={DEFAULT_NAV_KEYS}
+        can={can}
+        onNavigate={(key) => {
+          setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
+          navigateTo(key);
+        }}
+        activeDungeons={activeDungeons}
+        statPoints={state.statPoints}
+        penaltyActive={penaltyActive}
+        theme={theme}
+        hidden={isCreatingEntry}
+      />
 
       {/* TRAINING HUB — unified view for habits/goals/calendar */}
       {
@@ -1622,12 +1656,15 @@ function App({ initialHunterName, onLogout }) {
       {view === "sanctum" && (
         <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
           <div style={{ maxWidth: 480, margin: "0 auto" }}>
-            <InnerSanctum theme={theme} state={state} persist={persist} notify={notify} />
+            <React.Suspense fallback={null}>
+              <InnerSanctum theme={theme} state={state} persist={persist} notify={notify} />
+            </React.Suspense>
           </div>
         </div>
       )}
 
-            {/* QUEST FORGE MODAL */}
+
+      {/* QUEST FORGE MODAL */}
       {
         showCreate && (
           <div onClick={() => { setShowCreate(false); setShowTemplates(false); }} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(2,2,10,0.9)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)", padding: "16px 12px" }}>
@@ -2082,14 +2119,16 @@ function App({ initialHunterName, onLogout }) {
 
       {/* REWARDED AD MODAL */}
       {showAdModal && (
-        <RewardedAdModal
-          theme={theme}
-          onComplete={() => {
-            const result = watchRewardedAd();
-            return result;
-          }}
-          onClose={() => setShowAdModal(false)}
-        />
+        <React.Suspense fallback={null}>
+          <RewardedAdModal
+            theme={theme}
+            onComplete={() => {
+              const result = watchRewardedAd();
+              return result;
+            }}
+            onClose={() => setShowAdModal(false)}
+          />
+        </React.Suspense>
       )}
 
       {/* DAWN / DUSK PROTOCOL — rendered above as overlay (line ~451), this duplicate is intentionally removed */}
@@ -2099,6 +2138,7 @@ function App({ initialHunterName, onLogout }) {
         <AIChatWidget geminiAI={geminiAI} state={state} theme={theme} />
       )}
     </div >
+    </ScreenShake>
   );
 }
 

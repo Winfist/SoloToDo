@@ -338,15 +338,21 @@ export const GEM_SHOP_ITEMS = [
 ];
 
 // ─── THEMES ───────────────────────────────────────────────────
+// Each theme carries color tokens + optional spacing/radius overrides.
+// CSS counterpart: styles/tokens.css (set via data-theme attribute).
+const _themeBase = {
+  spacing: { sm: "8px", md: "16px", lg: "24px", xl: "32px" },
+  radius: { sm: "6px", md: "10px", lg: "14px", xl: "18px", full: "9999px" },
+};
 export const THEMES = {
-  default: { primary: "#22d3ee", secondary: "#a855f7", glow: "rgba(34,211,238,0.35)", accent: "#67e8f9", bg: "#06060e", card: "rgba(10,10,22,0.88)", surface: "rgba(16,16,36,0.6)" },
-  crimson: { primary: "#dc2626", secondary: "#991b1b", glow: "rgba(220,38,38,0.35)", accent: "#fca5a5", bg: "#0a0808", card: "rgba(24,12,12,0.85)", surface: "rgba(40,20,20,0.6)" },
-  shadow: { primary: "#6366f1", secondary: "#4338ca", glow: "rgba(99,102,241,0.35)", accent: "#a5b4fc", bg: "#06060f", card: "rgba(10,10,28,0.85)", surface: "rgba(18,18,42,0.6)" },
-  ice: { primary: "#06b6d4", secondary: "#0891b2", glow: "rgba(6,182,212,0.35)", accent: "#a5f3fc", bg: "#060a0f", card: "rgba(10,16,28,0.85)", surface: "rgba(16,24,42,0.6)" },
-  golden: { primary: "#d97706", secondary: "#b45309", glow: "rgba(217,119,6,0.35)", accent: "#fde68a", bg: "#0a0806", card: "rgba(24,20,12,0.85)", surface: "rgba(40,32,18,0.6)" },
-  celestial: { primary: "#daa520", secondary: "#f5deb3", glow: "rgba(218,165,32,0.35)", accent: "#ffe4b5", bg: "#0a0806", card: "rgba(22,18,12,0.88)", surface: "rgba(36,30,20,0.6)" },
-  void: { primary: "#7c3aed", secondary: "#581c87", glow: "rgba(124,58,237,0.35)", accent: "#c4b5fd", bg: "#08060f", card: "rgba(14,10,28,0.88)", surface: "rgba(22,16,42,0.6)" },
-  dragon: { primary: "#ea580c", secondary: "#9a3412", glow: "rgba(234,88,12,0.35)", accent: "#fdba74", bg: "#0a0604", card: "rgba(24,14,8,0.88)", surface: "rgba(38,22,14,0.6)" },
-  starfall: { primary: "#818cf8", secondary: "#4f46e5", glow: "rgba(129,140,248,0.35)", accent: "#e0e7ff", bg: "#060610", card: "rgba(10,10,26,0.88)", surface: "rgba(18,18,44,0.6)" },
-  blood_sovereign: { primary: "#be123c", secondary: "#881337", glow: "rgba(190,18,60,0.35)", accent: "#fda4af", bg: "#0a0406", card: "rgba(24,10,14,0.88)", surface: "rgba(38,16,22,0.6)" },
+  default: { ..._themeBase, primary: "#22d3ee", secondary: "#a855f7", glow: "rgba(34,211,238,0.35)", accent: "#67e8f9", bg: "#06060e", card: "rgba(10,10,22,0.88)", surface: "rgba(16,16,36,0.6)" },
+  crimson: { ..._themeBase, primary: "#dc2626", secondary: "#991b1b", glow: "rgba(220,38,38,0.35)", accent: "#fca5a5", bg: "#0a0808", card: "rgba(24,12,12,0.85)", surface: "rgba(40,20,20,0.6)" },
+  shadow: { ..._themeBase, primary: "#6366f1", secondary: "#4338ca", glow: "rgba(99,102,241,0.35)", accent: "#a5b4fc", bg: "#06060f", card: "rgba(10,10,28,0.85)", surface: "rgba(18,18,42,0.6)" },
+  ice: { ..._themeBase, primary: "#06b6d4", secondary: "#0891b2", glow: "rgba(6,182,212,0.35)", accent: "#a5f3fc", bg: "#060a0f", card: "rgba(10,16,28,0.85)", surface: "rgba(16,24,42,0.6)" },
+  golden: { ..._themeBase, primary: "#d97706", secondary: "#b45309", glow: "rgba(217,119,6,0.35)", accent: "#fde68a", bg: "#0a0806", card: "rgba(24,20,12,0.85)", surface: "rgba(40,32,18,0.6)" },
+  celestial: { ..._themeBase, primary: "#daa520", secondary: "#f5deb3", glow: "rgba(218,165,32,0.35)", accent: "#ffe4b5", bg: "#0a0806", card: "rgba(22,18,12,0.88)", surface: "rgba(36,30,20,0.6)" },
+  void: { ..._themeBase, primary: "#7c3aed", secondary: "#581c87", glow: "rgba(124,58,237,0.35)", accent: "#c4b5fd", bg: "#08060f", card: "rgba(14,10,28,0.88)", surface: "rgba(22,16,42,0.6)" },
+  dragon: { ..._themeBase, primary: "#ea580c", secondary: "#9a3412", glow: "rgba(234,88,12,0.35)", accent: "#fdba74", bg: "#0a0604", card: "rgba(24,14,8,0.88)", surface: "rgba(38,22,14,0.6)" },
+  starfall: { ..._themeBase, primary: "#818cf8", secondary: "#4f46e5", glow: "rgba(129,140,248,0.35)", accent: "#e0e7ff", bg: "#060610", card: "rgba(10,10,26,0.88)", surface: "rgba(18,18,44,0.6)" },
+  blood_sovereign: { ..._themeBase, primary: "#be123c", secondary: "#881337", glow: "rgba(190,18,60,0.35)", accent: "#fda4af", bg: "#0a0406", card: "rgba(24,10,14,0.88)", surface: "rgba(38,16,22,0.6)" },
 };
