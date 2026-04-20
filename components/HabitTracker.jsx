@@ -206,11 +206,11 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
                         boxShadow: `0 0 10px ${completed ? "#22c55e" : cat.color}22`,
                     }}>
                         {completed ? (
-                          <span style={{ fontSize: 22, color: "#22c55e" }}>✓</span>
+                            <span style={{ fontSize: 22, color: "#22c55e" }}>✓</span>
                         ) : cat.iconSrc ? (
-                          <img src={cat.iconSrc} alt={cat.label} style={{ width: 28, height: 28, objectFit: "contain", filter: `brightness(${completed ? 0.6 : 1.05}) drop-shadow(0 0 5px ${cat.color}55)` }} />
+                            <img src={cat.iconSrc} alt={cat.label} style={{ width: 28, height: 28, objectFit: "contain", filter: `brightness(${completed ? 0.6 : 1.05}) drop-shadow(0 0 5px ${cat.color}55)` }} />
                         ) : (
-                          habit.icon || cat.icon
+                            habit.icon || cat.icon
                         )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -226,8 +226,8 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
                         </div>
                         <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
                             <span style={{ fontSize: 8, color: cat.color, padding: "1px 5px", borderRadius: 4, background: cat.color + "18", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}>
-                              {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.label} style={{ width: 10, height: 10, objectFit: "contain" }} /> : cat.icon}
-                              {cat.label}
+                                {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.label} style={{ width: 10, height: 10, objectFit: "contain" }} /> : cat.icon}
+                                {cat.label}
                             </span>
                             {streak > 0 && (
                                 <span style={{ fontSize: 8, color: streak >= 5 ? "#f97316" : "#f59e0b", padding: "1px 5px", borderRadius: 4, background: "#f59e0b15", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}>
@@ -440,9 +440,9 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
                                 onMouseLeave={e => { if (category !== c.key) { e.currentTarget.style.borderColor = "#1e2940"; e.currentTarget.style.color = "#475569"; } }}
                             >
                                 {c.iconSrc ? (
-                                  <img src={c.iconSrc} alt={c.label} style={{ width: 20, height: 20, objectFit: "contain", filter: category === c.key ? `drop-shadow(0 0 6px ${c.color}88)` : "brightness(0.7)" }} />
+                                    <img src={c.iconSrc} alt={c.label} style={{ width: 20, height: 20, objectFit: "contain", filter: category === c.key ? `drop-shadow(0 0 6px ${c.color}88)` : "brightness(0.7)" }} />
                                 ) : (
-                                  <span style={{ fontSize: 16 }}>{c.icon}</span>
+                                    <span style={{ fontSize: 16 }}>{c.icon}</span>
                                 )}
                                 <span>{c.label}</span>
                             </button>
@@ -484,9 +484,9 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
                                 boxShadow: verification === v.key ? `0 0 12px ${theme?.primary || "#22d3ee"}22, inset 0 -2px 4px rgba(0,0,0,0.3)` : "none",
                             }}>
                                 {v.iconSrc ? (
-                                  <img src={v.iconSrc} alt={v.label} style={{ width: 20, height: 20, objectFit: "contain", filter: verification === v.key ? "brightness(1.2)" : "brightness(0.7)" }} />
+                                    <img src={v.iconSrc} alt={v.label} style={{ width: 20, height: 20, objectFit: "contain", filter: verification === v.key ? "brightness(1.2)" : "brightness(0.7)" }} />
                                 ) : (
-                                  <span style={{ fontSize: 16 }}>{v.icon}</span>
+                                    <span style={{ fontSize: 16 }}>{v.icon}</span>
                                 )}
                                 <span>{v.label}</span>
                                 <span style={{ fontSize: 7, opacity: 0.6 }}>{v.desc}</span>
@@ -593,8 +593,9 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
         });
 
         const habit = habits.find(h => h.id === habitId);
+        const updatedHabit = updated.find(h => h.id === habitId);
         const baseXp = habit?.verification === "timer" ? 15 : habit?.verification === "counter" ? 12 : 8;
-        const streakBonus = Math.min((habit?.currentStreak || 0), 10);
+        const streakBonus = Math.min((updatedHabit?.currentStreak || 0), 10);
         const xpGain = baseXp + streakBonus;
 
         const linkedQuestId = habit?.linkedQuestId;
@@ -604,7 +605,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
         }) : state.quests;
 
         persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpGain));
-        notify(`Habit erledigt! +${xpGain} XP Streak: ${(updated.find(h => h.id === habitId)?.currentStreak || 1)}`, "success");
+        notify(`Habit erledigt! +${xpGain} XP Streak: ${(updatedHabit?.currentStreak || 1)}`, "success");
     }, [habits, state, persist, notify, today]);
 
     const updateCounter = useCallback((habitId, value) => {

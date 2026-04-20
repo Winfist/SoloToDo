@@ -59,13 +59,25 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
         }
     }, [activeMode, running]);
 
-    // Timer logic
+    // Timer logic — tick every second while running
     useEffect(() => {
-        if (running && timeLeft > 0) {
-            timerRef.current = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-        } else if (running && timeLeft === 0) {
-            // Transition phase
-            if (phase === "work") {
+        if (!running) return;
+        timerRef.current = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timerRef.current);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timerRef.current);
+    }, [running, phase]);
+
+    // Phase transition when timer hits zero
+    useEffect(() => {
+        if (!running || timeLeft !== 0) return;
+        if (phase === "work") {
                 setPhase("break");
                 setTimeLeft(activeMode.break * 60);
 
@@ -123,12 +135,9 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
             } else {
                 setPhase("work");
                 setTimeLeft(activeMode.work * 60);
-                setRunning(false); // Stop Auto-start next work session? Or keep running? Stop for now so they have to commit.
+                setRunning(false);
                 notify(`Pause beendet. Bereit für den nächsten Dungeon?`, "info");
             }
-        }
-
-        return () => clearInterval(timerRef.current);
     }, [running, timeLeft, phase, activeMode, sessionStreak, state, persist, notify]);
 
     const toggleTimer = () => setRunning(!running);
@@ -152,7 +161,7 @@ export default function FocusMode({ state, persist, notify, onExit, theme }) {
 
     const progress = phase === "work"
         ? 100 - (timeLeft / (activeMode.work * 60)) * 100
-        : 100 - (timeLeft / (activeMode.break * 60)) * 100;
+        : (activeMode.break > 0 ? 100 - (timeLeft / (activeMode.break * 60)) * 100 : 100);
 
     return (
         <div style={{

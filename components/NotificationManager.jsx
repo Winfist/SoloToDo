@@ -93,7 +93,7 @@ function checkDungeonReset(state) {
     const hour = new Date().getHours();
     if (hour !== 8) return null; // Only at 8 AM
     const today = getToday();
-    if (state?.lastDungeonRefresh === today) {
+    if (state?.lastDungeonRefresh !== today) {
         return {
             title: "Neue Gates verfügbar!",
             body: `${(state.dungeons || []).length} Dungeon Gates warten auf dich.`,
@@ -169,7 +169,10 @@ export function NotificationBanner({ state, theme, onUpdateReminder }) {
             ? Notification.permission
             : "unsupported"
     );
-    const [dismissed, setDismissed] = useState(false);
+    const [dismissed, setDismissed] = useState(() => {
+        try { return localStorage.getItem("sl_notif_banner_dismissed") === "true"; }
+        catch { return false; }
+    });
 
     // Start periodic reminder checks when granted
     useEffect(() => {
@@ -212,6 +215,7 @@ export function NotificationBanner({ state, theme, onUpdateReminder }) {
                     onClick={async () => {
                         const result = await requestNotificationPermission();
                         setPermission(result);
+                        try { localStorage.setItem("sl_notif_banner_dismissed", "true"); } catch { }
                     }}
                     style={{
                         padding: "6px 14px", borderRadius: 8, fontSize: 10, fontWeight: 700,
@@ -224,7 +228,7 @@ export function NotificationBanner({ state, theme, onUpdateReminder }) {
                     AKTIVIEREN
                 </button>
                 <button
-                    onClick={() => setDismissed(true)}
+                    onClick={() => { setDismissed(true); try { localStorage.setItem("sl_notif_banner_dismissed", "true"); } catch { } }}
                     style={{
                         padding: "6px 10px", borderRadius: 8, fontSize: 10,
                         background: "transparent", color: "#475569",

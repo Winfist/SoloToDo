@@ -23,6 +23,7 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
   const stateRef = useRef(null);
+  const initDoneRef = useRef(false);
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
@@ -86,10 +87,12 @@ export function useGameState(initialHunterName, onLogout) {
   const dismissRewardFlow = useCallback(() => {
     setRewardFlowQueue(prev => {
       const next = prev.slice(1);
-      if (next.length === 0) setRewardFlowActive(false);
+      if (next.length === 0) {
+        setRewardFlowActive(false);
+        setShowingModal(false);
+      }
       return next;
     });
-    setShowingModal(false);
   }, []);
 
   const notify = useCallback((msg, type = "info") => setNotifications(prev => [...prev, { id: genId(), msg, type }]), []);
@@ -174,6 +177,8 @@ export function useGameState(initialHunterName, onLogout) {
   }, []);
 
   useEffect(() => {
+    if (initDoneRef.current) return;
+    initDoneRef.current = true;
     console.log("System Initialisierung gestartet...");
     loadState().then(({ data: s, source }) => {
       try {
@@ -382,7 +387,7 @@ export function useGameState(initialHunterName, onLogout) {
         triggerSystemMessage("NEUE AUFGABE", [
           "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
           `"${randTask.title}"`,
-          "SchlieÅ¸en Sie diese zeitnah ab, Hunter."
+          "Schließen Sie diese zeitnah ab, Hunter."
         ]);
 
         persist({
@@ -401,11 +406,11 @@ export function useGameState(initialHunterName, onLogout) {
   // --- 3 HOURS TASK ASSIGNMENT ---
   useEffect(() => {
     if (loading) return;
-    // Initial check on load
-    assignRandomTask();
+    // Delay initial check to avoid firing during boot sequence
+    const initialDelay = setTimeout(assignRandomTask, 5000);
     // Then every hour check if it's time for a new task
     const intervalId = setInterval(assignRandomTask, 3600000);
-    return () => clearInterval(intervalId);
+    return () => { clearTimeout(initialDelay); clearInterval(intervalId); };
   }, [loading, assignRandomTask]);
 
   const removeNotif = useCallback(id => setNotifications(prev => prev.filter(n => n.id !== id)), []);
@@ -498,7 +503,7 @@ export function useGameState(initialHunterName, onLogout) {
     const flow = buildQuestRewardFlow(result, state.level, rect);
     enqueueRewardFlow(flow);
     setPendingRatingQuest(quest);
-  }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify]);
+  }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);
 
 
   const deleteQuest = id => persist({ ...state, quests: state.quests.filter(q => q.id !== id) });
@@ -658,7 +663,7 @@ export function useGameState(initialHunterName, onLogout) {
     const totalSteps = 3;
     const firstQuest = generateChainedQuest(title, category, difficulty, 1, totalSteps);
     persist({ ...state, quests: [...state.quests, firstQuest] });
-    notify(`─ Quest-Kette gestartet! ${totalSteps} Schritte Â· Multiplikator steigt mit jedem Erfolg.`, "info");
+    notify(`─ Quest-Kette gestartet! ${totalSteps} Schritte · Multiplikator steigt mit jedem Erfolg.`, "info");
   }, [state, persist, notify]);
 
   // ─── SUB-QUEST COMPLETION ─────────────────────────────────────
@@ -683,12 +688,12 @@ export function useGameState(initialHunterName, onLogout) {
     nextState.quests = nextState.quests.map(q =>
       q.id === questId ? { ...q, subQuests: updatedSubQuests } : q
     );
-    nextState.totalXpEarned = (nextState.totalXpEarned || 0) + subQuestXp;
+    // totalXpEarned already accumulated by calculateLevelUp above
 
     setXpFloats(prev => [...prev, { id: genId(), amount: subQuestXp, ts: Date.now() }]);
     persist(nextState);
     notify(`Etappe abgeschlossen: ${subQuest.title} (+${subQuestXp} XP)`, "success");
-    try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+    try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) { }
   }, [state, persist, notify]);
 
   // ─── QUEST POOL MANAGEMENT ────────────────────────────────────
@@ -796,7 +801,8 @@ export function useGameState(initialHunterName, onLogout) {
     let jobLevelUpNotif = null;
     if (next._jobLevelUp) {
       jobLevelUpNotif = `JOB LEVEL UP: ${JOBS[next._jobLevelUp.job].name} Lv.${next._jobLevelUp.newLevel}!`;
-      delete next._jobLevelUp;
+      // NOTE: Do NOT delete _jobLevelUp here — the cinematic in App reads it from state.
+      // It will be cleaned up by the JobLevelUpCinematic onClose handler.
     }
 
     // Guardian-Passiv: Rewards bei Niederlage
@@ -811,7 +817,7 @@ export function useGameState(initialHunterName, onLogout) {
       ...next,
       dungeons: state.dungeons.map(d => d.instanceId === dungeon.instanceId ? { ...d, cleared: true } : d),
       dungeonHistory: [...(state.dungeonHistory || []), { dungeonId: dungeon.id, dungeonName: dungeon.name, dungeonRank: dungeon.rank, won: result.won, xp: result.xp, gold: totalGold, floorsCleared: result.floorsCleared || dungeon.floors, date: getToday() }],
-      totalXpEarned: (state.totalXpEarned || 0) + result.xp,
+      // totalXpEarned already accumulated by calculateLevelUp above
       equipment: { ...state.equipment, inventory: newInventory },
       shadowArmy: newShadowArmy
     };
@@ -1095,7 +1101,7 @@ export function useGameState(initialHunterName, onLogout) {
       if (isPerfect) {
         enqueueRewardFlow(buildProtocolRewardFlow(run, xpGain, true, elapsed));
       } else {
-        notify(`âœ… Protokoll abgeschlossen! +${xpGain} XP`, "success");
+        notify(`✅ Protokoll abgeschlossen! +${xpGain} XP`, "success");
       }
     } else {
       nextState.dawnDusk = {

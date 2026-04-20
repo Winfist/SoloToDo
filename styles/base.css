@@ -257,6 +257,8 @@ h1, h2, h3, h4, h5, h6 {
   animation: scanLine 8s linear infinite;
   pointer-events: none;
   z-index: 1;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .card-v2:hover {

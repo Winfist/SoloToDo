@@ -574,7 +574,7 @@ function ShadowDetailModal({ shadow, theme, onClose, onDeploy, onUndeploy, onEvo
             {!canEvolve && shadow.level < tierData.maxLevel && <div style={{ fontSize: 9, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>⚠ Erfordert Level {tierData.maxLevel} (aktuell {shadow.level})</div>}
             {!canEvolve && gold < nextTierData.evolutionCost && <div style={{ fontSize: 9, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>⚠ Zu wenig Gold ({gold}G / {nextTierData.evolutionCost}G)</div>}
             <button onClick={() => canEvolve && onEvolve(shadow.id)} disabled={!canEvolve} style={{ width: "100%", padding: 12, borderRadius: 10, fontSize: 12, fontWeight: 700, background: canEvolve ? `linear-gradient(135deg,${nextTierData.color}25,${nextTierData.color}10)` : "rgba(255,255,255,0.03)", color: canEvolve ? nextTierData.color : "#334155", border: `1px solid ${canEvolve ? nextTierData.color + "44" : "#1e2940"}`, fontFamily: "'Cinzel',serif", letterSpacing: 2, cursor: canEvolve ? "pointer" : "not-allowed", transition: "all 0.2s" }}>
-              {canEvolve ? "✓ª EVOLUTION ✓ª" : "EVOLUTION GESPERRT"}
+              {canEvolve ? "✧ EVOLUTION ✧" : "EVOLUTION GESPERRT"}
             </button>
           </div>
         )}
@@ -1197,7 +1197,7 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
       <div style={{ padding: "11px 18px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(180deg, transparent, ${rc}07)`, position: "relative", zIndex: 1 }}>
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "linear-gradient(135deg,rgba(192,132,252,0.1),rgba(192,132,252,0.02))", border: "1px solid #c084fc33", borderRadius: 12, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)" }}>
-            <span style={{ color: "#c084fc", fontSize: 13, textShadow: "0 0 8px #c084fc" }}>✓ª</span> <span style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>+{modifier?.xpMult ? Math.round(dungeon.xp * modifier.xpMult) : dungeon.xp} XP</span>
+            <span style={{ color: "#c084fc", fontSize: 13, textShadow: "0 0 8px #c084fc" }}>✧</span> <span style={{ color: "#e2e8f0", fontSize: 11, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>+{modifier?.xpMult ? Math.round(dungeon.xp * modifier.xpMult) : dungeon.xp} XP</span>
           </div>
           {(modifier?.goldMult ? Math.round(dungeon.gold * modifier.goldMult) : dungeon.gold) > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "linear-gradient(135deg,rgba(251,191,36,0.1),rgba(251,191,36,0.02))", border: "1px solid #fcd34d33", borderRadius: 12, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)" }}>
@@ -1410,7 +1410,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
     if (fl.type === "safe_room") {
       const safeLog = [
         { text: `▶ FLOOR ${floorNum}/${dungeon.floors} · 🏕️ SAFE ROOM`, type: "success" },
-        { text: "Die Shadow Army erholt sich. Kr├ñfte wiederhergestellt.", type: "success" },
+        { text: "Die Shadow Army erholt sich. Kräfte wiederhergestellt.", type: "success" },
         { text: "Taktische Neuausrichtung abgeschlossen.", type: "info" },
       ];
       let delay = 0;
@@ -1428,7 +1428,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
       setGoldBonus(prev => prev + bonus);
       const tLog = [
         { text: <>▶ FLOOR {floorNum}/{dungeon.floors} · <img src="/icon/coin.png" style={{ width: 14, height: 14, verticalAlign: "middle", marginTop: -2 }} alt="G" /> SCHATZKAMMER</>, type: "gold" },
-        { text: `Truhe ge├Âffnet! +${bonus} Gold Bonus geborgen.`, type: "gold" },
+        { text: `Truhe geöffnet! +${bonus} Gold Bonus geborgen.`, type: "gold" },
       ];
       let delay = 0;
       tLog.forEach((l, i) => setTimeout(() => addLog(l), delay += 700));
@@ -1466,16 +1466,16 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
     const hpAtPhaseEnd = pNum < bossPhaseDefs.length ? bossPhaseDefs[pNum].hp : 0;
 
     const phaseLogs = [
-      { text: `⚡´©Å BOSS PHASE ${pNum}/${bossPhaseDefs.length} · ${ph.icon} ${ph.name.toUpperCase()}`, type: "danger" },
+      { text: `⚡ BOSS PHASE ${pNum}/${bossPhaseDefs.length} · ${ph.icon} ${ph.name.toUpperCase()}`, type: "danger" },
       { text: ph.desc, type: "warning" },
     ];
     if (pNum === 1) {
-      if (isStrong) phaseLogs.push({ text: `${strategy.icon} Überlegene Kraft! Boss zur├╝ckgedr├ñngt!`, type: "success" });
+      if (isStrong) phaseLogs.push({ text: `${strategy.icon} Überlegene Kraft! Boss zurückgedrängt!`, type: "success" });
       else if (isWeak) phaseLogs.push({ text: "⚠ Kritisches Defizit! Boss dominiert!", type: "danger" });
       else phaseLogs.push({ text: `${strategy.icon} Harter Kampf gegen den Boss...`, type: "action" });
     } else {
-      phaseLogs.push({ text: `Boss verst├ñrkt! ATK-Multiplikator ├ù${ph.atkMod}!`, type: "danger" });
-      phaseLogs.push({ text: isStrong ? `${strategy.icon} Entschlossener Gegenschlag!` : "Alle Kr├ñfte mobilisiert – durchhalten!", type: isStrong ? "success" : "action" });
+      phaseLogs.push({ text: `Boss verstärkt! ATK-Multiplikator ×${ph.atkMod}!`, type: "danger" });
+      phaseLogs.push({ text: isStrong ? `${strategy.icon} Entschlossener Gegenschlag!` : "Alle Kräfte mobilisiert – durchhalten!", type: isStrong ? "success" : "action" });
     }
 
     let delay = 0;
@@ -1487,7 +1487,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
 
     if (pNum < bossPhaseDefs.length) {
       setTimeout(() => {
-        addLog({ text: `Boss-Energie ├╝bersteigt Grenzwert... Phase ${pNum + 1} aktiviert!`, type: "danger" });
+        addLog({ text: `Boss-Energie übersteigt Grenzwert... Phase ${pNum + 1} aktiviert!`, type: "danger" });
         setTimeout(() => runBossPhase(pNum + 1, completedSoFar, isStrong, isWeak, floorNum), 1200);
       }, delay + 1800);
     } else {
@@ -1660,7 +1660,7 @@ function DungeonBattle({ dungeon, playerStats, theme, onResult, onClose, skillBo
                 }}
                 disabled={Date.now() < (state.jobs.activeAbilityCooldowns?.shadow_step || 0) + 28800000}
                 style={{ padding: "8px 16px", borderRadius: 10, fontSize: 10, fontWeight: 900, background: "rgba(20,184,166,0.15)", color: "#14b8a6", border: "1px solid #14b8a655", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}
-              >✓¿ SHADOW STEP (SKIP FLOOR)</button>
+              >⚡ SHADOW STEP (SKIP FLOOR)</button>
             </div>
           )}
           {/* Boss Phase UI */}
@@ -1812,7 +1812,7 @@ function JobCard({ jobKey, level, xp, currentJob, onSwitch, onActivate, theme, r
             {ability.iconSrc ? (
               <img src={ability.iconSrc} alt={ability.name} style={{ width: 22, height: 22, objectFit: "contain", filter: `drop-shadow(0 0 6px ${job.color}88)` }} />
             ) : (
-              <span style={{ fontSize: 18 }}>✓¿</span>
+              <span style={{ fontSize: 18 }}>⚡</span>
             )}
             <div style={{ fontSize: 13, fontWeight: 800, color: job.color, fontFamily: "'Cinzel', serif" }}>{ability.name}</div>
           </div>
@@ -1931,7 +1931,7 @@ function JobLevelUpCinematic({ job, newLevel, onClose }) {
 
         <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${job.color}33`, borderRadius: 16, padding: "20px", marginBottom: 32 }}>
           <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>NEUE KRäFTE FREIGESCHALTET</div>
-          <div style={{ color: "#fff", fontSize: 14, fontWeight: 500 }}>Boni wurden verst├ñrkt. Spezialisierung vertieft.</div>
+          <div style={{ color: "#fff", fontSize: 14, fontWeight: 500 }}>Boni wurden verstärkt. Spezialisierung vertieft.</div>
         </div>
 
         <button style={{ background: job.color, color: "#fff", padding: "14px 40px", borderRadius: 14, fontSize: 13, fontWeight: 900, fontFamily: "'Cinzel', serif", letterSpacing: 4, border: "none", boxShadow: `0 0 40px ${job.color}44` }}>WEITER</button>

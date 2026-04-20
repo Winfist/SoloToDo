@@ -39,6 +39,9 @@ export default function AuroraBackground({ theme, penaltyActive, streak = 0, xpP
           zIndex: 0,
           pointerEvents: "none",
           overflow: "hidden",
+          contain: "strict",
+          willChange: "transform",
+          transform: "translateZ(0)",
         }}
       >
         {/* Main aurora — influenced by time of day */}
@@ -57,6 +60,8 @@ export default function AuroraBackground({ theme, penaltyActive, streak = 0, xpP
                radial-gradient(ellipse at 60% 0%, ${timeOfDay.colors.primary} 0%, transparent 45%)`}`,
           animation: "auroraShift 20s ease-in-out infinite alternate",
           filter: "blur(40px)",
+          willChange: "transform",
+          transform: "translateZ(0)",
         }} />
 
         {/* Bottom ambient — warm tones for evening/dawn */}
@@ -72,6 +77,8 @@ export default function AuroraBackground({ theme, penaltyActive, streak = 0, xpP
                radial-gradient(ellipse at 40% 90%, ${timeOfDay.colors.secondary} 0%, transparent 50%)`}`,
           animation: "auroraShift 25s ease-in-out infinite alternate-reverse",
           filter: "blur(60px)",
+          willChange: "transform",
+          transform: "translateZ(0)",
         }} />
 
         {/* Right side glow */}
@@ -86,6 +93,8 @@ export default function AuroraBackground({ theme, penaltyActive, streak = 0, xpP
             : `radial-gradient(ellipse at 100% 50%, ${theme.primary}06 0%, transparent 70%)`,
           animation: "auroraShift 30s ease-in-out infinite alternate",
           filter: "blur(50px)",
+          willChange: "transform",
+          transform: "translateZ(0)",
         }} />
 
         {/* ── Shadow Wisps — floating theme-colored wisps ── */}
@@ -155,6 +164,7 @@ export default function AuroraBackground({ theme, penaltyActive, streak = 0, xpP
           opacity: 0.025,
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
           backgroundSize: "128px 128px",
+          transform: "translateZ(0)",
         }}
       />
 

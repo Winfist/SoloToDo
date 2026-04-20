@@ -31,7 +31,7 @@ export default function HUDOverlay({ rank = "E", level = 1, streak = 0, xpPercen
       if (!running) return;
       frameCount++;
       const now = performance.now();
-      if (now - lastCheck >= 500) {
+      if (now - lastCheck >= 2000) {
         setFps(Math.round(frameCount / ((now - lastCheck) / 1000)));
         frameCount = 0;
         lastCheck = now;
@@ -55,6 +55,9 @@ export default function HUDOverlay({ rank = "E", level = 1, streak = 0, xpPercen
         pointerEvents: "none",
         opacity: 0.45,
         mixBlendMode: "screen",
+        contain: "layout style paint",
+        willChange: "transform",
+        transform: "translateZ(0)",
       }}
     >
       {/* ── Corner Brackets ── */}

@@ -419,7 +419,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
 
         const newQuest = {
             id: genId(), title: `[${goal.title}] ${milestone.title}`, difficulty: "normal",
-            category: goal.category === "fitness" || goal.category === "health" ? "str" : goal.category === "learning" || goal.category === "productivity" ? "int" : "cha",
+            category: goal.category === "fitness" ? "str" : goal.category === "health" ? "vit" : goal.category === "learning" ? "int" : goal.category === "productivity" ? "agi" : "cha",
             type: "side", createdAt: getToday(),
             linkedGoalId: goal.id, linkedMilestoneId: milestone.id, isSystem: true,
             xpMult: 2, goldMult: 1.5 // Goals give bonus xp

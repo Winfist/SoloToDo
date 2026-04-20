@@ -98,7 +98,8 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
 
   if (next._jobLevelUp) {
     notifications.push({ msg: `JOB LEVEL UP: ${JOBS[next._jobLevelUp.job].name} ist nun Level ${next._jobLevelUp.newLevel}!`, type: "levelup" });
-    delete next._jobLevelUp;
+    // NOTE: Do NOT delete _jobLevelUp — the cinematic in App reads it from state.
+    // It will be cleaned up by the JobLevelUpCinematic onClose handler.
   }
 
   // Shadow ARISE for boss quests
@@ -249,13 +250,19 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   delete next._charismaChaBonus;
   delete next._charismaTitle;
 
+  const categoryStatGain = Math.ceil(xpGain / 40) + codexStatBonus;
+  const newStats = {
+    ...state.stats,
+    [quest.category]: (state.stats[quest.category] || 0) + categoryStatGain,
+  };
+  // Add charisma dungeon bonus to CHA (avoid double-add when quest.category is already "cha")
+  if (charismaChaBonus > 0) {
+    newStats.cha = (newStats.cha || 0) + charismaChaBonus;
+  }
+
   next = {
     ...next,
-    stats: {
-      ...state.stats,
-      [quest.category]: (state.stats[quest.category] || 0) + Math.ceil(xpGain / 40) + codexStatBonus,
-      cha: (state.stats.cha || 0) + charismaChaBonus + (quest.category === "cha" ? Math.ceil(xpGain / 40) + codexStatBonus : 0)
-    },
+    stats: newStats,
     quests: updatedQuests,
     completedQuests: [...(state.completedQuests || []), {
       ...quest,
@@ -375,7 +382,7 @@ export function buildCompleteEmergencyQuestState(eq, state, processAchievements)
     ...next,
     gold: state.gold + goldGain,
     totalGoldEarned: (state.totalGoldEarned || 0) + goldGain,
-    stats: { ...state.stats, [eq.category]: (state.stats[eq.category] || 0) + 2 },
+    stats: { ...next.stats, [eq.category]: (next.stats[eq.category] || 0) + 2 },
     emergencyDone: true,
     totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1
   };

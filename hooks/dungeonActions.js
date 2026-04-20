@@ -119,7 +119,7 @@ export function buildDeployShadowState(shadowId, slot, state) {
  */
 export function buildUndeployShadowState(shadowId, state) {
   const newShadows = (state.shadowArmy.shadows || []).map(s => s.id === shadowId ? { ...s, isDeployed: false, deploymentSlot: null } : s);
-  return { ...state, shadowArmy: { ...state.shadowArmy, shadows: newShadows } };
+  return { nextState: { ...state, shadowArmy: { ...state.shadowArmy, shadows: newShadows } }, msg: "Shadow zurückgerufen." };
 }
 
 /**
