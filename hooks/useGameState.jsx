@@ -14,6 +14,7 @@ import {
   saveState, loadState, migrateState, calculateLevelUp, awardJobXp,
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests
 } from '../data/constants';
+import { JOBS } from '../data/jobs.js';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
 import { buildCompleteQuestState, buildCompleteEmergencyQuestState } from './questActions.js';
 import { buildQuestRewardFlow, buildEmergencyRewardFlow, buildDungeonRewardFlow, buildProtocolRewardFlow } from './rewardFlowBuilders.js';
