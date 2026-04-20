@@ -469,6 +469,23 @@ export function useGameState(initialHunterName, onLogout) {
     return Math.round(xp);
   }, []);
 
+  // Get active (non-expired) gem boosters
+  const getActiveGemBoosters = useCallback(() => {
+    const now = Date.now();
+    return (state?.activeGemBoosters || []).filter(b => b.expiresAt > now);
+  }, [state?.activeGemBoosters]);
+
+  // Get combined gem booster multipliers
+  const getGemBoosterMultipliers = useCallback(() => {
+    const active = getActiveGemBoosters();
+    let xpMult = 1, goldMult = 1;
+    active.forEach(b => {
+      if (b.effect?.xpMult) xpMult = Math.max(xpMult, b.effect.xpMult);
+      if (b.effect?.goldMult) goldMult = Math.max(goldMult, b.effect.goldMult);
+    });
+    return { xpMult, goldMult };
+  }, [getActiveGemBoosters]);
+
   const completeQuest = useCallback((questId, rect, verificationBonus = false) => {
     if (!state) return;
     const quest = state.quests.find(q => q.id === questId);
@@ -1212,24 +1229,7 @@ export function useGameState(initialHunterName, onLogout) {
   }, [state?.selectedTheme]);
   const modifier = state?.todayModifier || getDailyModifier();
 
-  // ─ GEM SYSTEM FUNCTIONS ─
-
-  // Get active (non-expired) gem boosters
-  const getActiveGemBoosters = useCallback(() => {
-    const now = Date.now();
-    return (state?.activeGemBoosters || []).filter(b => b.expiresAt > now);
-  }, [state?.activeGemBoosters]);
-
-  // Get combined gem booster multipliers
-  const getGemBoosterMultipliers = useCallback(() => {
-    const active = getActiveGemBoosters();
-    let xpMult = 1, goldMult = 1;
-    active.forEach(b => {
-      if (b.effect?.xpMult) xpMult = Math.max(xpMult, b.effect.xpMult);
-      if (b.effect?.goldMult) goldMult = Math.max(goldMult, b.effect.goldMult);
-    });
-    return { xpMult, goldMult };
-  }, [getActiveGemBoosters]);
+  // ─ GEM SYSTEM FUNCTIONS ─ (declarations moved above completeQuest to avoid TDZ)
 
   // Watch a rewarded ad (simulated)
   const watchRewardedAd = useCallback(() => {
