@@ -4,7 +4,7 @@
 // whether the user may remove it.
 
 export const DASHBOARD_WIDGETS = [
-  { key: "today_command", label: "Heute", icon: "NOW", color: "#22d3ee", desc: "Top 3, Reminder und Risiken", requires: null, removable: true },
+  { key: "today_command", label: "Heute", icon: "NOW", color: "#22d3ee", desc: "Top 3, Reminder und Risiken", requires: null, removable: false },
   { key: "gem_booster", label: "Gem Boosters", icon: "💎", color: "#a855f7", desc: "Aktive Premium-Booster", requires: "gem_shop", removable: true },
   { key: "hunter_status", label: "Hunter Status", icon: "⚔️", color: "#22d3ee", desc: "Level, Stats & XP-Übersicht", requires: null, removable: true },
   { key: "streak_display", label: "Streak-Anzeige", icon: "🔥", color: "#f97316", desc: "Dein Streak mit Flammen-Effekt", requires: null, removable: true },
@@ -48,6 +48,15 @@ export function mergeConfig(saved, can) {
 
   // collapsed: saved collapsed map
   let collapsed = saved?.collapsed ?? {};
+
+  // Enforce mandatory widgets
+  const mandatoryKeys = DASHBOARD_WIDGETS.filter(w => !w.removable).map(w => w.key);
+  for (const m of mandatoryKeys) {
+    if (!layout.includes(m)) {
+      layout.unshift(m);
+      hidden = hidden.filter(k => k !== m);
+    }
+  }
 
   // Any new widgets not in layout AND not in hidden → add to hidden
   const known = new Set([...layout, ...hidden]);
