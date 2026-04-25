@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { GEM_ICONS, QUEST_ICONS, STORY_ICONS, STAT_ICONS } from '../data/icons.js';
+import { getToday as getLocalToday } from '../data/dateUtils.js';
 
 const GEM_CATEGORIES = [
   { key: "all", label: "Alle", icon: "💎", color: "#a855f7" },
@@ -58,7 +59,7 @@ export default function UnifiedShopView({
     : "linear-gradient(145deg, rgba(251,191,36,0.14) 0%, rgba(245,158,11,0.06) 40%, rgba(217,119,6,0.1) 100%)";
 
   // Gem specific states
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalToday();
   const adsToday = state.lastAdWatchDate === today ? (state.adsWatchedToday || 0) : 0;
   const adsRemaining = Math.max(0, 5 - adsToday);
   const dailyClaimed = state.gemStreak?.lastClaimDate === today;

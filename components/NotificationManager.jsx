@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { NAV_ICONS } from "../data/icons.js";
+import { getToday, getLocalDateKey, formatLocalDateTime } from "../data/dateUtils.js";
 
 /**
  * NotificationManager – Push Notifications & Smart Reminders
@@ -13,8 +14,6 @@ import { NAV_ICONS } from "../data/icons.js";
  *
  * Uses the Web Notification API + periodic checks via setInterval.
  */
-
-function getToday() { return new Date().toISOString().slice(0, 10); }
 
 // ── Request Permission ───────────────────────────────────────
 export async function requestNotificationPermission() {
@@ -109,15 +108,45 @@ function checkCustomReminders(state) {
     for (const r of reminders) {
         if (r.fired) continue;
         if (now >= new Date(r.reminderAt).getTime()) {
+            const quest = r.questId ? (state?.quests || []).find(q => q.id === r.questId) : null;
             return {
                 title: r.title,
-                body: r.questId ? "Quest-Erinnerung" : "Erinnerung",
+                body: quest ? `Quest-Erinnerung: ${quest.title}` : (r.body || "Erinnerung"),
                 tag: `reminder-${r.id}`,
                 reminderId: r.id,
+                questId: r.questId,
             };
         }
     }
     return null;
+}
+
+function checkDueDateWarning(state) {
+    const quests = (state?.quests || []).filter(q => !q.completed && q.dueDate);
+    if (!quests.length) return null;
+    const today = getToday();
+    const overdue = quests.filter(q => q.dueDate < today);
+    const dueToday = quests.filter(q => q.dueDate === today);
+    const target = overdue[0] || dueToday[0];
+    if (!target) return null;
+    return {
+        title: overdue.length ? "Ueberfaellige Quest" : "Quest heute faellig",
+        body: overdue.length
+            ? `${overdue.length} Quest${overdue.length > 1 ? "s" : ""} sind ueberfaellig. Starte mit: ${target.title}`
+            : `${dueToday.length} Quest${dueToday.length > 1 ? "s" : ""} sind heute faellig. Naechste: ${target.title}`,
+        tag: `due-date-${today}`,
+    };
+}
+
+function wasNonReminderAlertSentToday(tag) {
+    if (typeof window === "undefined" || !tag) return false;
+    try {
+        const key = `sl_alert_${tag}`;
+        const today = getToday();
+        if (sessionStorage.getItem(key) === today) return true;
+        sessionStorage.setItem(key, today);
+    } catch { }
+    return false;
 }
 
 function checkWeeklySummary(state) {
@@ -129,7 +158,7 @@ function checkWeeklySummary(state) {
     const completed = state?.completedQuests || [];
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekAgoStr = weekAgo.toISOString().slice(0, 10);
+    const weekAgoStr = getLocalDateKey(weekAgo);
     const weekQuests = completed.filter(q => q.completedAt >= weekAgoStr).length;
 
     return {
@@ -144,6 +173,7 @@ function checkWeeklySummary(state) {
 export function runReminderChecks(state) {
     const checks = [
         checkCustomReminders,
+        checkDueDateWarning,
         checkStreakProtection,
         checkEmergencyQuest,
         checkHabitNudge,
@@ -154,6 +184,7 @@ export function runReminderChecks(state) {
     for (const check of checks) {
         const result = check(state);
         if (result) {
+            if (!result.reminderId && wasNonReminderAlertSentToday(result.tag)) continue;
             sendNotification(result.title, result.body, undefined, result.tag);
             return result; // Only send one per check cycle
         }
@@ -163,7 +194,7 @@ export function runReminderChecks(state) {
 
 // ── Permission Banner Component ─────────────────────────────
 
-export function NotificationBanner({ state, theme, onUpdateReminder }) {
+export function NotificationBanner({ state, theme, onUpdateReminder, onReminderFired }) {
     const [permission, setPermission] = useState(
         typeof window !== "undefined" && "Notification" in window
             ? Notification.permission
@@ -174,19 +205,25 @@ export function NotificationBanner({ state, theme, onUpdateReminder }) {
         catch { return false; }
     });
 
-    // Start periodic reminder checks when granted
+    const nextReminder = (state?.reminders || [])
+        .filter(r => !r.fired && r.reminderAt && new Date(r.reminderAt).getTime() > Date.now())
+        .sort((a, b) => new Date(a.reminderAt) - new Date(b.reminderAt))[0];
+
+    // Start periodic reminder checks. Browser notifications fire when granted;
+    // in-app notifications still fire without OS permission.
     useEffect(() => {
-        if (permission !== "granted" || !state) return;
+        if (!state) return;
         // Check every 15 minutes
         const handleCheck = () => {
             const result = runReminderChecks(state);
+            if (result && onReminderFired) onReminderFired(result);
             if (result?.reminderId && onUpdateReminder) onUpdateReminder(result.reminderId);
         };
         const interval = setInterval(handleCheck, 15 * 60 * 1000);
-        // Initial check after 5 minutes
-        const initial = setTimeout(handleCheck, 5 * 60 * 1000);
+        // Initial check after 30 seconds so newly-added reminders are responsive.
+        const initial = setTimeout(handleCheck, 30 * 1000);
         return () => { clearInterval(interval); clearTimeout(initial); };
-    }, [permission, state?.streak, state?.emergencyQuest, (state?.habits || []).length]);
+    }, [permission, state?.streak, state?.emergencyQuest, (state?.habits || []).length, (state?.reminders || []).map(r => `${r.id}:${r.reminderAt}:${r.fired}`).join("|")]);
 
     if (permission === "granted" || permission === "denied" || permission === "unsupported" || dismissed) {
         return null;
@@ -207,7 +244,9 @@ export function NotificationBanner({ state, theme, onUpdateReminder }) {
                     BENACHRICHTIGUNGEN
                 </div>
                 <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
-                    Erhalte Streak-Warnungen & Erinnerungen
+                    {nextReminder
+                        ? `Naechster Reminder: ${formatLocalDateTime(nextReminder.reminderAt)}`
+                        : "Erhalte Streak-Warnungen & Erinnerungen"}
                 </div>
             </div>
             <div style={{ display: "flex", gap: 6 }}>

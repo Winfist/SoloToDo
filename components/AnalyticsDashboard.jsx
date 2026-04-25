@@ -2,13 +2,12 @@ import React, { useMemo, useState } from "react";
 import { STAT_ICONS, MILESTONE_ICONS, JOB_ICONS } from "../data/icons.js";
 import { JOBS } from "../data/jobs.js";
 import { CATEGORIES, DIFFICULTIES } from "../data/gameData.js";
+import { getToday, getLocalDateKey } from "../data/dateUtils.js";
 
 /**
  * AnalyticsDashboard – Progress Analytics showing XP history,
  * completion rates, stat trends, and best-time detection.
  */
-
-function getToday() { return new Date().toISOString().slice(0, 10); }
 
 export default function AnalyticsDashboard({ state, theme }) {
     const completedQuests = state?.completedQuests || [];
@@ -51,8 +50,8 @@ export default function AnalyticsDashboard({ state, theme }) {
         const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
         const monthAgo = new Date(); monthAgo.setDate(monthAgo.getDate() - 30);
         if (historyFilter === "today") list = list.filter(q => q.completedAt === today);
-        if (historyFilter === "week") list = list.filter(q => q.completedAt >= weekAgo.toISOString().slice(0, 10));
-        if (historyFilter === "month") list = list.filter(q => q.completedAt >= monthAgo.toISOString().slice(0, 10));
+        if (historyFilter === "week") list = list.filter(q => q.completedAt >= getLocalDateKey(weekAgo));
+        if (historyFilter === "month") list = list.filter(q => q.completedAt >= getLocalDateKey(monthAgo));
         if (historySort === "newest") list.sort((a, b) => (b.completedAtMs || 0) - (a.completedAtMs || 0));
         if (historySort === "highest_rated") list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         return list.slice(0, 50);
@@ -64,7 +63,7 @@ export default function AnalyticsDashboard({ state, theme }) {
         for (let i = 29; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            const key = d.toISOString().slice(0, 10);
+            const key = getLocalDateKey(d);
             const questsDone = completedQuests.filter(q => q.completedAt === key).length;
             const habitsDone = habits.filter(h => h.history?.[key]?.completed).length;
             const habitsScheduled = habits.filter(h => h.active).length;
@@ -79,7 +78,7 @@ export default function AnalyticsDashboard({ state, theme }) {
         for (let i = 89; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            const key = d.toISOString().slice(0, 10);
+            const key = getLocalDateKey(d);
             const questsDone = completedQuests.filter(q => q.completedAt === key).length;
             const habitsDone = habits.filter(h => h.history?.[key]?.completed).length;
             days.push({ date: key, questsDone, habitsDone, dayOfWeek: d.getDay() });
@@ -125,7 +124,7 @@ export default function AnalyticsDashboard({ state, theme }) {
 
     // ── Hunter's Path Report ───────────────────────────────────
     const last7DaysStr = [...Array(7)].map((_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().slice(0, 10);
+        const d = new Date(); d.setDate(d.getDate() - i); return getLocalDateKey(d);
     });
     const recentQuests = completedQuests.filter(q => last7DaysStr.includes(q.completedAt));
     const recentCatStats = { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };

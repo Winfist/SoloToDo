@@ -172,6 +172,16 @@ function App({ initialHunterName, onLogout }) {
     setQTags,
     qDueDate,
     setQDueDate,
+    qPriority,
+    setQPriority,
+    qEnergy,
+    setQEnergy,
+    qContext,
+    setQContext,
+    qReminderPreset,
+    setQReminderPreset,
+    qReminderAt,
+    setQReminderAt,
     showDetails,
     setShowDetails,
     editingQuestId,
@@ -213,6 +223,8 @@ function App({ initialHunterName, onLogout }) {
     completeSubQuest,
     deleteQuest,
     createQuest,
+    createQuestsFromInputs,
+    snoozeReminder,
     completeEmergencyQuest,
     addChainedQuest,
     createQuestFromTemplate,
@@ -253,6 +265,21 @@ function App({ initialHunterName, onLogout }) {
   const [bootComplete, setBootComplete] = React.useState(false);
   // ── v3.0 Sticky Header (must be before any early returns) ──
   const headerState = useStickyHeader({ compactThreshold: 60 });
+  const headerRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(156);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const measure = () => setHeaderHeight(Math.ceil(el.getBoundingClientRect().height));
+    measure();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    observer?.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [headerState.isCompact, state?.hunterName, state?.level, state?.gold, state?.gems]);
   // ── Animation Controller (Phase 5) ───────────────────────────────────────────
   const animationControllerRef = useRef({ queue: [], index: 0, flow: null, active: false });
 
@@ -739,9 +766,14 @@ function App({ initialHunterName, onLogout }) {
           <TaskScanModal
             geminiAI={geminiAI}
             onConfirm={(tasks) => {
-              tasks.forEach(t => createQuest({ title: t.title, category: t.category, difficulty: t.difficulty, type: "side" }));
-              const scannedCount = (state?.ai?.scannedTasks || 0) + 1;
-              persist({ ...state, ai: { ...(state?.ai || {}), scannedTasks: scannedCount } });
+              createQuestsFromInputs(tasks.map(t => ({
+                title: t.title,
+                category: t.category,
+                difficulty: t.difficulty,
+                type: "side",
+                priority: t.priority || "medium",
+                energy: t.energy || "medium",
+              })), { source: "scan" });
               setShowTaskScan(false);
             }}
             onClose={() => setShowTaskScan(false)}
@@ -819,7 +851,7 @@ function App({ initialHunterName, onLogout }) {
         <div className="vignette" aria-hidden="true" />
 
         {/* HEADER 3.0 — Futuristic HUD with Compact Scroll */}
-        <header className={`header-v3 ${headerState.isCompact ? 'header-v3-compact' : ''}`} style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, paddingTop: headerState.isCompact ? "max(6px, env(safe-area-inset-top))" : "max(14px, env(safe-area-inset-top))", paddingLeft: 16, paddingRight: 16, paddingBottom: headerState.isCompact ? 4 : 10, background: `linear-gradient(180deg,${theme.bg},${theme.bg}f8 40%,${theme.bg}e0)`, backdropFilter: "blur(28px) saturate(1.5)", WebkitBackdropFilter: "blur(28px) saturate(1.5)", opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "all 0.35s cubic-bezier(0.22,1,0.36,1)", borderBottom: headerState.isCompact ? `1px solid ${theme.primary}22` : '1px solid transparent', boxShadow: headerState.isCompact ? `0 4px 24px rgba(0,0,0,0.3), 0 1px 0 ${theme.primary}15` : 'none' }}>
+        <header ref={headerRef} className={`header-v3 ${headerState.isCompact ? 'header-v3-compact' : ''}`} style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, paddingTop: headerState.isCompact ? "max(env(safe-area-inset-top, 0px), 8px)" : "calc(max(env(safe-area-inset-top, 0px), 8px) + 6px)", paddingLeft: 16, paddingRight: 16, paddingBottom: headerState.isCompact ? 4 : 10, background: theme.card, backdropFilter: "blur(28px) saturate(1.5)", WebkitBackdropFilter: "blur(28px) saturate(1.5)", opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "padding 0.35s cubic-bezier(0.22,1,0.36,1), background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease, opacity 0.35s ease", borderBottom: headerState.isCompact ? `1px solid ${theme.primary}22` : '1px solid transparent', boxShadow: headerState.isCompact ? `0 4px 24px rgba(0,0,0,0.3), 0 1px 0 ${theme.primary}15` : 'none' }}>
           {/* HUD corner brackets */}
           <div style={{ position: "absolute", top: 0, left: 0, width: 18, height: 18, borderTop: `2px solid ${theme.primary}44`, borderLeft: `2px solid ${theme.primary}44`, pointerEvents: "none", zIndex: 2, opacity: 0.6 }} />
           <div style={{ position: "absolute", top: 0, right: 0, width: 18, height: 18, borderTop: `2px solid ${theme.primary}44`, borderRight: `2px solid ${theme.primary}44`, pointerEvents: "none", zIndex: 2, opacity: 0.6 }} />
@@ -998,8 +1030,10 @@ function App({ initialHunterName, onLogout }) {
           </div>
         </header>
 
+        {/* Safe area filler removed */}
+
         {/* MAIN */}
-        <main style={{ position: "relative", zIndex: 1, padding: "16px", paddingTop: headerState.isCompact ? 60 : 108, maxWidth: 480, margin: "0 auto", paddingBottom: 92, transition: "padding-top 0.35s cubic-bezier(0.22,1,0.36,1)" }}>
+        <main style={{ position: "relative", zIndex: 1, padding: "16px", paddingTop: Math.max(headerHeight + 16, headerState.isCompact ? 72 : 132), maxWidth: 480, margin: "0 auto", paddingBottom: 92, transition: "padding-top 0.35s cubic-bezier(0.22,1,0.36,1)" }}>
 
           {/* SHADOW REGRESSION BANNER (replaces plain penalty banner) */}
           {penaltyActive && state.shadowRegression?.active && (state.shadowRegression.previousStreak || 0) > 0 ? (
@@ -1099,8 +1133,10 @@ function App({ initialHunterName, onLogout }) {
             </div>
           )}
 
-          <NotificationBanner state={state} theme={theme} onUpdateReminder={(id) => {
-            const updated = (state.reminders || []).map(r => r.id === id ? { ...r, fired: true } : r);
+          <NotificationBanner state={state} theme={theme} onReminderFired={(result) => {
+            if (result?.body) notify(result.body, result.reminderId ? "warning" : "info");
+          }} onUpdateReminder={(id) => {
+            const updated = (state.reminders || []).map(r => r.id === id ? { ...r, fired: true, firedAt: Date.now() } : r);
             persist({ ...state, reminders: updated });
           }} />
 
@@ -1120,6 +1156,9 @@ function App({ initialHunterName, onLogout }) {
                 completeEmergencyQuest={completeEmergencyQuest} createQuest={createQuest}
                 setShowCreate={setShowCreate}
                 setShowTaskScan={setShowTaskScan}
+                setShowFocusMode={setShowFocusMode}
+                snoozeReminder={snoozeReminder}
+                navigateTo={setView}
                 nextLevel={nextLevel} getUnlocksAtLevel={getUnlocksAtLevel}
                 notify={notify} persist={persist}
                 setIsCreatingEntry={setIsCreatingEntry}
@@ -1473,7 +1512,7 @@ function App({ initialHunterName, onLogout }) {
         {/* TRAINING HUB — unified view for habits/goals/calendar */}
         {
           view === "training" && (
-            <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: "calc(140px + env(safe-area-inset-top))", paddingBottom: 110, overflowY: "auto" }}>
+            <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: Math.max(headerHeight + 16, 132), paddingBottom: 110, overflowY: "auto" }}>
               <div style={{ maxWidth: 480, margin: "0 auto" }}>
                 {/* Training header */}
                 <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px 20px", marginBottom: 16, backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
@@ -1534,7 +1573,7 @@ function App({ initialHunterName, onLogout }) {
         {/* SYSTEM MENU — themed module hub */}
         {
           view === "system" && (
-            <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: "calc(140px + env(safe-area-inset-top))", paddingBottom: 110, overflowY: "auto" }}>
+            <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: Math.max(headerHeight + 16, 132), paddingBottom: 110, overflowY: "auto" }}>
               <div style={{ maxWidth: 480, margin: "0 auto" }}>
                 {/* System header */}
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -1659,7 +1698,7 @@ function App({ initialHunterName, onLogout }) {
 
         {/* INNER SANCTUM VIEW */}
         {view === "sanctum" && (
-          <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: 140, paddingBottom: 110, overflowY: "auto" }}>
+          <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: Math.max(headerHeight + 16, 132), paddingBottom: 110, overflowY: "auto" }}>
             <div style={{ maxWidth: 480, margin: "0 auto" }}>
               <React.Suspense fallback={null}>
                 <InnerSanctum theme={theme} state={state} persist={persist} notify={notify} />
@@ -1941,12 +1980,15 @@ function App({ initialHunterName, onLogout }) {
                       {showDetails && (
                         <div style={{ animation: "slideDown 0.3s ease", marginBottom: 14, padding: "16px", borderRadius: 16, background: "rgba(255,255,255,0.015)", border: `1px solid ${theme.primary}15` }}>
                           {/* PHOTO IMPORT PLACEHOLDER */}
+                          {can('ai_task_scan') && (
                           <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
-                            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px dashed ${theme.primary}55`, background: `linear-gradient(90deg, ${theme.primary}11, transparent)`, opacity: 0.8, cursor: "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
+                            <div onClick={() => { if (can('ai_task_scan')) { setShowTaskScan(true); setShowCreate(false); } }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${theme.primary}55`, background: `linear-gradient(90deg, ${theme.primary}11, transparent)`, opacity: can('ai_task_scan') ? 1 : 0.45, cursor: can('ai_task_scan') ? "pointer" : "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
                               <span style={{ fontSize: 14 }}>📸</span>
-                              <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: theme.primary, fontWeight: 700, letterSpacing: 1 }}>FOTO-IMPORT (COMING SOON)</span>
+                              <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: theme.primary, fontWeight: 700, letterSpacing: 1 }}>FOTO-SCAN</span>
                             </div>
                           </div>
+
+                          )}
 
                           {/* DESCRIPTION */}
                           <div style={{ marginBottom: 16 }}>
@@ -2046,6 +2088,27 @@ function App({ initialHunterName, onLogout }) {
                         </div>
                       )}
 
+                      {/* PRODUCTIVITY SIGNALS */}
+                      <div style={{ marginBottom: 14, display: "grid", gap: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>PRIORITAET</div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                            {[{ key: "low", label: "NIEDRIG" }, { key: "medium", label: "MITTEL" }, { key: "high", label: "HOCH" }].map(p => (
+                              <button key={p.key} type="button" onClick={() => setQPriority(p.key)} style={{ padding: "8px 6px", borderRadius: 8, fontSize: 9, fontWeight: 800, background: qPriority === p.key ? `${theme.primary}18` : "rgba(255,255,255,0.025)", border: `1px solid ${qPriority === p.key ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: qPriority === p.key ? theme.primary : "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer" }}>{p.label}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>ENERGIE / DAUER</div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                            {[{ key: "quick", label: "5 MIN" }, { key: "medium", label: "30 MIN" }, { key: "deep", label: "DEEP" }].map(e => (
+                              <button key={e.key} type="button" onClick={() => setQEnergy(e.key)} style={{ padding: "8px 6px", borderRadius: 8, fontSize: 9, fontWeight: 800, background: qEnergy === e.key ? `${theme.secondary}18` : "rgba(255,255,255,0.025)", border: `1px solid ${qEnergy === e.key ? theme.secondary + "66" : "rgba(255,255,255,0.06)"}`, color: qEnergy === e.key ? theme.secondary : "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer" }}>{e.label}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <input value={qContext} onChange={e => setQContext(e.target.value)} placeholder="Kontext: Zuhause, PC, Draussen..." style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontFamily: "'JetBrains Mono',monospace", fontSize: 11, outline: "none", boxSizing: "border-box" }} />
+                      </div>
+
                       {/* DUE DATE */}
                       <div style={{ marginBottom: 14 }}>
                         <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>FÄLLIG BIS</div>
@@ -2063,6 +2126,19 @@ function App({ initialHunterName, onLogout }) {
                             transition: "border-color 0.2s",
                           }}
                         />
+                      </div>
+
+                      {/* REMINDER */}
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>REMINDER</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: qReminderPreset === "custom" ? 8 : 0 }}>
+                          {[{ key: "none", label: "AUS" }, { key: "in30", label: "30 MIN" }, { key: "evening", label: "18:00" }, { key: "tomorrow_morning", label: "MORGEN" }, { key: "before_due", label: "VOR DUE" }, { key: "custom", label: "CUSTOM" }].map(r => (
+                            <button key={r.key} type="button" onClick={() => setQReminderPreset(r.key)} style={{ padding: "8px 5px", borderRadius: 8, fontSize: 8, fontWeight: 800, background: qReminderPreset === r.key ? `${theme.primary}18` : "rgba(255,255,255,0.025)", border: `1px solid ${qReminderPreset === r.key ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: qReminderPreset === r.key ? theme.primary : "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer" }}>{r.label}</button>
+                          ))}
+                        </div>
+                        {qReminderPreset === "custom" && (
+                          <input type="datetime-local" value={qReminderAt} onChange={e => setQReminderAt(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: `1px solid ${theme.primary}44`, color: "#e2e8f0", fontFamily: "'JetBrains Mono',monospace", fontSize: 11, colorScheme: "dark", outline: "none", boxSizing: "border-box" }} />
+                        )}
                       </div>
 
                       {/* HABIT SYNC */}

@@ -7,11 +7,14 @@ export const FEATURE_UNLOCKS = {
   quests_basic:       { level: 1,  tier: 0, label: "Quests",           desc: "Erstelle und schließe Quests ab" },
   stats_view:         { level: 1,  tier: 0, label: "Hunter Stats",     desc: "Deine Werte im Überblick" },
   settings:           { level: 1,  tier: 0, label: "Einstellungen",    desc: "Grundeinstellungen" },
+  calendar:           { level: 1,  tier: 0, label: "Kalender",         desc: "Quest-Kalender & Planung" },
 
   // ─── STUFE 1 — Level 3: Erste Systeme ───────────────────────
   habit_tracker:      { level: 3,  tier: 1, label: "Habit Tracker",    desc: "Baue tägliche Routinen auf" },
   emergency_quests:   { level: 3,  tier: 1, label: "Notfall-Quests",   desc: "Tägliche System-Herausforderungen" },
   quest_filters:      { level: 3,  tier: 1, label: "Quest-Filter",     desc: "Filtere deine aktiven Quests" },
+  analytics:          { level: 3,  tier: 1, label: "Analytics",        desc: "Fortschritts-Auswertung" },
+  ai_task_scan:       { level: 3,  tier: 1, label: "Task-Scanner",     desc: "Fotografiere deine Aufgaben" },
   music:              { level: 3,  tier: 1, label: "Music Player",     desc: "Epische Hintergrundmusik" },
 
   // ─── STUFE 2 — Level 5: Ziele & Vision ──────────────────────
@@ -19,17 +22,14 @@ export const FEATURE_UNLOCKS = {
   training_tab:       { level: 5,  tier: 2, label: "Training-Hub",     desc: "Ziele & tägliches Training" },
   micro_habits:       { level: 5,  tier: 2, label: "Micro-Habits",     desc: "Kleine tägliche Gewohnheiten" },
   vision_board:       { level: 5,  tier: 2, label: "Vision Board",     desc: "Manifestiere dein Schicksal" },
-  focus_mode:         { level: 5,  tier: 2, label: "Focus Mode",       desc: "Tiefe Konzentration aktivieren" },
+  focus_mode:         { level: 3,  tier: 1, label: "Focus Mode",       desc: "Tiefe Konzentration aktivieren" },
   ai_quest_desc:      { level: 5,  tier: 2, label: "KI Quest-Hilfe",   desc: "KI generiert Quest-Beschreibungen" },
 
   // ─── STUFE 3 — Level 8: Tracking & Routinen ────────────────
   achievements:       { level: 8,  tier: 3, label: "Achievements",     desc: "Meilensteine & Belohnungen" },
   weekly_quests:      { level: 8,  tier: 3, label: "Weekly Quests",    desc: "Wöchentliche Herausforderungen" },
-  analytics:          { level: 8,  tier: 3, label: "Analytics",        desc: "Fortschritts-Auswertung" },
   dawn_dusk:          { level: 8,  tier: 3, label: "Dawn/Dusk Protocol", desc: "Morgen- & Abendroutinen" },
-  calendar:           { level: 8,  tier: 3, label: "Kalender",         desc: "Quest-Kalender & Planung" },
   ai_coach:           { level: 8,  tier: 3, label: "KI-Coach",         desc: "Das System spricht zu dir" },
-  ai_task_scan:       { level: 8,  tier: 3, label: "Task-Scanner",     desc: "Fotografiere deine Aufgaben" },
 
   // ─── STUFE 4 — Level 11: D-Rang (Dungeons & Shop) ──────────
   dungeons:           { level: 11, tier: 4, label: "Dungeon Gates",    desc: "Besiege magische Portale" },

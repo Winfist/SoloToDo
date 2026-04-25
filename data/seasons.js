@@ -1,5 +1,6 @@
 // ─── GATE SEASONS & WORLD EVENTS ─────────────────────────────────────────────
 import { SEASON_ICONS, QUEST_ICONS } from "./icons.js";
+import { getLocalDateKey } from "./dateUtils.js";
 
 export const SEASONS = {
   frost: {
@@ -171,5 +172,5 @@ export function getNextMonday() {
   const diff = day === 1 ? 7 : (8 - day) % 7;
   d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
+  return getLocalDateKey(d);
 }

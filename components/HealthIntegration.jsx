@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { HEALTH_ICONS, STAT_ICONS, NAV_ICONS } from "../data/icons.js";
+import { getDateTimeLocalValue } from "../data/dateUtils.js";
 
 export default function HealthIntegration({ state, persist, notify, theme }) {
     const [syncing, setSyncing] = useState(false);
@@ -22,7 +23,7 @@ export default function HealthIntegration({ state, persist, notify, theme }) {
                 workout: Math.floor(Math.random() * 45) + 15 // 15 - 60
             };
             setSyncedData(data);
-            const dateStr = new Date().toISOString().slice(0, 16).replace('T', ' ');
+            const dateStr = getDateTimeLocalValue().replace('T', ' ');
             setLastSync(dateStr);
 
             // Only save the sync date — no XP reward per sync.

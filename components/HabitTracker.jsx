@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { calculateLevelUp } from "../data/constants";
 import { HABIT_ICONS, QUEST_ICONS, NAV_ICONS, STAT_ICONS, BACKGROUNDS } from "../data/icons.js";
+import { getToday, getLocalDateKey, getYesterdayKey } from "../data/dateUtils.js";
 
 // ═══════════════════════════════════════════════════════════════
 // HABIT TRACKER – Recurring Habits with per-Habit Streaks & Timer
@@ -29,7 +30,6 @@ const VERIFICATION_TYPES = [
     { key: "counter", label: "Zähler", icon: "🔢", iconSrc: HABIT_ICONS.counter, desc: "Wiederholungen" },
 ];
 
-function getToday() { return new Date().toISOString().slice(0, 10); }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
 // ── Timer Component ──────────────────────────────────────────
@@ -300,7 +300,7 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
                                 {Array.from({ length: 7 }).map((_, i) => {
                                     const d = new Date();
                                     d.setDate(d.getDate() - (6 - i));
-                                    const dateKey = d.toISOString().slice(0, 10);
+                                    const dateKey = getLocalDateKey(d);
                                     const log = habit.history?.[dateKey];
                                     const dayName = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][d.getDay()];
                                     return (
@@ -577,9 +577,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
         const updated = habits.map(h => {
             if (h.id !== habitId) return h;
             const wasCompletedYesterday = (() => {
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                return h.history?.[yesterday.toISOString().slice(0, 10)]?.completed;
+                return h.history?.[getYesterdayKey()]?.completed;
             })();
             const newStreak = wasCompletedYesterday ? (h.currentStreak || 0) + 1 : 1;
             return {
@@ -616,9 +614,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
             const reachedTarget = value >= h.targetCount;
             if (reachedTarget && !h.history?.[today]?.completed) {
                 const wasCompletedYesterday = (() => {
-                    const yesterday = new Date();
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    return h.history?.[yesterday.toISOString().slice(0, 10)]?.completed;
+                    return h.history?.[getYesterdayKey()]?.completed;
                 })();
                 const newStreak = wasCompletedYesterday ? (h.currentStreak || 0) + 1 : 1;
                 return {

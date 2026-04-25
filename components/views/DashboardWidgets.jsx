@@ -1,6 +1,7 @@
 import React from "react";
 import { STAT_ICONS, NAV_ICONS, GATE_ICONS, SHADOW_ICONS, STORY_ICONS } from "../../data/icons.js";
 import StreakFlame from "../ui/StreakFlame.jsx";
+import { getToday, formatLocalDateTime } from "../../data/dateUtils.js";
 
 // ─── STREAK DISPLAY WIDGET ────────────────────────────────────
 export function StreakDisplayWidget({ state, theme }) {
@@ -122,8 +123,9 @@ export function StreakDisplayWidget({ state, theme }) {
 // ─── DAILY PROGRESS WIDGET ────────────────────────────────────
 export function DailyProgressWidget({ state, theme }) {
   const allQuests = (state.quests || []);
-  const todayQuests = allQuests.filter(q => !q.completed);
-  const completedToday = state.questsCompletedToday || 0;
+  const today = getToday();
+  const todayQuests = allQuests.filter(q => !q.completed && (q.type === "daily" || !q.dueDate || q.dueDate <= today));
+  const completedToday = (state.completedQuests || []).filter(q => q.completedAt === today).length;
   const totalForToday = todayQuests.length + completedToday;
   const percent = totalForToday > 0 ? Math.round((completedToday / totalForToday) * 100) : 0;
 
@@ -197,6 +199,76 @@ export function DailyProgressWidget({ state, theme }) {
               <div style={{ fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>OFFEN</div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeReminder }) {
+  const today = getToday();
+  const priorityRank = { high: 0, medium: 1, low: 2 };
+  const typeRank = { daily: 0, weekly: 1, side: 2, chained: 3, hidden: 4 };
+  const focusQuests = (state.quests || [])
+    .filter(q => !q.completed)
+    .sort((a, b) => {
+      const aDue = a.dueDate ? (a.dueDate < today ? 0 : a.dueDate === today ? 1 : 3) : 4;
+      const bDue = b.dueDate ? (b.dueDate < today ? 0 : b.dueDate === today ? 1 : 3) : 4;
+      return aDue - bDue
+        || (priorityRank[a.priority] ?? 1) - (priorityRank[b.priority] ?? 1)
+        || (a.isSystem ? 1 : 0) - (b.isSystem ? 1 : 0)
+        || (typeRank[a.type] ?? 5) - (typeRank[b.type] ?? 5);
+    })
+    .slice(0, 3);
+  const nextReminder = (state.reminders || [])
+    .filter(r => !r.fired && r.reminderAt && new Date(r.reminderAt).getTime() > Date.now())
+    .sort((a, b) => new Date(a.reminderAt) - new Date(b.reminderAt))[0];
+  const completedToday = (state.completedQuests || []).some(q => q.completedAt === today);
+  const habitsOpen = (state.habits || []).filter(h => h.active !== false && !h.history?.[today]).length;
+  const streakRisk = (state.streak || 0) > 0 && !completedToday;
+
+  return (
+    <div style={{ background: theme.card, border: `1px solid ${streakRisk ? "#f59e0b55" : theme.primary + "22"}`, borderRadius: 18, padding: 18, backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)` }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 9, letterSpacing: 3, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>HEUTE</div>
+          <div style={{ fontSize: 18, color: "#fff", fontFamily: "'Cinzel',serif", fontWeight: 900 }}>Command Center</div>
+        </div>
+        {can?.("focus_mode") && (
+          <button onClick={() => setShowFocusMode?.(true)} style={{ padding: "9px 12px", borderRadius: 10, background: `linear-gradient(135deg,${theme.primary},${theme.secondary})`, color: "#fff", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>FOCUS</button>
+        )}
+      </div>
+      <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+        {focusQuests.length ? focusQuests.map((q, i) => (
+          <div key={q.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 10, background: q.dueDate && q.dueDate < today ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.025)", border: `1px solid ${q.priority === "high" ? "#f59e0b55" : "rgba(255,255,255,0.06)"}` }}>
+            <span style={{ width: 20, height: 20, borderRadius: 6, display: "grid", placeItems: "center", background: `${theme.primary}18`, color: theme.primary, fontSize: 10, fontFamily: "'JetBrains Mono',monospace", flexShrink: 0 }}>{i + 1}</span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.title}</div>
+              <div style={{ color: "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{q.dueDate ? (q.dueDate < today ? "UEBERFAELLIG" : q.dueDate === today ? "HEUTE" : q.dueDate) : q.energy || "OFFEN"} {q.context ? `- ${q.context}` : ""}</div>
+            </div>
+          </div>
+        )) : (
+          <div style={{ padding: 14, borderRadius: 10, background: "rgba(255,255,255,0.025)", color: "#64748b", fontSize: 12 }}>Keine offenen Fokus-Aufgaben.</div>
+        )}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+        <div style={{ padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <div style={{ color: nextReminder ? theme.primary : "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>REMINDER</div>
+          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4 }}>{nextReminder ? formatLocalDateTime(nextReminder.reminderAt) : "Keiner"}</div>
+          {nextReminder && (
+            <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
+              <button onClick={() => snoozeReminder?.(nextReminder.id, 15)} style={{ padding: "5px 7px", borderRadius: 7, background: `${theme.primary}14`, color: theme.primary, fontSize: 9, fontWeight: 800 }}>+15M</button>
+              <button onClick={() => snoozeReminder?.(nextReminder.id, 60)} style={{ padding: "5px 7px", borderRadius: 7, background: `${theme.primary}14`, color: theme.primary, fontSize: 9, fontWeight: 800 }}>+60M</button>
+            </div>
+          )}
+        </div>
+        <div style={{ padding: 10, borderRadius: 10, background: streakRisk ? "rgba(245,158,11,0.08)" : "rgba(255,255,255,0.025)", border: `1px solid ${streakRisk ? "#f59e0b55" : "rgba(255,255,255,0.05)"}` }}>
+          <div style={{ color: streakRisk ? "#f59e0b" : "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>STREAK</div>
+          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4 }}>{streakRisk ? "Risiko" : "OK"}</div>
+        </div>
+        <div style={{ padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <div style={{ color: "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>HABITS</div>
+          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4 }}>{habitsOpen} offen</div>
         </div>
       </div>
     </div>

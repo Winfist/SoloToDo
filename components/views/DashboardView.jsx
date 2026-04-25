@@ -7,11 +7,12 @@ import HabitTracker from "../HabitTracker.jsx";
 import MicroHabits from "../MicroHabits.jsx";
 import GemBoosterBanner from "../GemBoosterBanner.jsx";
 import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_LAYOUT, DEFAULT_HIDDEN_WIDGETS, mergeConfig, getWidgetDef } from "./DashboardWidgetRegistry.js";
-import { StreakDisplayWidget, DailyProgressWidget, QuickAccessWidget } from "./DashboardWidgets.jsx";
+import { StreakDisplayWidget, DailyProgressWidget, QuickAccessWidget, TodayCommandCenter } from "./DashboardWidgets.jsx";
 import ScrollReveal from "../ui/ScrollReveal.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
 import { AnimatedNumber } from "../../hooks/useAnimatedCounter.jsx";
 import GlitchText from "../ui/GlitchText.jsx";
+import { getToday } from "../../data/dateUtils.js";
 
 // ─── CSS KEYFRAMES for edit mode ──────────────────────────────
 const EDIT_MODE_CSS = `
@@ -48,6 +49,7 @@ export default function DashboardView({
   completeQuest, completeSubQuest, startEditingQuest, deleteQuest,
   completeEmergencyQuest, createQuest,
   setShowCreate, setShowTaskScan,
+  snoozeReminder,
   nextLevel, getUnlocksAtLevel: _getUnlocksAtLevel,
   notify, persist,
   setIsCreatingEntry,
@@ -255,11 +257,27 @@ export default function DashboardView({
       ? filteredQuests.filter(q => !q.isSystem)
       : filteredQuests;
 
+  const todayKey = getToday();
   const diffOrder = { boss: 0, hard: 1, normal: 2, easy: 3 };
-  const sortByDiff = (a, b) => (diffOrder[a.difficulty] ?? 2) - (diffOrder[b.difficulty] ?? 2);
-  const systemQuests = visibleQuests.filter(q => q.isSystem).sort(sortByDiff);
-  const userQuests = visibleQuests.filter(q => !q.isSystem).sort(sortByDiff);
-  const showGrouped = originFilter === "all" && (systemQuests.length > 0 && userQuests.length > 0);
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+  const typeOrder = { daily: 0, weekly: 1, side: 2, chained: 3, hidden: 4 };
+  const dueBucket = (quest) => {
+    if (!quest.dueDate) return 3;
+    if (quest.dueDate < todayKey) return 0;
+    if (quest.dueDate === todayKey) return 1;
+    return 2;
+  };
+  const sortByFocus = (a, b) =>
+    dueBucket(a) - dueBucket(b)
+    || (a.type === "daily" ? 0 : 1) - (b.type === "daily" ? 0 : 1)
+    || (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1)
+    || (a.isSystem ? 1 : 0) - (b.isSystem ? 1 : 0)
+    || (typeOrder[a.type] ?? 5) - (typeOrder[b.type] ?? 5)
+    || (diffOrder[a.difficulty] ?? 2) - (diffOrder[b.difficulty] ?? 2);
+  const sortedVisibleQuests = [...visibleQuests].sort(sortByFocus);
+  const systemQuests = visibleQuests.filter(q => q.isSystem).sort(sortByFocus);
+  const userQuests = visibleQuests.filter(q => !q.isSystem).sort(sortByFocus);
+  const showGrouped = false && originFilter === "all" && (systemQuests.length > 0 && userQuests.length > 0);
 
   const SectionHeader = ({ title, icon, color, count, sectionKey }) => (
     <div onClick={() => toggleSection(sectionKey)} style={{
@@ -284,6 +302,21 @@ export default function DashboardView({
     const isCollapsed = localCollapsed[widgetKey];
 
     switch (widgetKey) {
+      case "today_command":
+        if (isCollapsed) return { content: null, isEmpty: false };
+        return {
+          content: (
+            <TodayCommandCenter
+              state={state}
+              theme={theme}
+              can={can}
+              setShowFocusMode={setShowFocusMode}
+              snoozeReminder={snoozeReminder}
+            />
+          ),
+          isEmpty: false
+        };
+
       case "gem_booster": {
         if (!can('gem_shop')) return { content: null, isEmpty: true };
         const boosters = getActiveGemBoosters ? getActiveGemBoosters() : [];
@@ -455,7 +488,7 @@ export default function DashboardView({
                     onChange={e => setQuickAddTitle(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === "Enter" && quickAddTitle.trim()) {
-                        createQuest({ title: quickAddTitle.trim(), difficulty: "normal", category: "str", type: "side" });
+                        createQuest({ title: quickAddTitle.trim(), difficulty: "normal", category: "str", type: "side", priority: "medium", energy: "quick" });
                         setQuickAddTitle(""); setQuickAddMode(false);
                       }
                       if (e.key === "Escape") { setQuickAddTitle(""); setQuickAddMode(false); }
@@ -503,7 +536,7 @@ export default function DashboardView({
                       )}
                     </>
                   ) : (
-                    visibleQuests.map((q, i) => (
+                    sortedVisibleQuests.map((q, i) => (
                       <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />
                     ))
                   )}

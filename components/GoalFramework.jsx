@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { genId, calculateLevelUp } from '../data/constants';
 import { HABIT_ICONS, NAV_ICONS, SKILL_ICONS, STAT_ICONS, STORY_ICONS } from '../data/icons.js';
+import { getToday } from '../data/dateUtils.js';
 
 // ═══════════════════════════════════════════════════════════════
 // GOAL FRAMEWORK – Overarching Goals with Milestones
@@ -13,8 +14,6 @@ const GOAL_CATEGORIES = [
     { key: "productivity", icon: "⚡", iconSrc: STAT_ICONS.agi, label: "Produktiv", color: "#f59e0b" },
     { key: "social", icon: "👥", iconSrc: STAT_ICONS.cha, label: "Sozial", color: "#a855f7" },
 ];
-
-function getToday() { return new Date().toISOString().slice(0, 10); }
 
 // ── Goal Card ────────────────────────────────────────────────
 function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, onGenerateQuest, theme }) {

@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import { HABIT_ICONS, QUEST_ICONS } from "../data/icons.js";
+import { getToday, getLocalDateKey } from "../data/dateUtils.js";
 
 // ═══════════════════════════════════════════════════════════════
 // CALENDAR & SCHEDULING – Native Calendar View for Quests
 // ═══════════════════════════════════════════════════════════════
 
-function getToday() { return new Date().toISOString().slice(0, 10); }
-
 export default function CalendarSchedule({ state, persist, notify, theme }) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [calView, setCalView] = useState("month"); // "month" | "week"
 
-    const selectedDateStr = currentDate.toISOString().slice(0, 10);
+    const selectedDateStr = getLocalDateKey(currentDate);
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const startingDay = startOfMonth.getDay(); // 0 is Sunday
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -59,7 +58,7 @@ export default function CalendarSchedule({ state, persist, notify, theme }) {
         return (
             <div style={{ display: "flex", gap: 4, overflowX: "auto" }}>
                 {days.map((d, i) => {
-                    const ds = d.toISOString().slice(0, 10);
+                    const ds = getLocalDateKey(d);
                     const isToday = ds === todayStr;
                     const dayQuests = quests.filter(q => q.dueDate === ds || (q.type === "daily" && ds === todayStr));
                     const dayHabits = habits.filter(h => h.active);
@@ -129,7 +128,7 @@ export default function CalendarSchedule({ state, persist, notify, theme }) {
 
         const days = [];
         for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), d).toISOString().slice(0, 10);
+            const dateStr = getLocalDateKey(new Date(currentDate.getFullYear(), currentDate.getMonth(), d));
             const isToday = dateStr === getToday();
             const isSelected = d === currentDate.getDate();
 

@@ -129,4 +129,7 @@ export const DEFAULT_STATE = {
     verifiedQuests: 0,
     scannedTasks: 0,
   },
+  settings: {
+    autoSystemTasks: false,
+  },
 };

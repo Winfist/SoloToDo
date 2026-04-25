@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { calculateLevelUp } from "../data/constants";
 import { MICRO_ICONS } from "../data/icons.js";
+import { getToday } from "../data/dateUtils.js";
 
 /**
  * MicroHabits – Quick tap-counter widget for tiny daily habits.
@@ -14,8 +15,6 @@ const DEFAULT_MICRO_HABITS = [
     { id: "gratitude", icon: "🙏", iconSrc: MICRO_ICONS.gratitude, label: "Dankbar", dailyTarget: 3, color: "#a855f7" },
     { id: "breathe", icon: "🌬️", iconSrc: MICRO_ICONS.breathe, label: "Atmen", dailyTarget: 3, color: "#06b6d4" },
 ];
-
-function getToday() { return new Date().toISOString().slice(0, 10); }
 
 export default function MicroHabits({ state, persist, notify, theme }) {
     const today = getToday();

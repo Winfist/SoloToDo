@@ -1,4 +1,5 @@
 import { STAT_ICONS, NAV_ICONS, HABIT_ICONS, STORY_ICONS, SEASON_ICONS } from "../data/icons.js";
+import { getToday, getLocalDateKey } from "../data/dateUtils.js";
 
 /**
  * SystemCoach – Adaptive AI Coach Interventions.
@@ -15,8 +16,6 @@ import { STAT_ICONS, NAV_ICONS, HABIT_ICONS, STORY_ICONS, SEASON_ICONS } from ".
  *  - habitReminder: Habits unfinished after 20:00
  *  - celebration: Milestone reached
  */
-
-function getToday() { return new Date().toISOString().slice(0, 10); }
 
 // ── Intervention Checks ──────────────────────────────────────
 
@@ -45,7 +44,7 @@ export function checkOverexertion(state) {
     const completed = state.completedQuests || [];
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    const thresholdDate = threeDaysAgo.toISOString().slice(0, 10);
+    const thresholdDate = getLocalDateKey(threeDaysAgo);
     const recent = completed.filter(q => q.completedAt >= thresholdDate).length;
     if (recent < 20) return null;
     return {
@@ -214,7 +213,7 @@ export function checkWeeklyPathReport(state) {
     // Count quests from last 7 days by category
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const threshold = sevenDaysAgo.toISOString().slice(0, 10);
+    const threshold = getLocalDateKey(sevenDaysAgo);
     const recent = completed.filter(q => q.completedAt >= threshold);
 
     const statNames = { str: "STR", int: "INT", vit: "VIT", agi: "AGI", cha: "CHA" };
@@ -299,7 +298,7 @@ const AI_SESSION_DATE_KEY = "coach_ai_calls_date";
 const MAX_AI_COACH_CALLS = 5;
 
 function getAICallsToday() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getToday();
     const stored = sessionStorage.getItem(AI_SESSION_DATE_KEY);
     if (stored !== today) {
         sessionStorage.setItem(AI_SESSION_DATE_KEY, today);

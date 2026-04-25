@@ -5,6 +5,7 @@
 import { RANKS, DUNGEON_MODIFIERS, SKILLS, ACHIEVEMENTS, DUNGEON_TEMPLATES, EQUIPMENT_POOL, SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS } from "./gameData.js";
 import { JOBS } from "./jobs.js";
 import { QUEST_POOL } from "./questPool.js";
+import { getToday } from "./dateUtils.js";
 
 // ─── JOB XP CONFIG ────────────────────────────────────────────
 export const JOB_XP_SOURCES = {
@@ -40,7 +41,7 @@ export const getRank = (lv) => RANKS.find(r => lv >= r.minLv && lv <= r.maxLv) |
 export const getXpForLevel = (lv) => getRank(lv).xpPerLv;
 export const getRankIndex = (n) => RANKS.findIndex(r => r.name === n);
 export const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-export const getToday = () => new Date().toISOString().slice(0, 10);
+export { getToday };
 
 export function getDailyModifier() {
   const seed = parseInt(getToday().replace(/-/g, "")) % DUNGEON_MODIFIERS.length;

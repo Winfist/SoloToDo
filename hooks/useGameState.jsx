@@ -20,6 +20,7 @@ import { buildCompleteQuestState, buildCompleteEmergencyQuestState } from './que
 import { buildQuestRewardFlow, buildEmergencyRewardFlow, buildDungeonRewardFlow, buildProtocolRewardFlow } from './rewardFlowBuilders.js';
 import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextMonday } from '../data/seasons.js';
 import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER_UNLOCK_MESSAGES } from '../data/featureUnlocks.js';
+import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
@@ -62,6 +63,11 @@ export function useGameState(initialHunterName, onLogout) {
   const [qFromTemplate, setQFromTemplate] = useState(null);
   const [qTags, setQTags] = useState("");
   const [qDueDate, setQDueDate] = useState("");
+  const [qPriority, setQPriority] = useState("medium");
+  const [qEnergy, setQEnergy] = useState("medium");
+  const [qContext, setQContext] = useState("");
+  const [qReminderPreset, setQReminderPreset] = useState("none");
+  const [qReminderAt, setQReminderAt] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const [editingQuestId, setEditingQuestId] = useState(null);
   const [showHiddenQuestModal, setShowHiddenQuestModal] = useState(null);
@@ -159,7 +165,7 @@ export function useGameState(initialHunterName, onLogout) {
       unsub = subscribeSoulLink(linkCode, user.uid, (partnerData) => {
         setState(prev => {
           if (!prev) return prev;
-          const today = new Date().toISOString().slice(0, 10);
+          const today = getToday();
           const bothActive = partnerData.partnerLastActive === today && prev.lastActiveDate === today;
           return { ...prev, soulLink: { ...(prev.soulLink || {}), ...partnerData, bothActive } };
         });
@@ -341,6 +347,7 @@ export function useGameState(initialHunterName, onLogout) {
   const assignRandomTask = useCallback(() => {
     const currentState = stateRef.current;
     if (!currentState || loading) return;
+    if (currentState.settings?.autoSystemTasks !== true) return;
     const TASK_INTERVAL = 3 * 3600 * 1000; // 3 hours
     const now = Date.now();
     const lastTime = currentState.lastSystemTaskTime || 0;
@@ -524,41 +531,222 @@ export function useGameState(initialHunterName, onLogout) {
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);
 
 
-  const deleteQuest = id => persist({ ...state, quests: state.quests.filter(q => q.id !== id) });
+  const deleteQuest = id => persist({
+    ...state,
+    quests: state.quests.filter(q => q.id !== id),
+    reminders: (state.reminders || []).filter(r => r.questId !== id),
+  });
+
+  const resetQuestForm = useCallback(() => {
+    setQTitle("");
+    setQDescription("");
+    setQSubQuests([]);
+    setQSaveToPool(false);
+    setQFromTemplate(null);
+    setQTags("");
+    setQDueDate("");
+    setQSyncHabit(false);
+    setQPriority("medium");
+    setQEnergy("medium");
+    setQContext("");
+    setQReminderPreset("none");
+    setQReminderAt("");
+  }, []);
+
+  const normalizeSubQuestInput = useCallback((items = []) => {
+    return (items || [])
+      .map((sq) => typeof sq === "string" ? { title: sq } : sq)
+      .filter(sq => sq?.title?.trim())
+      .slice(0, 5)
+      .map((sq, i) => ({
+        id: sq.id || genId(),
+        title: sq.title.trim(),
+        completed: !!sq.completed,
+        completedAt: sq.completedAt || null,
+        order: i + 1,
+      }));
+  }, []);
+
+  const normalizeTags = useCallback((raw) => {
+    if (Array.isArray(raw)) return raw.map(t => String(t).trim()).filter(Boolean);
+    if (!raw) return [];
+    return String(raw).split(",").map(t => t.trim()).filter(Boolean);
+  }, []);
+
+  const attachQuestReminder = useCallback((quest, preset, customValue, existingReminderId = null) => {
+    const reminderDate = buildReminderDate(preset, { dueDate: quest.dueDate, customValue });
+    if (!reminderDate) return { quest, reminder: null };
+    const reminderId = existingReminderId || quest.reminderId || genId();
+    const reminderAt = reminderDate.toISOString();
+    return {
+      quest: { ...quest, reminderId, reminderAt, reminderPreset: preset },
+      reminder: {
+        id: reminderId,
+        questId: quest.id,
+        title: `Reminder: ${quest.title}`,
+        body: quest.title,
+        reminderAt,
+        fired: false,
+        preset,
+        createdAt: getToday(),
+      }
+    };
+  }, []);
+
+  const getQuestInputData = useCallback((input = null) => {
+    const source = input && !Array.isArray(input) ? input : {};
+    const useForm = !input;
+    const title = (source.title ?? qTitle).trim();
+    const description = (source.description ?? source.desc ?? qDescription).trim();
+    const rawSubQuests = source.subQuests ?? source.subQuestTitles ?? qSubQuests;
+    const tags = normalizeTags(source.tags ?? (useForm ? qTags : ""));
+    const type = source.type || qType || "side";
+    const dueDate = source.dueDate ?? (useForm ? qDueDate : "");
+    const priority = source.priority || (useForm ? qPriority : "medium");
+    const energy = source.energy || (useForm ? qEnergy : "medium");
+    const context = (source.context ?? (useForm ? qContext : "")).trim();
+    const reminderPreset = source.reminderPreset ?? (useForm ? qReminderPreset : "none");
+    const reminderAt = source.reminderAt ?? (useForm ? qReminderAt : "");
+    const syncHabit = source.syncHabit ?? (useForm ? qSyncHabit : false);
+    return {
+      title,
+      description,
+      subQuests: normalizeSubQuestInput(rawSubQuests),
+      tags,
+      type,
+      dueDate,
+      priority,
+      energy,
+      context,
+      reminderPreset,
+      reminderAt,
+      syncHabit,
+      category: source.category || qCat || "agi",
+      difficulty: source.difficulty || qDiff || "normal",
+      fromTemplate: source.fromTemplate || qFromTemplate || undefined,
+    };
+  }, [qTitle, qDescription, qSubQuests, qTags, qType, qDueDate, qPriority, qEnergy, qContext, qReminderPreset, qReminderAt, qSyncHabit, qCat, qDiff, qFromTemplate, normalizeTags, normalizeSubQuestInput]);
+
+  const createQuestsFromInputs = useCallback((inputs = [], options = {}) => {
+    if (!state || !Array.isArray(inputs) || inputs.length === 0) return [];
+    const createdCount = state.dailyUserQuestsCreated || 0;
+    const extraSlots = state.extraDailySlots || 0;
+    const maxAllowed = 4 + extraSlots;
+    const slotsLeft = Math.max(0, maxAllowed - createdCount);
+    if (slotsLeft <= 0) {
+      notify("Quest-Limit erreicht! Kaufe weitere Slots im Shop.", "warning");
+      return [];
+    }
+
+    const acceptedInputs = inputs.slice(0, slotsLeft);
+    const reminders = [];
+    const quests = acceptedInputs
+      .map((input) => getQuestInputData(input))
+      .filter(data => data.title)
+      .map((data) => {
+        let timeLimit = undefined;
+        if (data.type === "weekly") {
+          const d = new Date();
+          const daysUntilMonday = (8 - d.getDay()) % 7 || 7;
+          d.setDate(d.getDate() + daysUntilMonday); d.setHours(23, 59, 59, 999);
+          timeLimit = d.toISOString();
+        }
+        const quest = {
+          id: genId(),
+          title: data.title,
+          description: data.description || undefined,
+          subQuests: data.subQuests.length > 0 ? data.subQuests : undefined,
+          tags: data.tags.length > 0 ? data.tags : undefined,
+          fromTemplate: data.fromTemplate,
+          difficulty: data.difficulty,
+          category: data.category,
+          type: data.type,
+          priority: data.priority,
+          energy: data.energy,
+          context: data.context || undefined,
+          createdAt: getToday(),
+          createdAtMs: Date.now(),
+          ...(timeLimit ? { timeLimit } : {}),
+          ...(data.dueDate ? { dueDate: data.dueDate } : {}),
+        };
+        const withReminder = attachQuestReminder(quest, data.reminderPreset, data.reminderAt);
+        if (withReminder.reminder) reminders.push(withReminder.reminder);
+        return withReminder.quest;
+      });
+
+    if (quests.length === 0) return [];
+    const pool = state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
+    const recent = [...quests.map(q => q.title), ...(pool.recentlyUsed || []).filter(t => !quests.some(q => q.title === t))].slice(0, 10);
+    const nextState = {
+      ...state,
+      quests: [...(state.quests || []), ...quests],
+      reminders: [...(state.reminders || []), ...reminders],
+      dailyUserQuestsCreated: createdCount + quests.length,
+      customQuestPool: { ...pool, recentlyUsed: recent },
+      ...(options.source === "scan" ? { ai: { ...(state.ai || {}), scannedTasks: ((state.ai?.scannedTasks || 0) + 1) } } : {}),
+    };
+    persist(nextState);
+    if (inputs.length > quests.length) notify(`${quests.length}/${inputs.length} Quests importiert. Tageslimit erreicht.`, "warning");
+    else notify(`${quests.length} Quest${quests.length > 1 ? "s" : ""} erstellt.`, "success");
+    return quests;
+  }, [state, persist, notify, getQuestInputData, attachQuestReminder]);
 
   const startEditingQuest = useCallback((quest) => {
     setEditingQuestId(quest.id);
     setQTitle(quest.title);
     setQDescription(quest.description || "");
-    setQSubQuests((quest.subQuests || []).map(sq => ({ title: sq.title })));
-    setQTags("");
+    setQSubQuests((quest.subQuests || []).map(sq => ({ ...sq })));
+    setQTags((quest.tags || []).join(", "));
     setQDiff(quest.difficulty);
     setQCat(quest.category);
     setQType(quest.type);
+    setQDueDate(quest.dueDate || "");
+    setQPriority(quest.priority || "medium");
+    setQEnergy(quest.energy || "medium");
+    setQContext(quest.context || "");
+    setQReminderPreset(quest.reminderAt ? "custom" : "none");
+    setQReminderAt(quest.reminderAt ? getDateTimeLocalValue(quest.reminderAt) : "");
     setQSyncHabit(!!quest.linkedHabitId);
     setShowCreate(true);
   }, []);
 
-  const createQuest = () => {
-    if (!qTitle.trim()) return;
+  const createQuest = (input = null) => {
+    if (Array.isArray(input)) return createQuestsFromInputs(input);
 
-    if (editingQuestId) {
-      const editSubQuests = qSubQuests
-        .filter(sq => sq.title.trim())
-        .map((sq, i) => ({
-          id: genId(),
-          title: sq.title.trim(),
-          completed: false,
-          completedAt: null,
-          order: i + 1,
-        }));
+    const data = getQuestInputData(input);
+    if (!data.title) return;
+
+    if (editingQuestId && !input) {
       const updatedQuests = state.quests.map(q =>
         q.id === editingQuestId
-          ? { ...q, title: qTitle.trim(), description: qDescription.trim(), subQuests: editSubQuests.length > 0 ? editSubQuests : (q.subQuests || []), difficulty: qDiff, category: qCat, type: qType }
+          ? (() => {
+              const previousReminderId = q.reminderId || (state.reminders || []).find(r => r.questId === q.id)?.id;
+              const baseQuest = {
+                ...q,
+                title: data.title,
+                description: data.description || undefined,
+                subQuests: data.subQuests.length > 0 ? data.subQuests : undefined,
+                tags: data.tags.length > 0 ? data.tags : undefined,
+                difficulty: data.difficulty,
+                category: data.category,
+                type: data.type,
+                priority: data.priority,
+                energy: data.energy,
+                context: data.context || undefined,
+                dueDate: data.dueDate || undefined,
+                reminderAt: undefined,
+                reminderId: undefined,
+                reminderPreset: undefined,
+              };
+              return attachQuestReminder(baseQuest, data.reminderPreset, data.reminderAt, previousReminderId).quest;
+            })()
           : q
       );
-      persist({ ...state, quests: updatedQuests });
-      setQTitle(""); setQDescription(""); setQSubQuests([]); setQSaveToPool(false); setQFromTemplate(null);
+      const editedQuest = updatedQuests.find(q => q.id === editingQuestId);
+      const withReminder = editedQuest ? attachQuestReminder(editedQuest, data.reminderPreset, data.reminderAt, editedQuest.reminderId) : { reminder: null };
+      const reminders = (state.reminders || []).filter(r => r.questId !== editingQuestId);
+      persist({ ...state, quests: updatedQuests, reminders: withReminder.reminder ? [...reminders, withReminder.reminder] : reminders });
+      resetQuestForm();
       setEditingQuestId(null);
       setShowCreate(false);
       return;
@@ -574,59 +762,58 @@ export function useGameState(initialHunterName, onLogout) {
 
     // Weekly quest gets a timeLimit of next Monday midnight
     let timeLimit = undefined;
-    if (qType === "weekly") {
+    if (data.type === "weekly") {
       const d = new Date();
       const daysUntilMonday = (8 - d.getDay()) % 7 || 7;
       d.setDate(d.getDate() + daysUntilMonday); d.setHours(23, 59, 59, 999);
       timeLimit = d.toISOString();
     }
-    const habitId = ((qType === "daily" || qType === "weekly") && qSyncHabit) ? genId() : null;
-    let finalDiff = qDiff;
-    const tLower = qTitle.trim().toLowerCase();
+    const habitId = ((data.type === "daily" || data.type === "weekly") && data.syncHabit) ? genId() : null;
+    let finalDiff = data.difficulty;
+    const tLower = data.title.toLowerCase();
     const isSimple = tLower.includes("liegest\u00FCtz") || tLower.includes("situp") || tLower.includes("kniebeuge") || tLower.includes("wasser");
     const numMatch = tLower.match(/\d+/);
-    if (isSimple && numMatch && parseInt(numMatch[0], 10) <= 20) {
+    if (state.settings?.autoDifficulty !== false && isSimple && numMatch && parseInt(numMatch[0], 10) <= 20) {
       finalDiff = "easy";
     }
 
-    // Build sub-quests
-    const subQuestList = qSubQuests
-      .filter(sq => sq.title.trim())
-      .map((sq, i) => ({
-        id: genId(),
-        title: sq.title.trim(),
-        completed: false,
-        completedAt: null,
-        order: i + 1,
-      }));
-
     const quest = {
-      id: genId(), title: qTitle.trim(),
-      description: qDescription.trim() || undefined,
-      subQuests: subQuestList.length > 0 ? subQuestList : undefined,
-      fromTemplate: qFromTemplate || undefined,
-      difficulty: finalDiff, category: qCat, type: qType,
+      id: genId(), title: data.title,
+      description: data.description || undefined,
+      subQuests: data.subQuests.length > 0 ? data.subQuests : undefined,
+      tags: data.tags.length > 0 ? data.tags : undefined,
+      fromTemplate: data.fromTemplate,
+      difficulty: finalDiff, category: data.category, type: data.type,
+      priority: data.priority,
+      energy: data.energy,
+      context: data.context || undefined,
       createdAt: getToday(), createdAtMs: Date.now(),
       ...(timeLimit ? { timeLimit } : {}),
       ...(habitId ? { linkedHabitId: habitId } : {}),
-      ...(qDueDate ? { dueDate: qDueDate } : {}),
+      ...(data.dueDate ? { dueDate: data.dueDate } : {}),
+    };
+    const { quest: questWithReminder, reminder } = attachQuestReminder(quest, data.reminderPreset, data.reminderAt);
+
+    let nextState = {
+      ...state,
+      quests: [...state.quests, questWithReminder],
+      reminders: reminder ? [...(state.reminders || []), reminder] : (state.reminders || []),
+      dailyUserQuestsCreated: createdCount + 1
     };
 
-    let nextState = { ...state, quests: [...state.quests, quest], dailyUserQuestsCreated: createdCount + 1 };
-
     // Save to custom pool if requested
-    if (qSaveToPool) {
+    if (!input && qSaveToPool) {
       const pool = state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
       if (pool.templates.length < 50) {
         const template = {
           id: genId(),
-          title: quest.title,
-          description: quest.description || "",
-          category: quest.category,
-          difficulty: quest.difficulty,
-          type: quest.type,
-          subQuestTitles: subQuestList.map(sq => sq.title),
-          tags: qTags ? qTags.split(',').map(t => t.trim()).filter(Boolean) : [],
+          title: questWithReminder.title,
+          description: questWithReminder.description || "",
+          category: questWithReminder.category,
+          difficulty: questWithReminder.difficulty,
+          type: questWithReminder.type,
+          subQuestTitles: data.subQuests.map(sq => sq.title),
+          tags: data.tags,
           createdAt: getToday(),
           usageCount: 1,
           collectionId: null,
@@ -640,30 +827,52 @@ export function useGameState(initialHunterName, onLogout) {
 
     // Update recently used
     const pool = nextState.customQuestPool || state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
-    const recent = [quest.title, ...(pool.recentlyUsed || []).filter(t => t !== quest.title)].slice(0, 10);
+    const recent = [questWithReminder.title, ...(pool.recentlyUsed || []).filter(t => t !== questWithReminder.title)].slice(0, 10);
     nextState.customQuestPool = { ...pool, ...(nextState.customQuestPool || {}), recentlyUsed: recent };
 
     if (habitId) {
       const linkedHabit = {
         id: habitId,
-        title: qTitle.trim(),
-        category: qCat,
-        frequency: qType,
+        title: data.title,
+        category: data.category,
+        frequency: data.type,
         history: {},
         streak: 0,
         bestStreak: 0,
         totalCompletions: 0,
         createdAt: getToday(),
         active: true,
-        linkedQuestId: quest.id
+        linkedQuestId: questWithReminder.id
       };
       nextState.habits = [...(state.habits || []), linkedHabit];
     }
 
     persist(nextState);
-    setQTitle(""); setQDescription(""); setQSubQuests([]); setQSaveToPool(false); setQFromTemplate(null); setQDueDate("");
-    setShowCreate(false);
+    if (!input) {
+      resetQuestForm();
+      setShowCreate(false);
+    }
+    return questWithReminder;
   };
+
+  const snoozeReminder = useCallback((reminderId, minutes = 30) => {
+    if (!state || !reminderId) return;
+    const reminderAt = new Date(Date.now() + minutes * 60000).toISOString();
+    persist({
+      ...state,
+      reminders: (state.reminders || []).map(r =>
+        r.id === reminderId
+          ? { ...r, reminderAt, fired: false, snoozedAt: Date.now(), snoozeMinutes: minutes }
+          : r
+      ),
+      quests: (state.quests || []).map(q =>
+        q.reminderId === reminderId
+          ? { ...q, reminderAt, reminderPreset: "snoozed" }
+          : q
+      ),
+    });
+    notify(`Reminder um ${minutes} Minuten verschoben.`, "info");
+  }, [state, persist, notify]);
 
   const completeEmergencyQuest = useCallback((eq) => {
     if (!state || state.emergencyDone) return;
@@ -1261,9 +1470,7 @@ export function useGameState(initialHunterName, onLogout) {
       return false;
     }
     // Check if streak continues (yesterday or first time)
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    const yesterdayStr = getYesterdayKey();
     const prevStreak = state.gemStreak?.current || 0;
     const continues = state.gemStreak?.lastClaimDate === yesterdayStr;
     const newStreak = continues ? prevStreak + 1 : 1;
@@ -1410,6 +1617,16 @@ export function useGameState(initialHunterName, onLogout) {
     setQTags,
     qDueDate,
     setQDueDate,
+    qPriority,
+    setQPriority,
+    qEnergy,
+    setQEnergy,
+    qContext,
+    setQContext,
+    qReminderPreset,
+    setQReminderPreset,
+    qReminderAt,
+    setQReminderAt,
     showDetails,
     setShowDetails,
     editingQuestId,
@@ -1453,6 +1670,8 @@ export function useGameState(initialHunterName, onLogout) {
     completeSubQuest,
     deleteQuest,
     createQuest,
+    createQuestsFromInputs,
+    snoozeReminder,
     completeEmergencyQuest,
     addChainedQuest,
     createQuestFromTemplate,

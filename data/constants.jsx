@@ -11,6 +11,7 @@
 // The React UI components remain in this file to avoid splitting JSX dependencies.
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { getToday as getLocalToday, formatLocalDateTime } from "./dateUtils.js";
 
 // â”€â”€â”€ RE-EXPORTS FROM SPLIT MODULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export {
@@ -875,6 +876,20 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   const completedSubs = subQuests.filter(sq => sq.completed).length;
   const allSubsDone = subQuests.length > 0 && completedSubs === subQuests.length;
   const hasDetails = (quest.description && quest.description.trim()) || subQuests.length > 0;
+  const todayKey = getLocalToday();
+  const isOverdue = quest.dueDate && quest.dueDate < todayKey && !quest.completed;
+  const isDueToday = quest.dueDate === todayKey;
+  const priorityMeta = {
+    high: { label: "HOCH", color: "#f59e0b" },
+    medium: { label: "MITTEL", color: "#38bdf8" },
+    low: { label: "NIEDRIG", color: "#64748b" },
+  }[quest.priority || "medium"];
+  const energyMeta = {
+    quick: "5 MIN",
+    medium: "30 MIN",
+    deep: "DEEP",
+  }[quest.energy || "medium"];
+  const reminderLabel = quest.reminderAt ? formatLocalDateTime(quest.reminderAt) : null;
   const handleComplete = () => {
     if (completing) return;
     if (subQuests.length > 0 && !allSubsDone) { setExpanded(true); return; }
@@ -996,6 +1011,8 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             <span key={i} style={{ padding: "1px 6px", borderRadius: 4, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 8, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase", transition: "all 0.2s" }}>#{t}</span>
           ))}
           {quest.type === "weekly" && quest.timeLimit && <QuestTimer expiresAt={quest.timeLimit} color="#8b5cf6" />}
+          {quest.dueDate && <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: isOverdue ? "rgba(239,68,68,0.15)" : isDueToday ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.04)", color: isOverdue ? "#ef4444" : isDueToday ? "#f59e0b" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4, border: `1px solid ${isOverdue ? "#ef444455" : isDueToday ? "#f59e0b55" : "rgba(255,255,255,0.08)"}` }}>{isOverdue ? "UEBERFAELLIG" : isDueToday ? "HEUTE" : quest.dueDate}</span>}
+          {reminderLabel && <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: `${theme.primary}14`, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4, border: `1px solid ${theme.primary}33` }}>REM {reminderLabel}</span>}
         </div>
         {quest.systemMessage && (
           <div style={{ fontSize: 9, letterSpacing: 1, color: "#f87171", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, background: "rgba(248,113,113,0.1)", padding: "4px 6px", borderRadius: 6, borderLeft: "2px solid #f87171" }}>
@@ -1008,6 +1025,13 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
         </div>
         {quest.description && quest.description.trim() && !expanded && (
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif", fontStyle: "italic" }}>{quest.description}</div>
+        )}
+        {(quest.priority || quest.energy || quest.context) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontSize: 9 }}>
+            <span style={{ color: priorityMeta.color, background: `${priorityMeta.color}14`, border: `1px solid ${priorityMeta.color}33`, borderRadius: 6, padding: "2px 7px" }}>PRIO {priorityMeta.label}</span>
+            {energyMeta && <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "2px 7px" }}>{energyMeta}</span>}
+            {quest.context && <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "2px 7px" }}>{quest.context}</span>}
+          </div>
         )}
         {quest.type === "chained" && <ChainedQuestProgress quest={quest} />}
         {subQuests.length > 0 && !expanded && (
@@ -1059,7 +1083,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
           {isHidden && <span style={{ margin: "0 5px", color: typeCfg.color }}>· ✨ Verborgene Belohnung</span>}
         </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0, opacity: hover ? 1 : 0, transition: "opacity 0.2s", position: "relative", zIndex: 2 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0, opacity: 1, transition: "opacity 0.2s", position: "relative", zIndex: 2 }}>
         {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(quest); }} className="press-feedback" style={{ fontSize: 14, color: "#3b82f6", background: "transparent", padding: "4px", cursor: "pointer", border: "none" }}>✏️</button>}
         {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(quest.id); }} className="press-feedback" style={{ fontSize: 14, color: "#ef4444", background: "transparent", padding: "4px", cursor: "pointer", border: "none" }}>✕</button>}
       </div>

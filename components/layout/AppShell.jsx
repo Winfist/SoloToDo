@@ -39,7 +39,7 @@ export default function AppShell({
   const navProps = { view, navConfig, allTabs, defaultKeys, can, onNavigate, activeDungeons, statPoints, theme };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--theme-bg)", color: "#e2e8f0", fontFamily: "var(--font-sans)", position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: "var(--theme-bg)", color: "#e2e8f0", fontFamily: "var(--font-sans)", position: "relative", overflowX: "hidden", width: "100%", maxWidth: "100vw" }}>
       {/* Sidebar on desktop */}
       {isDesktop && !hideNav && (
         <Sidebar {...navProps} logo={logo} />

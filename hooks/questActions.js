@@ -264,6 +264,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     ...next,
     stats: newStats,
     quests: updatedQuests,
+    reminders: (state.reminders || []).filter(r => r.questId !== questId),
     completedQuests: [...(state.completedQuests || []), {
       ...quest,
       completedAt: today,

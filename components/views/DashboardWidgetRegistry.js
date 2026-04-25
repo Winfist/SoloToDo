@@ -4,20 +4,22 @@
 // whether the user may remove it.
 
 export const DASHBOARD_WIDGETS = [
-  { key: "gem_booster",      label: "Gem Boosters",        icon: "💎", color: "#a855f7", desc: "Aktive Premium-Booster",         requires: "gem_shop",      removable: true  },
-  { key: "hunter_status",    label: "Hunter Status",       icon: "⚔️", color: "#22d3ee", desc: "Level, Stats & XP-Übersicht",    requires: null,            removable: true  },
-  { key: "streak_display",   label: "Streak-Anzeige",      icon: "🔥", color: "#f97316", desc: "Dein Streak mit Flammen-Effekt", requires: null,            removable: true  },
-  { key: "daily_progress",   label: "Tagesfortschritt",    icon: "📊", color: "#22c55e", desc: "Wie viel du heute geschafft hast", requires: null,          removable: true  },
-  { key: "quests",           label: "Hunter Quests",       icon: "📜", color: "#f59e0b", desc: "Aktive Quests & Filter",         requires: null,            removable: false },
-  { key: "quick_access",     label: "Schnellzugriff",      icon: "⚡", color: "#6366f1", desc: "Shortcuts zu Features",          requires: null,            removable: true  },
-  { key: "vision_board",     label: "Vision Board",        icon: "🔮", color: "#a855f7", desc: "Affirmationen & Motivation",     requires: "vision_board",  removable: true  },
-  { key: "habits",           label: "Habit Tracker",       icon: "🎯", color: "#22c55e", desc: "Tägliche Gewohnheiten",          requires: "habit_tracker", removable: true  },
-  { key: "micro_habits",     label: "Micro-Habits",        icon: "✨", color: "#06b6d4", desc: "Kleine tägliche Aufgaben",       requires: "micro_habits",  removable: true  },
-  { key: "next_unlock",      label: "System-Update",       icon: "🔓", color: "#6366f1", desc: "Nächstes Feature-Unlock",        requires: null,            removable: true  },
+  { key: "today_command", label: "Heute", icon: "NOW", color: "#22d3ee", desc: "Top 3, Reminder und Risiken", requires: null, removable: true },
+  { key: "gem_booster", label: "Gem Boosters", icon: "💎", color: "#a855f7", desc: "Aktive Premium-Booster", requires: "gem_shop", removable: true },
+  { key: "hunter_status", label: "Hunter Status", icon: "⚔️", color: "#22d3ee", desc: "Level, Stats & XP-Übersicht", requires: null, removable: true },
+  { key: "streak_display", label: "Streak-Anzeige", icon: "🔥", color: "#f97316", desc: "Dein Streak mit Flammen-Effekt", requires: null, removable: true },
+  { key: "daily_progress", label: "Tagesfortschritt", icon: "📊", color: "#22c55e", desc: "Wie viel du heute geschafft hast", requires: null, removable: true },
+  { key: "quests", label: "Hunter Quests", icon: "📜", color: "#f59e0b", desc: "Aktive Quests & Filter", requires: null, removable: false },
+  { key: "quick_access", label: "Schnellzugriff", icon: "⚡", color: "#6366f1", desc: "Shortcuts zu Features", requires: null, removable: true },
+  { key: "vision_board", label: "Vision Board", icon: "🔮", color: "#a855f7", desc: "Affirmationen & Motivation", requires: "vision_board", removable: true },
+  { key: "habits", label: "Habit Tracker", icon: "🎯", color: "#22c55e", desc: "Tägliche Gewohnheiten", requires: "habit_tracker", removable: true },
+  { key: "micro_habits", label: "Micro-Habits", icon: "✨", color: "#06b6d4", desc: "Kleine tägliche Aufgaben", requires: "micro_habits", removable: true },
+  { key: "next_unlock", label: "System-Update", icon: "🔓", color: "#6366f1", desc: "Nächstes Feature-Unlock", requires: null, removable: true },
 ];
 
 // The default layout order — new users get this
 export const DEFAULT_DASHBOARD_LAYOUT = [
+  "today_command",
   "gem_booster",
   "hunter_status",
   "quests",
@@ -51,7 +53,11 @@ export function mergeConfig(saved, can) {
   const known = new Set([...layout, ...hidden]);
   for (const key of allKeys) {
     if (!known.has(key)) {
-      hidden.push(key);
+      if (key === "today_command") {
+        layout.unshift(key);
+      } else {
+        hidden.push(key);
+      }
     }
   }
 

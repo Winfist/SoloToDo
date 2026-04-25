@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { NAV_ICONS, STAT_ICONS } from "../data/icons";
+import { getToday } from "../data/dateUtils.js";
 
 // ═══════════════════════════════════════════════════════════════
 // SOUL LINK VIEW
@@ -16,7 +17,7 @@ export default function SoulLinkView({
   const [loading, setLoading] = useState(false);
   const soulLink = state?.soulLink || {};
   const isLinked = !!soulLink.linkCode;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getToday();
   const bothActive = soulLink.bothActive;
 
   const t = theme || { primary: "#22d3ee", accent: "#67e8f9", card: "rgba(10,10,22,0.88)", glow: "rgba(34,211,238,0.35)" };
