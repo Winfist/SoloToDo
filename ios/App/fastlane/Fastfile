@@ -13,7 +13,11 @@ platform :ios do
       in_house: false
     )
 
-    cert(api_key: api_key)
+    cert(
+      api_key: api_key,
+      keychain_path: ENV["MATCH_KEYCHAIN_NAME"],
+      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ""
+    )
     sigh(api_key: api_key)
 
     update_code_signing_settings(
