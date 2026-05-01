@@ -13,6 +13,19 @@ platform :ios do
       in_house: false
     )
 
+    # Clean up old ephemeral certificates since GitHub runners are destroyed after each run
+    require 'spaceship'
+    Spaceship::ConnectAPI::Certificate.all.each do |c|
+      if c.certificate_type.to_s.include?("DISTRIBUTION")
+        UI.message("Revoking old certificate: #{c.id}")
+        begin
+          c.delete!
+        rescue => e
+          UI.error("Failed to delete certificate: #{e}")
+        end
+      end
+    end
+
     cert(
       api_key: api_key,
       keychain_path: "~/Library/Keychains/fastlane_tmp_keychain-db",
