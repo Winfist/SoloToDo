@@ -878,13 +878,32 @@ function App({ initialHunterName, onLogout }) {
               <button onClick={onLogout} className="press-feedback" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, color: "#ef4444", fontSize: 10, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", padding: "6px 12px", fontWeight: 800, letterSpacing: 1, transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)" }} title="System beenden" onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.22)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"; e.currentTarget.style.boxShadow = "none"; }}>
                 EXIT
               </button>
+              {/* Music mute — always visible in top row */}
+              {can('music') && <button
+                onClick={() => setIsMusicPlaying(prev => {
+                  const next = !prev;
+                  localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
+                  return next;
+                })}
+                className="press-feedback"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 32, height: 32, borderRadius: 8,
+                  background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
+                  color: isMusicPlaying ? theme.accent : "#475569",
+                  cursor: "pointer", fontSize: 16, transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)"
+                }}
+              >
+                {isMusicPlaying ? "\u266B" : "\u266A"}
+              </button>}
             </div>
 
             {/* Energy Line Separator */}
             <div className="energy-line" style={{ margin: "0 -16px", opacity: headerState.isCompact ? 0.3 : 1, transition: "opacity 0.3s" }} />
 
             {/* BOTTOM ROW: Stats + Icons */}
-            <div className={`header-v3-stats-row ${headerState.isCompact ? 'compact' : ''}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", paddingTop: 2, maxHeight: headerState.isCompact ? 0 : 50 }}>
+            <div className={`header-v3-stats-row ${headerState.isCompact ? 'compact' : ''}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", paddingTop: 2, maxHeight: headerState.isCompact ? 0 : 50, overflowX: "auto", WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div id="header-xp-target" className="stat-mini" style={{ background: `${theme.primary}08`, borderColor: `${theme.primary}15` }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", fontVariantNumeric: "tabular-nums" }}>{powerLevel.toLocaleString()}</div>
@@ -989,24 +1008,7 @@ function App({ initialHunterName, onLogout }) {
                   </span>
                   <span className="hide-on-mobile">PROTOCOL</span>
                 </button>}
-                {can('music') && <button
-                  onClick={() => setIsMusicPlaying(prev => {
-                    const next = !prev;
-                    localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
-                    return next;
-                  })}
-                  className="press-feedback"
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    width: 34, height: 34, borderRadius: 10,
-                    background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
-                    color: isMusicPlaying ? theme.accent : "#475569",
-                    cursor: "pointer", fontSize: 18, transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)"
-                  }}
-                >
-                  {isMusicPlaying ? "\u266B" : "\u266A"}
-                </button>}
+
 
                 {can('multiplayer') && <button
                   onClick={enterPortal}
@@ -1981,12 +1983,12 @@ function App({ initialHunterName, onLogout }) {
                         <div style={{ animation: "slideDown 0.3s ease", marginBottom: 14, padding: "16px", borderRadius: 16, background: "rgba(255,255,255,0.015)", border: `1px solid ${theme.primary}15` }}>
                           {/* PHOTO IMPORT PLACEHOLDER */}
                           {can('ai_task_scan') && (
-                          <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
-                            <div onClick={() => { if (can('ai_task_scan')) { setShowTaskScan(true); setShowCreate(false); } }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${theme.primary}55`, background: `linear-gradient(90deg, ${theme.primary}11, transparent)`, opacity: can('ai_task_scan') ? 1 : 0.45, cursor: can('ai_task_scan') ? "pointer" : "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
-                              <span style={{ fontSize: 14 }}>📸</span>
-                              <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: theme.primary, fontWeight: 700, letterSpacing: 1 }}>FOTO-SCAN</span>
+                            <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
+                              <div onClick={() => { if (can('ai_task_scan')) { setShowTaskScan(true); setShowCreate(false); } }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${theme.primary}55`, background: `linear-gradient(90deg, ${theme.primary}11, transparent)`, opacity: can('ai_task_scan') ? 1 : 0.45, cursor: can('ai_task_scan') ? "pointer" : "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
+                                <span style={{ fontSize: 14 }}>📸</span>
+                                <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: theme.primary, fontWeight: 700, letterSpacing: 1 }}>FOTO-SCAN</span>
+                              </div>
                             </div>
-                          </div>
 
                           )}
 

@@ -16,7 +16,8 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   OAuthProvider
 } from "firebase/auth";
@@ -334,6 +335,23 @@ export default function AuthScreen({ onAuthSuccess }) {
   const msg3Ref = useRef(null);
   const vignetteRef = useRef(null);
 
+  // Handle redirect result from Google/Apple sign-in (Capacitor WKWebView)
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          setHunterName(result.user.displayName || "Hunter");
+          setShowSuccess(true);
+        }
+      })
+      .catch((err) => {
+        if (err.code && err.code !== "auth/redirect-cancelled-by-user") {
+          console.error("Redirect result error:", err);
+          setErrors({ server: "Login fehlgeschlagen: " + (err.message || "") });
+        }
+      });
+  }, []);
+
   // Called every frame by AuthTunnelScene — only DOM manipulation, no setState
   const handleProgress = useCallback((p) => {
     // Vignette deepens with approach
@@ -421,16 +439,13 @@ export default function AuthScreen({ onAuthSuccess }) {
     setErrors({});
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      setHunterName(result.user.displayName || "Hunter");
-      setShowSuccess(true);
+      await signInWithRedirect(auth, provider);
+      // Page will reload — result handled in useEffect/getRedirectResult
     } catch (err) {
       console.error(err);
       let msg = "Google Login fehlgeschlagen: " + (err.message || "");
       if (err.code === "auth/operation-not-allowed") msg = "Google Login ist in Firebase nicht aktiviert.";
-      else if (err.code === "auth/popup-closed-by-user") msg = "Popup wurde geschlossen.";
       setErrors({ server: msg });
-    } finally {
       setLoading(false);
     }
   };
@@ -440,16 +455,13 @@ export default function AuthScreen({ onAuthSuccess }) {
     setErrors({});
     try {
       const provider = new OAuthProvider('apple.com');
-      const result = await signInWithPopup(auth, provider);
-      setHunterName(result.user.displayName || "Hunter");
-      setShowSuccess(true);
+      await signInWithRedirect(auth, provider);
+      // Page will reload — result handled in useEffect/getRedirectResult
     } catch (err) {
       console.error(err);
       let msg = "Apple Login fehlgeschlagen: " + (err.message || "");
       if (err.code === "auth/operation-not-allowed") msg = "Apple Login ist in Firebase nicht aktiviert.";
-      else if (err.code === "auth/popup-closed-by-user") msg = "Popup wurde geschlossen.";
       setErrors({ server: msg });
-    } finally {
       setLoading(false);
     }
   };
@@ -661,11 +673,11 @@ export default function AuthScreen({ onAuthSuccess }) {
         ref={formContainerRef}
         style={{
           position: "fixed", inset: 0,
-          display: "flex", alignItems: isMobile ? "flex-start" : "center", justifyContent: "center",
-          padding: isMobile ? "12px" : "20px", paddingTop: isMobile ? "60px" : "90px",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: isMobile ? "12px" : "20px",
           zIndex: 25,
           opacity: 0, pointerEvents: "none",
-          overflowY: isMobile ? "auto" : "hidden",
+          overflowY: "auto",
           WebkitOverflowScrolling: "touch",
         }}
       >
