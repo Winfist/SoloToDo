@@ -16,6 +16,19 @@ try {
   document.documentElement.dataset.theme = "default";
 }
 
+// GLOBAL ERROR CATCHER FOR NATIVE WEBVIEWS
+window.mobileErrors = [];
+window.onerror = function (msg, url, lineNo, columnNo, error) {
+  window.mobileErrors.push(`Error: ${msg} | Line: ${lineNo}`);
+  alert(`CRITICAL ERROR:\n${msg}\nLine: ${lineNo}\nURL: ${url}`);
+  return false;
+};
+window.addEventListener('unhandledrejection', function (event) {
+  window.mobileErrors.push(`Unhandled Promise: ${event.reason}`);
+  const msg = (event.reason && event.reason.stack) ? event.reason.stack : event.reason;
+  alert(`PROMISE REJECTION:\n${msg}`);
+});
+
 // Polyfill window.storage with localStorage
 if (!window.storage) {
   window.storage = {
