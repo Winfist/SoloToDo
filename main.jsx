@@ -16,17 +16,22 @@ try {
   document.documentElement.dataset.theme = "default";
 }
 
-// GLOBAL ERROR CATCHER FOR NATIVE WEBVIEWS
+// ── GLOBAL ERROR CATCHER FOR NATIVE WEBVIEWS ──
+// Enhanced: captures error.stack when available to bypass cross-origin masking
 window.mobileErrors = [];
 window.onerror = function (msg, url, lineNo, columnNo, error) {
-  window.mobileErrors.push(`Error: ${msg} | Line: ${lineNo}`);
-  alert(`CRITICAL ERROR:\n${msg}\nLine: ${lineNo}\nURL: ${url}`);
+  const stack = (error && error.stack) ? error.stack : '(no stack)';
+  const detail = `${msg}\nLine: ${lineNo}\nURL: ${url}\nStack: ${stack}`;
+  window.mobileErrors.push(detail);
+  try { alert('CRITICAL ERROR:\n' + detail); } catch (_) { /* alert might fail */ }
   return false;
 };
 window.addEventListener('unhandledrejection', function (event) {
-  window.mobileErrors.push(`Unhandled Promise: ${event.reason}`);
-  const msg = (event.reason && event.reason.stack) ? event.reason.stack : event.reason;
-  alert(`PROMISE REJECTION:\n${msg}`);
+  const reason = event.reason;
+  const stack = (reason && reason.stack) ? reason.stack : String(reason);
+  const detail = `Unhandled Promise Rejection:\n${stack}`;
+  window.mobileErrors.push(detail);
+  try { alert('PROMISE REJECTION:\n' + detail); } catch (_) { /* alert might fail */ }
 });
 
 // Polyfill window.storage with localStorage
@@ -47,13 +52,19 @@ if (!window.storage) {
   };
 }
 
+// ── AUTH TIMEOUT: if Firebase auth never fires, fallback to login after 8s ──
+const AUTH_TIMEOUT_MS = 8000;
+
 function Root() {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
   const [hunterName, setHunterName] = useState("");
 
   useEffect(() => {
+    let settled = false;
+
     // Listen for Firebase Auth changes
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      settled = true;
       if (user) {
         setHunterName(user.displayName || "");
         setIsAuthenticated(true);
@@ -62,7 +73,20 @@ function Root() {
       }
     });
 
-    return () => unsubscribe();
+    // Safety timeout: if onAuthStateChanged never fires (IndexedDB hang),
+    // force-show the login screen so the user isn't stuck forever.
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        console.warn('[SoloToDo] Auth timeout – forcing login screen');
+        window.mobileErrors.push('Auth timeout after ' + AUTH_TIMEOUT_MS + 'ms – forcing login');
+        setIsAuthenticated(false);
+      }
+    }, AUTH_TIMEOUT_MS);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleAuthSuccess = (user, name) => {
@@ -106,8 +130,13 @@ function Root() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <Root />
-  </React.StrictMode>
-);
+try {
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <Root />
+    </React.StrictMode>
+  );
+} catch (e) {
+  const msg = e && e.stack ? e.stack : String(e);
+  alert('FATAL RENDER ERROR:\n' + msg);
+}

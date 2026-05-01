@@ -1,6 +1,10 @@
 // firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import {
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
@@ -18,7 +22,11 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Use initializeAuth with explicit persistence fallback:
+// IndexedDB first (desktop), then localStorage (Capacitor WKWebView fallback)
+const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+});
 const db = getFirestore(app);
 const functions = getFunctions(app, "europe-west1");
 

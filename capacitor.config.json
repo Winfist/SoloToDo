@@ -1,5 +1,10 @@
 {
   "appId": "com.solotodo.app",
   "appName": "SoloToDo",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "hostname": "app.solotodo.com",
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
+  }
 }
