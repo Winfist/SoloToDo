@@ -15,7 +15,7 @@ platform :ios do
 
     cert(
       api_key: api_key,
-      keychain_path: ENV["MATCH_KEYCHAIN_NAME"],
+      keychain_path: ENV["KEYCHAIN_PATH"],
       keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ""
     )
     sigh(api_key: api_key)
