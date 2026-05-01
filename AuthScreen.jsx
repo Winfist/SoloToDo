@@ -16,11 +16,13 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   OAuthProvider
 } from "firebase/auth";
+
+// Detect native Capacitor environment (WKWebView on iOS)
+const IS_CAPACITOR = typeof window !== "undefined" && !!window.Capacitor;
 
 // ─── AUTH CSS ─────────────────────────────────────────────────
 // Fonts are loaded globally in index.html. Keyframes here supplement styles/base.css during migration.
@@ -335,22 +337,7 @@ export default function AuthScreen({ onAuthSuccess }) {
   const msg3Ref = useRef(null);
   const vignetteRef = useRef(null);
 
-  // Handle redirect result from Google/Apple sign-in (Capacitor WKWebView)
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setHunterName(result.user.displayName || "Hunter");
-          setShowSuccess(true);
-        }
-      })
-      .catch((err) => {
-        if (err.code && err.code !== "auth/redirect-cancelled-by-user") {
-          console.error("Redirect result error:", err);
-          setErrors({ server: "Login fehlgeschlagen: " + (err.message || "") });
-        }
-      });
-  }, []);
+
 
   // Called every frame by AuthTunnelScene — only DOM manipulation, no setState
   const handleProgress = useCallback((p) => {
@@ -435,33 +422,49 @@ export default function AuthScreen({ onAuthSuccess }) {
   };
 
   const handleGoogleLogin = async () => {
+    // Native Capacitor (iOS/Android): OAuth popups/redirects don't work in WKWebView
+    if (IS_CAPACITOR) {
+      setErrors({ server: "Google Login ist in der nativen App noch nicht verfügbar. Bitte nutze E-Mail & Passwort." });
+      return;
+    }
     setLoading(true);
     setErrors({});
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
-      // Page will reload — result handled in useEffect/getRedirectResult
+      const result = await signInWithPopup(auth, provider);
+      setHunterName(result.user.displayName || "Hunter");
+      setShowSuccess(true);
     } catch (err) {
       console.error(err);
       let msg = "Google Login fehlgeschlagen: " + (err.message || "");
       if (err.code === "auth/operation-not-allowed") msg = "Google Login ist in Firebase nicht aktiviert.";
+      else if (err.code === "auth/popup-closed-by-user") msg = "Popup wurde geschlossen.";
       setErrors({ server: msg });
+    } finally {
       setLoading(false);
     }
   };
 
   const handleAppleLogin = async () => {
+    // Native Capacitor (iOS/Android): OAuth popups/redirects don't work in WKWebView
+    if (IS_CAPACITOR) {
+      setErrors({ server: "Apple Login ist in der nativen App noch nicht verfügbar. Bitte nutze E-Mail & Passwort." });
+      return;
+    }
     setLoading(true);
     setErrors({});
     try {
       const provider = new OAuthProvider('apple.com');
-      await signInWithRedirect(auth, provider);
-      // Page will reload — result handled in useEffect/getRedirectResult
+      const result = await signInWithPopup(auth, provider);
+      setHunterName(result.user.displayName || "Hunter");
+      setShowSuccess(true);
     } catch (err) {
       console.error(err);
       let msg = "Apple Login fehlgeschlagen: " + (err.message || "");
       if (err.code === "auth/operation-not-allowed") msg = "Apple Login ist in Firebase nicht aktiviert.";
+      else if (err.code === "auth/popup-closed-by-user") msg = "Popup wurde geschlossen.";
       setErrors({ server: msg });
+    } finally {
       setLoading(false);
     }
   };

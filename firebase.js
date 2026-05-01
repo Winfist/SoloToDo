@@ -4,7 +4,6 @@ import {
   initializeAuth,
   indexedDBLocalPersistence,
   browserLocalPersistence,
-  browserPopupRedirectResolver,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
@@ -25,9 +24,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 // Use initializeAuth with explicit persistence fallback:
 // IndexedDB first (desktop), then localStorage (Capacitor WKWebView fallback)
+// NOTE: No popupRedirectResolver — it creates a cross-origin iframe that crashes WKWebView
 const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence],
-  popupRedirectResolver: browserPopupRedirectResolver,
 });
 const db = getFirestore(app);
 const functions = getFunctions(app, "europe-west1");
