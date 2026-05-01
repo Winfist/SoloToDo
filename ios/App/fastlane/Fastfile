@@ -15,8 +15,8 @@ platform :ios do
 
     cert(
       api_key: api_key,
-      keychain_path: ENV["KEYCHAIN_PATH"],
-      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"] || ""
+      keychain_path: "~/Library/Keychains/fastlane_tmp_keychain-db",
+      keychain_password: ""
     )
     sigh(api_key: api_key)
 
