@@ -31,6 +31,13 @@ jobs:
       - name: Build Web & Sync Capacitor
         run: npm run build:cap
 
+      - name: Clean SPM cache
+        run: rm -rf ~/Library/Caches/org.swift.swiftpm
+
+      - name: Resolve Xcode SPM Dependencies
+        working-directory: ios/App
+        run: xcodebuild -resolvePackageDependencies -project App.xcodeproj -scheme App -clonedSourcePackagesDirPath SPM
+
       - name: Deploy to TestFlight
         working-directory: ios/App
         run: fastlane beta

@@ -51,6 +51,7 @@ platform :ios do
       scheme: "App",
       export_method: "app-store",
       export_team_id: team_id,
+      cloned_source_packages_path: "SPM",
       xcargs: "PROVISIONING_PROFILE_SPECIFIER='#{ENV["SIGH_NAME"]}' CODE_SIGN_STYLE='Manual' CODE_SIGN_IDENTITY='Apple Distribution' DEVELOPMENT_TEAM='#{team_id}'"
     )
 
