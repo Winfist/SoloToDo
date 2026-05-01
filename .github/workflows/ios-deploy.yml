@@ -1,0 +1,35 @@
+name: Deploy iOS to TestFlight
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build_ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Web & Sync Capacitor
+        run: npm run build:cap
+
+      - name: Deploy to TestFlight
+        working-directory: ios/App
+        run: fastlane beta
+        env:
+          APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
+          APP_STORE_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
+          APP_STORE_P8_KEY: ${{ secrets.APP_STORE_P8_KEY }}
