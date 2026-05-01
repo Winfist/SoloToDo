@@ -36,9 +36,12 @@ platform :ios do
       app_identifier: "com.solotodo.app"
     )
 
-    # Extract the true Team ID straight from the downloaded profile using macOS native tools
-    profile_path = ENV["SIGH_PROFILE_PATH"]
-    team_id = sh("security cms -D -i '#{profile_path}' 2>/dev/null | /usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' /dev/stdin").strip
+    # Extract the true Team ID safely from Fastlane state or raw profile fallback
+    team_id = lane_context[SharedValues::SIGH_TEAM_ID]
+    if team_id.nil? || team_id.to_s.empty?
+      profile_path = lane_context[SharedValues::SIGH_PROFILE_PATH] || Dir.glob("../*.mobileprovision").first || Dir.glob("*.mobileprovision").first
+      team_id = sh("security cms -D -i '#{profile_path}' 2>/dev/null | /usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' /dev/stdin").strip
+    end
     UI.message("Extracted Team ID from Profile: #{team_id}")
 
     build_app(
