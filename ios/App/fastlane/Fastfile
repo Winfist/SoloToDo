@@ -41,6 +41,11 @@ platform :ios do
     team_id = sh("security cms -D -i '#{profile_path}' 2>/dev/null | grep -A2 'TeamIdentifier' | grep 'string' | sed -E 's/<[^>]+>//g'").strip
     UI.message("Extracted Team ID from Profile: #{team_id}")
 
+    increment_build_number(
+      build_number: ENV["GITHUB_RUN_NUMBER"],
+      xcodeproj: "App.xcodeproj"
+    )
+
     build_app(
       project: "App.xcodeproj", 
       scheme: "App",
