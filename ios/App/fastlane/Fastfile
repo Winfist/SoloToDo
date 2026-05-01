@@ -18,7 +18,10 @@ platform :ios do
       keychain_path: "~/Library/Keychains/fastlane_tmp_keychain-db",
       keychain_password: ""
     )
-    sigh(api_key: api_key)
+    sigh(
+      api_key: api_key,
+      app_identifier: "com.solotodo.app"
+    )
 
     update_code_signing_settings(
       use_automatic_signing: false,
@@ -35,6 +38,7 @@ platform :ios do
 
     upload_to_testflight(
       api_key: api_key,
+      app_identifier: "com.solotodo.app",
       skip_waiting_for_build_processing: true
     )
   end
