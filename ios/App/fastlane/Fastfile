@@ -40,7 +40,7 @@ platform :ios do
       project: "App.xcodeproj", 
       scheme: "App",
       export_method: "app-store",
-      xcargs: "PROVISIONING_PROFILE_SPECIFIER='#{ENV["SIGH_NAME"]}' CODE_SIGN_STYLE='Manual' CODE_SIGN_IDENTITY='Apple Distribution'"
+      xcargs: "PROVISIONING_PROFILE_SPECIFIER='#{ENV["SIGH_NAME"]}' CODE_SIGN_STYLE='Manual' CODE_SIGN_IDENTITY='Apple Distribution' DEVELOPMENT_TEAM='#{ENV["sigh_com.solotodo.app_appstore_team-id"]}'"
     )
 
     upload_to_testflight(
