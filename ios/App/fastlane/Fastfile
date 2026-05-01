@@ -38,7 +38,7 @@ platform :ios do
 
     # Extract the true Team ID safely from Fastlane state or raw profile fallback
     profile_path = lane_context[SharedValues::SIGH_PROFILE_PATH] || Dir.glob("../*.mobileprovision").first || Dir.glob("*.mobileprovision").first
-    team_id = sh("security cms -D -i '#{profile_path}' 2>/dev/null | /usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' /dev/stdin").strip
+    team_id = sh("security cms -D -i '#{profile_path}' 2>/dev/null | grep -A2 'TeamIdentifier' | grep 'string' | sed -E 's/<[^>]+>//g'").strip
     UI.message("Extracted Team ID from Profile: #{team_id}")
 
     build_app(
