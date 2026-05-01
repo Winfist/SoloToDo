@@ -36,11 +36,17 @@ platform :ios do
       app_identifier: "com.solotodo.app"
     )
 
+    # Extract the true Team ID straight from the downloaded profile using macOS native tools
+    profile_path = ENV["SIGH_PROFILE_PATH"]
+    team_id = sh("security cms -D -i '#{profile_path}' 2>/dev/null | /usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' /dev/stdin").strip
+    UI.message("Extracted Team ID from Profile: #{team_id}")
+
     build_app(
       project: "App.xcodeproj", 
       scheme: "App",
       export_method: "app-store",
-      xcargs: "PROVISIONING_PROFILE_SPECIFIER='#{ENV["SIGH_NAME"]}' CODE_SIGN_STYLE='Manual' CODE_SIGN_IDENTITY='Apple Distribution' DEVELOPMENT_TEAM='#{ENV["sigh_com.solotodo.app_appstore_team-id"]}'"
+      export_team_id: team_id,
+      xcargs: "PROVISIONING_PROFILE_SPECIFIER='#{ENV["SIGH_NAME"]}' CODE_SIGN_STYLE='Manual' CODE_SIGN_IDENTITY='Apple Distribution' DEVELOPMENT_TEAM='#{team_id}'"
     )
 
     upload_to_testflight(
