@@ -646,6 +646,49 @@ export default function SettingsView({ state, persist, theme, can, onLogout }) {
         <SettingRow label="System-Nachrichten" desc="CLI-Nachrichten beim App-Start" value={getSetting("systemMessages", true)} onChange={() => toggleSetting("systemMessages", true)} theme={theme} />
         <SettingRow label="Haptisches Feedback" desc="Vibration bei Quest-Abschluss" value={getSetting("haptics", true)} onChange={() => toggleSetting("haptics", true)} theme={theme} />
         <SettingRow label="Quest-Completion Cinematic" desc="Epische Belohnungs-Animation" value={getSetting("questCinematic", true)} onChange={() => toggleSetting("questCinematic", true)} theme={theme} />
+
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 10, lineHeight: 1.4 }}>
+            Probleme mit Benachrichtigungen? Klicke hier und schließe die App sofort. In 5 Sekunden sollte eine Test-Nachricht erscheinen.
+          </div>
+          <button onClick={async () => {
+              try {
+                  const IS_CAPACITOR = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform();
+                  if (IS_CAPACITOR) {
+                      const { LocalNotifications } = await import('@capacitor/local-notifications');
+                      const perm = await LocalNotifications.checkPermissions();
+                      if (perm.display !== 'granted') {
+                          await LocalNotifications.requestPermissions();
+                      }
+                      await LocalNotifications.schedule({
+                          notifications: [{
+                              id: Math.floor(Math.random() * 100000),
+                              title: "SYSTEM TEST",
+                              body: "Die Benachrichtigungen funktionieren einwandfrei!",
+                              schedule: { at: new Date(Date.now() + 5000) },
+                              sound: "default"
+                          }]
+                      });
+                      alert("Geplant! Schließe jetzt die App (Geh auf den Home-Screen).");
+                  } else {
+                      if (Notification.permission !== "granted") await Notification.requestPermission();
+                      new Notification("SYSTEM TEST", { body: "Die Benachrichtigungen funktionieren!" });
+                  }
+              } catch (e) {
+                  alert("Fehler beim Senden: " + e.message);
+              }
+          }} style={{
+              width: "100%", padding: "10px", borderRadius: 8,
+              background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)",
+              color: "#f59e0b", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
+              cursor: "pointer", transition: "all 0.2s"
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(245,158,11,0.25)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(245,158,11,0.15)"}
+          >
+              TEST-BENACHRICHTIGUNG SENDEN (5s)
+          </button>
+        </div>
       </SettingsSection>
 
 
