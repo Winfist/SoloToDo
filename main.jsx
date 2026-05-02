@@ -61,40 +61,34 @@ function Root() {
 
   useEffect(() => {
     let settled = false;
-    let unsubscribe = () => {};
 
     const init = async () => {
-      // On native (iOS/Android), the Capacitor Firebase Auth plugin manages the session.
-      // We must wait for it to restore the user BEFORE starting the timeout,
-      // otherwise the 8s timeout fires first and kicks the user to the login screen.
+      // On native (iOS/Android), the Capacitor Firebase Auth plugin manages the session
+      // in the OS keychain. We must trigger a sync BEFORE onAuthStateChanged fires,
+      // otherwise the JS SDK reports null (no user) and loadState() starts fresh.
       if (window.Capacitor?.isNativePlatform()) {
         try {
           const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-          const result = await FirebaseAuthentication.getCurrentUser();
-          
-          if (result.user) {
-            // User is logged in natively — set state immediately, no need to wait for JS SDK
-            console.log('[SoloToDo] Native user restored:', result.user.email);
-            setHunterName(result.user.displayName || '');
-            setIsAuthenticated(true);
-            settled = true;
-          }
-          // If no native user, fall through to onAuthStateChanged below
+          // This call forces the native plugin to push its stored credentials into the JS SDK.
+          // After this resolves, auth.currentUser will be set correctly.
+          await FirebaseAuthentication.getCurrentUser();
+          console.log('[SoloToDo] Native auth sync completed, currentUser:', auth.currentUser?.email || 'null');
         } catch (e) {
-          console.warn('[SoloToDo] Failed to get native user', e);
+          console.warn('[SoloToDo] Failed to sync native auth state', e);
         }
       }
 
-      if (settled) return; // Already resolved from native, skip JS SDK listener
-
-      // Web: rely on Firebase JS SDK persistence (IndexedDB / localStorage)
-      unsubscribe = onAuthStateChanged(auth, (user) => {
+      // Now listen for auth state — on native, this should fire immediately with the synced user.
+      // On web, it fires from IndexedDB/localStorage persistence.
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (settled) return;
         settled = true;
         if (user) {
+          console.log('[SoloToDo] Auth state confirmed:', user.email);
           setHunterName(user.displayName || '');
           setIsAuthenticated(true);
         } else {
+          console.log('[SoloToDo] No authenticated user found');
           setIsAuthenticated(false);
         }
       });
@@ -108,13 +102,14 @@ function Root() {
           setIsAuthenticated(false);
         }
       }, AUTH_TIMEOUT_MS);
+
+      return unsubscribe;
     };
 
-    init();
+    let cleanup = () => {};
+    init().then(unsub => { if (unsub) cleanup = unsub; });
 
-    return () => {
-      unsubscribe();
-    };
+    return () => cleanup();
   }, []);
 
   const handleAuthSuccess = (user, name) => {

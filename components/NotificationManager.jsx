@@ -210,15 +210,37 @@ export function runReminderChecks(state) {
 // ── Permission Banner Component ─────────────────────────────
 
 export function NotificationBanner({ state, theme, onUpdateReminder, onReminderFired }) {
-    const [permission, setPermission] = useState(
-        typeof window !== "undefined" && "Notification" in window
-            ? Notification.permission
-            : "unsupported"
-    );
+    const [permission, setPermission] = useState(() => {
+        if (IS_CAPACITOR) return "prompt"; // Will be checked async below
+        if (typeof window !== "undefined" && "Notification" in window) return Notification.permission;
+        return "unsupported";
+    });
     const [dismissed, setDismissed] = useState(() => {
         try { return localStorage.getItem("sl_notif_banner_dismissed") === "true"; }
         catch { return false; }
     });
+
+    // On native (Capacitor), auto-request push permissions after login
+    useEffect(() => {
+        if (!IS_CAPACITOR) return;
+        const autoRequest = async () => {
+            try {
+                const { FirebaseMessaging } = await import('@capacitor-firebase/messaging');
+                const { receive } = await FirebaseMessaging.checkPermissions();
+                if (receive === 'granted') {
+                    setPermission('granted');
+                    return;
+                }
+                // Auto-request — this triggers the iOS system dialog
+                const result = await FirebaseMessaging.requestPermissions();
+                setPermission(result.receive === 'granted' ? 'granted' : 'denied');
+            } catch (e) {
+                console.error('[SoloToDo] Auto push permission request failed', e);
+                setPermission('unsupported');
+            }
+        };
+        autoRequest();
+    }, []);
 
     const nextReminder = (state?.reminders || [])
         .filter(r => !r.fired && r.reminderAt && new Date(r.reminderAt).getTime() > Date.now())
