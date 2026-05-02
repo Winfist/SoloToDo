@@ -62,54 +62,35 @@ function Root() {
   useEffect(() => {
     let settled = false;
 
-    const init = async () => {
-      // On native (iOS/Android), the Capacitor Firebase Auth plugin manages the session
-      // in the OS keychain. We must trigger a sync BEFORE onAuthStateChanged fires,
-      // otherwise the JS SDK reports null (no user) and loadState() starts fresh.
-      if (window.Capacitor?.isNativePlatform()) {
-        try {
-          const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-          // This call forces the native plugin to push its stored credentials into the JS SDK.
-          // After this resolves, auth.currentUser will be set correctly.
-          await FirebaseAuthentication.getCurrentUser();
-          console.log('[SoloToDo] Native auth sync completed, currentUser:', auth.currentUser?.email || 'null');
-        } catch (e) {
-          console.warn('[SoloToDo] Failed to sync native auth state', e);
-        }
+    // With skipNativeAuth:true, the JS SDK manages all auth state.
+    // On sign-in, signInWithCredential stores the session in localStorage (browserLocalPersistence).
+    // On app restart, onAuthStateChanged restores from localStorage automatically.
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (settled) return;
+      settled = true;
+      if (user) {
+        console.log('[SoloToDo] Auth restored:', user.email);
+        setHunterName(user.displayName || '');
+        setIsAuthenticated(true);
+      } else {
+        console.log('[SoloToDo] No authenticated user');
+        setIsAuthenticated(false);
       }
+    });
 
-      // Now listen for auth state — on native, this should fire immediately with the synced user.
-      // On web, it fires from IndexedDB/localStorage persistence.
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (settled) return;
+    // Safety timeout: if onAuthStateChanged never fires, show login screen
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        console.warn('[SoloToDo] Auth timeout – forcing login screen');
         settled = true;
-        if (user) {
-          console.log('[SoloToDo] Auth state confirmed:', user.email);
-          setHunterName(user.displayName || '');
-          setIsAuthenticated(true);
-        } else {
-          console.log('[SoloToDo] No authenticated user found');
-          setIsAuthenticated(false);
-        }
-      });
+        setIsAuthenticated(false);
+      }
+    }, AUTH_TIMEOUT_MS);
 
-      // Safety timeout: if onAuthStateChanged never fires (e.g. IndexedDB hang on web),
-      // force-show the login screen so the user isn't stuck on "LOADING SYSTEM..." forever.
-      setTimeout(() => {
-        if (!settled) {
-          console.warn('[SoloToDo] Auth timeout – forcing login screen');
-          settled = true;
-          setIsAuthenticated(false);
-        }
-      }, AUTH_TIMEOUT_MS);
-
-      return unsubscribe;
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
     };
-
-    let cleanup = () => {};
-    init().then(unsub => { if (unsub) cleanup = unsub; });
-
-    return () => cleanup();
   }, []);
 
   const handleAuthSuccess = (user, name) => {

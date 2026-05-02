@@ -428,12 +428,13 @@ export default function AuthScreen({ onAuthSuccess }) {
     try {
       if (IS_CAPACITOR) {
         // Native Google Sign-In via Capacitor plugin
-        // With skipNativeAuth:false, the plugin auto-signs into Firebase — no signInWithCredential needed
+        // With skipNativeAuth:true, the plugin returns credentials without signing in.
+        // We sign in via the JS SDK so it can persist the session in localStorage.
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-        await FirebaseAuthentication.signInWithGoogle();
-        // Plugin already signed in — get user from Firebase auth state
-        const user = auth.currentUser;
-        setHunterName(user?.displayName || "Hunter");
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        const credential = GoogleAuthProvider.credential(result.credential?.idToken);
+        const userCredential = await signInWithCredential(auth, credential);
+        setHunterName(userCredential.user.displayName || "Hunter");
         setShowSuccess(true);
       } else {
         // Web: popup-based sign-in
@@ -459,12 +460,17 @@ export default function AuthScreen({ onAuthSuccess }) {
     try {
       if (IS_CAPACITOR) {
         // Native Apple Sign-In via Capacitor plugin
-        // With skipNativeAuth:false, the plugin auto-signs into Firebase — no signInWithCredential needed
+        // With skipNativeAuth:true, the plugin returns credentials without signing in.
+        // We sign in via the JS SDK so it can persist the session in localStorage.
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-        await FirebaseAuthentication.signInWithApple();
-        // Plugin already signed in — get user from Firebase auth state
-        const user = auth.currentUser;
-        setHunterName(user?.displayName || "Hunter");
+        const result = await FirebaseAuthentication.signInWithApple();
+        const provider = new OAuthProvider('apple.com');
+        const credential = provider.credential({
+          idToken: result.credential?.idToken,
+          rawNonce: result.credential?.nonce,
+        });
+        const userCredential = await signInWithCredential(auth, credential);
+        setHunterName(userCredential.user.displayName || "Hunter");
         setShowSuccess(true);
       } else {
         // Web: popup-based sign-in
