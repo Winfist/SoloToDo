@@ -46,13 +46,21 @@ platform :ios do
       xcodeproj: "App.xcodeproj"
     )
 
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "App.xcodeproj",
+      team_id: team_id,
+      targets: ["App"],
+      profile_name: ENV["SIGH_NAME"],
+      code_sign_identity: "Apple Distribution"
+    )
+
     build_app(
       project: "App.xcodeproj", 
       scheme: "App",
       export_method: "app-store",
       export_team_id: team_id,
-      cloned_source_packages_path: "SPM",
-      xcargs: "PROVISIONING_PROFILE_SPECIFIER='#{ENV["SIGH_NAME"]}' CODE_SIGN_STYLE='Manual' CODE_SIGN_IDENTITY='Apple Distribution' DEVELOPMENT_TEAM='#{team_id}'"
+      cloned_source_packages_path: "SPM"
     )
 
     upload_to_testflight(
