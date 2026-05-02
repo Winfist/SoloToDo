@@ -1,10 +1,6 @@
 name: Deploy iOS to TestFlight
 
 on:
-  push:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 jobs:

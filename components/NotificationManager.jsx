@@ -118,9 +118,21 @@ function checkStreakProtection(state) {
     if (questsToday > 0 || habitsToday > 0) return null;
     const hoursLeft = 24 - hour;
     return {
-        title: `${streak}-Tage Streak in Gefahr!`,
-        body: `Dein Streak endet in ${hoursLeft}h. Eine Quest oder ein Habit rettet ihn!`,
+        title: "SYSTEM WARNUNG: STREAK IN GEFAHR",
+        body: `Du hast heute noch nichts erreicht. Dein ${streak}-Tage Streak endet in ${hoursLeft}h!`,
         tag: `streak-protection-${hour < 18 ? "early" : "late"}`,
+    };
+}
+
+function checkLateNightEnergy(state) {
+    const hour = new Date().getHours();
+    if (hour < 21 || hour > 23) return null;
+    const quests = (state?.quests || []).filter(q => !q.completed && q.energy === "deep");
+    if (quests.length === 0) return null;
+    return {
+        title: "SYSTEM WARNUNG: ZEIT/ENERGIE",
+        body: `Es ist spät. Hast du noch genug Ausdauer für "${quests[0].title}"?`,
+        tag: "late-night-energy",
     };
 }
 
@@ -311,7 +323,14 @@ export async function scheduleBackgroundNotifications(state) {
         // Streak protection at 19:00
         if ((state?.streak || 0) >= 3 && !hasActivity) {
             const d19 = new Date(); d19.setHours(19, 0, 0, 0);
-            addNotif(`${state.streak}-Tage Streak in Gefahr!`, "Erledige eine Quest bevor der Tag endet!", d19);
+            addNotif("SYSTEM WARNUNG: STREAK IN GEFAHR", `Du hast heute noch nichts erreicht. Dein ${state.streak}-Tage Streak endet bald!`, d19);
+        }
+
+        // Late Night Energy Warning at 21:00
+        const deepQuests = (state?.quests || []).filter(q => !q.completed && q.energy === "deep");
+        if (deepQuests.length > 0) {
+            const d21 = new Date(); d21.setHours(21, 0, 0, 0);
+            addNotif("SYSTEM WARNUNG: ZEIT/ENERGIE", `Es ist spät. Hast du noch genug Ausdauer für "${deepQuests[0].title}"?`, d21);
         }
 
         // Habit reminder at 20:00
@@ -361,6 +380,7 @@ export function runReminderChecks(state) {
         checkWeeklyQuestExpiry,
         checkDailyActivity,       // NEW: fires throughout the day
         checkStreakProtection,
+        checkLateNightEnergy,
         checkEmergencyQuest,
         checkEmergencyMorning,
         checkHabitNudge,

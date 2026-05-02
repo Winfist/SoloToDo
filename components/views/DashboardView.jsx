@@ -47,7 +47,7 @@ export default function DashboardView({
   filteredQuests, hiddenQuestCount,
   questFilter, setQuestFilter,
   completeQuest, completeSubQuest, startEditingQuest, deleteQuest,
-  completeEmergencyQuest, createQuest,
+  completeEmergencyQuest, createQuest, onOpenDetail,
   setShowCreate, setShowTaskScan,
   snoozeReminder,
   nextLevel, getUnlocksAtLevel: _getUnlocksAtLevel,
@@ -522,7 +522,7 @@ export default function DashboardView({
                         <>
                           <SectionHeader title="SYSTEM-AUFTRÄGE" icon="⚙" color="#06b6d4" count={systemQuests.length} sectionKey="system" />
                           {!collapsedSections.system && systemQuests.map((q, i) => (
-                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />
+                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
                           ))}
                         </>
                       )}
@@ -530,14 +530,14 @@ export default function DashboardView({
                         <>
                           <SectionHeader title="DEINE QUESTS" icon="✦" color="#f59e0b" count={userQuests.length} sectionKey="user" />
                           {!collapsedSections.user && userQuests.map((q, i) => (
-                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />
+                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
                           ))}
                         </>
                       )}
                     </>
                   ) : (
                     sortedVisibleQuests.map((q, i) => (
-                      <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} />
+                      <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
                     ))
                   )}
                 </div>

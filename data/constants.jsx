@@ -853,7 +853,7 @@ function ChainedQuestProgress({ quest }) {
 }
 
 // ═══ QUEST CARD 2.0 ═══════════════════════════════════════════
-function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest }) {
+function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail }) {
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [hover, setHover] = useState(false);
@@ -952,7 +952,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
 
   return (
     <div className={rarityClass} style={{ marginBottom: 8 }}>
-    <div ref={cardRef} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{
+    <div ref={cardRef} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClick={() => { if (onOpenDetail) onOpenDetail(quest); }} style={{
       background: cardBg,
       backgroundSize: "cover", backgroundPosition: "center", backgroundBlendMode: "overlay",
       border: cardBorder, borderRadius: 14, padding: "14px 16px",
@@ -967,13 +967,14 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
       opacity: isEasy ? (hover ? 1 : 0.88) : 1,
       position: "relative",
       overflow: "hidden",
+      cursor: onOpenDetail ? "pointer" : "default",
     }}>
       {/* Scan line overlay for Boss quests */}
       {isBoss && !completing && <div style={{ position: "absolute", top: 0, left: "-100%", width: "60%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(239,68,68,0.03),transparent)", animation: "scanLine 6s linear infinite", pointerEvents: "none", zIndex: 1 }} />}
       {/* Ambient glow for Boss quests */}
       {isBoss && !completing && <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(ellipse at 15% 0%, rgba(239,68,68,0.06), transparent 55%)", pointerEvents: "none", zIndex: 0 }} />}
 
-      <button onClick={handleComplete} className="press-feedback" style={{
+      <button onClick={(e) => { e.stopPropagation(); handleComplete(); }} className="press-feedback" style={{
         width: confirming ? 46 : 38, height: 38, borderRadius: 10, flexShrink: 0, marginTop: 2,
         background: completing ? diff.color + "22" : confirming ? "#f59e0b22" : "transparent",
         border: `2px solid ${completing ? diff.color : confirming ? "#f59e0b" : subQuests.length > 0 && !allSubsDone ? "#334155" : diff.color + "44"}`,
@@ -1020,8 +1021,11 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
           </div>
         )}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div onClick={() => hasDetails && setExpanded(!expanded)} style={{ fontSize: 14, fontWeight: 600, color: completing ? "#64748b" : "#e2e8f0", textDecoration: completing ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: expanded ? "normal" : "nowrap", fontFamily: "'Outfit',sans-serif", cursor: hasDetails ? "pointer" : "default", flex: 1 }}>{quest.title}</div>
-          {hasDetails && <button onClick={() => setExpanded(!expanded)} style={{ background: "transparent", border: "none", color: "#475569", fontSize: 10, cursor: "pointer", padding: "2px 4px", transition: "transform 0.2s", transform: expanded ? "rotate(180deg)" : "none", flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>▼</button>}
+          <div onClick={(e) => {
+            if (onOpenDetail) { e.stopPropagation(); onOpenDetail(quest); }
+            else if (hasDetails) { e.stopPropagation(); setExpanded(!expanded); }
+          }} style={{ fontSize: 14, fontWeight: 600, color: completing ? "#64748b" : "#e2e8f0", textDecoration: completing ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: expanded ? "normal" : "nowrap", fontFamily: "'Outfit',sans-serif", cursor: (onOpenDetail || hasDetails) ? "pointer" : "inherit", flex: 1 }}>{quest.title}</div>
+          {hasDetails && <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} style={{ background: "transparent", border: "none", color: "#475569", fontSize: 10, cursor: "pointer", padding: "2px 4px", transition: "transform 0.2s", transform: expanded ? "rotate(180deg)" : "none", flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>▼</button>}
         </div>
         {quest.description && quest.description.trim() && !expanded && (
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif", fontStyle: "italic" }}>{quest.description}</div>

@@ -75,6 +75,7 @@ import { useGeminiAI } from './hooks/useGeminiAI.js';
 import { QuestVerifyModal } from './components/QuestVerifyModal.jsx';
 import { TaskScanModal } from './components/TaskScanModal.jsx';
 import { AIChatWidget } from './components/AIChatWidget.jsx';
+import QuestDetailModal from './components/QuestDetailModal.jsx';
 function hoursUntilMidnight() {
   const now = new Date();
   const midnight = new Date(now);
@@ -355,6 +356,7 @@ function App({ initialHunterName, onLogout }) {
   const [showSeasonView, setShowSeasonView] = React.useState(false);
   const [showCharismaView, setShowCharismaView] = React.useState(false);
   const [showAdModal, setShowAdModal] = React.useState(false);
+  const [detailQuest, setDetailQuest] = React.useState(null);
   const modifier = useMemo(() => getDailyModifier(), []);
   const [showFocusMode, setShowFocusMode] = React.useState(false);
   const [isCreatingEntry, setIsCreatingEntry] = React.useState(false);
@@ -798,6 +800,29 @@ function App({ initialHunterName, onLogout }) {
             />
           )}
 
+          {/* QUEST DETAIL MODAL */}
+          {detailQuest && (
+            <QuestDetailModal
+              quest={detailQuest}
+              theme={theme}
+              gameState={state}
+              onClose={() => setDetailQuest(null)}
+              onComplete={handleCompleteQuest}
+              onEdit={(quest) => { setDetailQuest(null); startEditingQuest(quest); }}
+              onDelete={deleteQuest}
+              onCompleteSubQuest={completeSubQuest}
+              onSaveNotes={(id, notes) => {
+                const updated = {
+                  ...state,
+                  quests: state.quests.map(q => q.id === id ? { ...q, notes } : q)
+                };
+                setState(updated);
+                persist(updated);
+              }}
+              completedQuests={state.completedQuests || []}
+            />
+          )}
+
           {/* SOUL LINK VIEW */}
           {showSoulLink && (
             <SoulLinkView
@@ -1160,6 +1185,7 @@ function App({ initialHunterName, onLogout }) {
                 setShowTaskScan={setShowTaskScan}
                 setShowFocusMode={setShowFocusMode}
                 snoozeReminder={snoozeReminder}
+                onOpenDetail={setDetailQuest}
                 navigateTo={setView}
                 nextLevel={nextLevel} getUnlocksAtLevel={getUnlocksAtLevel}
                 notify={notify} persist={persist}
