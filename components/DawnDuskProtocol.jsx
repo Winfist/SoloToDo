@@ -487,7 +487,7 @@ export default function DawnDuskProtocol({
                       fontFamily: "'Courier New', monospace",
                       letterSpacing: "0.08em"
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{type === "dawn" ? <img src="/icons/story_dawn.png" alt="Dawn" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #fbbf2488) brightness(1.1)" }} /> : <img src="/icons/health_sleep.png" alt="Dusk" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #818cf888) brightness(1.1)" }} />}</div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{type === "dawn" ? <img src="/icons/.webp" alt="Dawn" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #fbbf2488) brightness(1.1)" }} /> : <img src="/icons/.webp" alt="Dusk" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #818cf888) brightness(1.1)" }} />}</div>
                       <div style={{ fontSize: "0.75rem", marginTop: "0.15rem" }}>
                         {type === "dawn" ? "DAWN" : "DUSK"}
                       </div>
@@ -547,7 +547,7 @@ export default function DawnDuskProtocol({
                     color: "#e2e8f0", fontWeight: 700, fontSize: "0.82rem",
                     letterSpacing: "0.12em"
                   }}>
-                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{tab === "dawn" ? <img src="/icons/story_dawn.png" alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> : <img src="/icons/health_sleep.png" alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />} {tab === "dawn" ? "MORGEN-ETAGEN" : "ABEND-ETAGEN"}</span>
+                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{tab === "dawn" ? <img src="/icons/.webp" alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> : <img src="/icons/.webp" alt="" style={{ width: 14, height: 14, objectFit: "contain" }} />} {tab === "dawn" ? "MORGEN-ETAGEN" : "ABEND-ETAGEN"}</span>
                     <span style={{ color: tabColor, marginLeft: "0.5rem" }}>
                       {currentTasks.length}/5
                     </span>
@@ -560,7 +560,7 @@ export default function DawnDuskProtocol({
                     border: `1px dashed ${tabColor}25`, borderRadius: "12px",
                     background: `${tabColor}05`
                   }}>
-                     <div style={{ marginBottom: "0.5rem" }}><img src={tab === "dawn" ? "/icons/story_dawn.png" : "/icons/health_sleep.png"} alt="" style={{ width: 36, height: 36, objectFit: "contain", filter: `drop-shadow(0 0 8px ${tabColor}88) brightness(1.1)` }} /></div>
+                     <div style={{ marginBottom: "0.5rem" }}><img src={tab === "dawn" ? "/icons/.webp" : "/icons/.webp"} alt="" style={{ width: 36, height: 36, objectFit: "contain", filter: `drop-shadow(0 0 8px ${tabColor}88) brightness(1.1)` }} /></div>
                     <div style={{ color: "#4b5563", fontSize: "0.82rem", lineHeight: 1.5 }}>
                       Keine Etagen konfiguriert.<br />
                       <span style={{ color: tabColor, opacity: 0.7 }}>Richte deine Routine ein →</span>
@@ -616,7 +616,7 @@ export default function DawnDuskProtocol({
                     onMouseOver={e => { e.currentTarget.style.background = `${tabColor}28`; e.currentTarget.style.boxShadow = `0 0 35px ${tabColor}30`; }}
                     onMouseOut={e => { e.currentTarget.style.background = `linear-gradient(135deg, ${tabColor}22, ${tabColor}08)`; e.currentTarget.style.boxShadow = `0 0 25px ${tabColor}15`; }}
                   >
-                     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{tab === "dawn" ? <img src="/icons/story_dawn.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} /> : <img src="/icons/health_sleep.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />} {tab === "dawn" ? "DAWN PROTOCOL STARTEN" : "DUSK PROTOCOL STARTEN"}</span>
+                     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{tab === "dawn" ? <img src="/icons/.webp" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} /> : <img src="/icons/.webp" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />} {tab === "dawn" ? "DAWN PROTOCOL STARTEN" : "DUSK PROTOCOL STARTEN"}</span>
                   </button>
                 )}
 
@@ -661,7 +661,7 @@ export default function DawnDuskProtocol({
                   background: `${tabColor}18`, border: `1px solid ${tabColor}40`,
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem"
                 }}>
-                   {tab === "dawn" ? <img src="/icons/story_dawn.png" alt="Dawn" style={{ width: 20, height: 20, objectFit: "contain", filter: `drop-shadow(0 0 4px ${tabColor}88)` }} /> : <img src="/icons/health_sleep.png" alt="Dusk" style={{ width: 20, height: 20, objectFit: "contain", filter: `drop-shadow(0 0 4px ${tabColor}88)` }} />}
+                   {tab === "dawn" ? <img src="/icons/.webp" alt="Dawn" style={{ width: 20, height: 20, objectFit: "contain", filter: `drop-shadow(0 0 4px ${tabColor}88)` }} /> : <img src="/icons/.webp" alt="Dusk" style={{ width: 20, height: 20, objectFit: "contain", filter: `drop-shadow(0 0 4px ${tabColor}88)` }} />}
                 </div>
                 <div>
                   <div style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.88rem" }}>

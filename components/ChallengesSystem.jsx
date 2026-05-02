@@ -3,7 +3,7 @@ import { calculateLevelUp } from "../data/constants";
 import { NAV_ICONS, GATE_ICONS, SEASON_ICONS, STAT_ICONS, SOCIAL_ICONS } from "../data/icons.js";
 
 const WEEKLY_CHALLENGES = [
-    { id: "iron_week", title: "Iron Week", req: "7 STR-Quests in einer Woche", reward: { xp: 500, gold: 200, badge: "iron_will" }, icon: "💪", iconSrc: "/icons/habit_fitness.png" },
+    { id: "iron_week", title: "Iron Week", req: "7 STR-Quests in einer Woche", reward: { xp: 500, gold: 200, badge: "iron_will" }, icon: "💪", iconSrc: "/icons/.webp" },
     { id: "streak_master", title: "Streak Master", req: "7-Tage Streak halten", reward: { xp: 300, gold: 150 }, icon: "🔥", iconSrc: STAT_ICONS.str },
     { id: "scholar", title: "Scholar", req: "5 INT-Quests in einer Woche", reward: { xp: 400, gold: 100 }, icon: "📚", iconSrc: STAT_ICONS.int }
 ];

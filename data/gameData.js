@@ -311,11 +311,11 @@ export const SHOP_ITEMS = [
 
 // ─── GEM SHOP ITEMS ───────────────────────────────────────────
 export const GEM_SHOP_ITEMS = [
-  { id: "gem_xp_surge", type: "booster", name: "XP Surge Crystal", cost: 15, desc: "+50% XP für 2 Stunden", duration: 7200000, effect: { xpMult: 1.5 }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
-  { id: "gem_gold_rush", type: "booster", name: "Gold Rush Fragment", cost: 12, desc: "+75% Gold für 2 Stunden", duration: 7200000, effect: { goldMult: 1.75 }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
-  { id: "gem_double_drop", type: "booster", name: "Double Drop Token", cost: 25, desc: "Doppelte Dungeon-Drops für 24h", duration: 86400000, effect: { dungeonDropMult: 2 }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
-  { id: "gem_streak_shield", type: "booster", name: "Streak Shield Crystal", cost: 20, desc: "3 Tage absoluter Streak-Schutz", duration: 259200000, effect: { streakShield: true }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
-  { id: "gem_mega_xp", type: "booster", name: "Mega XP Elixir", cost: 50, desc: "+100% XP für 24 Stunden", duration: 86400000, effect: { xpMult: 2.0 }, category: "booster", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_xp_surge", type: "booster", name: "XP Surge Crystal", cost: 15, desc: "+50% XP für 2 Stunden", duration: 7200000, effect: { xpMult: 1.5 }, category: "booster", repeatable: true, iconSrc: "/icons/.webp" },
+  { id: "gem_gold_rush", type: "booster", name: "Gold Rush Fragment", cost: 12, desc: "+75% Gold für 2 Stunden", duration: 7200000, effect: { goldMult: 1.75 }, category: "booster", repeatable: true, iconSrc: "/icons/.webp" },
+  { id: "gem_double_drop", type: "booster", name: "Double Drop Token", cost: 25, desc: "Doppelte Dungeon-Drops für 24h", duration: 86400000, effect: { dungeonDropMult: 2 }, category: "booster", repeatable: true, iconSrc: "/icons/.webp" },
+  { id: "gem_streak_shield", type: "booster", name: "Streak Shield Crystal", cost: 20, desc: "3 Tage absoluter Streak-Schutz", duration: 259200000, effect: { streakShield: true }, category: "booster", repeatable: true, iconSrc: "/icons/.webp" },
+  { id: "gem_mega_xp", type: "booster", name: "Mega XP Elixir", cost: 50, desc: "+100% XP für 24 Stunden", duration: 86400000, effect: { xpMult: 2.0 }, category: "booster", repeatable: true, iconSrc: "/icons/.webp" },
   { id: "gem_theme_celestial", type: "theme", name: "Celestial Monarch", cost: 80, desc: "Himmlisches Gold/Weiß Theme", themeKey: "celestial", category: "theme", iconSrc: SHOP_ICONS.theme },
   { id: "gem_theme_void", type: "theme", name: "Void Emperor", cost: 80, desc: "Tiefes Void-Lila Theme", themeKey: "void", category: "theme", iconSrc: SHOP_ICONS.theme },
   { id: "gem_theme_dragon", type: "theme", name: "Dragon's Breath", cost: 120, desc: "Drachenfeuer Orange/Rot Theme", themeKey: "dragon", category: "theme", iconSrc: SHOP_ICONS.theme },
@@ -326,15 +326,15 @@ export const GEM_SHOP_ITEMS = [
   { id: "gem_title_dragon", type: "title", name: "Dragon Slayer", cost: 60, desc: "Bezwinger der Drachen", category: "title", iconSrc: SHOP_ICONS.title },
   { id: "gem_title_void", type: "title", name: "Void Walker", cost: 80, desc: "Wanderer der Leere", category: "title", iconSrc: SHOP_ICONS.title },
   { id: "gem_title_absolute", type: "title", name: "The Absolute Being", cost: 150, desc: "Der Absolute", category: "title", iconSrc: SHOP_ICONS.title },
-  { id: "gem_aura_crimson", type: "cosmetic", name: "Shadow Aura: Crimson", cost: 30, desc: "Rote Aura für alle Shadows", effect: { auraColor: "#ef4444" }, category: "cosmetic", iconSrc: "/icons/gem.png" },
-  { id: "gem_aura_celestial", type: "cosmetic", name: "Shadow Aura: Celestial", cost: 30, desc: "Goldene Aura für alle Shadows", effect: { auraColor: "#fbbf24" }, category: "cosmetic", iconSrc: "/icons/gem.png" },
-  { id: "gem_aura_void", type: "cosmetic", name: "Shadow Aura: Void", cost: 30, desc: "Violette Void-Aura", effect: { auraColor: "#a855f7" }, category: "cosmetic", iconSrc: "/icons/gem.png" },
-  { id: "gem_nameplate_ancient", type: "cosmetic", name: "Ancient Nameplate", cost: 20, desc: "Antikes Namensschild für Shadows", category: "cosmetic", iconSrc: "/icons/gem.png" },
-  { id: "gem_quest_skip", type: "consumable", name: "Quest Timer Skip", cost: 5, desc: "Überspringt die Wartezeit einer Quest", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
-  { id: "gem_extra_slot", type: "consumable", name: "Premium Quest Slot", cost: 8, desc: "+1 Extra Quest-Slot für heute", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
-  { id: "gem_dungeon_refresh", type: "consumable", name: "Dungeon Refresh", cost: 10, desc: "Generiere sofort neue Dungeons", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
-  { id: "gem_shadow_rename", type: "consumable", name: "Shadow Rename Token", cost: 15, desc: "Benenne einen Shadow um", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
-  { id: "gem_stat_reset", type: "consumable", name: "Stat Reset Scroll", cost: 30, desc: "Alle Stat-Punkte zurücksetzen und neu verteilen", category: "convenience", repeatable: true, iconSrc: "/icons/gem.png" },
+  { id: "gem_aura_crimson", type: "cosmetic", name: "Shadow Aura: Crimson", cost: 30, desc: "Rote Aura für alle Shadows", effect: { auraColor: "#ef4444" }, category: "cosmetic", iconSrc: "/icons/.webp" },
+  { id: "gem_aura_celestial", type: "cosmetic", name: "Shadow Aura: Celestial", cost: 30, desc: "Goldene Aura für alle Shadows", effect: { auraColor: "#fbbf24" }, category: "cosmetic", iconSrc: "/icons/.webp" },
+  { id: "gem_aura_void", type: "cosmetic", name: "Shadow Aura: Void", cost: 30, desc: "Violette Void-Aura", effect: { auraColor: "#a855f7" }, category: "cosmetic", iconSrc: "/icons/.webp" },
+  { id: "gem_nameplate_ancient", type: "cosmetic", name: "Ancient Nameplate", cost: 20, desc: "Antikes Namensschild für Shadows", category: "cosmetic", iconSrc: "/icons/.webp" },
+  { id: "gem_quest_skip", type: "consumable", name: "Quest Timer Skip", cost: 5, desc: "Überspringt die Wartezeit einer Quest", category: "convenience", repeatable: true, iconSrc: "/icons/.webp" },
+  { id: "gem_extra_slot", type: "consumable", name: "Premium Quest Slot", cost: 8, desc: "+1 Extra Quest-Slot für heute", category: "convenience", repeatable: true, iconSrc: "/icons/.webp" },
+  { id: "gem_dungeon_refresh", type: "consumable", name: "Dungeon Refresh", cost: 10, desc: "Generiere sofort neue Dungeons", category: "convenience", repeatable: true, iconSrc: "/icons/.webp" },
+  { id: "gem_shadow_rename", type: "consumable", name: "Shadow Rename Token", cost: 15, desc: "Benenne einen Shadow um", category: "convenience", repeatable: true, iconSrc: "/icons/.webp" },
+  { id: "gem_stat_reset", type: "consumable", name: "Stat Reset Scroll", cost: 30, desc: "Alle Stat-Punkte zurücksetzen und neu verteilen", category: "convenience", repeatable: true, iconSrc: "/icons/.webp" },
 ];
 
 // ─── THEMES ───────────────────────────────────────────────────
