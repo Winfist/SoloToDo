@@ -7,11 +7,10 @@ export default function NativeStatsDashboard({ state, persist }) {
   const [steps, setSteps] = useState(0);
   const [sleep, setSleep] = useState({ hours: 0, minutes: 0 });
   const [location, setLocation] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadNativeData();
-  }, []);
+  // We intentionally do NOT call loadNativeData on mount anymore,
+  // to prevent immediate permission popups or crashes on iOS.
 
   const loadNativeData = async () => {
     setLoading(true);
