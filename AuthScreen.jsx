@@ -17,6 +17,7 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   signInWithPopup,
+  signInWithCredential,
   GoogleAuthProvider,
   OAuthProvider
 } from "firebase/auth";
@@ -422,23 +423,30 @@ export default function AuthScreen({ onAuthSuccess }) {
   };
 
   const handleGoogleLogin = async () => {
-    // Native Capacitor (iOS/Android): OAuth popups/redirects don't work in WKWebView
-    if (IS_CAPACITOR) {
-      setErrors({ server: "Google Login ist in der nativen App noch nicht verfügbar. Bitte nutze E-Mail & Passwort." });
-      return;
-    }
     setLoading(true);
     setErrors({});
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      setHunterName(result.user.displayName || "Hunter");
-      setShowSuccess(true);
+      if (IS_CAPACITOR) {
+        // Native Google Sign-In via Capacitor plugin
+        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        // Sync with Firebase JS SDK
+        const credential = GoogleAuthProvider.credential(result.credential?.idToken);
+        const userCredential = await signInWithCredential(auth, credential);
+        setHunterName(userCredential.user.displayName || "Hunter");
+        setShowSuccess(true);
+      } else {
+        // Web: popup-based sign-in
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        setHunterName(result.user.displayName || "Hunter");
+        setShowSuccess(true);
+      }
     } catch (err) {
       console.error(err);
       let msg = "Google Login fehlgeschlagen: " + (err.message || "");
       if (err.code === "auth/operation-not-allowed") msg = "Google Login ist in Firebase nicht aktiviert.";
-      else if (err.code === "auth/popup-closed-by-user") msg = "Popup wurde geschlossen.";
+      else if (err.code === "auth/popup-closed-by-user" || err.message?.includes("canceled")) msg = "Login abgebrochen.";
       setErrors({ server: msg });
     } finally {
       setLoading(false);
@@ -446,23 +454,34 @@ export default function AuthScreen({ onAuthSuccess }) {
   };
 
   const handleAppleLogin = async () => {
-    // Native Capacitor (iOS/Android): OAuth popups/redirects don't work in WKWebView
-    if (IS_CAPACITOR) {
-      setErrors({ server: "Apple Login ist in der nativen App noch nicht verfügbar. Bitte nutze E-Mail & Passwort." });
-      return;
-    }
     setLoading(true);
     setErrors({});
     try {
-      const provider = new OAuthProvider('apple.com');
-      const result = await signInWithPopup(auth, provider);
-      setHunterName(result.user.displayName || "Hunter");
-      setShowSuccess(true);
+      if (IS_CAPACITOR) {
+        // Native Apple Sign-In via Capacitor plugin
+        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+        const result = await FirebaseAuthentication.signInWithApple();
+        // Sync with Firebase JS SDK
+        const provider = new OAuthProvider('apple.com');
+        const credential = provider.credential({
+          idToken: result.credential?.idToken,
+          rawNonce: result.credential?.nonce,
+        });
+        const userCredential = await signInWithCredential(auth, credential);
+        setHunterName(userCredential.user.displayName || "Hunter");
+        setShowSuccess(true);
+      } else {
+        // Web: popup-based sign-in
+        const provider = new OAuthProvider('apple.com');
+        const result = await signInWithPopup(auth, provider);
+        setHunterName(result.user.displayName || "Hunter");
+        setShowSuccess(true);
+      }
     } catch (err) {
       console.error(err);
       let msg = "Apple Login fehlgeschlagen: " + (err.message || "");
       if (err.code === "auth/operation-not-allowed") msg = "Apple Login ist in Firebase nicht aktiviert.";
-      else if (err.code === "auth/popup-closed-by-user") msg = "Popup wurde geschlossen.";
+      else if (err.code === "auth/popup-closed-by-user" || err.message?.includes("canceled")) msg = "Login abgebrochen.";
       setErrors({ server: msg });
     } finally {
       setLoading(false);

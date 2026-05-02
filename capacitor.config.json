@@ -6,5 +6,11 @@
     "hostname": "app.solotodo.com",
     "androidScheme": "https",
     "iosScheme": "capacitor"
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["apple.com", "google.com"]
+    }
   }
 }
