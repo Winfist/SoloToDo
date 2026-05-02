@@ -3,74 +3,74 @@
 //        <img src={STAT_ICONS.str} className="game-icon" alt="STR" />
 
 export const STAT_ICONS = {
-    str: "/icons/.webp",
-    int: "/icons/.webp",
-    vit: "/icons/.webp",
-    agi: "/icons/.webp",
-    cha: "/icons/.webp",
+    str: "/icons/stat_str.webp",
+    int: "/icons/stat_int.webp",
+    vit: "/icons/stat_vit.webp",
+    agi: "/icons/stat_agi.webp",
+    cha: "/icons/stat_cha.webp",
 };
 
 export const SHADOW_ICONS = {
-    soldier:   "/icons/.webp",
-    mage:      "/icons/.webp",
-    commander: "/icons/.webp",
-    igris:     "/icons/.webp",
-    beru:      "/icons/.webp",
-    bellion:   "/icons/.webp",
-    assassin:  "/icons/.webp",
-    knight:    "/icons/.webp",
-    healer:    "/icons/.webp",
+    soldier:   "/icons/shadow_soldier.webp",
+    mage:      "/icons/shadow_mage.webp",
+    commander: "/icons/shadow_commander.webp",
+    igris:     "/icons/shadow_igris.webp",
+    beru:      "/icons/shadow_beru.webp",
+    bellion:   "/icons/shadow_bellion.webp",
+    assassin:  "/icons/shadow_assassin.webp",
+    knight:    "/icons/shadow_knight.webp",
+    healer:    "/icons/shadow_healer.webp",
 };
 
 export const GATE_ICONS = {
-    normal:   "/icons/.webp",
-    red:      "/icons/.webp",
-    ice:      "/icons/.webp",
-    saferoom: "/icons/.webp",
+    normal:   "/icons/gate_normal.webp",
+    red:      "/icons/gate_red.webp",
+    ice:      "/icons/gate_ice.webp",
+    saferoom: "/icons/gate_saferoom.webp",
 };
 
 export const ITEM_ICONS = {
-    blade: "/icons/.webp",
-    armor: "/icons/.webp",
-    ring: "/icons/.webp",
-    potion: "/icons/.webp",
+    blade: "/icons/item_blade.webp",
+    armor: "/icons/item_armor.webp",
+    ring: "/icons/item_ring.webp",
+    potion: "/icons/item_potion.webp",
 };
 
 export const SHOP_ICONS = {
-    title: "/icons/.webp",
-    theme: "/icons/.webp",
+    title: "/icons/icon_title.webp",
+    theme: "/icons/icon_theme.webp",
 };
 
 export const SKILL_ICONS = {
-    attack: "/icons/.webp",
-    defense: "/icons/.webp",
-    magic: "/icons/.webp",
-    speed: "/icons/.webp",
+    attack: "/icons/skill_attack.webp",
+    defense: "/icons/skill_defense.webp",
+    magic: "/icons/skill_magic.webp",
+    speed: "/icons/skill_speed.webp",
 };
 
 export const SYSTEM_ICONS = {
-    logo: "/icons/.webp",
+    logo: "/icons/setup_logo.webp",
 };
 
 export const NAV_ICONS = {
-    dashboard:    "/icons/.webp",
-    goals:        "/icons/.webp",
-    settings:     "/icons/.webp",
-    shop:         "/icons/.webp",
-    jobs:         "/icons/.webp",
-    events:       "/icons/.webp",
-    analytics:    "/icons/.webp",
-    achievements: "/icons/.webp",
-    timer:        "/icons/.webp",
-    guild:        "/icons/.webp",
+    dashboard:    "/icons/nav_dashboard.webp",
+    goals:        "/icons/nav_goals.webp",
+    settings:     "/icons/nav_settings.webp",
+    shop:         "/icons/nav_shop.webp",
+    jobs:         "/icons/nav_jobs.webp",
+    events:       "/icons/nav_events.webp",
+    analytics:    "/icons/nav_analytics.webp",
+    achievements: "/icons/nav_achievements.webp",
+    timer:        "/icons/nav_timer.webp",
+    guild:        "/icons/nav_guild.webp",
 };
 
 export const QUEST_ICONS = {
-    daily:     "/icons/.webp",
-    weekly:    "/icons/.webp",
-    emergency: "/icons/.webp",
-    chain:     "/icons/.webp",
-    hidden:    "/icons/.webp",
+    daily:     "/icons/quest_daily.webp",
+    weekly:    "/icons/quest_weekly.webp",
+    emergency: "/icons/quest_emergency.webp",
+    chain:     "/icons/quest_chain.webp",
+    hidden:    "/icons/quest_hidden.webp",
 };
 
 export const BACKGROUNDS = {
@@ -81,145 +81,145 @@ export const BACKGROUNDS = {
 };
 
 export const DIFF_ICONS = {
-    easy:   "/icons/.webp",
-    normal: "/icons/.webp",
-    hard:   "/icons/.webp",
-    boss:   "/icons/.webp",
+    easy:   "/icons/diff_easy.webp",
+    normal: "/icons/diff_normal.webp",
+    hard:   "/icons/diff_hard.webp",
+    boss:   "/icons/diff_boss.webp",
 };
 
 export const ROLE_ICONS = {
-    tank:      "/icons/.webp",
-    vanguard:  "/icons/.webp",
-    core:      "/icons/.webp",
-    rearguard: "/icons/.webp",
+    tank:      "/icons/role_tank.webp",
+    vanguard:  "/icons/role_vanguard.webp",
+    core:      "/icons/role_core.webp",
+    rearguard: "/icons/role_rearguard.webp",
 };
 
 export const STYLE_ICONS = {
-    aggressive: "/icons/.webp",
-    tactical:   "/icons/.webp",
-    defensive:  "/icons/.webp",
-    swift:      "/icons/.webp",
+    aggressive: "/icons/style_aggressive.webp",
+    tactical:   "/icons/style_tactical.webp",
+    defensive:  "/icons/style_defensive.webp",
+    swift:      "/icons/style_swift.webp",
 };
 
 export const DUNGEON_ICONS = {
-    bloodmoon:   "/icons/.webp",
-    densemana:   "/icons/.webp",
-    floorElite:  "/icons/.webp",
-    floorPuzzle: "/icons/.webp",
-    floorTreasure: "/icons/.webp",
+    bloodmoon:   "/icons/dungeon_bloodmoon.webp",
+    densemana:   "/icons/dungeon_densemana.webp",
+    floorElite:  "/icons/floor_elite.webp",
+    floorPuzzle: "/icons/floor_puzzle.webp",
+    floorTreasure: "/icons/floor_treasure.webp",
 };
 
 export const JOB_ICONS = {
-    berserker:  "/icons/.webp",
-    archmage:   "/icons/.webp",
-    insight:    "/icons/.webp",
-    guardian:   "/icons/.webp",
-    fortress:   "/icons/.webp",
-    assassin:   "/icons/.webp",
-    shadowstep: "/icons/.webp",
-    monarch:    "/icons/.webp",
-    domain:     "/icons/.webp",
-    necromancer:"/icons/.webp",
-    necromancerBig:"/icons/.webp",
-    assassinBig: "/icons/.webp",
-    berserkerBig: "/icons/.webp",
-    archmageBig: "/icons/.webp",
-    armydead:   "/icons/.webp",
+    berserker:  "/icons/job_berserker.webp",
+    archmage:   "/icons/job_archmage.webp",
+    insight:    "/icons/job_insight.webp",
+    guardian:   "/icons/job_guardian.webp",
+    fortress:   "/icons/job_fortress.webp",
+    assassin:   "/icons/job_assassin.webp",
+    shadowstep: "/icons/job_shadowstep.webp",
+    monarch:    "/icons/job_monarch.webp",
+    domain:     "/icons/job_domain.webp",
+    necromancer:"/icons/job_necromancer.webp",
+    necromancerBig:"/icons/class_necromancer.webp",
+    assassinBig: "/icons/class_assassin.webp",
+    berserkerBig: "/icons/class_berserker.webp",
+    archmageBig: "/icons/class_archmage.webp",
+    armydead:   "/icons/job_armydead.webp",
 };
 
 export const HABIT_ICONS = {
-    fitness:      "/icons/.webp",
-    health:       "/icons/.webp",
-    mindfulness:  "/icons/.webp",
-    weekday:      "/icons/.webp",
-    weekend:      "/icons/.webp",
-    manual:       "/icons/.webp",
-    timer:        "/icons/.webp",
-    counter:      "/icons/.webp",
+    fitness:      "/icons/habit_fitness.webp",
+    health:       "/icons/habit_health.webp",
+    mindfulness:  "/icons/habit_mindfulness.webp",
+    weekday:      "/icons/habit_weekday.webp",
+    weekend:      "/icons/habit_weekend.webp",
+    manual:       "/icons/habit_manual.webp",
+    timer:        "/icons/habit_timer.webp",
+    counter:      "/icons/habit_counter.webp",
 };
 
 export const MICRO_ICONS = {
-    water:     "/icons/.webp",
-    stretch:   "/icons/.webp",
-    gratitude: "/icons/.webp",
-    breathe:   "/icons/.webp",
+    water:     "/icons/micro_water.webp",
+    stretch:   "/icons/micro_stretch.webp",
+    gratitude: "/icons/micro_gratitude.webp",
+    breathe:   "/icons/micro_breathe.webp",
 };
 
 export const HEALTH_ICONS = {
-    steps: "/icons/.webp",
-    sleep: "/icons/.webp",
+    steps: "/icons/health_steps.webp",
+    sleep: "/icons/health_sleep.webp",
 };
 
 export const SEASON_ICONS = {
-    frost:     "/icons/.webp",
-    spring:    "/icons/.webp",
-    inferno:   "/icons/.webp",
-    redgate:   "/icons/.webp",
-    statsurge: "/icons/.webp",
-    merchant:  "/icons/.webp",
+    frost:     "/icons/season_frost.webp",
+    spring:    "/icons/season_spring.webp",
+    inferno:   "/icons/season_inferno.webp",
+    redgate:   "/icons/season_redgate.webp",
+    statsurge: "/icons/season_statsurge.webp",
+    merchant:  "/icons/season_merchant.webp",
 };
 
 export const CHA_ICONS = {
-    conversation:   "/icons/.webp",
-    romance:        "/icons/.webp",
-    publicspeaking: "/icons/.webp",
+    conversation:   "/icons/cha_conversation.webp",
+    romance:        "/icons/cha_romance.webp",
+    publicspeaking: "/icons/cha_publicspeaking.webp",
 };
 
 export const DOMAIN_ICONS = {
-    career: "/icons/.webp",
-    dating: "/icons/.webp",
+    career: "/icons/domain_career.webp",
+    dating: "/icons/domain_dating.webp",
 };
 
 export const SOCIAL_ICONS = {
-    global: "/icons/.webp",
+    global: "/icons/social_global.webp",
 };
 
 export const STORY_ICONS = {
-    arise:       "/icons/.webp",
-    scroll:      "/icons/.webp",
-    helmet:      "/icons/.webp",
-    blackheart:  "/icons/.webp",
-    butterfly:   "/icons/.webp",
-    cerberus:    "/icons/.webp",
-    dawn:        "/icons/.webp",
-    dragon:      "/icons/.webp",
-    association: "/icons/.webp",
-    mountain:    "/icons/.webp",
-    door:        "/icons/.webp",
-    scales:      "/icons/.webp",
-    statue:      "/icons/.webp",
-    systeminit:  "/icons/.webp",
+    arise:       "/icons/story_arise.webp",
+    scroll:      "/icons/story_scroll.webp",
+    helmet:      "/icons/story_helmet.webp",
+    blackheart:  "/icons/story_blackheart.webp",
+    butterfly:   "/icons/story_butterfly.webp",
+    cerberus:    "/icons/story_cerberus.webp",
+    dawn:        "/icons/story_dawn.webp",
+    dragon:      "/icons/story_dragon.webp",
+    association: "/icons/story_association.webp",
+    mountain:    "/icons/story_mountain.webp",
+    door:        "/icons/story_door.webp",
+    scales:      "/icons/story_scales.webp",
+    statue:      "/icons/story_statue.webp",
+    systeminit:  "/icons/story_systeminit.webp",
 };
 
 export const BOSS_ICONS = {
-    awakening:  "/icons/.webp",
-    unleashed:  "/icons/.webp",
-    calamity:   "/icons/.webp",
-    deathsdoor: "/icons/.webp",
+    awakening:  "/icons/boss_awakening.webp",
+    unleashed:  "/icons/boss_unleashed.webp",
+    calamity:   "/icons/calamity.webp",
+    deathsdoor: "/icons/deaths_door.webp",
 };
 
 export const GEM_ICONS = {
-    gem:        "/icons/.webp",
-    gemShop:    "/icons/.webp",
-    booster:    "/icons/.webp",
-    adReward:   "/icons/.webp",
+    gem:        "/icons/gem.webp",
+    gemShop:    "/icons/gem.webp",
+    booster:    "/icons/gem.webp",
+    adReward:   "/icons/gem.webp",
 };
 
 export const GUILD_CRESTS = {
-    crest1: "/icons/.webp",
-    crest2: "/icons/.webp",
-    crest3: "/icons/.webp",
-    crest4: "/icons/.webp",
-    crest5: "/icons/.webp",
-    crest6: "/icons/.webp",
+    crest1: "/icons/crest_1.webp",
+    crest2: "/icons/crest_2.webp",
+    crest3: "/icons/crest_3.webp",
+    crest4: "/icons/crest_4.webp",
+    crest5: "/icons/crest_5.webp",
+    crest6: "/icons/crest_6.webp",
 };
 
 export const MILESTONE_ICONS = {
-    streak100: "/icons/.webp",
+    streak100: "/icons/milestone_streak_100.webp",
 };
 
 export const ABILITY_ICONS = {
-    consume: "/icons/.webp",
+    consume: "/icons/ability_consume.webp",
 };
 
 // ─── CONVENIENCE: Lookup helpers for components ────────────────

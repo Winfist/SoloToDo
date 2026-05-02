@@ -199,7 +199,7 @@ export default function SoulLinkView({
                   <img src={STAT_ICONS.str} alt="" style={{ width: 18, height: 18, objectFit: "contain", filter: "drop-shadow(0 0 4px #22c55e)", marginRight: 4, verticalAlign: "middle" }} /> {state.streak || 0}
                 </div>
                 <div style={{ color: "#6b7280", fontSize: "0.65rem", marginTop: "0.25rem" }}>
-                  {state.lastActiveDate === today ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src="/icons/.webp" alt="" style={{ width: 10, height: 10, objectFit: "contain" }} /> Heute aktiv</span> : "Noch inaktiv"}
+                  {state.lastActiveDate === today ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src="/icons/quest_s.webp" alt="" style={{ width: 10, height: 10, objectFit: "contain" }} /> Heute aktiv</span> : "Noch inaktiv"}
                 </div>
               </div>
 
@@ -225,7 +225,7 @@ export default function SoulLinkView({
                       <img src={STAT_ICONS.str} alt="" style={{ width: 18, height: 18, objectFit: "contain", filter: "drop-shadow(0 0 4px #a855f7)", marginRight: 4, verticalAlign: "middle" }} /> {soulLink.partnerStreak || 0}
                     </div>
                     <div style={{ color: "#6b7280", fontSize: "0.65rem", marginTop: "0.25rem" }}>
-                      {soulLink.partnerLastActive === today ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src="/icons/.webp" alt="" style={{ width: 10, height: 10, objectFit: "contain" }} /> Heute aktiv</span> : "Noch inaktiv"}
+                      {soulLink.partnerLastActive === today ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src="/icons/quest_s.webp" alt="" style={{ width: 10, height: 10, objectFit: "contain" }} /> Heute aktiv</span> : "Noch inaktiv"}
                     </div>
                   </>
                 ) : (

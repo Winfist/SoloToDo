@@ -5,7 +5,7 @@ import React, { useState, useCallback } from "react";
  * Renders a custom image with glow/animation effects, falls back to emoji.
  *
  * Props:
- * @param {string}  src        – Path to icon image (e.g. "/icons/.webp")
+ * @param {string}  src        – Path to icon image (e.g. "/icons/stat_str.webp")
  * @param {string}  fallback   – Emoji fallback if src is missing
  * @param {number}  size       – Icon size in px (default: 24)
  * @param {boolean} glow       – Enable glow effect
