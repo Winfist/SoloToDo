@@ -58,6 +58,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SoloToDo nutzt deinen Standort für ortsbasierte Erkundungs-Quests (z.B. &quot;Gehe in den Park&quot;) und Belohnungen.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>SoloToDo nutzt deinen Standort für ortsbasierte Erkundungs-Quests und Belohnungen.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>SoloToDo nutzt deine Gesundheitsdaten (z.B. Schritte), um deine täglichen Quests zu tracken und Belohnungen zu vergeben.</string>
 	<key>NSHealthUpdateUsageDescription</key>
