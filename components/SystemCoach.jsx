@@ -12,7 +12,7 @@ import { getToday, getLocalDateKey } from "../data/dateUtils.js";
  *  - inactivity: No quest in 48h
  *  - overexertion: 20+ quests in 3 days
  *  - imbalance: One stat 3x higher than lowest
- *  - streakDanger: Streak > 5 and no quest today after 18:00
+ *  - streakDanger: Streak >= 3 and no quest/habit today after 18:00
  *  - habitReminder: Habits unfinished after 20:00
  *  - celebration: Milestone reached
  */
@@ -95,7 +95,8 @@ export function checkStreakDanger(state) {
     if (hour < 18) return null;
     const today = getToday();
     const questsToday = (state.completedQuests || []).filter(q => q.completedAt === today).length;
-    if (questsToday > 0) return null;
+    const habitsToday = (state.habits || []).filter(h => h.history?.[today]?.completed).length;
+    if (questsToday > 0 || habitsToday > 0) return null;
     const hoursLeft = 24 - hour;
     const streakBonus = Math.min(streak, 30);
     return {
