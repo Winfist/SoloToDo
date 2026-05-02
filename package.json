@@ -16,8 +16,10 @@
     "@capacitor-firebase/messaging": "^8.2.0",
     "@capacitor/android": "^8.3.1",
     "@capacitor/core": "^8.3.1",
+    "@capacitor/geolocation": "^8.2.0",
     "@capacitor/ios": "^8.3.1",
     "@capacitor/local-notifications": "^8.0.2",
+    "@capgo/capacitor-health": "^8.4.8",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@react-three/postprocessing": "^3.0.4",
@@ -25,6 +27,7 @@
     "gsap": "^3.14.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "tesseract.js": "^7.0.0",
     "three": "^0.160.1"
   },
   "devDependencies": {

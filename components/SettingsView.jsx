@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { NAV_ICONS, STAT_ICONS, STORY_ICONS, SHADOW_ICONS, ITEM_ICONS, SHOP_ICONS, GEM_ICONS, CHA_ICONS } from "../data/icons.js";
 import { db, auth } from "../firebase.js";
 import { doc, getDoc } from "firebase/firestore";
+import NativeStatsDashboard from "./NativeStatsDashboard";
 
 // ─── NAV TAB REGISTRY ─────────────────────────────────────────
 // All possible bottom-navigation tabs the user can choose from.
@@ -780,6 +781,15 @@ export default function SettingsView({ state, persist, theme, can, onLogout }) {
         </SettingsSection>
       )}
 
+
+      {/* ════════════════════════════════════════════════════════════
+           SECTION 5B: GESUNDHEIT & NATIVE DATEN
+         ════════════════════════════════════════════════════════════ */}
+      <SettingsSection title="Health & Sensoren" icon="❤️" color="#ef4444" open={openSection === "health"} onToggle={() => toggleSection("health")} theme={theme}>
+        <div style={{ padding: "0 0 16px 0" }}>
+          <NativeStatsDashboard state={state} persist={persist} />
+        </div>
+      </SettingsSection>
 
       {/* ════════════════════════════════════════════════════════════
            SECTION 6: DATEN & ACCOUNT
