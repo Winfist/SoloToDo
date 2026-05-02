@@ -22,11 +22,17 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-// Use initializeAuth with explicit persistence fallback:
-// IndexedDB first (desktop), then localStorage (Capacitor WKWebView fallback)
+
+// Persistence strategy:
+// - Native (iOS/Android WKWebView): use ONLY browserLocalPersistence (localStorage).
+//   IndexedDB is unreliable in WKWebView and gets wiped on app restart, killing auth.
+// - Web (desktop browsers): use IndexedDB first, then localStorage as fallback.
 // NOTE: No popupRedirectResolver — it creates a cross-origin iframe that crashes WKWebView
+const isNative = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform();
 const auth = initializeAuth(app, {
-  persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+  persistence: isNative
+    ? [browserLocalPersistence]
+    : [indexedDBLocalPersistence, browserLocalPersistence],
 });
 const db = getFirestore(app);
 const functions = getFunctions(app, "europe-west1");
