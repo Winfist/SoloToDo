@@ -1,36 +1,91 @@
-import { Geolocation } from '@capacitor/geolocation';
+/**
+ * Location Service — wraps @capacitor/geolocation with platform checks.
+ * On non-native platforms (web browser) all methods return safe fallback values
+ * instead of crashing. Falls back to browser Geolocation API when available.
+ */
+
+const isNative = () =>
+  typeof window !== 'undefined' &&
+  window.Capacitor &&
+  window.Capacitor.isNativePlatform();
+
+let _Geolocation = null;
+
+async function getGeolocation() {
+  if (_Geolocation) return _Geolocation;
+  if (!isNative()) return null;
+  try {
+    const mod = await import('@capacitor/geolocation');
+    _Geolocation = mod.Geolocation;
+    return _Geolocation;
+  } catch (e) {
+    console.warn('[locationService] Could not load Geolocation plugin:', e);
+    return null;
+  }
+}
 
 export const locationService = {
   /**
-   * Request location permissions
+   * Request location permissions.
+   * Returns true on success, false if unavailable or denied.
    */
   async requestPermissions() {
-    try {
-      const permissionStatus = await Geolocation.requestPermissions();
-      return permissionStatus.location === 'granted';
-    } catch (error) {
-      console.error("Error requesting location permissions:", error);
-      return false;
+    const Geo = await getGeolocation();
+    if (Geo) {
+      try {
+        const permissionStatus = await Geo.requestPermissions();
+        return permissionStatus.location === 'granted';
+      } catch (error) {
+        console.error('[locationService] Error requesting permissions:', error);
+        return false;
+      }
     }
+
+    // Fallback: browser geolocation (no explicit permission request needed)
+    if (navigator.geolocation) {
+      return true;
+    }
+    return false;
   },
 
   /**
-   * Get current location coordinates
+   * Get current location coordinates.
+   * Returns { lat, lng, accuracy } or null.
    */
   async getCurrentPosition() {
-    try {
-      const coordinates = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-      });
-      return {
-        lat: coordinates.coords.latitude,
-        lng: coordinates.coords.longitude,
-        accuracy: coordinates.coords.accuracy,
-      };
-    } catch (error) {
-      console.error("Error fetching location:", error);
-      return null;
+    const Geo = await getGeolocation();
+    if (Geo) {
+      try {
+        const coordinates = await Geo.getCurrentPosition({
+          enableHighAccuracy: true,
+        });
+        return {
+          lat: coordinates.coords.latitude,
+          lng: coordinates.coords.longitude,
+          accuracy: coordinates.coords.accuracy,
+        };
+      } catch (error) {
+        console.error('[locationService] Error fetching location:', error);
+        return null;
+      }
     }
+
+    // Fallback: browser geolocation
+    if (navigator.geolocation) {
+      return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          }),
+          () => resolve(null),
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+    }
+
+    return null;
   },
 
   /**

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import Tesseract from 'tesseract.js';
 
+/**
+ * ScreenTimeUpload — standalone version.
+ * Uses dynamic import for Tesseract.js to avoid bundle bloat and import errors.
+ */
 export default function ScreenTimeUpload({ onTimeParsed }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultText, setResultText] = useState('');
@@ -18,31 +21,43 @@ export default function ScreenTimeUpload({ onTimeParsed }) {
       // 1. Convert file to URL
       const imageUrl = URL.createObjectURL(file);
 
-      // 2. Run Tesseract OCR
+      // 2. Dynamic import of Tesseract
+      const Tesseract = (await import('tesseract.js')).default;
+
+      // 3. Run Tesseract OCR
       const { data: { text } } = await Tesseract.recognize(
         imageUrl,
-        'deu', // German language (since user's language is German)
-        { logger: m => console.log(m) }
+        'deu', // German language
+        { logger: m => console.log('[OCR]', m.status, Math.round((m.progress || 0) * 100) + '%') }
       );
 
-      // 3. Simple Regex to find patterns like "4h 30m" or "4 Std. 30 Min."
-      // This is a basic fallback parsing and can be optimized.
+      // 4. Parse time patterns: "4h 30m", "4 Std. 30 Min.", "2:45"
       const timeRegex = /(\d+)\s*(h|std\.?|stunden?)\s*(?:(\d+)\s*(m|min\.?|minuten?))?/i;
-      const match = text.match(timeRegex);
+      const colonRegex = /(\d{1,2}):(\d{2})/;
+      let match = text.match(timeRegex);
 
       if (match) {
         const hours = parseInt(match[1] || '0', 10);
         const minutes = parseInt(match[3] || '0', 10);
         const totalMinutes = (hours * 60) + minutes;
-        
+
         setResultText(`Gefunden: ${hours}h ${minutes}m (${totalMinutes} Minuten)`);
         if (onTimeParsed) onTimeParsed(totalMinutes);
       } else {
-        setError('Konnte keine Bildschirmzeit im Bild erkennen. Bitte achte darauf, dass die Dauer gut lesbar ist.');
+        match = text.match(colonRegex);
+        if (match) {
+          const hours = parseInt(match[1], 10);
+          const minutes = parseInt(match[2], 10);
+          const totalMinutes = (hours * 60) + minutes;
+          setResultText(`Gefunden: ${hours}h ${minutes}m (${totalMinutes} Minuten)`);
+          if (onTimeParsed) onTimeParsed(totalMinutes);
+        } else {
+          setError('Konnte keine Bildschirmzeit im Bild erkennen. Bitte achte darauf, dass die Dauer gut lesbar ist.');
+        }
       }
     } catch (err) {
-      console.error(err);
-      setError('Fehler bei der Bildverarbeitung.');
+      console.error('[ScreenTimeUpload]', err);
+      setError('Fehler bei der Bildverarbeitung: ' + (err.message || err));
     } finally {
       setIsProcessing(false);
     }
@@ -54,19 +69,19 @@ export default function ScreenTimeUpload({ onTimeParsed }) {
       <p style={{ fontSize: '0.85rem', color: '#aaa', marginBottom: '10px' }}>
         Lade einen Screenshot deiner Apple/Android Bildschirmzeit hoch, um deine Quest abzuschließen.
       </p>
-      
-      <input 
-        type="file" 
-        accept="image/*" 
+
+      <input
+        type="file"
+        accept="image/*"
         onChange={handleImageUpload}
         disabled={isProcessing}
         style={{ color: '#fff' }}
       />
 
       {isProcessing && <p style={{ color: '#00ffcc', fontSize: '0.9rem' }}>Bild wird analysiert... Bitte warten.</p>}
-      
+
       {error && <p style={{ color: '#ff4444', fontSize: '0.9rem' }}>{error}</p>}
-      
+
       {resultText && (
         <div style={{ marginTop: '10px', color: '#00ffcc', fontWeight: 'bold' }}>
           {resultText}

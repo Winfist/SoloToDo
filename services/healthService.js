@@ -1,58 +1,111 @@
-import { Health } from '@capgo/capacitor-health';
+/**
+ * Health Service — wraps @capgo/capacitor-health with platform checks.
+ * On non-native platforms (web browser) all methods return safe fallback values
+ * instead of crashing.
+ */
+
+const isNative = () =>
+  typeof window !== 'undefined' &&
+  window.Capacitor &&
+  window.Capacitor.isNativePlatform();
+
+let _Health = null;
+
+async function getHealth() {
+  if (_Health) return _Health;
+  if (!isNative()) return null;
+  try {
+    const mod = await import('@capgo/capacitor-health');
+    _Health = mod.Health;
+    return _Health;
+  } catch (e) {
+    console.warn('[healthService] Could not load Health plugin:', e);
+    return null;
+  }
+}
 
 export const healthService = {
   /**
-   * Request permissions for Step Count and Sleep Analysis
+   * Returns true if we're on a native platform with the Health plugin available.
+   */
+  async isAvailable() {
+    const h = await getHealth();
+    return h != null;
+  },
+
+  /**
+   * Request permissions for Step Count and Sleep Analysis.
+   * Returns true on success, false if unavailable or denied.
    */
   async requestPermissions() {
+    const Health = await getHealth();
+    if (!Health) {
+      console.log('[healthService] Not on native platform — skipping permission request');
+      return false;
+    }
     try {
-      await Health.requestAuthorization([
-        {
-          read: ['steps', 'sleepAnalysis'],
-        }
-      ]);
+      await Health.requestAuthorization({
+        read: ['steps', 'sleep'],
+        write: [],
+      });
       return true;
     } catch (error) {
-      console.error("Error requesting health permissions:", error);
+      console.error('[healthService] Error requesting health permissions:', error);
       return false;
     }
   },
 
   /**
-   * Get steps for today
+   * Get steps for today. Returns 0 if unavailable.
    */
   async getTodaySteps() {
+    const Health = await getHealth();
+    if (!Health) return 0;
     try {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
-      
+
       const endOfDay = new Date();
       endOfDay.setHours(23, 59, 59, 999);
 
-      const result = await Health.query({
+      const result = await Health.queryAggregated({
+        sampleType: 'steps',
+        startDate: startOfDay.toISOString(),
+        endDate: endOfDay.toISOString(),
+        bucket: 'day',
+      });
+
+      // queryAggregated typically returns { value: number }
+      if (result && typeof result.value === 'number') {
+        return Math.floor(result.value);
+      }
+
+      // Fallback: try query() and sum
+      const queryResult = await Health.query({
         sampleType: 'steps',
         startDate: startOfDay.toISOString(),
         endDate: endOfDay.toISOString(),
       });
 
-      // Sum up the steps
       let totalSteps = 0;
-      if (result && result.resultData) {
-         result.resultData.forEach(entry => {
-             totalSteps += entry.value;
-         });
+      if (queryResult && queryResult.resultData) {
+        queryResult.resultData.forEach(entry => {
+          totalSteps += (entry.value || 0);
+        });
       }
       return totalSteps;
     } catch (error) {
-      console.error("Error fetching steps:", error);
+      console.error('[healthService] Error fetching steps:', error);
       return 0;
     }
   },
 
   /**
-   * Get sleep data for the previous night
+   * Get sleep data for the previous night. Returns { minutes, hours }.
    */
   async getLastNightSleep() {
+    const Health = await getHealth();
+    if (!Health) return { minutes: 0, hours: '0.0' };
     try {
       const now = new Date();
       const yesterday = new Date(now);
@@ -60,31 +113,31 @@ export const healthService = {
       yesterday.setHours(18, 0, 0, 0); // Check from 6 PM yesterday
 
       const result = await Health.query({
-        sampleType: 'sleepAnalysis',
+        sampleType: 'sleep',
         startDate: yesterday.toISOString(),
         endDate: now.toISOString(),
       });
-      
-      // Basic sleep calculation (could be enhanced based on phases)
+
       let totalSleepMinutes = 0;
       if (result && result.resultData) {
-         result.resultData.forEach(entry => {
-             // Apple Health often returns inBed and asleep phases
-             if (entry.value === 'asleep') {
-                 const start = new Date(entry.startDate);
-                 const end = new Date(entry.endDate);
-                 totalSleepMinutes += (end - start) / (1000 * 60);
-             }
-         });
+        result.resultData.forEach(entry => {
+          // Apple Health returns various sleep phases
+          const val = String(entry.value || '').toLowerCase();
+          if (val === 'asleep' || val.includes('asleep') || val === '1') {
+            const start = new Date(entry.startDate);
+            const end = new Date(entry.endDate);
+            totalSleepMinutes += (end - start) / (1000 * 60);
+          }
+        });
       }
-      
+
       return {
-        minutes: totalSleepMinutes,
+        minutes: Math.round(totalSleepMinutes),
         hours: (totalSleepMinutes / 60).toFixed(1)
       };
     } catch (error) {
-      console.error("Error fetching sleep data:", error);
-      return { minutes: 0, hours: 0 };
+      console.error('[healthService] Error fetching sleep data:', error);
+      return { minutes: 0, hours: '0.0' };
     }
   }
 };
