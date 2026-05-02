@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { NAV_ICONS } from "../data/icons.js";
 import { getToday, getLocalDateKey, formatLocalDateTime } from "../data/dateUtils.js";
+import { auth, db } from "../firebase";
+import { doc, updateDoc } from "firebase/firestore";
+
+const IS_CAPACITOR = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform();
 
 /**
  * NotificationManager – Push Notifications & Smart Reminders
@@ -17,11 +21,22 @@ import { getToday, getLocalDateKey, formatLocalDateTime } from "../data/dateUtil
 
 // ── Request Permission ───────────────────────────────────────
 export async function requestNotificationPermission() {
-    if (!("Notification" in window)) return "unsupported";
-    if (Notification.permission === "granted") return "granted";
-    if (Notification.permission === "denied") return "denied";
-    const result = await Notification.requestPermission();
-    return result;
+    if (IS_CAPACITOR) {
+        try {
+            const { FirebaseMessaging } = await import('@capacitor-firebase/messaging');
+            const result = await FirebaseMessaging.requestPermissions();
+            return result.receive === 'granted' ? 'granted' : 'denied';
+        } catch (e) {
+            console.error('[SoloToDo] Failed to request native push permissions', e);
+            return 'unsupported';
+        }
+    } else {
+        if (!("Notification" in window)) return "unsupported";
+        if (Notification.permission === "granted") return "granted";
+        if (Notification.permission === "denied") return "denied";
+        const result = await Notification.requestPermission();
+        return result;
+    }
 }
 
 // ── Send Notification ────────────────────────────────────────
@@ -208,6 +223,49 @@ export function NotificationBanner({ state, theme, onUpdateReminder, onReminderF
     const nextReminder = (state?.reminders || [])
         .filter(r => !r.fired && r.reminderAt && new Date(r.reminderAt).getTime() > Date.now())
         .sort((a, b) => new Date(a.reminderAt) - new Date(b.reminderAt))[0];
+
+    // Setup Capacitor Push Notifications if permission is granted
+    useEffect(() => {
+        if (!IS_CAPACITOR || permission !== 'granted' || !auth.currentUser) return;
+        
+        let isMounted = true;
+        
+        const initPush = async () => {
+            try {
+                const { FirebaseMessaging } = await import('@capacitor-firebase/messaging');
+                
+                // Set up token listener
+                FirebaseMessaging.addListener('tokenReceived', async (event) => {
+                    console.log('[SoloToDo] FCM Token received:', event.token);
+                    if (auth.currentUser && isMounted) {
+                        try {
+                            const userRef = doc(db, 'users', auth.currentUser.uid);
+                            await updateDoc(userRef, {
+                                fcmToken: event.token,
+                                lastTokenUpdate: new Date().toISOString()
+                            });
+                            console.log('[SoloToDo] FCM Token saved to Firestore.');
+                        } catch (err) {
+                            console.error('[SoloToDo] Error saving FCM token:', err);
+                        }
+                    }
+                });
+                
+                // Get token on startup
+                const { token } = await FirebaseMessaging.getToken();
+                if (token && auth.currentUser) {
+                    const userRef = doc(db, 'users', auth.currentUser.uid);
+                    await updateDoc(userRef, { fcmToken: token });
+                }
+            } catch (err) {
+                console.error('[SoloToDo] Push Init Error:', err);
+            }
+        };
+        
+        initPush();
+        
+        return () => { isMounted = false; };
+    }, [permission, auth.currentUser]);
 
     // Start periodic reminder checks. Browser notifications fire when granted;
     // in-app notifications still fire without OS permission.

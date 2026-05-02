@@ -62,6 +62,19 @@ function Root() {
   useEffect(() => {
     let settled = false;
 
+    const syncNativeAuth = async () => {
+      if (window.Capacitor?.isNativePlatform()) {
+        try {
+          const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+          // This call triggers the native plugin to sync its stored credentials with the Firebase JS SDK
+          await FirebaseAuthentication.getCurrentUser();
+        } catch (e) {
+          console.warn('[SoloToDo] Failed to sync native auth state', e);
+        }
+      }
+    };
+    syncNativeAuth();
+
     // Listen for Firebase Auth changes
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       settled = true;

@@ -11,6 +11,12 @@
     "FirebaseAuthentication": {
       "skipNativeAuth": false,
       "providers": ["apple.com", "google.com"]
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "FirebaseMessaging": {
+      "presentationOptions": ["badge", "sound", "alert"]
     }
   }
 }
