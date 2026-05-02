@@ -61,44 +61,59 @@ function Root() {
 
   useEffect(() => {
     let settled = false;
+    let unsubscribe = () => {};
 
-    const syncNativeAuth = async () => {
+    const init = async () => {
+      // On native (iOS/Android), the Capacitor Firebase Auth plugin manages the session.
+      // We must wait for it to restore the user BEFORE starting the timeout,
+      // otherwise the 8s timeout fires first and kicks the user to the login screen.
       if (window.Capacitor?.isNativePlatform()) {
         try {
           const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-          // This call triggers the native plugin to sync its stored credentials with the Firebase JS SDK
-          await FirebaseAuthentication.getCurrentUser();
+          const result = await FirebaseAuthentication.getCurrentUser();
+          
+          if (result.user) {
+            // User is logged in natively — set state immediately, no need to wait for JS SDK
+            console.log('[SoloToDo] Native user restored:', result.user.email);
+            setHunterName(result.user.displayName || '');
+            setIsAuthenticated(true);
+            settled = true;
+          }
+          // If no native user, fall through to onAuthStateChanged below
         } catch (e) {
-          console.warn('[SoloToDo] Failed to sync native auth state', e);
+          console.warn('[SoloToDo] Failed to get native user', e);
         }
       }
+
+      if (settled) return; // Already resolved from native, skip JS SDK listener
+
+      // Web: rely on Firebase JS SDK persistence (IndexedDB / localStorage)
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (settled) return;
+        settled = true;
+        if (user) {
+          setHunterName(user.displayName || '');
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      });
+
+      // Safety timeout: if onAuthStateChanged never fires (e.g. IndexedDB hang on web),
+      // force-show the login screen so the user isn't stuck on "LOADING SYSTEM..." forever.
+      setTimeout(() => {
+        if (!settled) {
+          console.warn('[SoloToDo] Auth timeout – forcing login screen');
+          settled = true;
+          setIsAuthenticated(false);
+        }
+      }, AUTH_TIMEOUT_MS);
     };
-    syncNativeAuth();
 
-    // Listen for Firebase Auth changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      settled = true;
-      if (user) {
-        setHunterName(user.displayName || "");
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-      }
-    });
-
-    // Safety timeout: if onAuthStateChanged never fires (IndexedDB hang),
-    // force-show the login screen so the user isn't stuck forever.
-    const timeout = setTimeout(() => {
-      if (!settled) {
-        console.warn('[SoloToDo] Auth timeout – forcing login screen');
-        window.mobileErrors.push('Auth timeout after ' + AUTH_TIMEOUT_MS + 'ms – forcing login');
-        setIsAuthenticated(false);
-      }
-    }, AUTH_TIMEOUT_MS);
+    init();
 
     return () => {
       unsubscribe();
-      clearTimeout(timeout);
     };
   }, []);
 
