@@ -28,7 +28,25 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
 };
 window.addEventListener('unhandledrejection', function (event) {
   const reason = event.reason;
-  const stack = (reason && reason.stack) ? reason.stack : String(reason);
+  const msg = String(reason?.message || reason || '');
+  const stack = (reason && reason.stack) ? reason.stack : msg;
+
+  // Suppress known Capacitor plugin errors — these are NOT bugs, just
+  // native plugins that aren't available in every environment.
+  const isCapacitorPlugin = msg.includes('not implemented') ||
+    msg.includes('unimplemented') ||
+    msg.includes('plugin') ||
+    msg.includes('Capacitor') ||
+    msg.includes('capacitor') ||
+    msg.includes('Health') ||
+    msg.includes('Geolocation');
+
+  if (isCapacitorPlugin) {
+    console.warn('[SoloToDo] Suppressed Capacitor plugin rejection:', msg);
+    event.preventDefault(); // Prevents the browser from logging it as an error
+    return;
+  }
+
   const detail = `Unhandled Promise Rejection:\n${stack}`;
   window.mobileErrors.push(detail);
   try { alert('PROMISE REJECTION:\n' + detail); } catch (_) { /* alert might fail */ }
