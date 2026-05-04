@@ -149,6 +149,7 @@ export default function NativeStatsDashboard({ state, persist }) {
     setDiagLog([]);
     addLog('Sync gestartet...');
     addLog(`isNative: ${IS_NATIVE}`);
+    addLog(`Platform: ${Capacitor.getPlatform()}`);
 
     let fetchedSteps = 0;
     let fetchedSleep = { hours: '0.0', minutes: 0 };
@@ -157,23 +158,44 @@ export default function NativeStatsDashboard({ state, persist }) {
     try {
       // 1. Health Data
       addLog('Requesting health permissions...');
-      const healthGranted = await healthService.requestPermissions();
-      addLog(`Health permissions result: ${healthGranted}`);
+      const t0 = Date.now();
+      let healthGranted = false;
+      try {
+        healthGranted = await healthService.requestPermissions();
+        addLog(`Health permissions COMPLETED in ${Date.now() - t0}ms → ${healthGranted}`);
+      } catch (permErr) {
+        const elapsed = Date.now() - t0;
+        const isTimeout = permErr?.message?.includes('Timeout');
+        addLog(`Health permissions ${isTimeout ? 'TIMEOUT' : 'ERROR'} after ${elapsed}ms: ${permErr?.message || permErr}`);
+        if (isTimeout) {
+          setError('HealthKit-Berechtigung Timeout. Bitte öffne die iOS Health-App → SoloToDo, prüfe die Berechtigungen und versuche es erneut.');
+        }
+      }
 
       if (healthGranted) {
         addLog('Fetching steps...');
-        fetchedSteps = await healthService.getTodaySteps();
-        addLog(`Steps: ${fetchedSteps}`);
+        try {
+          fetchedSteps = await healthService.getTodaySteps();
+          addLog(`Steps: ${fetchedSteps}`);
+        } catch (stepErr) {
+          addLog(`Steps ERROR: ${stepErr?.message || stepErr}`);
+        }
 
         addLog('Fetching sleep...');
-        fetchedSleep = await healthService.getLastNightSleep();
-        addLog(`Sleep: ${fetchedSleep.hours}h`);
+        try {
+          fetchedSleep = await healthService.getLastNightSleep();
+          addLog(`Sleep: ${fetchedSleep.hours}h`);
+        } catch (sleepErr) {
+          addLog(`Sleep ERROR: ${sleepErr?.message || sleepErr}`);
+        }
 
         setSteps(fetchedSteps);
         setSleep(fetchedSleep);
       } else if (IS_NATIVE) {
         addLog('Health permissions DENIED or plugin not available');
-        setError('Health-Berechtigungen nicht gewährt. Bitte erlaube den Zugriff in den Geräte-Einstellungen.');
+        if (!error) {
+          setError('Health-Berechtigungen nicht gewährt. Bitte erlaube den Zugriff in den Geräte-Einstellungen.');
+        }
       } else {
         addLog('Not native — skipping health data');
       }
@@ -206,7 +228,7 @@ export default function NativeStatsDashboard({ state, persist }) {
     } finally {
       setLoading(false);
     }
-  }, [addLog]);
+  }, [addLog, error]);
 
   const syncAndReward = async () => {
     try {

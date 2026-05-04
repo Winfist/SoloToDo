@@ -6,6 +6,9 @@
  * Every public method double-guards with isNative() + try/catch so that
  * Capacitor's internal registerPlugin proxy can never produce an
  * unhandled promise rejection.
+ *
+ * All native calls are wrapped in a timeout to prevent infinite hangs
+ * (e.g. iOS HealthKit permission dialog never resolving).
  */
 
 import { Capacitor } from '@capacitor/core';
@@ -21,6 +24,21 @@ function getHealthPlugin() {
   return Promise.resolve(Health);
 }
 
+/**
+ * Wraps a promise with a timeout. If the promise doesn't resolve/reject
+ * within `ms` milliseconds, it rejects with a descriptive error.
+ */
+function withTimeout(promise, ms, label = 'operation') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`[healthService] Timeout: ${label} did not complete within ${ms / 1000}s`)), ms)
+    ),
+  ]);
+}
+
+const TIMEOUT_MS = 15000; // 15 seconds
+
 export const healthService = {
   /**
    * Returns true if we're on a native platform with the Health plugin available.
@@ -30,7 +48,9 @@ export const healthService = {
     try {
       const Health = await getHealthPlugin();
       if (!Health) return false;
-      const res = await Health.isAvailable();
+      console.log('[healthService] Calling Health.isAvailable()...');
+      const res = await withTimeout(Health.isAvailable(), TIMEOUT_MS, 'isAvailable');
+      console.log('[healthService] isAvailable result:', JSON.stringify(res));
       return res?.available === true;
     } catch (e) {
       console.warn('[healthService] isAvailable error:', e);
@@ -49,11 +69,20 @@ export const healthService = {
     }
     try {
       const Health = await getHealthPlugin();
-      if (!Health) return false;
-      await Health.requestAuthorization({
-        read: ['steps', 'sleep'],
-        write: [],
-      });
+      if (!Health) {
+        console.warn('[healthService] Health plugin is null');
+        return false;
+      }
+      console.log('[healthService] Calling Health.requestAuthorization({read:[steps,sleep], write:[]})...');
+      const authResult = await withTimeout(
+        Health.requestAuthorization({
+          read: ['steps', 'sleep'],
+          write: [],
+        }),
+        TIMEOUT_MS,
+        'requestAuthorization'
+      );
+      console.log('[healthService] requestAuthorization result:', JSON.stringify(authResult));
       // On iOS, HealthKit requestAuthorization always resolves even if user denies.
       // Actual denial only shows when reading data.
       return true;

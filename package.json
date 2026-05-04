@@ -9,7 +9,8 @@
     "build:cap": "vite build && npx cap sync",
     "preview": "vite preview",
     "predeploy": "cmd /c \"if exist dist_firebase rmdir /s /q dist_firebase\" && cmd /c \"mkdir dist_firebase && xcopy /E /I dist\\* dist_firebase\\ && xcopy /E /I admin-dist\\* dist_firebase\\admin\\\"",
-    "deploy": "firebase deploy"
+    "deploy": "firebase deploy",
+    "postinstall": "node patch-health-plugin.js"
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.2.0",
