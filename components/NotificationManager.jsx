@@ -4,7 +4,9 @@ import { getToday, getLocalDateKey, formatLocalDateTime } from "../data/dateUtil
 import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";
 
-const IS_CAPACITOR = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform();
+import { Capacitor } from '@capacitor/core';
+
+const IS_CAPACITOR = Capacitor.isNativePlatform();
 
 // ── Request Permission ───────────────────────────────────────
 export async function requestNotificationPermission() {

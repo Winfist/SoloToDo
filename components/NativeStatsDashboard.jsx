@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { healthService } from '../services/healthService';
 import { locationService } from '../services/locationService';
 
-const IS_NATIVE = typeof window !== 'undefined' &&
-  window.Capacitor &&
-  window.Capacitor.isNativePlatform();
+import { Capacitor } from '@capacitor/core';
+
+const IS_NATIVE = Capacitor.isNativePlatform();
 
 // ─── SCREEN TIME OCR ──────────────────────────────────────────
 // Lazy-loaded only when user uploads a file
@@ -125,7 +125,12 @@ export default function NativeStatsDashboard({ state, persist }) {
 
   // Check availability on mount
   useEffect(() => {
-    healthService.isAvailable().then(setHealthAvailable);
+    healthService.isAvailable()
+      .then(setHealthAvailable)
+      .catch(err => {
+        console.warn('[NativeStatsDashboard] healthService check failed:', err);
+        setHealthAvailable(false);
+      });
   }, []);
 
   const loadNativeData = useCallback(async () => {

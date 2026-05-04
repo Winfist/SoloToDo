@@ -4,10 +4,9 @@
  * instead of crashing. Falls back to browser Geolocation API when available.
  */
 
-const isNative = () =>
-  typeof window !== 'undefined' &&
-  window.Capacitor &&
-  window.Capacitor.isNativePlatform();
+import { Capacitor } from '@capacitor/core';
+
+const isNative = () => Capacitor.isNativePlatform();
 
 let _Geolocation = null;
 

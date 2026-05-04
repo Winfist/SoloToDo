@@ -3,6 +3,7 @@ import { NAV_ICONS, STAT_ICONS, STORY_ICONS, SHADOW_ICONS, ITEM_ICONS, SHOP_ICON
 import { db, auth } from "../firebase.js";
 import { doc, getDoc } from "firebase/firestore";
 import NativeStatsDashboard from "./NativeStatsDashboard";
+import { Capacitor } from "@capacitor/core";
 
 // ─── NAV TAB REGISTRY ─────────────────────────────────────────
 // All possible bottom-navigation tabs the user can choose from.
@@ -654,7 +655,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout }) {
           </div>
           <button onClick={async () => {
               try {
-                  const IS_CAPACITOR = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform();
+                  const IS_CAPACITOR = Capacitor.isNativePlatform();
                   if (IS_CAPACITOR) {
                       const { LocalNotifications } = await import('@capacitor/local-notifications');
                       const perm = await LocalNotifications.checkPermissions();
