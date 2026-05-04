@@ -14,26 +14,11 @@ const isNative = () => {
   try { return Capacitor.isNativePlatform(); } catch { return false; }
 };
 
-// Lazy singleton — resolved once, cached forever.
-let _healthPromise = null;
+import { Health } from '@capgo/capacitor-health';
 
 function getHealthPlugin() {
-  if (_healthPromise) return _healthPromise;
-
-  // On web, don't even try loading — return null immediately.
-  if (!isNative()) {
-    _healthPromise = Promise.resolve(null);
-    return _healthPromise;
-  }
-
-  _healthPromise = import('@capgo/capacitor-health')
-    .then(mod => mod.Health ?? null)
-    .catch(err => {
-      console.warn('[healthService] Could not load Health plugin:', err);
-      return null;
-    });
-
-  return _healthPromise;
+  if (!isNative()) return Promise.resolve(null);
+  return Promise.resolve(Health);
 }
 
 export const healthService = {

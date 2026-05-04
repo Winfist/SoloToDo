@@ -8,19 +8,11 @@ import { Capacitor } from '@capacitor/core';
 
 const isNative = () => Capacitor.isNativePlatform();
 
-let _Geolocation = null;
+import { Geolocation } from '@capacitor/geolocation';
 
-async function getGeolocation() {
-  if (_Geolocation) return _Geolocation;
-  if (!isNative()) return null;
-  try {
-    const mod = await import('@capacitor/geolocation');
-    _Geolocation = mod.Geolocation;
-    return _Geolocation;
-  } catch (e) {
-    console.warn('[locationService] Could not load Geolocation plugin:', e);
-    return null;
-  }
+function getGeolocation() {
+  if (!isNative()) return Promise.resolve(null);
+  return Promise.resolve(Geolocation);
 }
 
 export const locationService = {
