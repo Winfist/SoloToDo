@@ -156,60 +156,55 @@ export default function NativeStatsDashboard({ state, persist }) {
     let fetchedLocation = null;
 
     try {
-      // 1. Health Data — try permissions first, but always attempt reads on native
       if (IS_NATIVE) {
-        addLog('Requesting health permissions...');
+        // Permission check (with real-time logging via onLog callback)
+        addLog('--- Berechtigungen prüfen ---');
         const t0 = Date.now();
         let healthGranted = false;
         try {
-          healthGranted = await healthService.requestPermissions();
-          addLog(`Health permissions COMPLETED in ${Date.now() - t0}ms → ${healthGranted}`);
+          healthGranted = await healthService.requestPermissions(addLog);
+          addLog(`Berechtigungen: ${healthGranted ? '✓ OK' : '✗ NICHT erteilt'} (${Date.now() - t0}ms)`);
         } catch (permErr) {
-          const elapsed = Date.now() - t0;
-          addLog(`Health permissions ERROR after ${elapsed}ms: ${permErr?.message || permErr}`);
+          addLog(`Berechtigungen FEHLER nach ${Date.now() - t0}ms: ${permErr?.message || permErr}`);
         }
 
-        // Always try to read data, even if permissions returned false
-        // On iOS, reads return empty results if denied (no crash)
-        addLog('Fetching steps (regardless of permission result)...');
+        // Always try to read data
+        addLog('--- Daten abrufen ---');
         try {
-          fetchedSteps = await healthService.getTodaySteps();
-          addLog(`Steps: ${fetchedSteps}`);
+          fetchedSteps = await healthService.getTodaySteps(addLog);
         } catch (stepErr) {
-          addLog(`Steps ERROR: ${stepErr?.message || stepErr}`);
+          addLog(`Steps FEHLER: ${stepErr?.message || stepErr}`);
         }
 
-        addLog('Fetching sleep...');
         try {
-          fetchedSleep = await healthService.getLastNightSleep();
-          addLog(`Sleep: ${fetchedSleep.hours}h`);
+          fetchedSleep = await healthService.getLastNightSleep(addLog);
         } catch (sleepErr) {
-          addLog(`Sleep ERROR: ${sleepErr?.message || sleepErr}`);
+          addLog(`Sleep FEHLER: ${sleepErr?.message || sleepErr}`);
         }
 
         setSteps(fetchedSteps);
         setSleep(fetchedSleep);
 
         if (fetchedSteps === 0 && parseFloat(fetchedSleep.hours) === 0 && !healthGranted) {
-          addLog('No health data — permissions might be missing');
-          setError('Keine Health-Daten verfügbar. Bitte öffne die iOS Health-App → Teilen → SoloToDo und erlaube Schritte & Schlaf.');
+          addLog('Keine Health-Daten — Berechtigungen fehlen');
+          setError('Keine Health-Daten. Öffne iOS Health-App → Teilen → SoloToDo und erlaube Schritte & Schlaf.');
         }
       } else {
-        addLog('Not native — skipping health data');
+        addLog('Nicht nativ — überspringe Health');
       }
 
-      // 2. Location Data
+      // Location
       try {
-        addLog('Requesting location...');
+        addLog('--- Standort ---');
         const locationGranted = await locationService.requestPermissions();
-        addLog(`Location permission: ${locationGranted}`);
+        addLog(`Standort-Berechtigung: ${locationGranted}`);
         if (locationGranted) {
           fetchedLocation = await locationService.getCurrentPosition();
-          addLog(`Location: ${fetchedLocation?.lat?.toFixed(4)}, ${fetchedLocation?.lng?.toFixed(4)}`);
+          addLog(`Standort: ${fetchedLocation?.lat?.toFixed(4)}, ${fetchedLocation?.lng?.toFixed(4)}`);
           setLocation(fetchedLocation);
         }
       } catch (locErr) {
-        addLog(`Location error: ${locErr?.message || locErr}`);
+        addLog(`Standort FEHLER: ${locErr?.message || locErr}`);
       }
 
       const now = new Date().toLocaleString('de-DE');
@@ -219,9 +214,9 @@ export default function NativeStatsDashboard({ state, persist }) {
 
       return { steps: fetchedSteps, sleep: fetchedSleep, location: fetchedLocation };
     } catch (err) {
-      addLog(`SYNC ERROR: ${err?.message || err}`);
+      addLog(`SYNC FEHLER: ${err?.message || err}`);
       console.error('[NativeStatsDashboard] Sync error:', err);
-      setError('Fehler beim Laden der Sensordaten: ' + (err.message || String(err)));
+      setError('Fehler: ' + (err.message || String(err)));
       return null;
     } finally {
       setLoading(false);
