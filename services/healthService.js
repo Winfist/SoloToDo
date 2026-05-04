@@ -73,21 +73,74 @@ export const healthService = {
         console.warn('[healthService] Health plugin is null');
         return false;
       }
-      console.log('[healthService] Calling Health.requestAuthorization({read:[steps,sleep], write:[]})...');
-      const authResult = await withTimeout(
-        Health.requestAuthorization({
-          read: ['steps', 'sleep'],
-          write: [],
-        }),
-        TIMEOUT_MS,
-        'requestAuthorization'
-      );
-      console.log('[healthService] requestAuthorization result:', JSON.stringify(authResult));
-      // On iOS, HealthKit requestAuthorization always resolves even if user denies.
-      // Actual denial only shows when reading data.
-      return true;
+
+      // Strategy: On iOS, requestAuthorization() can freeze the WebView entirely.
+      // Instead, we try multiple approaches:
+      //
+      // 1. Try checkAuthorization (never shows UI, just checks status)
+      // 2. Try a small test read (works if already authorized)
+      // 3. Only if both fail, attempt requestAuthorization with a short timeout
+
+      // --- Approach 1: Check if already authorized ---
+      try {
+        console.log('[healthService] Checking existing authorization...');
+        const checkResult = await withTimeout(
+          Health.checkAuthorization({ read: ['steps', 'sleep'], write: [] }),
+          5000,
+          'checkAuthorization'
+        );
+        console.log('[healthService] checkAuthorization result:', JSON.stringify(checkResult));
+        if (checkResult?.readAuthorized?.length > 0) {
+          console.log('[healthService] Already authorized for:', checkResult.readAuthorized);
+          return true;
+        }
+      } catch (checkErr) {
+        console.warn('[healthService] checkAuthorization failed:', checkErr?.message || checkErr);
+      }
+
+      // --- Approach 2: Try a small test read (works if previously authorized) ---
+      try {
+        console.log('[healthService] Attempting test read of steps...');
+        const now = new Date();
+        const startOfDay = new Date(now);
+        startOfDay.setHours(0, 0, 0, 0);
+        const testResult = await withTimeout(
+          Health.readSamples({
+            dataType: 'steps',
+            startDate: startOfDay.toISOString(),
+            endDate: now.toISOString(),
+            limit: 1,
+          }),
+          5000,
+          'testRead'
+        );
+        console.log('[healthService] Test read succeeded — already authorized');
+        return true;
+      } catch (testErr) {
+        console.warn('[healthService] Test read failed:', testErr?.message || testErr);
+      }
+
+      // --- Approach 3: Try requestAuthorization with short timeout ---
+      try {
+        console.log('[healthService] Attempting requestAuthorization (5s timeout)...');
+        const authResult = await withTimeout(
+          Health.requestAuthorization({
+            read: ['steps', 'sleep'],
+            write: [],
+          }),
+          5000,
+          'requestAuthorization'
+        );
+        console.log('[healthService] requestAuthorization result:', JSON.stringify(authResult));
+        return true;
+      } catch (authErr) {
+        console.warn('[healthService] requestAuthorization failed/timeout:', authErr?.message || authErr);
+        // Even if requestAuthorization fails, data might still be readable
+        // (e.g. user granted permissions in iOS Settings directly)
+        return false;
+      }
     } catch (error) {
-      console.error('[healthService] Error requesting health permissions:', error);
+      console.error('[healthService] Error in requestPermissions:', error);
       return false;
     }
   },

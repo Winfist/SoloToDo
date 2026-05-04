@@ -156,24 +156,22 @@ export default function NativeStatsDashboard({ state, persist }) {
     let fetchedLocation = null;
 
     try {
-      // 1. Health Data
-      addLog('Requesting health permissions...');
-      const t0 = Date.now();
-      let healthGranted = false;
-      try {
-        healthGranted = await healthService.requestPermissions();
-        addLog(`Health permissions COMPLETED in ${Date.now() - t0}ms → ${healthGranted}`);
-      } catch (permErr) {
-        const elapsed = Date.now() - t0;
-        const isTimeout = permErr?.message?.includes('Timeout');
-        addLog(`Health permissions ${isTimeout ? 'TIMEOUT' : 'ERROR'} after ${elapsed}ms: ${permErr?.message || permErr}`);
-        if (isTimeout) {
-          setError('HealthKit-Berechtigung Timeout. Bitte öffne die iOS Health-App → SoloToDo, prüfe die Berechtigungen und versuche es erneut.');
+      // 1. Health Data — try permissions first, but always attempt reads on native
+      if (IS_NATIVE) {
+        addLog('Requesting health permissions...');
+        const t0 = Date.now();
+        let healthGranted = false;
+        try {
+          healthGranted = await healthService.requestPermissions();
+          addLog(`Health permissions COMPLETED in ${Date.now() - t0}ms → ${healthGranted}`);
+        } catch (permErr) {
+          const elapsed = Date.now() - t0;
+          addLog(`Health permissions ERROR after ${elapsed}ms: ${permErr?.message || permErr}`);
         }
-      }
 
-      if (healthGranted) {
-        addLog('Fetching steps...');
+        // Always try to read data, even if permissions returned false
+        // On iOS, reads return empty results if denied (no crash)
+        addLog('Fetching steps (regardless of permission result)...');
         try {
           fetchedSteps = await healthService.getTodaySteps();
           addLog(`Steps: ${fetchedSteps}`);
@@ -191,10 +189,10 @@ export default function NativeStatsDashboard({ state, persist }) {
 
         setSteps(fetchedSteps);
         setSleep(fetchedSleep);
-      } else if (IS_NATIVE) {
-        addLog('Health permissions DENIED or plugin not available');
-        if (!error) {
-          setError('Health-Berechtigungen nicht gewährt. Bitte erlaube den Zugriff in den Geräte-Einstellungen.');
+
+        if (fetchedSteps === 0 && parseFloat(fetchedSleep.hours) === 0 && !healthGranted) {
+          addLog('No health data — permissions might be missing');
+          setError('Keine Health-Daten verfügbar. Bitte öffne die iOS Health-App → Teilen → SoloToDo und erlaube Schritte & Schlaf.');
         }
       } else {
         addLog('Not native — skipping health data');
@@ -228,7 +226,7 @@ export default function NativeStatsDashboard({ state, persist }) {
     } finally {
       setLoading(false);
     }
-  }, [addLog, error]);
+  }, [addLog]);
 
   const syncAndReward = async () => {
     try {
