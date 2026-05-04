@@ -28,8 +28,15 @@ export const healthService = {
    * Returns true if we're on a native platform with the Health plugin available.
    */
   async isAvailable() {
-    const h = await getHealth();
-    return h != null;
+    const Health = await getHealth();
+    if (!Health) return false;
+    try {
+      const res = await Health.isAvailable();
+      return res.available;
+    } catch (e) {
+      console.warn('[healthService] isAvailable error:', e);
+      return false;
+    }
   },
 
   /**
@@ -68,27 +75,27 @@ export const healthService = {
       endOfDay.setHours(23, 59, 59, 999);
 
       const result = await Health.queryAggregated({
-        sampleType: 'steps',
+        dataType: 'steps',
         startDate: startOfDay.toISOString(),
         endDate: endOfDay.toISOString(),
         bucket: 'day',
       });
 
-      // queryAggregated typically returns { value: number }
-      if (result && typeof result.value === 'number') {
-        return Math.floor(result.value);
+      // queryAggregated typically returns { samples: [] }
+      if (result && result.samples && result.samples.length > 0) {
+        return Math.floor(result.samples[0].value);
       }
 
-      // Fallback: try query() and sum
-      const queryResult = await Health.query({
-        sampleType: 'steps',
+      // Fallback: try readSamples() and sum
+      const queryResult = await Health.readSamples({
+        dataType: 'steps',
         startDate: startOfDay.toISOString(),
         endDate: endOfDay.toISOString(),
       });
 
       let totalSteps = 0;
-      if (queryResult && queryResult.resultData) {
-        queryResult.resultData.forEach(entry => {
+      if (queryResult && queryResult.samples) {
+        queryResult.samples.forEach(entry => {
           totalSteps += (entry.value || 0);
         });
       }
@@ -111,18 +118,18 @@ export const healthService = {
       yesterday.setDate(now.getDate() - 1);
       yesterday.setHours(18, 0, 0, 0); // Check from 6 PM yesterday
 
-      const result = await Health.query({
-        sampleType: 'sleep',
+      const result = await Health.readSamples({
+        dataType: 'sleep',
         startDate: yesterday.toISOString(),
         endDate: now.toISOString(),
       });
 
       let totalSleepMinutes = 0;
-      if (result && result.resultData) {
-        result.resultData.forEach(entry => {
-          // Apple Health returns various sleep phases
-          const val = String(entry.value || '').toLowerCase();
-          if (val === 'asleep' || val.includes('asleep') || val === '1') {
+      if (result && result.samples) {
+        result.samples.forEach(entry => {
+          // Check sleepState for Capgo plugin
+          const val = String(entry.sleepState || entry.value || '').toLowerCase();
+          if (val === 'asleep' || val.includes('asleep') || val === '1' || val === 'deep' || val === 'light' || val === 'rem') {
             const start = new Date(entry.startDate);
             const end = new Date(entry.endDate);
             totalSleepMinutes += (end - start) / (1000 * 60);
