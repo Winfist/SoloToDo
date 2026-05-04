@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build && cd admin-dashboard && npm run build",
     "build:cap": "vite build && npx cap sync",
     "preview": "vite preview",

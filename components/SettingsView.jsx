@@ -749,11 +749,13 @@ export default function SettingsView({ state, persist, theme, can, onLogout }) {
             <SettingRow label="KI-Systemnachrichten" desc="Coach-Interventionen" disabled lockLevel={8} theme={theme} />
           )}
 
+          {/*
           {can?.('ai_coach') ? (
             <SettingRow label="KI-Coach Chat" desc="Floating Chat-Widget für Coaching" value={state.ai?.coachEnabled ?? false} onChange={() => toggleAI("coachEnabled", false)} color="#22c55e" theme={theme} />
           ) : (
             <SettingRow label="KI-Coach Chat" desc="Chat-Widget" disabled lockLevel={8} theme={theme} />
           )}
+          */}
 
           {can?.('ai_dynamic_quests') ? (
             <SettingRow label="Dynamische Quests" desc="KI generiert tägliche System-Quests" value={state.ai?.dynamicQuestsEnabled ?? true} onChange={() => toggleAI("dynamicQuestsEnabled")} color="#22c55e" theme={theme} />

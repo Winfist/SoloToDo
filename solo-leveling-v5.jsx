@@ -2243,10 +2243,11 @@ function App({ initialHunterName, onLogout }) {
 
         {/* DAWN / DUSK PROTOCOL — rendered above as overlay (line ~451), this duplicate is intentionally removed */}
 
-        {/* AI COACH WIDGET — floating bottom-right, unlocked at Level 8 */}
+        {/* AI COACH WIDGET — floating bottom-right, unlocked at Level 8
         {can('ai_coach') && state?.ai?.enabled && state?.ai?.coachEnabled && (
           <AIChatWidget geminiAI={geminiAI} state={state} theme={theme} />
         )}
+        */}
       </div >
     </ScreenShake>
   );
