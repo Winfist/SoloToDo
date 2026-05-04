@@ -122,21 +122,33 @@ export default function NativeStatsDashboard({ state, persist }) {
   const [lastSyncTime, setLastSyncTime] = useState(state?.lastNativeSync || null);
   const [healthAvailable, setHealthAvailable] = useState(null); // null = unknown
   const [syncSuccess, setSyncSuccess] = useState(false);
+  const [diagLog, setDiagLog] = useState([]);
+
+  const addLog = useCallback((msg) => {
+    setDiagLog(prev => [...prev, `[${new Date().toLocaleTimeString('de-DE')}] ${msg}`]);
+  }, []);
 
   // Check availability on mount
   useEffect(() => {
+    addLog(`Platform: ${IS_NATIVE ? 'NATIVE' : 'WEB'}`);
     healthService.isAvailable()
-      .then(setHealthAvailable)
+      .then(avail => {
+        addLog(`Health available: ${avail}`);
+        setHealthAvailable(avail);
+      })
       .catch(err => {
-        console.warn('[NativeStatsDashboard] healthService check failed:', err);
+        addLog(`Health check ERROR: ${err?.message || err}`);
         setHealthAvailable(false);
       });
-  }, []);
+  }, [addLog]);
 
   const loadNativeData = useCallback(async () => {
     setLoading(true);
     setError('');
     setSyncSuccess(false);
+    setDiagLog([]);
+    addLog('Sync gestartet...');
+    addLog(`isNative: ${IS_NATIVE}`);
 
     let fetchedSteps = 0;
     let fetchedSleep = { hours: '0.0', minutes: 0 };
@@ -144,61 +156,75 @@ export default function NativeStatsDashboard({ state, persist }) {
 
     try {
       // 1. Health Data
+      addLog('Requesting health permissions...');
       const healthGranted = await healthService.requestPermissions();
+      addLog(`Health permissions result: ${healthGranted}`);
+
       if (healthGranted) {
+        addLog('Fetching steps...');
         fetchedSteps = await healthService.getTodaySteps();
+        addLog(`Steps: ${fetchedSteps}`);
+
+        addLog('Fetching sleep...');
         fetchedSleep = await healthService.getLastNightSleep();
+        addLog(`Sleep: ${fetchedSleep.hours}h`);
+
         setSteps(fetchedSteps);
         setSleep(fetchedSleep);
       } else if (IS_NATIVE) {
+        addLog('Health permissions DENIED or plugin not available');
         setError('Health-Berechtigungen nicht gewährt. Bitte erlaube den Zugriff in den Geräte-Einstellungen.');
+      } else {
+        addLog('Not native — skipping health data');
       }
 
       // 2. Location Data
       try {
+        addLog('Requesting location...');
         const locationGranted = await locationService.requestPermissions();
+        addLog(`Location permission: ${locationGranted}`);
         if (locationGranted) {
           fetchedLocation = await locationService.getCurrentPosition();
+          addLog(`Location: ${fetchedLocation?.lat?.toFixed(4)}, ${fetchedLocation?.lng?.toFixed(4)}`);
           setLocation(fetchedLocation);
         }
       } catch (locErr) {
-        console.warn('[NativeStatsDashboard] Location error:', locErr);
-        // Location is optional, don't break the whole sync
+        addLog(`Location error: ${locErr?.message || locErr}`);
       }
 
       const now = new Date().toLocaleString('de-DE');
       setLastSyncTime(now);
       setSyncSuccess(true);
+      addLog('Sync abgeschlossen ✓');
 
       return { steps: fetchedSteps, sleep: fetchedSleep, location: fetchedLocation };
     } catch (err) {
+      addLog(`SYNC ERROR: ${err?.message || err}`);
       console.error('[NativeStatsDashboard] Sync error:', err);
       setError('Fehler beim Laden der Sensordaten: ' + (err.message || String(err)));
       return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [addLog]);
 
   const syncAndReward = async () => {
     try {
       const data = await loadNativeData();
-      if (!data) return; // error was already set
+      if (!data) return;
 
       const fetchedSteps = data.steps;
       const now = new Date().toLocaleString('de-DE');
 
       if (fetchedSteps > 0 && state && persist) {
-        // Save sync timestamp
         persist({ ...state, lastNativeSync: now });
       }
 
-      // Show result
       if (!IS_NATIVE) {
         setError('');
-        // On web, show info that real data only works on the phone
       }
     } catch (err) {
+      addLog(`syncAndReward ERROR: ${err?.message || err}`);
       console.error('[NativeStatsDashboard] syncAndReward error:', err);
       setError('Sync fehlgeschlagen: ' + (err.message || String(err)));
     }
@@ -356,6 +382,37 @@ export default function NativeStatsDashboard({ state, persist }) {
           fontSize: 9, color: '#475569', fontFamily: "'JetBrains Mono',monospace",
         }}>
           Letzter Sync: {lastSyncTime}
+        </div>
+      )}
+
+      {/* ── Diagnostic Log ── */}
+      {diagLog.length > 0 && (
+        <div style={{
+          marginTop: 16, padding: '12px 14px', borderRadius: 12,
+          background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(99,102,241,0.2)',
+          maxHeight: 200, overflowY: 'auto',
+        }}>
+          <div style={{
+            fontSize: 9, letterSpacing: 2, color: '#6366f1',
+            fontFamily: "'JetBrains Mono',monospace", marginBottom: 8,
+          }}>
+            DIAGNOSE LOG
+          </div>
+          {diagLog.map((line, i) => (
+            <div key={i} style={{
+              fontSize: 9, color: line.includes('ERROR') || line.includes('DENIED')
+                ? '#f87171'
+                : line.includes('✓')
+                  ? '#22c55e'
+                  : '#94a3b8',
+              fontFamily: "'JetBrains Mono',monospace",
+              lineHeight: 1.6,
+              borderBottom: '1px solid rgba(255,255,255,0.03)',
+              padding: '2px 0',
+            }}>
+              {line}
+            </div>
+          ))}
         </div>
       )}
     </div>
