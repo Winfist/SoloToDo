@@ -29,6 +29,11 @@ export function migrateState(oldState) {
   }
   s.achievements = { ...DEFAULT_STATE.achievements, ...(oldState.achievements || {}) };
   s.hiddenQuests = { ...DEFAULT_STATE.hiddenQuests, ...(oldState.hiddenQuests || {}) };
+  s.healthPreferences = { ...DEFAULT_STATE.healthPreferences, ...(oldState.healthPreferences || {}) };
+  s.healthPreferences.manualSleepLog = {
+    ...DEFAULT_STATE.healthPreferences.manualSleepLog,
+    ...(oldState.healthPreferences?.manualSleepLog || {})
+  };
   s.story = { ...DEFAULT_STATE.story, ...(oldState.story || {}) };
   s.shadowRegression = { ...DEFAULT_STATE.shadowRegression, ...(oldState.shadowRegression || {}) };
   s.soulLink = { ...DEFAULT_STATE.soulLink, ...(oldState.soulLink || {}) };

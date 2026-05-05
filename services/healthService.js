@@ -10,6 +10,7 @@
  */
 
 import { Capacitor } from '@capacitor/core';
+import { getLocalDateKey } from '../data/dateUtils.js';
 
 const isNative = () => {
   try { return Capacitor.isNativePlatform(); } catch { return false; }
@@ -33,6 +34,62 @@ function withTimeout(promise, ms, label = 'operation') {
 }
 
 const CALL_TIMEOUT = 8000; // 8 seconds per native call
+
+function normalizeHistoryDays(days) {
+  const parsed = Math.floor(Number(days) || 7);
+  return Math.min(Math.max(parsed, 1), 180);
+}
+
+function getHistoryBounds(days, { sleepWindow = false } = {}) {
+  const safeDays = normalizeHistoryDays(days);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  const start = new Date();
+  start.setDate(start.getDate() - (safeDays - 1));
+  start.setHours(sleepWindow ? 18 : 0, 0, 0, 0);
+
+  if (sleepWindow) {
+    start.setDate(start.getDate() - 1);
+  }
+
+  return { safeDays, start, end };
+}
+
+function isAsleepSample(entry) {
+  const val = String(entry?.sleepState || entry?.value || '').toLowerCase();
+  return val === 'asleep'
+    || val.includes('asleep')
+    || val === '1'
+    || val === 'deep'
+    || val === 'light'
+    || val === 'rem';
+}
+
+function mergeIntervals(intervals) {
+  const sorted = [...intervals].sort((a, b) => a.start - b.start);
+  const merged = [];
+
+  for (const iv of sorted) {
+    if (!Number.isFinite(iv.start) || !Number.isFinite(iv.end) || iv.end <= iv.start) continue;
+    const last = merged[merged.length - 1];
+    if (last && iv.start <= last.end) {
+      last.end = Math.max(last.end, iv.end);
+      if (iv.rawEnd && (!last.rawEnd || iv.end >= last.end)) last.rawEnd = iv.rawEnd;
+    } else {
+      merged.push({ ...iv });
+    }
+  }
+
+  return merged;
+}
+
+function mapToSortedRows(map, valueKey = 'value') {
+  return Object.keys(map).sort().map(date => ({
+    date,
+    [valueKey]: map[date],
+  }));
+}
 
 export const healthService = {
   /**
@@ -285,42 +342,104 @@ export const healthService = {
   },
 
   /**
-   * Get steps for the last 7 days. Returns array of { date, value }
+   * Get daily steps for the last N days. Returns array of { date, value }
+   * with local date keys (YYYY-MM-DD).
    */
-  async getWeeklySteps(onLog) {
+  async getStepsHistory(days = 7, onLog) {
     if (!isNative()) return [];
     try {
       const Health = getHealthPlugin();
       if (!Health) return [];
 
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
+      const { safeDays, start, end } = getHistoryBounds(days);
 
-      const startOfWeek = new Date();
-      startOfWeek.setDate(startOfWeek.getDate() - 6);
-      startOfWeek.setHours(0, 0, 0, 0);
-
-      onLog?.('getWeeklySteps gestartet...');
+      onLog?.(`getStepsHistory gestartet (${safeDays} Tage)...`);
       const result = await withTimeout(
         Health.queryAggregated({
           dataType: 'steps',
-          startDate: startOfWeek.toISOString(),
-          endDate: endOfDay.toISOString(),
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
           bucket: 'day',
+          aggregation: 'sum',
         }),
         CALL_TIMEOUT,
-        'queryAggregated-weekly-steps'
+        `queryAggregated-steps-${safeDays}d`
       );
 
-      if (result?.samples?.length > 0) {
-        return result.samples.map(s => ({
-          date: s.startDate,
-          value: Math.floor(s.value)
-        }));
+      const dailyMap = {};
+      if (result?.samples?.length) {
+        result.samples.forEach(sample => {
+          const dateKey = getLocalDateKey(sample.startDate);
+          dailyMap[dateKey] = (dailyMap[dateKey] || 0) + Math.floor(sample.value || 0);
+        });
       }
-      return [];
+
+      return mapToSortedRows(dailyMap, 'value');
     } catch (error) {
-      onLog?.(`getWeeklySteps FEHLER: ${error?.message || error}`);
+      onLog?.(`getStepsHistory FEHLER: ${error?.message || error}`);
+      return [];
+    }
+  },
+
+  /**
+   * Get steps for the last 7 days. Returns array of { date, value }
+   */
+  async getWeeklySteps(onLog) {
+    return this.getStepsHistory(7, onLog);
+  },
+
+  /**
+   * Get sleep data for the last N days. Returns array of { date, hours }
+   * with local date keys (YYYY-MM-DD).
+   */
+  async getSleepHistory(days = 7, onLog) {
+    if (!isNative()) return [];
+    try {
+      const Health = getHealthPlugin();
+      if (!Health) return [];
+
+      const { safeDays, start, end } = getHistoryBounds(days, { sleepWindow: true });
+      const limit = Math.min(2500, Math.max(500, safeDays * 12));
+
+      onLog?.(`getSleepHistory gestartet (${safeDays} Tage)...`);
+      const result = await withTimeout(
+        Health.readSamples({
+          dataType: 'sleep',
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+          limit,
+          ascending: true,
+        }),
+        CALL_TIMEOUT,
+        `readSamples-sleep-${safeDays}d`
+      );
+
+      const intervals = [];
+      if (result?.samples) {
+        result.samples.forEach(entry => {
+          if (isAsleepSample(entry)) {
+            const start = new Date(entry.startDate).getTime();
+            const end = new Date(entry.endDate).getTime();
+            intervals.push({ start, end, rawEnd: entry.endDate });
+          }
+        });
+      }
+
+      const merged = mergeIntervals(intervals);
+
+      const dailyMap = {};
+      merged.forEach(iv => {
+        const dateKey = getLocalDateKey(iv.rawEnd || iv.end);
+        if (!dailyMap[dateKey]) dailyMap[dateKey] = 0;
+        dailyMap[dateKey] += Math.max(0, iv.end - iv.start);
+      });
+
+      return mapToSortedRows(dailyMap, 'hours').map(row => ({
+        date: row.date,
+        hours: parseFloat((row.hours / (1000 * 60 * 60)).toFixed(1)),
+      }));
+    } catch (error) {
+      onLog?.(`getSleepHistory FEHLER: ${error?.message || error}`);
       return [];
     }
   },
@@ -329,75 +448,6 @@ export const healthService = {
    * Get sleep data for the last 7 days. Returns array of { date, hours }
    */
   async getWeeklySleep(onLog) {
-    if (!isNative()) return [];
-    try {
-      const Health = getHealthPlugin();
-      if (!Health) return [];
-
-      const endOfNight = new Date();
-
-      const startOfWeek = new Date();
-      startOfWeek.setDate(startOfWeek.getDate() - 7);
-      startOfWeek.setHours(18, 0, 0, 0);
-
-      onLog?.('getWeeklySleep gestartet...');
-      const result = await withTimeout(
-        Health.readSamples({
-          dataType: 'sleep',
-          startDate: startOfWeek.toISOString(),
-          endDate: endOfNight.toISOString(),
-        }),
-        CALL_TIMEOUT,
-        'readSamples-weekly-sleep'
-      );
-
-      let intervals = [];
-      if (result?.samples) {
-        result.samples.forEach(entry => {
-          const val = String(entry.sleepState || entry.value || '').toLowerCase();
-          if (val === 'asleep' || val.includes('asleep') || val === '1' || val === 'deep' || val === 'light' || val === 'rem') {
-            const start = new Date(entry.startDate).getTime();
-            const end = new Date(entry.endDate).getTime();
-            intervals.push({ start, end, rawDate: entry.endDate });
-          }
-        });
-      }
-
-      intervals.sort((a, b) => a.start - b.start);
-      let merged = [];
-      for (let iv of intervals) {
-        if (merged.length === 0) {
-          merged.push(iv);
-        } else {
-          let last = merged[merged.length - 1];
-          if (iv.start <= last.end && new Date(iv.rawDate).getDate() === new Date(last.rawDate).getDate()) {
-            last.end = Math.max(last.end, iv.end);
-          } else {
-            merged.push(iv);
-          }
-        }
-      }
-
-      // Aggregate by date
-      let dailyMap = {};
-      merged.forEach(iv => {
-        // Sleep belonging to "today" is usually the sleep that ended today morning.
-        const dateKey = new Date(iv.rawDate).toISOString().split('T')[0];
-        if (!dailyMap[dateKey]) dailyMap[dateKey] = 0;
-        dailyMap[dateKey] += Math.max(0, iv.end - iv.start);
-      });
-
-      return Object.keys(dailyMap).map(dateKey => {
-        const ms = dailyMap[dateKey];
-        const hours = (ms / (1000 * 60 * 60)).toFixed(1);
-        return {
-          date: dateKey,
-          hours: parseFloat(hours)
-        };
-      });
-    } catch (error) {
-      onLog?.(`getWeeklySleep FEHLER: ${error?.message || error}`);
-      return [];
-    }
+    return this.getSleepHistory(7, onLog);
   }
 };

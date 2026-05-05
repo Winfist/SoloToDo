@@ -28,6 +28,12 @@ export const DEFAULT_STATE = {
   goals: [],
   habits: [],
   reminders: [],
+  healthPreferences: {
+    sleepMode: "auto",
+    manualSleepToday: 0,
+    manualSleepLog: {},
+    healthHistoryRange: "7d"
+  },
   microHabits: { habits: null, daily: {} },
   hiddenQuests: { discovered: [], completed: [] },
   weeklyQuestReset: null,

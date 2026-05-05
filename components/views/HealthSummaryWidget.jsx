@@ -2,16 +2,54 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { healthService } from '../../services/healthService';
 import { Capacitor } from '@capacitor/core';
 import { AnimatedNumber } from '../../hooks/useAnimatedCounter.jsx';
+import { getLocalDateKey, getToday } from '../../data/dateUtils.js';
 
 const IS_NATIVE = Capacitor.isNativePlatform();
+
+function buildWeekStats(stepHistory = [], sleepHistory = [], sleepMode = 'auto', manualSleepLog = {}, manualSleepToday = 0) {
+    const stepMap = Object.fromEntries((stepHistory || []).map(item => [item.date, parseFloat(item.value) || 0]));
+    const sleepMap = Object.fromEntries((sleepHistory || []).map(item => [item.date, parseFloat(item.hours ?? item.value) || 0]));
+    const todayKey = getToday();
+    let totalSteps = 0;
+    let totalSleep = 0;
+    let sleepDays = 0;
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateKey = getLocalDateKey(d);
+        totalSteps += stepMap[dateKey] || 0;
+
+        let sleepValue = sleepMap[dateKey] || 0;
+        if (sleepMode === 'manual') {
+            const manualValue = manualSleepLog?.[dateKey] ?? (dateKey === todayKey ? manualSleepToday : null);
+            if (manualValue !== null && manualValue !== undefined) sleepValue = parseFloat(manualValue) || 0;
+        }
+        if (sleepValue > 0) {
+            totalSleep += sleepValue;
+            sleepDays += 1;
+        }
+    }
+
+    return {
+        avgSteps: Math.round(totalSteps / 7),
+        avgSleep: sleepDays ? (totalSleep / sleepDays).toFixed(1) : '0.0',
+    };
+}
 
 export function HealthSummaryWidget({ state, theme, openDetails }) {
     const [steps, setSteps] = useState(0);
     const [sleep, setSleep] = useState({ hours: '0.0' });
+    const [weekStats, setWeekStats] = useState({ avgSteps: 0, avgSleep: '0.0' });
     const [hasChecked, setHasChecked] = useState(false);
+    const sleepMode = state?.healthPreferences?.sleepMode || 'auto';
+    const manualSleepToday = state?.healthPreferences?.manualSleepToday || 0;
+    const manualSleepLog = state?.healthPreferences?.manualSleepLog;
 
     const fetchHealthQuietly = useCallback(async (activeObj = { active: true }) => {
         if (!IS_NATIVE) {
+            const manualStats = buildWeekStats([], [], sleepMode, manualSleepLog, manualSleepToday);
+            if (activeObj.active) setWeekStats(manualStats);
             if (activeObj.active) setHasChecked(true);
             return;
         }
@@ -31,12 +69,18 @@ export function HealthSummaryWidget({ state, theme, openDetails }) {
                 const sl = await healthService.getLastNightSleep(silentLog);
                 if (activeObj.active) setSleep(sl);
             } catch (e) { }
+
+            try {
+                const sHistory = await healthService.getStepsHistory(7, silentLog);
+                const slHistory = await healthService.getSleepHistory(7, silentLog);
+                if (activeObj.active) setWeekStats(buildWeekStats(sHistory, slHistory, sleepMode, manualSleepLog, manualSleepToday));
+            } catch (e) { }
         } catch (err) {
             console.warn("[HealthSummary] Quiet fetch failed:", err);
         } finally {
             if (activeObj.active) setHasChecked(true);
         }
-    }, []);
+    }, [manualSleepLog, manualSleepToday, sleepMode]);
 
     useEffect(() => {
         let activeObj = { active: true };
@@ -64,12 +108,11 @@ export function HealthSummaryWidget({ state, theme, openDetails }) {
         };
     }, [fetchHealthQuietly]);
 
-    const sleepMode = state?.healthPreferences?.sleepMode || 'auto';
     const progressSteps = Math.min((steps / 10000) * 100, 100);
     const primaryColor = theme?.primary || "#38bdf8";
 
     // Grab manual sleep if necessary
-    const displaySleep = sleepMode === 'manual' ? (state?.healthPreferences?.manualSleepToday || 0) : sleep.hours;
+    const displaySleep = sleepMode === 'manual' ? manualSleepToday : sleep.hours;
 
     return (
         <div
@@ -191,6 +234,18 @@ export function HealthSummaryWidget({ state, theme, openDetails }) {
                     </div>
                 )}
 
+            </div>
+            <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: sleepMode === "off" ? "1fr" : "1fr 1fr", gap: 8, position: "relative", zIndex: 1 }}>
+                <div style={{ background: "rgba(56,189,248,0.06)", border: `1px solid ${primaryColor}22`, borderRadius: 10, padding: "8px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>AVG 7T</span>
+                    <span style={{ fontSize: 10, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{weekStats.avgSteps.toLocaleString()} / Tag</span>
+                </div>
+                {sleepMode !== "off" && (
+                    <div style={{ background: "rgba(167,139,250,0.06)", border: "1px solid #a78bfa22", borderRadius: 10, padding: "8px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>AVG 7T</span>
+                        <span style={{ fontSize: 10, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{weekStats.avgSleep}h Schlaf</span>
+                    </div>
+                )}
             </div>
         </div>
     );

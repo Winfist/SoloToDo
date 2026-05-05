@@ -1,8 +1,95 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { healthService } from '../services/healthService';
 import { Capacitor } from '@capacitor/core';
+import { getLocalDateKey, getToday } from '../data/dateUtils.js';
 
 const IS_NATIVE = Capacitor.isNativePlatform();
+const STEP_GOAL = 10000;
+const SLEEP_GOAL = 7;
+const HISTORY_RANGES = [
+  { key: '7d', label: '7T', days: 7 },
+  { key: '14d', label: '14T', days: 14 },
+  { key: '30d', label: '30T', days: 30 },
+  { key: '90d', label: '90T', days: 90 },
+];
+const DAY_LABELS = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
+
+function getHistoryRangeConfig(key) {
+  return HISTORY_RANGES.find(r => r.key === key) || HISTORY_RANGES[0];
+}
+
+function formatHistoryLabel(date, daysBack, rangeDays) {
+  if (daysBack === 0) return 'HEUTE';
+  if (rangeDays <= 14) return DAY_LABELS[date.getDay()];
+  return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function formatDateShort(dateKey) {
+  const d = new Date(`${dateKey}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return '--';
+  return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.`;
+}
+
+function buildHistoryRows(rangeDays, stepsData = [], sleepData = [], manualSleepLog = {}, sleepMode = 'auto', manualSleepToday = 0, offsetDays = 0) {
+  const stepMap = Object.fromEntries((stepsData || []).map(item => [item.date, parseFloat(item.value) || 0]));
+  const sleepMap = Object.fromEntries((sleepData || []).map(item => [item.date, parseFloat(item.hours ?? item.value) || 0]));
+  const steps = [];
+  const sleep = [];
+  const labelEvery = rangeDays <= 14 ? 1 : rangeDays <= 30 ? 5 : 15;
+  const todayKey = getToday();
+
+  for (let i = rangeDays - 1 + offsetDays; i >= offsetDays; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateKey = getLocalDateKey(d);
+    const relativeIndex = i - offsetDays;
+    const showLabel = i === 0 || relativeIndex === 0 || relativeIndex % labelEvery === 0;
+    const showValue = i === 0;
+    const label = formatHistoryLabel(d, i, rangeDays);
+    let sleepValue = sleepMap[dateKey] || 0;
+
+    if (sleepMode === 'manual') {
+      const manualValue = manualSleepLog?.[dateKey] ?? (dateKey === todayKey ? manualSleepToday : null);
+      if (manualValue !== null && manualValue !== undefined) sleepValue = parseFloat(manualValue) || 0;
+    }
+
+    steps.push({ date: dateKey, label, value: stepMap[dateKey] || 0, showLabel, showValue });
+    sleep.push({ date: dateKey, label, value: sleepValue, showLabel, showValue });
+  }
+
+  return { steps, sleep };
+}
+
+function summarizeHistory(stepsRows = [], sleepRows = []) {
+  const totalSteps = stepsRows.reduce((sum, row) => sum + (parseFloat(row.value) || 0), 0);
+  const avgSteps = stepsRows.length ? Math.round(totalSteps / stepsRows.length) : 0;
+  const stepGoalDays = stepsRows.filter(row => (parseFloat(row.value) || 0) >= STEP_GOAL).length;
+  const bestStepDay = stepsRows.reduce((best, row) => ((parseFloat(row.value) || 0) > (parseFloat(best?.value) || 0) ? row : best), null);
+
+  const sleepWithData = sleepRows.filter(row => (parseFloat(row.value) || 0) > 0);
+  const totalSleep = sleepWithData.reduce((sum, row) => sum + (parseFloat(row.value) || 0), 0);
+  const avgSleep = sleepWithData.length ? totalSleep / sleepWithData.length : 0;
+  const sleepGoalNights = sleepRows.filter(row => (parseFloat(row.value) || 0) >= SLEEP_GOAL).length;
+  const bestSleepNight = sleepRows.reduce((best, row) => ((parseFloat(row.value) || 0) > (parseFloat(best?.value) || 0) ? row : best), null);
+
+  return { totalSteps, avgSteps, stepGoalDays, bestStepDay, avgSleep, sleepGoalNights, bestSleepNight };
+}
+
+function patchHistoryValue(rows, dateKey, value) {
+  return rows.map(row => row.date === dateKey ? { ...row, value } : row);
+}
+
+function formatStepsTrend(currentTotal, previousTotal) {
+  if (!previousTotal) return currentTotal > 0 ? 'NEU' : '0%';
+  const pct = ((currentTotal - previousTotal) / previousTotal) * 100;
+  return `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%`;
+}
+
+function formatSleepTrend(currentAvg, previousAvg) {
+  if (!previousAvg) return currentAvg > 0 ? 'NEU' : '0.0h';
+  const diff = currentAvg - previousAvg;
+  return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}h`;
+}
 
 // ─── KEYFRAMES ────────────────────────────────────────────────
 const HEALTH_CSS = `
@@ -40,9 +127,12 @@ function BarChart({ data, primaryColor, labelFormatter }) {
 
   const allZero = data.every(d => parseFloat(d.value) === 0);
   const maxValue = allZero ? 1 : Math.max(...data.map(d => parseFloat(d.value) || 0), 1);
+  const needsScroll = data.length > 21;
+  const innerWidth = needsScroll ? Math.max(data.length * 18, 560) : '100%';
 
   return (
-    <div style={{ position: 'relative', height: 140, padding: '10px 0 0' }}>
+    <div style={{ overflowX: needsScroll ? 'auto' : 'visible', overflowY: 'hidden', paddingBottom: needsScroll ? 4 : 0 }}>
+      <div style={{ position: 'relative', height: 140, padding: '10px 0 0', minWidth: innerWidth }}>
       {/* Grid lines */}
       {[0.5, 1].map(r => (
         <div key={r} style={{ position: 'absolute', bottom: `calc(${r * 80}% + 24px)`, left: 0, right: 0, borderTop: '1px dashed rgba(255,255,255,0.04)', zIndex: 0 }} />
@@ -58,19 +148,19 @@ function BarChart({ data, primaryColor, labelFormatter }) {
       )}
 
       {/* Bars */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '100%', paddingBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: needsScroll ? 'flex-start' : 'space-around', gap: needsScroll ? 4 : 0, height: '100%', paddingBottom: 24 }}>
         {data.map((item, i) => {
           const val = parseFloat(item.value) || 0;
           const heightPct = allZero ? 3 : Math.max((val / maxValue) * 100, 3);
           const isToday = i === data.length - 1;
+          const showLabel = !needsScroll || item.showLabel || isToday;
+          const showValue = !needsScroll || item.showValue || isToday;
           return (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: `${85 / data.length}%`, position: 'relative', zIndex: 1, animation: `healthSlideUp 0.5s ease ${i * 0.06}s both` }}>
+            <div key={item.date || i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: needsScroll ? 14 : `${85 / data.length}%`, flex: needsScroll ? '0 0 14px' : '0 1 auto', position: 'relative', zIndex: 1, animation: `healthSlideUp 0.5s ease ${Math.min(i, 12) * 0.04}s both` }}>
               {/* Value label */}
-              {!allZero && val > 0 && (
-                <div style={{ fontSize: 7, color: isToday ? primaryColor : 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 800 : 400 }}>
-                  {labelFormatter(val)}
-                </div>
-              )}
+              <div style={{ height: 10, fontSize: 7, color: isToday ? primaryColor : 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 800 : 400 }}>
+                {!allZero && val > 0 && showValue ? labelFormatter(val) : ''}
+              </div>
               {/* Bar */}
               <div style={{
                 width: '100%', maxWidth: 28, height: `${heightPct}%`, minHeight: 4,
@@ -83,19 +173,20 @@ function BarChart({ data, primaryColor, labelFormatter }) {
                 transition: 'all 0.6s cubic-bezier(0.34,1.56,0.64,1)',
               }} />
               {/* Day label */}
-              <div style={{ fontSize: 8, color: isToday ? '#fff' : '#4a5568', marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 700 : 400, letterSpacing: 0.5 }}>
-                {item.label}
+              <div style={{ height: 10, fontSize: 8, color: isToday ? '#fff' : '#4a5568', marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 700 : 400, letterSpacing: 0.5 }}>
+                {showLabel ? item.label : ''}
               </div>
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
 }
 
 // ─── STAT MINI CARD ───────────────────────────────────────────
-function StatMini({ icon, label, value, color }) {
+function StatMini({ icon, label, value, color, detail }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(0,0,0,0.25)', borderRadius: 12, border: `1px solid ${color}15` }}>
       <div style={{ width: 28, height: 28, borderRadius: 8, background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${color}33`, flexShrink: 0 }}>
@@ -104,6 +195,7 @@ function StatMini({ icon, label, value, color }) {
       <div>
         <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontFamily: "'Cinzel',serif" }}>{value}</div>
         <div style={{ fontSize: 7, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5, marginTop: 1 }}>{label}</div>
+        {detail && <div style={{ fontSize: 7, color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 3 }}>{detail}</div>}
       </div>
     </div>
   );
@@ -124,11 +216,14 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [diagLog, setDiagLog] = useState([]);
 
-  const [weeklySteps, setWeeklySteps] = useState([]);
-  const [weeklySleep, setWeeklySleep] = useState([]);
+  const [historySteps, setHistorySteps] = useState([]);
+  const [historySleep, setHistorySleep] = useState([]);
+  const [previousSteps, setPreviousSteps] = useState([]);
+  const [previousSleep, setPreviousSleep] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
 
   const sleepMode = state?.healthPreferences?.sleepMode || 'auto';
+  const [historyRange, setHistoryRange] = useState(state?.healthPreferences?.healthHistoryRange || '7d');
   const [manualSleepHours, setManualSleepHours] = useState(state?.healthPreferences?.manualSleepToday || 0);
   const [savedManual, setSavedManual] = useState(false);
 
@@ -138,39 +233,28 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
 
   // ── History ──
   const loadHistory = useCallback(async () => {
-    const days = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
-    const emptyWeek = () => {
-      const s = [], sl = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        s.push({ label: i === 0 ? "HEUTE" : days[d.getDay()], value: 0 });
-        sl.push({ label: i === 0 ? "HEUTE" : days[d.getDay()], value: 0 });
-      }
-      return { s, sl };
-    };
+    const range = getHistoryRangeConfig(historyRange);
+    const totalDays = range.days * 2;
+    const manualLog = state?.healthPreferences?.manualSleepLog || {};
 
     if (!IS_NATIVE) {
-      const { s, sl } = emptyWeek();
-      setWeeklySteps(s); setWeeklySleep(sl); setHistoryLoading(false);
+      const current = buildHistoryRows(range.days, [], [], manualLog, sleepMode, manualSleepHours, 0);
+      const previous = buildHistoryRows(range.days, [], [], manualLog, sleepMode, manualSleepHours, range.days);
+      setHistorySteps(current.steps); setHistorySleep(current.sleep);
+      setPreviousSteps(previous.steps); setPreviousSleep(previous.sleep);
+      setHistoryLoading(false);
       return;
     }
     try {
       setHistoryLoading(true);
-      const sData = await healthService.getWeeklySteps();
-      const slData = await healthService.getWeeklySleep();
-      let parsedSteps = [], parsedSleep = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        const dateKey = d.toISOString().split('T')[0];
-        const label = i === 0 ? "HEUTE" : days[d.getDay()];
-        const ms = sData?.find(x => x.date?.startsWith(dateKey));
-        const msl = slData?.find(x => x.date === dateKey);
-        parsedSteps.push({ label, value: ms ? ms.value : 0 });
-        parsedSleep.push({ label, value: msl ? msl.hours : 0 });
-      }
-      setWeeklySteps(parsedSteps); setWeeklySleep(parsedSleep);
+      const sData = await healthService.getStepsHistory(totalDays);
+      const slData = await healthService.getSleepHistory(totalDays);
+      const current = buildHistoryRows(range.days, sData, slData, manualLog, sleepMode, manualSleepHours, 0);
+      const previous = buildHistoryRows(range.days, sData, slData, manualLog, sleepMode, manualSleepHours, range.days);
+      setHistorySteps(current.steps); setHistorySleep(current.sleep);
+      setPreviousSteps(previous.steps); setPreviousSleep(previous.sleep);
     } catch (err) { console.warn("History:", err); } finally { setHistoryLoading(false); }
-  }, []);
+  }, [historyRange, manualSleepHours, sleepMode, state?.healthPreferences?.manualSleepLog]);
 
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
@@ -186,8 +270,9 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
         try { fetchedSleep = await healthService.getLastNightSleep(addLog); } catch (e) { }
         setSteps(fetchedSteps); setSleep(fetchedSleep);
         // Patch today's history buckets
-        setWeeklySteps(prev => { const c = [...prev]; if (c.length) c[c.length - 1].value = fetchedSteps; return c; });
-        setWeeklySleep(prev => { const c = [...prev]; if (c.length) c[c.length - 1].value = parseFloat(fetchedSleep.hours); return c; });
+        const todayKey = getToday();
+        setHistorySteps(prev => patchHistoryValue(prev, todayKey, fetchedSteps));
+        setHistorySleep(prev => patchHistoryValue(prev, todayKey, sleepMode === 'manual' ? manualSleepHours : parseFloat(fetchedSleep.hours)));
       } else { addLog('Web: Keine Sensoren.'); }
       setLastSyncTime(new Date().toLocaleString('de-DE'));
       setSyncSuccess(true);
@@ -229,8 +314,11 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
   const stepsPct = Math.min((steps / 10000) * 100, 100);
   const displaySleep = sleepMode === 'manual' ? manualSleepHours : parseFloat(sleep.hours);
   const sleepPct = Math.min((displaySleep / 8) * 100, 100);
-  const totalWeekSteps = weeklySteps.reduce((a, b) => a + (parseFloat(b.value) || 0), 0);
-  const avgWeekSleep = weeklySleep.length ? (weeklySleep.reduce((a, b) => a + (parseFloat(b.value) || 0), 0) / weeklySleep.filter(d => parseFloat(d.value) > 0).length || 0).toFixed(1) : '0';
+  const rangeConfig = getHistoryRangeConfig(historyRange);
+  const currentStats = summarizeHistory(historySteps, historySleep);
+  const previousStats = summarizeHistory(previousSteps, previousSleep);
+  const stepsTrend = formatStepsTrend(currentStats.totalSteps, previousStats.totalSteps);
+  const sleepTrend = formatSleepTrend(currentStats.avgSleep, previousStats.avgSleep);
 
   // ─── TABS ───────────────────────────────────────────────────
   const tabs = [
@@ -363,16 +451,55 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
       {tab === 'history' && (
         <div style={{ animation: 'healthSlideUp 0.35s ease' }}>
 
-          {/* Weekly summary cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: sleepMode === 'off' ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14, background: 'rgba(0,0,0,0.28)', borderRadius: 12, padding: 4 }}>
+            {HISTORY_RANGES.map(r => (
+              <button key={r.key} onClick={() => { setHistoryRange(r.key); updatePreferences({ healthHistoryRange: r.key }); }} style={{
+                flex: 1, padding: '8px 0', borderRadius: 9, border: 'none',
+                background: historyRange === r.key ? 'rgba(56,189,248,0.14)' : 'transparent',
+                color: historyRange === r.key ? '#38bdf8' : '#475569',
+                fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1,
+                cursor: 'pointer', transition: 'all 0.2s'
+              }}>{r.label}</button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 8, color: '#475569', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2, marginBottom: 12, textAlign: 'center' }}>
+            AKTUELLER ZEITRAUM: {rangeConfig.days} TAGE / VERGLEICH MIT VORPERIODE
+          </div>
+
+          {/* Summary cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
             <StatMini
               icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round"><path d="M13 22H6c-1.1 0-2-.9-2-2V9.06c0-1.06.84-1.92 1.89-1.98L11 7l4-2 3.6 1.8c.8.4 1.4 1.1 1.4 2.2V20c0 1.1-.9 2-2 2h-5z" /></svg>}
-              label="WOCHE GESAMT" value={totalWeekSteps.toLocaleString()} color="#38bdf8"
+              label="GESAMT" value={currentStats.totalSteps.toLocaleString()} color="#38bdf8" detail={`TREND ${stepsTrend}`}
+            />
+            <StatMini
+              icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round"><path d="M8 17l4-4 4 4" /><path d="M12 13V3" /><path d="M20 21H4" /></svg>}
+              label="AVG / TAG" value={currentStats.avgSteps.toLocaleString()} color="#38bdf8" detail={`${currentStats.stepGoalDays}/${rangeConfig.days} ZIELTAGE`}
             />
             {sleepMode !== 'off' && (
               <StatMini
                 icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 0 2.93 17.07z" /></svg>}
-                label="Ø SCHLAF" value={`${avgWeekSleep}h`} color="#a78bfa"
+                label="AVG SCHLAF" value={`${currentStats.avgSleep.toFixed(1)}h`} color="#a78bfa" detail={`TREND ${sleepTrend}`}
+              />
+            )}
+            {sleepMode !== 'off' && (
+              <StatMini
+                icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round"><path d="M12 3v18" /><path d="M7 8h10" /><path d="M7 16h10" /></svg>}
+                label="7H+ NACHTE" value={`${currentStats.sleepGoalNights}/${rangeConfig.days}`} color="#a78bfa" detail={`BESTE ${(parseFloat(currentStats.bestSleepNight?.value) || 0).toFixed(1)}h`}
+              />
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: sleepMode === 'off' ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 16 }}>
+            <StatMini
+              icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5" /></svg>}
+              label="BESTER SCHRITT-TAG" value={(parseFloat(currentStats.bestStepDay?.value) || 0).toLocaleString()} color="#22c55e" detail={currentStats.bestStepDay?.date ? formatDateShort(currentStats.bestStepDay.date) : '--'}
+            />
+            {sleepMode !== 'off' && (
+              <StatMini
+                icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round"><path d="M4 14h16" /><path d="M7 14V8a3 3 0 0 1 6 0v6" /></svg>}
+                label="BESTE NACHT" value={`${(parseFloat(currentStats.bestSleepNight?.value) || 0).toFixed(1)}h`} color="#22c55e" detail={currentStats.bestSleepNight?.date ? formatDateShort(currentStats.bestSleepNight.date) : '--'}
               />
             )}
           </div>
@@ -385,7 +512,7 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
             </div>
             {historyLoading
               ? <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}>LADEN...</div>
-              : <BarChart data={weeklySteps} primaryColor="#38bdf8" labelFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v} />
+              : <BarChart data={historySteps} primaryColor="#38bdf8" labelFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v} />
             }
           </div>
 
@@ -398,7 +525,7 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
               </div>
               {historyLoading
                 ? <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}>LADEN...</div>
-                : <BarChart data={weeklySleep} primaryColor="#a78bfa" labelFormatter={v => `${v}h`} />
+                : <BarChart data={historySleep} primaryColor="#a78bfa" labelFormatter={v => `${v}h`} />
               }
             </div>
           )}
@@ -466,7 +593,16 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
                 />
                 <div style={{ fontSize: 12, color: '#64748b' }}>h</div>
                 <button
-                  onClick={() => { updatePreferences({ manualSleepToday: manualSleepHours }); setSavedManual(true); setTimeout(() => setSavedManual(false), 2000); }}
+                  onClick={() => {
+                    const todayKey = getToday();
+                    updatePreferences({
+                      manualSleepToday: manualSleepHours,
+                      manualSleepLog: { ...(state?.healthPreferences?.manualSleepLog || {}), [todayKey]: manualSleepHours }
+                    });
+                    setHistorySleep(prev => patchHistoryValue(prev, todayKey, manualSleepHours));
+                    setSavedManual(true);
+                    setTimeout(() => setSavedManual(false), 2000);
+                  }}
                   style={{
                     marginLeft: 'auto', padding: '10px 18px', borderRadius: 10, border: 'none',
                     background: savedManual ? 'rgba(34,197,94,0.15)' : '#a78bfa',
