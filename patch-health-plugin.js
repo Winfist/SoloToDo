@@ -21,29 +21,60 @@ console.log(`[HealthPatch] Checking for HealthPlugin.swift at ${pluginPath}`);
 if (fs.existsSync(pluginPath)) {
     let content = fs.readFileSync(pluginPath, 'utf8');
 
-    // We are looking for the requestAuthorization method implementation
-    const targetPattern = /implementation\.requestAuthorization\(\s*readIdentifiers:\s*read,\s*writeIdentifiers:\s*write\s*\)\s*\{\s*result\s*in/i;
-
-    if (content.includes('DispatchQueue.main.async {') && content.includes('self.implementation.requestAuthorization')) {
+    // Check if our patch is already applied (look for 'let impl = self.implementation')
+    if (content.includes('let impl = self.implementation')) {
         console.log('[HealthPatch] Fix already applied.');
-    } else if (targetPattern.test(content)) {
-        console.log('[HealthPatch] Found target implementation call. Applying patch...');
+        process.exit(0);
+    }
 
-        const originalCodeRegex = /implementation\.requestAuthorization\(\s*readIdentifiers:\s*read,\s*writeIdentifiers:\s*write\s*\)\s*\{\s*result\s*in\s*(?:DispatchQueue\.main\.async\s*\{([\s\S]*?)\}|([\s\S]*?))\s*\}/;
+    // The original plugin code for requestAuthorization looks like this:
+    //   implementation.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in
+    //       ...
+    //   }
+    //
+    // OR a previously-broken patch may have wrapped it in:
+    //   DispatchQueue.main.async { [weak self] in
+    //       guard let self = self else { return }
+    //       self.implementation.requestAuthorization(...)
+    //   }
+    //
+    // Both patterns fail on Xcode 26 / Swift 6. Our fix:
+    //   let impl = self.implementation
+    //   DispatchQueue.main.async {
+    //       impl.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in
+    //           DispatchQueue.main.async { ... }
+    //       }
+    //   }
 
-        content = content.replace(
-            originalCodeRegex,
-            (match, capture1, capture2) => {
-                const innerResultCode = capture1 || capture2 || '';
-                return `DispatchQueue.main.async { [weak self]\n            guard let self = self else { return }\n            self.implementation.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in\n                ${innerResultCode}\n            }\n        }`;
+    // Strategy: replace the entire requestAuthorization method body
+    const methodRegex = /@objc\s+func\s+requestAuthorization\s*\(\s*_\s+call:\s*CAPPluginCall\s*\)\s*\{[\s\S]*?\n    \}/;
+
+    const replacement = `@objc func requestAuthorization(_ call: CAPPluginCall) {
+        let read = (call.getArray("read") as? [String]) ?? []
+        let write = (call.getArray("write") as? [String]) ?? []
+
+        let impl = self.implementation
+        DispatchQueue.main.async {
+            impl.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case let .success(payload):
+                        call.resolve(payload.toDictionary())
+                    case let .failure(error):
+                        call.reject(error.localizedDescription, nil, error)
+                    }
+                }
             }
-        );
+        }
+    }`;
 
+    if (methodRegex.test(content)) {
+        content = content.replace(methodRegex, replacement);
         fs.writeFileSync(pluginPath, content, 'utf8');
-        console.log('[HealthPatch] Successfully patched HealthPlugin.swift for iOS main thread UI requirements.');
+        console.log('[HealthPatch] Successfully patched requestAuthorization for Xcode 26 / Swift 6 compatibility.');
     } else {
-        console.warn('[HealthPatch] Could not find the exact code block to patch in HealthPlugin.swift. Please check the plugin version.');
+        console.warn('[HealthPatch] Could not find requestAuthorization method to patch. Plugin may have changed.');
     }
 } else {
-    console.log('[HealthPatch] iOS HealthPlugin source not found, likely because npm install has not fully resolved or it was removed. Skipping patch.');
+    console.log('[HealthPatch] iOS HealthPlugin source not found. Skipping patch.');
 }
