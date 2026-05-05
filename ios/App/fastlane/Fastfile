@@ -33,8 +33,7 @@ platform :ios do
     )
     sigh(
       api_key: api_key,
-      app_identifier: "com.solotodo.app",
-      force: true
+      app_identifier: "com.solotodo.app"
     )
 
     # Extract the true Team ID safely from Fastlane state or raw profile fallback
