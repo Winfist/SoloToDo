@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { CATEGORIES, ACHIEVEMENTS } from "../../data/gameData.js";
 import { getUnlocksAtLevel } from "../../data/featureUnlocks.js";
 import { STAT_ICONS, GATE_ICONS, QUEST_ICONS, SHADOW_ICONS, NAV_ICONS } from "../../data/icons.js";
@@ -13,6 +14,8 @@ import TiltCard from "../ui/TiltCard.jsx";
 import { AnimatedNumber } from "../../hooks/useAnimatedCounter.jsx";
 import GlitchText from "../ui/GlitchText.jsx";
 import { getToday } from "../../data/dateUtils.js";
+import { HealthSummaryWidget } from "./HealthSummaryWidget.jsx";
+import NativeStatsDashboard from "../NativeStatsDashboard.jsx";
 
 // ─── CSS KEYFRAMES for edit mode ──────────────────────────────
 const EDIT_MODE_CSS = `
@@ -59,6 +62,8 @@ export default function DashboardView({
   setShowFocusMode,
   setShowDawnDusk,
   setShowSoulLink,
+  updateHealthData,
+  claimHealthReward
 }) {
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
 
@@ -74,6 +79,16 @@ export default function DashboardView({
   const dashConfig = useMemo(() => mergeConfig(state.dashboardConfig, can), [state.dashboardConfig, state.level]);
   const [editMode, setEditMode] = useState(false);
   const [showAddPanel, setShowAddPanel] = useState(false);
+  const [showHealthModal, setShowHealthModal] = useState(false);
+
+  // Lock body scroll when health modal is open
+  useEffect(() => {
+    if (showHealthModal) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [showHealthModal]);
 
   // local layout for drag reordering
   const [localLayout, setLocalLayout] = useState(dashConfig.layout);
@@ -348,46 +363,46 @@ export default function DashboardView({
 
               {(showDashboardStats || editMode) && (
                 <>
-                <ScrollReveal animation="scaleIn" duration={0.5}>
-                <TiltCard tiltIntensity={6} glareIntensity={0.1} holographic borderGlow={theme.primary}>
-                  <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "24px 22px 20px", marginBottom: 16, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)` }}>
-                    <div style={{ position: "absolute", top: 0, right: 0, width: "60%", height: "100%", background: `radial-gradient(circle at 100% 30%,${theme.primary}0a,transparent 70%)`, pointerEvents: "none" }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, position: "relative" }}>
-                      <div>
-                        <GlitchText variant="scan" duration={1200} color="#22d3ee">
-                          {`> SYSTEM ONLINE. WILLKOMMEN, ${state.hunterName.toUpperCase()}.`}
-                        </GlitchText>
-                        <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 4, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, marginTop: 10 }}>HUNTER LEVEL</div>
-                        <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 40px ${theme.primary}33` }}><AnimatedNumber value={state.level} duration={600} format="number" /></div>
-                        {streakBonus > 0 && <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}><img src={STAT_ICONS.str} alt="Streak" style={{ width: 12, height: 12, objectFit: "contain", filter: "drop-shadow(0 0 4px #f59e0b88)" }} /> +{streakBonus}% XP</div>}
-                        {formationBonus.dungeonBonus > 0 && <div style={{ fontSize: 10, color: "#a78bfa", marginTop: 3, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}><img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "drop-shadow(0 0 4px #a78bfa88) brightness(0.6) invert(1)" }} /> +{formationBonus.dungeonBonus}% Dungeon</div>}
-                      </div>
-                      <StatRadar stats={state.stats} theme={theme} size={110} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>
-                      <span style={{ letterSpacing: 2 }}>EXP</span><span><AnimatedNumber value={state.xp} duration={800} format="locale" /> / {xpNeeded.toLocaleString()}</span>
-                    </div>
-                    <div style={{ height: 10, background: "rgba(15,15,30,0.9)", borderRadius: 5, overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.04)" }}>
-                      <div style={{ width: `${xpPercent}%`, height: "100%", borderRadius: 5, background: `linear-gradient(90deg,${theme.primary},${theme.accent})`, boxShadow: `0 0 16px ${theme.glow},0 2px 8px ${theme.primary}44`, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", position: "relative", overflow: "hidden" }}>
-                        <div style={{ position: "absolute", top: 0, left: "-100%", width: "60%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)", animation: "shimmer 2.5s ease-in-out infinite" }} />
-                      </div>
-                    </div>
-                  </div>
-                </TiltCard>
-                </ScrollReveal>
-                <ScrollReveal animation="slideUp" stagger={0.06}>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8, marginBottom: 24 }}>
-                    {CATEGORIES.map((cat, i) => (
-                      <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}20`, borderRadius: 16, padding: "12px 4px 10px", textAlign: "center", backdropFilter: "blur(8px)", transition: "border-color 0.3s,transform 0.2s,box-shadow 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${cat.color}18`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "20"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
-                        <div style={{ width: 44, height: 44, margin: "0 auto", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "50%", background: `radial-gradient(circle, ${cat.color}18 0%, ${cat.color}08 70%, transparent 100%)`, border: `1.5px solid ${cat.color}30`, overflow: "hidden", boxShadow: `0 0 20px ${cat.color}20, inset 0 0 12px ${cat.color}10` }}>
-                          {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "110%", height: "110%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 6px ${cat.color}66)`, transform: "scale(1.15)" }} /> : <span style={{ fontSize: 20 }}>{cat.icon}</span>}
+                  <ScrollReveal animation="scaleIn" duration={0.5}>
+                    <TiltCard tiltIntensity={6} glareIntensity={0.1} holographic borderGlow={theme.primary}>
+                      <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "24px 22px 20px", marginBottom: 16, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)` }}>
+                        <div style={{ position: "absolute", top: 0, right: 0, width: "60%", height: "100%", background: `radial-gradient(circle at 100% 30%,${theme.primary}0a,transparent 70%)`, pointerEvents: "none" }} />
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, position: "relative" }}>
+                          <div>
+                            <GlitchText variant="scan" duration={1200} color="#22d3ee">
+                              {`> SYSTEM ONLINE. WILLKOMMEN, ${state.hunterName.toUpperCase()}.`}
+                            </GlitchText>
+                            <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 4, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, marginTop: 10 }}>HUNTER LEVEL</div>
+                            <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 40px ${theme.primary}33` }}><AnimatedNumber value={state.level} duration={600} format="number" /></div>
+                            {streakBonus > 0 && <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}><img src={STAT_ICONS.str} alt="Streak" style={{ width: 12, height: 12, objectFit: "contain", filter: "drop-shadow(0 0 4px #f59e0b88)" }} /> +{streakBonus}% XP</div>}
+                            {formationBonus.dungeonBonus > 0 && <div style={{ fontSize: 10, color: "#a78bfa", marginTop: 3, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}><img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "drop-shadow(0 0 4px #a78bfa88) brightness(0.6) invert(1)" }} /> +{formationBonus.dungeonBonus}% Dungeon</div>}
+                          </div>
+                          <StatRadar stats={state.stats} theme={theme} size={110} />
                         </div>
-                        <div style={{ fontSize: 9, color: cat.color, marginTop: 5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1.5, textShadow: `0 0 8px ${cat.color}44` }}>{cat.stat}</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 2, textShadow: "0 0 12px rgba(255,255,255,0.1)" }}><AnimatedNumber value={(state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0)} duration={700} delay={i * 80} format="number" /></div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>
+                          <span style={{ letterSpacing: 2 }}>EXP</span><span><AnimatedNumber value={state.xp} duration={800} format="locale" /> / {xpNeeded.toLocaleString()}</span>
+                        </div>
+                        <div style={{ height: 10, background: "rgba(15,15,30,0.9)", borderRadius: 5, overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.04)" }}>
+                          <div style={{ width: `${xpPercent}%`, height: "100%", borderRadius: 5, background: `linear-gradient(90deg,${theme.primary},${theme.accent})`, boxShadow: `0 0 16px ${theme.glow},0 2px 8px ${theme.primary}44`, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", position: "relative", overflow: "hidden" }}>
+                            <div style={{ position: "absolute", top: 0, left: "-100%", width: "60%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)", animation: "shimmer 2.5s ease-in-out infinite" }} />
+                          </div>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </ScrollReveal>
+                    </TiltCard>
+                  </ScrollReveal>
+                  <ScrollReveal animation="slideUp" stagger={0.06}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8, marginBottom: 24 }}>
+                      {CATEGORIES.map((cat, i) => (
+                        <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}20`, borderRadius: 16, padding: "12px 4px 10px", textAlign: "center", backdropFilter: "blur(8px)", transition: "border-color 0.3s,transform 0.2s,box-shadow 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${cat.color}18`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "20"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
+                          <div style={{ width: 44, height: 44, margin: "0 auto", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "50%", background: `radial-gradient(circle, ${cat.color}18 0%, ${cat.color}08 70%, transparent 100%)`, border: `1.5px solid ${cat.color}30`, overflow: "hidden", boxShadow: `0 0 20px ${cat.color}20, inset 0 0 12px ${cat.color}10` }}>
+                            {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "110%", height: "110%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 6px ${cat.color}66)`, transform: "scale(1.15)" }} /> : <span style={{ fontSize: 20 }}>{cat.icon}</span>}
+                          </div>
+                          <div style={{ fontSize: 9, color: cat.color, marginTop: 5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1.5, textShadow: `0 0 8px ${cat.color}44` }}>{cat.stat}</div>
+                          <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 2, textShadow: "0 0 12px rgba(255,255,255,0.1)" }}><AnimatedNumber value={(state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0)} duration={700} delay={i * 80} format="number" /></div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollReveal>
                 </>
               )}
             </>
@@ -401,6 +416,13 @@ export default function DashboardView({
       case "daily_progress":
         if (isCollapsed) return { content: null, isEmpty: false };
         return { content: <DailyProgressWidget state={state} theme={theme} />, isEmpty: false };
+
+      case "health_summary":
+        if (isCollapsed) return { content: null, isEmpty: false };
+        return {
+          content: <HealthSummaryWidget state={state} theme={theme} openDetails={() => setShowHealthModal(true)} />,
+          isEmpty: false
+        };
 
       case "quests":
         if (isCollapsed) return { content: null, isEmpty: false };
@@ -914,6 +936,54 @@ export default function DashboardView({
             onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#64748b"; }}
           >↻ Standard wiederherstellen</button>
         </>
+      )}
+
+      {/* ── Health & Steps Details Modal ── */}
+      {showHealthModal && typeof document !== "undefined" && createPortal(
+        <div
+          onTouchMove={e => e.stopPropagation()}
+          onWheel={e => e.stopPropagation()}
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)",
+            zIndex: 9999, display: "flex", flexDirection: "column",
+            animation: "fadeIn 0.25s ease",
+            touchAction: "none", overscrollBehavior: "contain"
+          }}>
+          {/* Safe Area Header */}
+          <div style={{ padding: "max(env(safe-area-inset-top, 0px), 24px) 20px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", color: "#38bdf8", letterSpacing: 2 }}>
+              SYSTEM:// HEALTH_SYNC
+            </div>
+            <button
+              onClick={() => setShowHealthModal(false)}
+              style={{
+                background: "rgba(255,255,255,0.1)", border: "none",
+                width: 36, height: 36, borderRadius: 18,
+                color: "#fff", fontSize: 18, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center"
+              }}
+            >✕</button>
+          </div>
+
+          {/* Modal Body */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 40px", touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}>
+            <div style={{
+              background: "rgba(15,23,42,0.6)", borderRadius: 24, padding: "20px",
+              border: "1px solid rgba(56,189,248,0.2)",
+              boxShadow: "0 16px 40px rgba(0,0,0,0.3), inset 0 0 20px rgba(56,189,248,0.05)",
+              maxWidth: 480, margin: "0 auto"
+            }}>
+              <NativeStatsDashboard
+                state={state}
+                persist={persist}
+                updateHealthData={updateHealthData}
+                claimHealthReward={claimHealthReward}
+              />
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -22,19 +22,21 @@ if (fs.existsSync(pluginPath)) {
     let content = fs.readFileSync(pluginPath, 'utf8');
 
     // We are looking for the requestAuthorization method implementation
-    // from exactly this signature until its closing bracket and ensuring we wrap it in main.async
-    const targetPattern = /implementation\.requestAuthorization\(readIdentifiers:\s*read,\s*writeIdentifiers:\s*write\)\s*\{\s*result\s*in[\s\S]*?\}\s*\}/g;
+    const targetPattern = /implementation\.requestAuthorization\(\s*readIdentifiers:\s*read,\s*writeIdentifiers:\s*write\s*\)\s*\{\s*result\s*in/i;
 
     if (content.includes('DispatchQueue.main.async {') && content.includes('self.implementation.requestAuthorization')) {
         console.log('[HealthPatch] Fix already applied.');
-    } else if (content.includes('implementation.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in')) {
+    } else if (targetPattern.test(content)) {
         console.log('[HealthPatch] Found target implementation call. Applying patch...');
 
-        // Replace the call to ensure it's on the main thread.
-        // Also change `implementation` to `self.implementation` to compile inside the block.
+        const originalCodeRegex = /implementation\.requestAuthorization\(\s*readIdentifiers:\s*read,\s*writeIdentifiers:\s*write\s*\)\s*\{\s*result\s*in\s*(?:DispatchQueue\.main\.async\s*\{([\s\S]*?)\}|([\s\S]*?))\s*\}/;
+
         content = content.replace(
-            /implementation\.requestAuthorization\(readIdentifiers:\s*read,\s*writeIdentifiers:\s*write\)\s*\{\s*result\s*in\s*(DispatchQueue\.main\.async\s*\{[\s\S]*?\})\s*\}/,
-            `DispatchQueue.main.async { [weak self] in\n            guard let self = self else { return }\n            self.implementation.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in\n                $1\n            }\n        }`
+            originalCodeRegex,
+            (match, capture1, capture2) => {
+                const innerResultCode = capture1 || capture2 || '';
+                return `DispatchQueue.main.async { [weak self]\n            guard let self = self else { return }\n            self.implementation.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in\n                ${innerResultCode}\n            }\n        }`;
+            }
         );
 
         fs.writeFileSync(pluginPath, content, 'utf8');

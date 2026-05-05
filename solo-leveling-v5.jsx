@@ -250,6 +250,9 @@ function App({ initialHunterName, onLogout }) {
     joinSoulLinkCode,
     breakSoulLinkCode,
     sendReviveToPartner,
+    // Health gamification
+    updateHealthData,
+    claimHealthReward,
     // Gem system
     watchRewardedAd,
     buyGemItem,
@@ -1191,6 +1194,8 @@ function App({ initialHunterName, onLogout }) {
                 notify={notify} persist={persist}
                 setIsCreatingEntry={setIsCreatingEntry}
                 getActiveGemBoosters={getActiveGemBoosters}
+                updateHealthData={updateHealthData}
+                claimHealthReward={claimHealthReward}
               />
             )}
 
@@ -1513,7 +1518,7 @@ function App({ initialHunterName, onLogout }) {
             {/* ◆ ◆ ◆  SETTINGS ◆ ◆ ◆  */}
             {
               view === "settings" && (
-                <SettingsView state={state} persist={persist} theme={theme} can={can} onLogout={onLogout} />
+                <SettingsView state={state} persist={persist} theme={theme} can={can} onLogout={onLogout} updateHealthData={updateHealthData} claimHealthReward={claimHealthReward} />
               )
             }
           </MotionBlurTransition>

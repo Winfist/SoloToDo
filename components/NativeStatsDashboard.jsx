@@ -1,111 +1,110 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { healthService } from '../services/healthService';
-import { locationService } from '../services/locationService';
-
 import { Capacitor } from '@capacitor/core';
 
 const IS_NATIVE = Capacitor.isNativePlatform();
 
-// ─── SCREEN TIME OCR ──────────────────────────────────────────
-// Lazy-loaded only when user uploads a file
-function ScreenTimeSection({ onTimeParsed }) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [resultText, setResultText] = useState('');
-  const [error, setError] = useState('');
+// ─── KEYFRAMES ────────────────────────────────────────────────
+const HEALTH_CSS = `
+@keyframes healthPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+@keyframes healthSpin { to{transform:rotate(360deg)} }
+@keyframes healthSlideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes healthGlow { 0%,100%{box-shadow:0 0 8px rgba(56,189,248,0.15)} 50%{box-shadow:0 0 20px rgba(56,189,248,0.3)} }
+`;
 
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setIsProcessing(true);
-    setError('');
-    setResultText('');
-
-    try {
-      const imageUrl = URL.createObjectURL(file);
-
-      // Dynamic import so Tesseract only loads when needed
-      const Tesseract = (await import('tesseract.js')).default;
-
-      const { data: { text } } = await Tesseract.recognize(
-        imageUrl,
-        'deu',
-        { logger: m => console.log('[OCR]', m.status, Math.round((m.progress || 0) * 100) + '%') }
-      );
-
-      // Parse patterns like "4h 30m", "4 Std. 30 Min.", "2:45"
-      const timeRegex = /(\d+)\s*(h|std\.?|stunden?)\s*(?:(\d+)\s*(m|min\.?|minuten?))?/i;
-      const colonRegex = /(\d{1,2}):(\d{2})/;
-      let match = text.match(timeRegex);
-
-      if (match) {
-        const hours = parseInt(match[1] || '0', 10);
-        const minutes = parseInt(match[3] || '0', 10);
-        const totalMinutes = (hours * 60) + minutes;
-        setResultText(`✅ Erkannt: ${hours}h ${minutes}m (${totalMinutes} Minuten)`);
-        if (onTimeParsed) onTimeParsed(totalMinutes);
-      } else {
-        match = text.match(colonRegex);
-        if (match) {
-          const hours = parseInt(match[1], 10);
-          const minutes = parseInt(match[2], 10);
-          const totalMinutes = (hours * 60) + minutes;
-          setResultText(`✅ Erkannt: ${hours}h ${minutes}m (${totalMinutes} Minuten)`);
-          if (onTimeParsed) onTimeParsed(totalMinutes);
-        } else {
-          setError('Konnte keine Bildschirmzeit erkennen. Achte darauf, dass die Dauer gut lesbar ist.');
-        }
-      }
-    } catch (err) {
-      console.error('[ScreenTimeSection]', err);
-      setError('Fehler bei der Bildverarbeitung: ' + (err.message || err));
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
+// ─── CIRCULAR PROGRESS RING ───────────────────────────────────
+function ProgressRing({ radius = 38, stroke = 4, progress = 0, color = '#38bdf8', children }) {
+  const normalizedRadius = radius - stroke;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (Math.min(progress, 100) / 100) * circumference;
   return (
-    <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <div style={{ fontSize: 10, letterSpacing: 2, color: '#a78bfa', fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>
-        BILDSCHIRMZEIT (OCR)
+    <div style={{ position: 'relative', width: radius * 2, height: radius * 2 }}>
+      <svg width={radius * 2} height={radius * 2} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={radius} cy={radius} r={normalizedRadius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
+        <circle cx={radius} cy={radius} r={normalizedRadius} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)' }} />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        {children}
       </div>
-      <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5, marginBottom: 12 }}>
-        Lade einen Screenshot deiner Bildschirmzeit hoch. Die Zeit wird per OCR ausgelesen.
-      </div>
-      <label style={{
-        display: 'block', padding: '12px', borderRadius: 10,
-        background: 'rgba(167,139,250,0.08)', border: '1px dashed rgba(167,139,250,0.3)',
-        color: '#a78bfa', fontSize: 11, fontWeight: 700, textAlign: 'center',
-        fontFamily: "'JetBrains Mono',monospace", cursor: 'pointer',
-        transition: 'all 0.2s',
-      }}>
-        {isProcessing ? '⏳ Wird analysiert...' : '📷 SCREENSHOT HOCHLADEN'}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          disabled={isProcessing}
-          style={{ display: 'none' }}
-        />
-      </label>
-      {error && <div style={{ marginTop: 8, fontSize: 11, color: '#f87171' }}>❌ {error}</div>}
-      {resultText && <div style={{ marginTop: 8, fontSize: 11, color: '#22c55e', fontWeight: 600 }}>{resultText}</div>}
     </div>
   );
 }
 
-// ─── STAT CARD ────────────────────────────────────────────────
-function StatCard({ icon, label, value, subtext, color }) {
+// ─── SVG CHART COMPONENT ──────────────────────────────────────
+function BarChart({ data, primaryColor, labelFormatter }) {
+  if (!data || data.length === 0) {
+    return <div style={{ height: 140, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>Keine Daten verfügbar</div>;
+  }
+
+  const allZero = data.every(d => parseFloat(d.value) === 0);
+  const maxValue = allZero ? 1 : Math.max(...data.map(d => parseFloat(d.value) || 0), 1);
+
   return (
-    <div style={{
-      background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: '14px 12px',
-      border: `1px solid ${color}18`, textAlign: 'center',
-      transition: 'border-color 0.3s',
-    }}>
-      <div style={{ fontSize: 22, marginBottom: 6 }}>{icon}</div>
-      <div style={{ fontSize: 15, fontWeight: 800, color, fontFamily: "'Cinzel',serif" }}>{value}</div>
-      <div style={{ fontSize: 8, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", marginTop: 3, letterSpacing: 1 }}>{label}</div>
-      {subtext && <div style={{ fontSize: 9, color: '#475569', marginTop: 4, fontFamily: "'JetBrains Mono',monospace" }}>{subtext}</div>}
+    <div style={{ position: 'relative', height: 140, padding: '10px 0 0' }}>
+      {/* Grid lines */}
+      {[0.5, 1].map(r => (
+        <div key={r} style={{ position: 'absolute', bottom: `calc(${r * 80}% + 24px)`, left: 0, right: 0, borderTop: '1px dashed rgba(255,255,255,0.04)', zIndex: 0 }} />
+      ))}
+
+      {/* Empty state overlay */}
+      {allZero && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
+          <div style={{ fontSize: 9, color: '#475569', fontFamily: "'JetBrains Mono',monospace", background: 'rgba(0,0,0,0.6)', padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.04)' }}>
+            Synchronisiere um Daten zu laden
+          </div>
+        </div>
+      )}
+
+      {/* Bars */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '100%', paddingBottom: 24 }}>
+        {data.map((item, i) => {
+          const val = parseFloat(item.value) || 0;
+          const heightPct = allZero ? 3 : Math.max((val / maxValue) * 100, 3);
+          const isToday = i === data.length - 1;
+          return (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: `${85 / data.length}%`, position: 'relative', zIndex: 1, animation: `healthSlideUp 0.5s ease ${i * 0.06}s both` }}>
+              {/* Value label */}
+              {!allZero && val > 0 && (
+                <div style={{ fontSize: 7, color: isToday ? primaryColor : 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 800 : 400 }}>
+                  {labelFormatter(val)}
+                </div>
+              )}
+              {/* Bar */}
+              <div style={{
+                width: '100%', maxWidth: 28, height: `${heightPct}%`, minHeight: 4,
+                background: allZero ? `${primaryColor}15`
+                  : isToday ? `linear-gradient(180deg, ${primaryColor}, ${primaryColor}88)`
+                    : `linear-gradient(180deg, ${primaryColor}66, ${primaryColor}18)`,
+                borderRadius: '5px 5px 2px 2px',
+                boxShadow: isToday && !allZero ? `0 0 12px ${primaryColor}44, inset 0 1px 0 rgba(255,255,255,0.25)` : 'none',
+                opacity: allZero ? 0.25 : 1,
+                transition: 'all 0.6s cubic-bezier(0.34,1.56,0.64,1)',
+              }} />
+              {/* Day label */}
+              <div style={{ fontSize: 8, color: isToday ? '#fff' : '#4a5568', marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 700 : 400, letterSpacing: 0.5 }}>
+                {item.label}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── STAT MINI CARD ───────────────────────────────────────────
+function StatMini({ icon, label, value, color }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(0,0,0,0.25)', borderRadius: 12, border: `1px solid ${color}15` }}>
+      <div style={{ width: 28, height: 28, borderRadius: 8, background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${color}33`, flexShrink: 0 }}>
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontFamily: "'Cinzel',serif" }}>{value}</div>
+        <div style={{ fontSize: 7, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5, marginTop: 1 }}>{label}</div>
+      </div>
     </div>
   );
 }
@@ -113,321 +112,373 @@ function StatCard({ icon, label, value, subtext, color }) {
 // ═══════════════════════════════════════════════════════════════
 //  MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
-export default function NativeStatsDashboard({ state, persist }) {
+export default function NativeStatsDashboard({ state, persist, updateHealthData, claimHealthReward }) {
+  const [tab, setTab] = useState('overview');
+
   const [steps, setSteps] = useState(0);
   const [sleep, setSleep] = useState({ hours: '0.0', minutes: 0 });
-  const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastSyncTime, setLastSyncTime] = useState(state?.lastNativeSync || null);
-  const [healthAvailable, setHealthAvailable] = useState(null); // null = unknown
   const [syncSuccess, setSyncSuccess] = useState(false);
+  const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [diagLog, setDiagLog] = useState([]);
+
+  const [weeklySteps, setWeeklySteps] = useState([]);
+  const [weeklySleep, setWeeklySleep] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  const sleepMode = state?.healthPreferences?.sleepMode || 'auto';
+  const [manualSleepHours, setManualSleepHours] = useState(state?.healthPreferences?.manualSleepToday || 0);
+  const [savedManual, setSavedManual] = useState(false);
 
   const addLog = useCallback((msg) => {
     setDiagLog(prev => [...prev, `[${new Date().toLocaleTimeString('de-DE')}] ${msg}`]);
   }, []);
 
-  // Check availability on mount
-  useEffect(() => {
-    addLog(`Platform: ${IS_NATIVE ? 'NATIVE' : 'WEB'}`);
-    healthService.isAvailable()
-      .then(avail => {
-        addLog(`Health available: ${avail}`);
-        setHealthAvailable(avail);
-      })
-      .catch(err => {
-        addLog(`Health check ERROR: ${err?.message || err}`);
-        setHealthAvailable(false);
-      });
-  }, [addLog]);
+  // ── History ──
+  const loadHistory = useCallback(async () => {
+    const days = ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'];
+    const emptyWeek = () => {
+      const s = [], sl = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        s.push({ label: i === 0 ? "HEUTE" : days[d.getDay()], value: 0 });
+        sl.push({ label: i === 0 ? "HEUTE" : days[d.getDay()], value: 0 });
+      }
+      return { s, sl };
+    };
 
-  const loadNativeData = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    setSyncSuccess(false);
-    setDiagLog([]);
+    if (!IS_NATIVE) {
+      const { s, sl } = emptyWeek();
+      setWeeklySteps(s); setWeeklySleep(sl); setHistoryLoading(false);
+      return;
+    }
+    try {
+      setHistoryLoading(true);
+      const sData = await healthService.getWeeklySteps();
+      const slData = await healthService.getWeeklySleep();
+      let parsedSteps = [], parsedSleep = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const dateKey = d.toISOString().split('T')[0];
+        const label = i === 0 ? "HEUTE" : days[d.getDay()];
+        const ms = sData?.find(x => x.date?.startsWith(dateKey));
+        const msl = slData?.find(x => x.date === dateKey);
+        parsedSteps.push({ label, value: ms ? ms.value : 0 });
+        parsedSleep.push({ label, value: msl ? msl.hours : 0 });
+      }
+      setWeeklySteps(parsedSteps); setWeeklySleep(parsedSleep);
+    } catch (err) { console.warn("History:", err); } finally { setHistoryLoading(false); }
+  }, []);
+
+  useEffect(() => { loadHistory(); }, [loadHistory]);
+
+  // ── Sync ──
+  const loadNativeData = async () => {
+    setLoading(true); setError(''); setSyncSuccess(false); setDiagLog([]);
     addLog('Sync gestartet...');
-    addLog(`isNative: ${IS_NATIVE}`);
-    addLog(`Platform: ${Capacitor.getPlatform()}`);
-
-    let fetchedSteps = 0;
-    let fetchedSleep = { hours: '0.0', minutes: 0 };
-    let fetchedLocation = null;
-
+    let fetchedSteps = 0, fetchedSleep = { hours: '0.0', minutes: 0 };
     try {
       if (IS_NATIVE) {
-        // Permission check (with real-time logging via onLog callback)
-        addLog('--- Berechtigungen prüfen ---');
-        const t0 = Date.now();
-        let healthGranted = false;
-        try {
-          healthGranted = await healthService.requestPermissions(addLog);
-          addLog(`Berechtigungen: ${healthGranted ? '✓ OK' : '✗ NICHT erteilt'} (${Date.now() - t0}ms)`);
-        } catch (permErr) {
-          addLog(`Berechtigungen FEHLER nach ${Date.now() - t0}ms: ${permErr?.message || permErr}`);
-        }
-
-        // Always try to read data
-        addLog('--- Daten abrufen ---');
-        try {
-          fetchedSteps = await healthService.getTodaySteps(addLog);
-        } catch (stepErr) {
-          addLog(`Steps FEHLER: ${stepErr?.message || stepErr}`);
-        }
-
-        try {
-          fetchedSleep = await healthService.getLastNightSleep(addLog);
-        } catch (sleepErr) {
-          addLog(`Sleep FEHLER: ${sleepErr?.message || sleepErr}`);
-        }
-
-        setSteps(fetchedSteps);
-        setSleep(fetchedSleep);
-
-        if (fetchedSteps === 0 && parseFloat(fetchedSleep.hours) === 0 && !healthGranted) {
-          addLog('Keine Health-Daten — Berechtigungen fehlen');
-          setError('Keine Health-Daten. Öffne iOS Health-App → Teilen → SoloToDo und erlaube Schritte & Schlaf.');
-        }
-      } else {
-        addLog('Nicht nativ — überspringe Health');
-      }
-
-      // Location
-      try {
-        addLog('--- Standort ---');
-        const locationGranted = await locationService.requestPermissions();
-        addLog(`Standort-Berechtigung: ${locationGranted}`);
-        if (locationGranted) {
-          fetchedLocation = await locationService.getCurrentPosition();
-          addLog(`Standort: ${fetchedLocation?.lat?.toFixed(4)}, ${fetchedLocation?.lng?.toFixed(4)}`);
-          setLocation(fetchedLocation);
-        }
-      } catch (locErr) {
-        addLog(`Standort FEHLER: ${locErr?.message || locErr}`);
-      }
-
-      const now = new Date().toLocaleString('de-DE');
-      setLastSyncTime(now);
+        try { await healthService.requestPermissions(addLog); } catch (e) { }
+        try { fetchedSteps = await healthService.getTodaySteps(addLog); } catch (e) { }
+        try { fetchedSleep = await healthService.getLastNightSleep(addLog); } catch (e) { }
+        setSteps(fetchedSteps); setSleep(fetchedSleep);
+        // Patch today's history buckets
+        setWeeklySteps(prev => { const c = [...prev]; if (c.length) c[c.length - 1].value = fetchedSteps; return c; });
+        setWeeklySleep(prev => { const c = [...prev]; if (c.length) c[c.length - 1].value = parseFloat(fetchedSleep.hours); return c; });
+      } else { addLog('Web: Keine Sensoren.'); }
+      setLastSyncTime(new Date().toLocaleString('de-DE'));
       setSyncSuccess(true);
-      addLog('Sync abgeschlossen ✓');
-
-      return { steps: fetchedSteps, sleep: fetchedSleep, location: fetchedLocation };
+      return { steps: fetchedSteps, sleep: fetchedSleep };
     } catch (err) {
-      addLog(`SYNC FEHLER: ${err?.message || err}`);
-      console.error('[NativeStatsDashboard] Sync error:', err);
-      setError('Fehler: ' + (err.message || String(err)));
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [addLog]);
+      setError(err.message || String(err)); return null;
+    } finally { setLoading(false); }
+  };
 
   const syncAndReward = async () => {
-    try {
-      const data = await loadNativeData();
-      if (!data) return;
-
-      const fetchedSteps = data.steps;
-      const now = new Date().toLocaleString('de-DE');
-
-      if (fetchedSteps > 0 && state && persist) {
-        persist({ ...state, lastNativeSync: now });
-      }
-
-      if (!IS_NATIVE) {
-        setError('');
-      }
-    } catch (err) {
-      addLog(`syncAndReward ERROR: ${err?.message || err}`);
-      console.error('[NativeStatsDashboard] syncAndReward error:', err);
-      setError('Sync fehlgeschlagen: ' + (err.message || String(err)));
+    const data = await loadNativeData();
+    if (!data) return;
+    const s = data.steps;
+    let sl = parseFloat(data.sleep.hours);
+    if (sleepMode === 'manual') sl = manualSleepHours;
+    if (sleepMode === 'off') sl = 0;
+    if (s > 0 || sl > 0) {
+      if (updateHealthData) updateHealthData(s, sl);
+      else if (persist) persist({ ...state, lastNativeSync: new Date().toLocaleString('de-DE') });
+    }
+    if (claimHealthReward) {
+      if (s >= 5000 && !state?.healthRewardsClaimed?.steps_5000) claimHealthReward("steps_5000", 15, 50, "5.000 Schritte", "Schritt-Meilenstein");
+      if (s >= 10000 && !state?.healthRewardsClaimed?.steps_10000) claimHealthReward("steps_10000", 30, 100, "10.000 Schritte", "Schritt-Meilenstein");
+      if (sleepMode !== 'off' && sl >= 7 && !state?.healthRewardsClaimed?.sleep_7h) claimHealthReward("sleep_7h", 20, 60, "7+ Stunden Schlaf", "Erholungs-Bonus");
     }
   };
 
-  const handleScreenTimeParsed = (minutes) => {
-    console.log('[NativeStatsDashboard] Screen time parsed:', minutes, 'minutes');
-    if (minutes < 240 && state && persist) {
-      // Under 4 hours = reward
-      setSyncSuccess(true);
-    }
+  const updatePreferences = (updates) => {
+    persist({ ...state, healthPreferences: { ...(state?.healthPreferences || {}), ...updates } });
   };
 
-  // ─── Platform status badge ───
-  const renderPlatformBadge = () => {
-    if (healthAvailable === null) return null;
-
-    if (healthAvailable) {
-      return (
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '4px 10px', borderRadius: 20,
-          background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)',
-          fontSize: 9, color: '#22c55e', fontFamily: "'JetBrains Mono',monospace",
-          letterSpacing: 1,
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
-          HEALTH CONNECTED
-        </div>
-      );
-    }
-
-    return (
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 5,
-        padding: '4px 10px', borderRadius: 20,
-        background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
-        fontSize: 9, color: '#f59e0b', fontFamily: "'JetBrains Mono',monospace",
-        letterSpacing: 1,
-      }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />
-        WEB MODUS
-      </div>
-    );
+  const handleAuthorizeHealth = async () => {
+    setIsAuthorizing(true);
+    try { await healthService.authorize(addLog); await syncAndReward(); } catch (e) { }
+    finally { setIsAuthorizing(false); }
   };
+
+  // ── Computed ──
+  const stepsPct = Math.min((steps / 10000) * 100, 100);
+  const displaySleep = sleepMode === 'manual' ? manualSleepHours : parseFloat(sleep.hours);
+  const sleepPct = Math.min((displaySleep / 8) * 100, 100);
+  const totalWeekSteps = weeklySteps.reduce((a, b) => a + (parseFloat(b.value) || 0), 0);
+  const avgWeekSleep = weeklySleep.length ? (weeklySleep.reduce((a, b) => a + (parseFloat(b.value) || 0), 0) / weeklySleep.filter(d => parseFloat(d.value) > 0).length || 0).toFixed(1) : '0';
+
+  // ─── TABS ───────────────────────────────────────────────────
+  const tabs = [
+    { id: 'overview', label: 'HEUTE', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> },
+    { id: 'history', label: 'VERLAUF', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 20V10M12 20V4M6 20v-6" /></svg> },
+    { id: 'settings', label: 'SYSTEM', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.18V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.09 15H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1.05 1.39 1.18H21a2 2 0 1 1 0 4h-.09c-.62.13-1.13.58-1.39 1.18z" /></svg> }
+  ];
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div style={{ animation: 'healthSlideUp 0.3s ease', minHeight: 380 }}>
+      <style>{HEALTH_CSS}</style>
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div>
-          <div style={{ fontSize: 10, letterSpacing: 3, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
-            NATIVE SENSOREN
-          </div>
-        </div>
-        {renderPlatformBadge()}
-      </div>
-
-      {/* Web-Info wenn nicht nativ */}
-      {healthAvailable === false && (
-        <div style={{
-          padding: '12px 14px', borderRadius: 12, marginBottom: 16,
-          background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)',
-          fontSize: 11, color: '#f59e0b', lineHeight: 1.5,
-        }}>
-          <strong>📱 Web-Modus aktiv.</strong> Health-Daten (Schritte, Schlaf) sind nur auf dem Smartphone über die native App verfügbar.
-          Standort kann im Browser abgefragt werden.
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div style={{
-          padding: '10px 14px', borderRadius: 10, marginBottom: 14,
-          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-          fontSize: 11, color: '#f87171', lineHeight: 1.4,
-        }}>
-          ⚠️ {error}
-        </div>
-      )}
-
-      {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-        <StatCard
-          icon="👟"
-          label="SCHRITTE"
-          value={steps.toLocaleString()}
-          subtext={steps > 0 ? `+${Math.floor(steps / 1000)} Ausdauer` : null}
-          color="#38bdf8"
-        />
-        <StatCard
-          icon="💤"
-          label="SCHLAF"
-          value={`${sleep.hours}h`}
-          subtext={parseFloat(sleep.hours) >= 7 ? '+10% HP Regen' : null}
-          color="#a78bfa"
-        />
-      </div>
-
-      {/* Location */}
-      <div style={{
-        padding: '12px 14px', borderRadius: 12, marginBottom: 14,
-        background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)',
-      }}>
-        <div style={{ fontSize: 9, letterSpacing: 2, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>
-          STANDORT
-        </div>
-        <div style={{ fontSize: 12, color: location ? '#22c55e' : '#475569', fontFamily: "'JetBrains Mono',monospace" }}>
-          {location ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : 'Noch nicht abgefragt'}
-        </div>
-        <div style={{ fontSize: 9, color: '#475569', marginTop: 4 }}>
-          (Wird für Erkundungs-Quests genutzt)
-        </div>
-      </div>
-
-      {/* Screen Time Upload */}
-      <ScreenTimeSection onTimeParsed={handleScreenTimeParsed} />
-
-      {/* Sync Button */}
-      <button
-        onClick={syncAndReward}
-        disabled={loading}
-        style={{
-          marginTop: 16, width: '100%', padding: '14px', borderRadius: 12,
-          background: loading
-            ? 'rgba(34,197,94,0.15)'
-            : syncSuccess
-              ? 'rgba(34,197,94,0.12)'
-              : 'rgba(34,197,94,0.08)',
-          border: `1px solid rgba(34,197,94,${loading ? '0.4' : '0.25'})`,
-          color: '#22c55e', fontSize: 11, fontWeight: 700,
-          fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1,
-          cursor: loading ? 'not-allowed' : 'pointer',
-          transition: 'all 0.3s',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}
-      >
-        {loading ? (
-          <>
-            <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⟳</span>
-            SYNCHRONISIERUNG...
-          </>
-        ) : syncSuccess ? (
-          <>✅ DATEN AKTUALISIERT</>
-        ) : (
-          <>🔄 DATEN SYNCHRONISIEREN</>
-        )}
-      </button>
-
-      {/* Last sync info */}
-      {lastSyncTime && (
-        <div style={{
-          textAlign: 'center', marginTop: 8,
-          fontSize: 9, color: '#475569', fontFamily: "'JetBrains Mono',monospace",
-        }}>
-          Letzter Sync: {lastSyncTime}
-        </div>
-      )}
-
-      {/* ── Diagnostic Log ── */}
-      {diagLog.length > 0 && (
-        <div style={{
-          marginTop: 16, padding: '12px 14px', borderRadius: 12,
-          background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(99,102,241,0.2)',
-          maxHeight: 200, overflowY: 'auto',
-        }}>
-          <div style={{
-            fontSize: 9, letterSpacing: 2, color: '#6366f1',
-            fontFamily: "'JetBrains Mono',monospace", marginBottom: 8,
+      {/* ── Tab Bar ── */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 4 }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+            background: tab === t.id ? 'rgba(56,189,248,0.12)' : 'transparent',
+            color: tab === t.id ? '#38bdf8' : '#4a5568',
+            fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1.2,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            transition: 'all 0.25s', cursor: 'pointer',
+            boxShadow: tab === t.id ? '0 0 16px rgba(56,189,248,0.08)' : 'none',
           }}>
-            DIAGNOSE LOG
-          </div>
-          {diagLog.map((line, i) => (
-            <div key={i} style={{
-              fontSize: 9, color: line.includes('ERROR') || line.includes('DENIED')
-                ? '#f87171'
-                : line.includes('✓')
-                  ? '#22c55e'
-                  : '#94a3b8',
-              fontFamily: "'JetBrains Mono',monospace",
-              lineHeight: 1.6,
-              borderBottom: '1px solid rgba(255,255,255,0.03)',
-              padding: '2px 0',
-            }}>
-              {line}
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ═══════ TAB: OVERVIEW ═══════ */}
+      {tab === 'overview' && (
+        <div style={{ animation: 'healthSlideUp 0.35s ease' }}>
+
+          {error && <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.08)', color: '#f87171', borderRadius: 12, marginBottom: 14, fontSize: 10, border: '1px solid rgba(239,68,68,0.15)' }}>{error}</div>}
+
+          {/* Hero Rings */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
+            {/* Steps Ring */}
+            <div style={{ textAlign: 'center' }}>
+              <ProgressRing radius={44} stroke={5} progress={stepsPct} color="#38bdf8">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"><path d="M13 22H6c-1.1 0-2-.9-2-2V9.06c0-1.06.84-1.92 1.89-1.98L11 7l4-2 3.6 1.8c.8.4 1.4 1.1 1.4 2.2V20c0 1.1-.9 2-2 2h-5z" /><path d="M10 7V3h4v4" /></svg>
+                <div style={{ fontSize: 12, fontWeight: 900, color: '#fff', fontFamily: "'Cinzel',serif", marginTop: 2 }}>{steps.toLocaleString()}</div>
+              </ProgressRing>
+              <div style={{ fontSize: 7, color: '#38bdf8', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 6 }}>SCHRITTE</div>
+              <div style={{ fontSize: 8, color: '#475569', fontFamily: "'JetBrains Mono',monospace" }}>/ 10.000</div>
             </div>
-          ))}
+
+            {/* Sleep Ring (if not off) */}
+            {sleepMode !== 'off' && (
+              <div style={{ textAlign: 'center' }}>
+                <ProgressRing radius={44} stroke={5} progress={sleepPct} color="#a78bfa">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 0 2.93 17.07z" /></svg>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: '#fff', fontFamily: "'Cinzel',serif", marginTop: 2 }}>{displaySleep}</div>
+                </ProgressRing>
+                <div style={{ fontSize: 7, color: '#a78bfa', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 6 }}>SCHLAF</div>
+                <div style={{ fontSize: 8, color: '#475569', fontFamily: "'JetBrains Mono',monospace" }}>{sleepMode === 'manual' ? 'manuell' : '/ 8h'}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Reward Milestones */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+            {[
+              { key: 'steps_5000', label: '5K', claimed: state?.healthRewardsClaimed?.steps_5000, reached: steps >= 5000, color: '#38bdf8' },
+              { key: 'steps_10000', label: '10K', claimed: state?.healthRewardsClaimed?.steps_10000, reached: steps >= 10000, color: '#38bdf8' },
+              ...(sleepMode !== 'off' ? [{ key: 'sleep_7h', label: '7h+', claimed: state?.healthRewardsClaimed?.sleep_7h, reached: displaySleep >= 7, color: '#a78bfa' }] : [])
+            ].map(m => (
+              <div key={m.key} style={{
+                flex: 1, padding: '8px', borderRadius: 10, textAlign: 'center',
+                background: m.claimed ? `${m.color}12` : 'rgba(0,0,0,0.25)',
+                border: `1px solid ${m.claimed ? m.color + '44' : m.reached ? m.color + '33' : 'rgba(255,255,255,0.04)'}`,
+                transition: 'all 0.3s'
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: m.claimed ? m.color : m.reached ? '#fff' : '#4a5568', fontFamily: "'JetBrains Mono',monospace" }}>{m.label}</div>
+                <div style={{ fontSize: 7, color: m.claimed ? m.color : '#4a5568', marginTop: 2, fontFamily: "'JetBrains Mono',monospace" }}>
+                  {m.claimed ? '✓ CLAIMED' : m.reached ? 'BEREIT' : '—'}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Sync Button */}
+          <button onClick={syncAndReward} disabled={loading} style={{
+            width: '100%', padding: '14px', borderRadius: 14,
+            background: loading ? 'rgba(56,189,248,0.06)' : syncSuccess ? 'rgba(34,197,94,0.08)' : 'rgba(56,189,248,0.08)',
+            border: `1px solid ${syncSuccess ? 'rgba(34,197,94,0.25)' : 'rgba(56,189,248,0.2)'}`,
+            color: syncSuccess ? '#22c55e' : '#38bdf8',
+            fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.3s',
+          }}>
+            {loading ? (
+              <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'healthSpin 1.2s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg> SYNCHRONISIERE...</>
+            ) : syncSuccess ? (
+              <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg> SYNC ERFOLGREICH</>
+            ) : (
+              <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> DATEN ABRUFEN</>
+            )}
+          </button>
+
+          {/* Last sync */}
+          {lastSyncTime && <div style={{ textAlign: 'center', marginTop: 8, fontSize: 8, color: '#374151', fontFamily: "'JetBrains Mono',monospace" }}>Letzter Sync: {lastSyncTime}</div>}
+
+          {/* Connect hint */}
+          {IS_NATIVE && steps === 0 && parseFloat(sleep.hours) === 0 && syncSuccess && (
+            <div style={{ marginTop: 14, padding: '14px', borderRadius: 12, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: '#fca5a5', marginBottom: 10, lineHeight: 1.5 }}>Keine Daten erkannt. Prüfe ob Apple Health Rechte erteilt wurden.</div>
+              <button onClick={handleAuthorizeHealth} disabled={isAuthorizing} style={{
+                padding: '10px 20px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: 8, fontWeight: 700, fontSize: 9, letterSpacing: 1, cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace"
+              }}>{isAuthorizing ? 'VERBINDE...' : 'HEALTH VERBINDEN'}</button>
+            </div>
+          )}
+
+          {/* Diag Log (collapsible) */}
+          {diagLog.length > 0 && (
+            <details style={{ marginTop: 16 }}>
+              <summary style={{ fontSize: 8, color: '#4a5568', fontFamily: "'JetBrains Mono',monospace", cursor: 'pointer', letterSpacing: 1 }}>DIAGNOSE LOG ({diagLog.length})</summary>
+              <div style={{ marginTop: 6, padding: '10px', background: 'rgba(0,0,0,0.4)', borderRadius: 10, maxHeight: 150, overflowY: 'auto', border: '1px solid rgba(99,102,241,0.15)' }}>
+                {diagLog.map((l, i) => (
+                  <div key={i} style={{ fontSize: 8, color: l.includes('FEHLER') || l.includes('ERROR') ? '#f87171' : l.includes('✓') ? '#22c55e' : '#6b7280', fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.7, borderBottom: '1px solid rgba(255,255,255,0.02)', padding: '1px 0' }}>{l}</div>
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+
+      {/* ═══════ TAB: HISTORY ═══════ */}
+      {tab === 'history' && (
+        <div style={{ animation: 'healthSlideUp 0.35s ease' }}>
+
+          {/* Weekly summary cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: sleepMode === 'off' ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 16 }}>
+            <StatMini
+              icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round"><path d="M13 22H6c-1.1 0-2-.9-2-2V9.06c0-1.06.84-1.92 1.89-1.98L11 7l4-2 3.6 1.8c.8.4 1.4 1.1 1.4 2.2V20c0 1.1-.9 2-2 2h-5z" /></svg>}
+              label="WOCHE GESAMT" value={totalWeekSteps.toLocaleString()} color="#38bdf8"
+            />
+            {sleepMode !== 'off' && (
+              <StatMini
+                icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 0 2.93 17.07z" /></svg>}
+                label="Ø SCHLAF" value={`${avgWeekSleep}h`} color="#a78bfa"
+              />
+            )}
+          </div>
+
+          {/* Steps Chart */}
+          <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid #38bdf818', borderRadius: 16, padding: '16px 14px', marginBottom: 14 }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: '#38bdf8', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5"><path d="M18 20V10M12 20V4M6 20v-6" /></svg>
+              SCHRITTE
+            </div>
+            {historyLoading
+              ? <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}>LADEN...</div>
+              : <BarChart data={weeklySteps} primaryColor="#38bdf8" labelFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v} />
+            }
+          </div>
+
+          {/* Sleep Chart */}
+          {sleepMode !== 'off' && (
+            <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid #a78bfa18', borderRadius: 16, padding: '16px 14px' }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#a78bfa', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 0 2.93 17.07z" /></svg>
+                SCHLAF
+              </div>
+              {historyLoading
+                ? <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}>LADEN...</div>
+                : <BarChart data={weeklySleep} primaryColor="#a78bfa" labelFormatter={v => `${v}h`} />
+              }
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════ TAB: SETTINGS ═══════ */}
+      {tab === 'settings' && (
+        <div style={{ animation: 'healthSlideUp 0.35s ease' }}>
+
+          {/* Platform Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, padding: '10px 14px', background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: IS_NATIVE ? '#22c55e' : '#f59e0b', boxShadow: `0 0 8px ${IS_NATIVE ? '#22c55e' : '#f59e0b'}66` }} />
+            <div style={{ fontSize: 9, color: IS_NATIVE ? '#22c55e' : '#f59e0b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5, fontWeight: 600 }}>
+              {IS_NATIVE ? 'NATIVE · HEALTHKIT VERBUNDEN' : 'WEB · EINGESCHRÄNKTER MODUS'}
+            </div>
+          </div>
+
+          {/* Sleep Mode Selector */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 8, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 10 }}>SCHLAFTRACKING MODUS</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { value: 'auto', title: 'Automatisch', desc: 'Via Apple HealthKit Sensor', color: '#38bdf8', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg> },
+                { value: 'manual', title: 'Manuell', desc: 'Tägliche Direkteingabe', color: '#a78bfa', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg> },
+                { value: 'off', title: 'Deaktiviert', desc: 'Kein Schlaftracking', color: '#6b7280', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg> }
+              ].map(opt => (
+                <div key={opt.value} onClick={() => updatePreferences({ sleepMode: opt.value })}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '14px 16px', borderRadius: 14,
+                    border: `1px solid ${sleepMode === opt.value ? opt.color + '55' : 'rgba(255,255,255,0.04)'}`,
+                    background: sleepMode === opt.value ? `${opt.color}10` : 'rgba(0,0,0,0.2)',
+                    cursor: 'pointer', transition: 'all 0.25s',
+                  }}>
+                  {/* Radio dot */}
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    border: `2px solid ${sleepMode === opt.value ? opt.color : '#374151'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}>
+                    {sleepMode === opt.value && <div style={{ width: 8, height: 8, borderRadius: '50%', background: opt.color }} />}
+                  </div>
+                  <div style={{ color: sleepMode === opt.value ? opt.color : '#6b7280', flexShrink: 0 }}>{opt.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: sleepMode === opt.value ? '#fff' : '#94a3b8', letterSpacing: 0.5 }}>{opt.title}</div>
+                    <div style={{ fontSize: 8, color: '#4a5568', marginTop: 2 }}>{opt.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Manual Sleep Input */}
+          {sleepMode === 'manual' && (
+            <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid #a78bfa33', borderRadius: 14, padding: '16px', animation: 'healthSlideUp 0.3s ease' }}>
+              <div style={{ fontSize: 8, color: '#a78bfa', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 12 }}>HEUTIGER SCHLAF</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input
+                  type="number" min="0" max="24" step="0.5"
+                  value={manualSleepHours}
+                  onChange={e => { setManualSleepHours(parseFloat(e.target.value) || 0); setSavedManual(false); }}
+                  style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid #a78bfa33', padding: '10px 12px', borderRadius: 10, color: '#fff', fontSize: 18, width: 70, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, textAlign: 'center' }}
+                />
+                <div style={{ fontSize: 12, color: '#64748b' }}>h</div>
+                <button
+                  onClick={() => { updatePreferences({ manualSleepToday: manualSleepHours }); setSavedManual(true); setTimeout(() => setSavedManual(false), 2000); }}
+                  style={{
+                    marginLeft: 'auto', padding: '10px 18px', borderRadius: 10, border: 'none',
+                    background: savedManual ? 'rgba(34,197,94,0.15)' : '#a78bfa',
+                    color: savedManual ? '#22c55e' : '#000',
+                    fontWeight: 800, fontSize: 9, letterSpacing: 1, cursor: 'pointer',
+                    fontFamily: "'JetBrains Mono',monospace", transition: 'all 0.3s'
+                  }}>
+                  {savedManual ? '✓ GESPEICHERT' : 'SPEICHERN'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

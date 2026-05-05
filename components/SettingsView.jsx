@@ -9,23 +9,23 @@ import { Capacitor } from "@capacitor/core";
 // All possible bottom-navigation tabs the user can choose from.
 // Export for use in solo-leveling-v5.jsx bottom nav.
 export const ALL_NAV_TABS = [
-  { key: "dashboard",    iconSrc: "/icons/nav_dashboard.webp",   label: "Heute",     desc: "Tagesübersicht & Quests" },
-  { key: "training",     iconSrc: "/icons/nav_goals.webp",       label: "Ziele",     desc: "Ziele, Habits & Training",   requires: "training_tab" },
-  { key: "dungeon",      iconSrc: "/icons/gate_normal.webp",     label: "Gates",     desc: "Dungeon Gates betreten",     requires: "dungeons", isGate: true },
-  { key: "story",        iconSrc: "/icons/story_scroll.webp",    label: "Story",     desc: "Deine Heldenreise",          requires: "story" },
-  { key: "system",       iconSrc: "/icons/nav_settings.webp",    label: "System",    desc: "Alle Module & Menüs" },
-  { key: "stats",        iconSrc: "/icons/stat_str.webp",        label: "Stats",     desc: "Hunter Stats & Skills",      requires: "stats_view" },
-  { key: "analytics",    iconSrc: "/icons/nav_analytics.webp",   label: "Analytics", desc: "Fortschritts-Auswertung",    requires: "analytics" },
-  { key: "achievements", iconSrc: "/icons/nav_achievements.webp",label: "Erfolge",   desc: "Meilensteine & Belohnungen", requires: "achievements" },
-  { key: "challenges",   iconSrc: "/icons/nav_events.webp",      label: "Events",    desc: "Challenges & Missionen",     requires: "challenges" },
-  { key: "shadows",      iconSrc: "/icons/shadow_soldier.webp",  label: "Schatten",  desc: "Shadow Army verwalten",      requires: "shadow_army" },
-  { key: "equipment",    iconSrc: "/icons/item_blade.webp",      label: "Arsenal",   desc: "Waffen & Rüstung",           requires: "equipment" },
-  { key: "jobs",         iconSrc: "/icons/nav_jobs.webp",        label: "Jobs",      desc: "Hunter-Klassen",             requires: "jobs" },
-  { key: "shop",         iconSrc: "/icons/nav_shop.webp",        label: "Shop",      desc: "Items & Themes kaufen",      requires: "shop" },
-  { key: "goals",        iconSrc: "/icons/nav_goals.webp",       label: "Goals",     desc: "Langfristige Visionen",      requires: "goals" },
-  { key: "calendar",     iconSrc: "/icons/nav_timer.webp",       label: "Kalender",  desc: "Quest-Kalender & Planung",   requires: "calendar" },
-  { key: "settings",     iconSrc: "/icons/nav_settings.webp",    label: "Settings",  desc: "Einstellungen & Export" },
-  { key: "sanctum",      iconSrc: "/icons/nav_timer.webp",       label: "Sanctum",   desc: "Meditation & Willenskraft",  requires: "sanctum" },
+  { key: "dashboard", iconSrc: "/icons/nav_dashboard.webp", label: "Heute", desc: "Tagesübersicht & Quests" },
+  { key: "training", iconSrc: "/icons/nav_goals.webp", label: "Ziele", desc: "Ziele, Habits & Training", requires: "training_tab" },
+  { key: "dungeon", iconSrc: "/icons/gate_normal.webp", label: "Gates", desc: "Dungeon Gates betreten", requires: "dungeons", isGate: true },
+  { key: "story", iconSrc: "/icons/story_scroll.webp", label: "Story", desc: "Deine Heldenreise", requires: "story" },
+  { key: "system", iconSrc: "/icons/nav_settings.webp", label: "System", desc: "Alle Module & Menüs" },
+  { key: "stats", iconSrc: "/icons/stat_str.webp", label: "Stats", desc: "Hunter Stats & Skills", requires: "stats_view" },
+  { key: "analytics", iconSrc: "/icons/nav_analytics.webp", label: "Analytics", desc: "Fortschritts-Auswertung", requires: "analytics" },
+  { key: "achievements", iconSrc: "/icons/nav_achievements.webp", label: "Erfolge", desc: "Meilensteine & Belohnungen", requires: "achievements" },
+  { key: "challenges", iconSrc: "/icons/nav_events.webp", label: "Events", desc: "Challenges & Missionen", requires: "challenges" },
+  { key: "shadows", iconSrc: "/icons/shadow_soldier.webp", label: "Schatten", desc: "Shadow Army verwalten", requires: "shadow_army" },
+  { key: "equipment", iconSrc: "/icons/item_blade.webp", label: "Arsenal", desc: "Waffen & Rüstung", requires: "equipment" },
+  { key: "jobs", iconSrc: "/icons/nav_jobs.webp", label: "Jobs", desc: "Hunter-Klassen", requires: "jobs" },
+  { key: "shop", iconSrc: "/icons/nav_shop.webp", label: "Shop", desc: "Items & Themes kaufen", requires: "shop" },
+  { key: "goals", iconSrc: "/icons/nav_goals.webp", label: "Goals", desc: "Langfristige Visionen", requires: "goals" },
+  { key: "calendar", iconSrc: "/icons/nav_timer.webp", label: "Kalender", desc: "Quest-Kalender & Planung", requires: "calendar" },
+  { key: "settings", iconSrc: "/icons/nav_settings.webp", label: "Settings", desc: "Einstellungen & Export" },
+  { key: "sanctum", iconSrc: "/icons/nav_timer.webp", label: "Sanctum", desc: "Meditation & Willenskraft", requires: "sanctum" },
 ];
 
 export const DEFAULT_NAV_KEYS = ["dashboard", "training", "dungeon", "story", "system"];
@@ -34,9 +34,9 @@ export const DEFAULT_NAV_KEYS = ["dashboard", "training", "dungeon", "story", "s
 const MAX_NAV_TABS = 5;
 const ITEM_HEIGHT = 64; // px – height per draggable navbar item (including gap)
 const FONT_SIZE_OPTIONS = [
-  { key: "small",  label: "Klein",   value: 14 },
-  { key: "normal", label: "Normal",  value: 16 },
-  { key: "large",  label: "Groß",    value: 18 },
+  { key: "small", label: "Klein", value: 14 },
+  { key: "normal", label: "Normal", value: 16 },
+  { key: "large", label: "Groß", value: 18 },
 ];
 
 // ─── REUSABLE TOGGLE ──────────────────────────────────────────
@@ -427,7 +427,7 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
 // ═════════════════════════════════════════════════════════════════
 //  MAIN SETTINGS VIEW
 // ═════════════════════════════════════════════════════════════════
-export default function SettingsView({ state, persist, theme, can, onLogout }) {
+export default function SettingsView({ state, persist, theme, can, onLogout, updateHealthData, claimHealthReward }) {
   // ── Section states ──
   const [openSection, setOpenSection] = useState(null);
   const toggleSection = (key) => setOpenSection(prev => prev === key ? null : key);
@@ -445,7 +445,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout }) {
     if (!uid) return;
     getDoc(doc(db, "aiUsage", uid)).then(snap => {
       if (snap.exists()) setAiUsage(snap.data());
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   // ── Settings helpers ──
@@ -654,41 +654,41 @@ export default function SettingsView({ state, persist, theme, can, onLogout }) {
             Probleme mit Benachrichtigungen? Klicke hier und schließe die App sofort. In 5 Sekunden sollte eine Test-Nachricht erscheinen.
           </div>
           <button onClick={async () => {
-              try {
-                  const IS_CAPACITOR = Capacitor.isNativePlatform();
-                  if (IS_CAPACITOR) {
-                      const { LocalNotifications } = await import('@capacitor/local-notifications');
-                      const perm = await LocalNotifications.checkPermissions();
-                      if (perm.display !== 'granted') {
-                          await LocalNotifications.requestPermissions();
-                      }
-                      await LocalNotifications.schedule({
-                          notifications: [{
-                              id: Math.floor(Math.random() * 100000),
-                              title: "SYSTEM TEST",
-                              body: "Die Benachrichtigungen funktionieren einwandfrei!",
-                              schedule: { at: new Date(Date.now() + 5000) },
-                              sound: "default"
-                          }]
-                      });
-                      alert("Geplant! Schließe jetzt die App (Geh auf den Home-Screen).");
-                  } else {
-                      if (Notification.permission !== "granted") await Notification.requestPermission();
-                      new Notification("SYSTEM TEST", { body: "Die Benachrichtigungen funktionieren!" });
-                  }
-              } catch (e) {
-                  alert("Fehler beim Senden: " + e.message);
+            try {
+              const IS_CAPACITOR = Capacitor.isNativePlatform();
+              if (IS_CAPACITOR) {
+                const { LocalNotifications } = await import('@capacitor/local-notifications');
+                const perm = await LocalNotifications.checkPermissions();
+                if (perm.display !== 'granted') {
+                  await LocalNotifications.requestPermissions();
+                }
+                await LocalNotifications.schedule({
+                  notifications: [{
+                    id: Math.floor(Math.random() * 100000),
+                    title: "SYSTEM TEST",
+                    body: "Die Benachrichtigungen funktionieren einwandfrei!",
+                    schedule: { at: new Date(Date.now() + 5000) },
+                    sound: "default"
+                  }]
+                });
+                alert("Geplant! Schließe jetzt die App (Geh auf den Home-Screen).");
+              } else {
+                if (Notification.permission !== "granted") await Notification.requestPermission();
+                new Notification("SYSTEM TEST", { body: "Die Benachrichtigungen funktionieren!" });
               }
+            } catch (e) {
+              alert("Fehler beim Senden: " + e.message);
+            }
           }} style={{
-              width: "100%", padding: "10px", borderRadius: 8,
-              background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)",
-              color: "#f59e0b", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
-              cursor: "pointer", transition: "all 0.2s"
+            width: "100%", padding: "10px", borderRadius: 8,
+            background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)",
+            color: "#f59e0b", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
+            cursor: "pointer", transition: "all 0.2s"
           }}
             onMouseEnter={e => e.currentTarget.style.background = "rgba(245,158,11,0.25)"}
             onMouseLeave={e => e.currentTarget.style.background = "rgba(245,158,11,0.15)"}
           >
-              TEST-BENACHRICHTIGUNG SENDEN (5s)
+            TEST-BENACHRICHTIGUNG SENDEN (5s)
           </button>
         </div>
       </SettingsSection>
@@ -790,7 +790,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout }) {
          ════════════════════════════════════════════════════════════ */}
       <SettingsSection title="Health & Sensoren" icon="❤️" color="#ef4444" open={openSection === "health"} onToggle={() => toggleSection("health")} theme={theme}>
         <div style={{ padding: "0 0 16px 0" }}>
-          <NativeStatsDashboard state={state} persist={persist} />
+          <NativeStatsDashboard state={state} persist={persist} updateHealthData={updateHealthData} claimHealthReward={claimHealthReward} />
         </div>
       </SettingsSection>
 

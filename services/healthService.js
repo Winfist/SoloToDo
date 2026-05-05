@@ -111,26 +111,40 @@ export const healthService = {
         onLog?.(`Test-Read FEHLER: ${testErr?.message || testErr}`);
       }
 
-      // Step 3: As LAST resort, try requestAuthorization with timeout
-      // This might freeze — but we have a timeout to bail out
-      onLog?.('Schritt 3: requestAuthorization (letzter Versuch, 8s Timeout)...');
-      try {
-        const authResult = await withTimeout(
-          Health.requestAuthorization({
-            read: ['steps', 'sleep'],
-            write: [],
-          }),
-          CALL_TIMEOUT,
-          'requestAuthorization'
-        );
-        onLog?.(`requestAuthorization: ${JSON.stringify(authResult)}`);
-        return true;
-      } catch (authErr) {
-        onLog?.(`requestAuthorization FEHLER/TIMEOUT: ${authErr?.message || authErr}`);
-        return false;
-      }
+      // Step 3 is skipped completely.
+      // requestAuthorization causes the iOS WebView to freeze unconditionally.
+      // If the above tests failed, we return false.
+      // The user must manually grant permissions in iOS Settings -> Health -> Data Access.
+      onLog?.('Schritt 3: requestAuthorization übersprungen (verursacht WebView Freeze).');
+      return false;
     } catch (error) {
       onLog?.(`KRITISCHER FEHLER: ${error?.message || error}`);
+      return false;
+    }
+  },
+
+  /**
+   * Explicitly request authorization. Use this ONLY upon user action to
+   * avoid freezing the WebView upon app startup.
+   */
+  async authorize(onLog) {
+    if (!isNative()) return false;
+    try {
+      const Health = getHealthPlugin();
+      if (!Health) return false;
+      onLog?.('Explizite Health-Autorisierung gestartet...');
+      const authResult = await withTimeout(
+        Health.requestAuthorization({
+          read: ['steps', 'sleep'],
+          write: [],
+        }),
+        120000, // 2 Minuten Timeout, da der Nutzer manuell Toggles im iOS Popup aktivieren muss
+        'requestAuthorization-Modal'
+      );
+      onLog?.(`requestAuthorization: ${JSON.stringify(authResult)}`);
+      return true;
+    } catch (err) {
+      onLog?.(`Autorisierung fehlgeschlagen: ${err?.message || err}`);
       return false;
     }
   },
@@ -227,17 +241,36 @@ export const healthService = {
         'readSamples-sleep'
       );
 
-      let totalSleepMinutes = 0;
+      let intervals = [];
       if (result?.samples) {
         result.samples.forEach(entry => {
           const val = String(entry.sleepState || entry.value || '').toLowerCase();
           if (val === 'asleep' || val.includes('asleep') || val === '1' || val === 'deep' || val === 'light' || val === 'rem') {
-            const start = new Date(entry.startDate);
-            const end = new Date(entry.endDate);
-            totalSleepMinutes += (end - start) / (1000 * 60);
+            const start = new Date(entry.startDate).getTime();
+            const end = new Date(entry.endDate).getTime();
+            intervals.push({ start, end });
           }
         });
       }
+
+      // Merge overlapping intervals to prevent double counting
+      intervals.sort((a, b) => a.start - b.start);
+      let merged = [];
+      for (let iv of intervals) {
+        if (merged.length === 0) {
+          merged.push(iv);
+        } else {
+          let last = merged[merged.length - 1];
+          if (iv.start <= last.end) {
+            last.end = Math.max(last.end, iv.end); // Merge overlap
+          } else {
+            merged.push(iv);
+          }
+        }
+      }
+
+      let totalSleepMs = merged.reduce((acc, iv) => acc + (iv.end - iv.start), 0);
+      let totalSleepMinutes = totalSleepMs / (1000 * 60);
 
       const hours = (totalSleepMinutes / 60).toFixed(1);
       onLog?.(`Schlaf: ${hours}h (${Math.round(totalSleepMinutes)} min)`);
@@ -248,6 +281,123 @@ export const healthService = {
     } catch (error) {
       onLog?.(`Schlaf FEHLER: ${error?.message || error}`);
       return { minutes: 0, hours: '0.0' };
+    }
+  },
+
+  /**
+   * Get steps for the last 7 days. Returns array of { date, value }
+   */
+  async getWeeklySteps(onLog) {
+    if (!isNative()) return [];
+    try {
+      const Health = getHealthPlugin();
+      if (!Health) return [];
+
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - 6);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      onLog?.('getWeeklySteps gestartet...');
+      const result = await withTimeout(
+        Health.queryAggregated({
+          dataType: 'steps',
+          startDate: startOfWeek.toISOString(),
+          endDate: endOfDay.toISOString(),
+          bucket: 'day',
+        }),
+        CALL_TIMEOUT,
+        'queryAggregated-weekly-steps'
+      );
+
+      if (result?.samples?.length > 0) {
+        return result.samples.map(s => ({
+          date: s.startDate,
+          value: Math.floor(s.value)
+        }));
+      }
+      return [];
+    } catch (error) {
+      onLog?.(`getWeeklySteps FEHLER: ${error?.message || error}`);
+      return [];
+    }
+  },
+
+  /**
+   * Get sleep data for the last 7 days. Returns array of { date, hours }
+   */
+  async getWeeklySleep(onLog) {
+    if (!isNative()) return [];
+    try {
+      const Health = getHealthPlugin();
+      if (!Health) return [];
+
+      const endOfNight = new Date();
+
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - 7);
+      startOfWeek.setHours(18, 0, 0, 0);
+
+      onLog?.('getWeeklySleep gestartet...');
+      const result = await withTimeout(
+        Health.readSamples({
+          dataType: 'sleep',
+          startDate: startOfWeek.toISOString(),
+          endDate: endOfNight.toISOString(),
+        }),
+        CALL_TIMEOUT,
+        'readSamples-weekly-sleep'
+      );
+
+      let intervals = [];
+      if (result?.samples) {
+        result.samples.forEach(entry => {
+          const val = String(entry.sleepState || entry.value || '').toLowerCase();
+          if (val === 'asleep' || val.includes('asleep') || val === '1' || val === 'deep' || val === 'light' || val === 'rem') {
+            const start = new Date(entry.startDate).getTime();
+            const end = new Date(entry.endDate).getTime();
+            intervals.push({ start, end, rawDate: entry.endDate });
+          }
+        });
+      }
+
+      intervals.sort((a, b) => a.start - b.start);
+      let merged = [];
+      for (let iv of intervals) {
+        if (merged.length === 0) {
+          merged.push(iv);
+        } else {
+          let last = merged[merged.length - 1];
+          if (iv.start <= last.end && new Date(iv.rawDate).getDate() === new Date(last.rawDate).getDate()) {
+            last.end = Math.max(last.end, iv.end);
+          } else {
+            merged.push(iv);
+          }
+        }
+      }
+
+      // Aggregate by date
+      let dailyMap = {};
+      merged.forEach(iv => {
+        // Sleep belonging to "today" is usually the sleep that ended today morning.
+        const dateKey = new Date(iv.rawDate).toISOString().split('T')[0];
+        if (!dailyMap[dateKey]) dailyMap[dateKey] = 0;
+        dailyMap[dateKey] += Math.max(0, iv.end - iv.start);
+      });
+
+      return Object.keys(dailyMap).map(dateKey => {
+        const ms = dailyMap[dateKey];
+        const hours = (ms / (1000 * 60 * 60)).toFixed(1);
+        return {
+          date: dateKey,
+          hours: parseFloat(hours)
+        };
+      });
+    } catch (error) {
+      onLog?.(`getWeeklySleep FEHLER: ${error?.message || error}`);
+      return [];
     }
   }
 };

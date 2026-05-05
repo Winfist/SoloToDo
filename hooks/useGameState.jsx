@@ -553,6 +553,52 @@ export function useGameState(initialHunterName, onLogout) {
     setQReminderAt("");
   }, []);
 
+  const updateHealthData = useCallback((steps, sleepHours) => {
+    if (!state) return;
+    persist({
+      ...state,
+      dailySteps: steps,
+      dailySleepHours: sleepHours,
+      lastNativeSync: new Date().toLocaleString('de-DE')
+    });
+  }, [state, persist]);
+
+  const claimHealthReward = useCallback((milestoneKey, xp, gold, title, subtitle) => {
+    if (!state) return;
+    if (state.healthRewardsClaimed?.[milestoneKey]) return;
+
+    const nextClaimed = { ...(state.healthRewardsClaimed || {}), [milestoneKey]: true };
+    const leveledState = calculateLevelUp({
+      ...state,
+      healthRewardsClaimed: nextClaimed,
+      gold: (state.gold || 0) + gold,
+      totalGoldEarned: (state.totalGoldEarned || 0) + gold
+    }, xp);
+
+    persist(leveledState);
+
+    let animationQueue = [];
+    animationQueue.push({
+      type: 'system_message',
+      payload: { title: "ERFOLG: " + title, lines: [`Verdiente Belohnung: +${xp} XP, +${gold} Gold`, subtitle] }
+    });
+
+    if (leveledState.level > state.level) {
+      animationQueue.push({ type: 'levelup', payload: { oldLevel: state.level, level: leveledState.level, earnedPoints: (leveledState.level - state.level) * 3 } });
+    }
+
+    enqueueRewardFlow({
+      title: "GESUNDHEITS-ERFOLG",
+      subtitle: title,
+      xpReceived: xp,
+      goldReceived: gold,
+      animationQueue,
+      deferredUi: {
+        passiveToasts: [{ msg: `Belohnung abgeholt: ${title}`, type: 'success', delayMs: 400 }]
+      }
+    });
+  }, [state, persist, enqueueRewardFlow]);
+
   const normalizeSubQuestInput = useCallback((items = []) => {
     return (items || [])
       .map((sq) => typeof sq === "string" ? { title: sq } : sq)
@@ -720,26 +766,26 @@ export function useGameState(initialHunterName, onLogout) {
       const updatedQuests = state.quests.map(q =>
         q.id === editingQuestId
           ? (() => {
-              const previousReminderId = q.reminderId || (state.reminders || []).find(r => r.questId === q.id)?.id;
-              const baseQuest = {
-                ...q,
-                title: data.title,
-                description: data.description || undefined,
-                subQuests: data.subQuests.length > 0 ? data.subQuests : undefined,
-                tags: data.tags.length > 0 ? data.tags : undefined,
-                difficulty: data.difficulty,
-                category: data.category,
-                type: data.type,
-                priority: data.priority,
-                energy: data.energy,
-                context: data.context || undefined,
-                dueDate: data.dueDate || undefined,
-                reminderAt: undefined,
-                reminderId: undefined,
-                reminderPreset: undefined,
-              };
-              return attachQuestReminder(baseQuest, data.reminderPreset, data.reminderAt, previousReminderId).quest;
-            })()
+            const previousReminderId = q.reminderId || (state.reminders || []).find(r => r.questId === q.id)?.id;
+            const baseQuest = {
+              ...q,
+              title: data.title,
+              description: data.description || undefined,
+              subQuests: data.subQuests.length > 0 ? data.subQuests : undefined,
+              tags: data.tags.length > 0 ? data.tags : undefined,
+              difficulty: data.difficulty,
+              category: data.category,
+              type: data.type,
+              priority: data.priority,
+              energy: data.energy,
+              context: data.context || undefined,
+              dueDate: data.dueDate || undefined,
+              reminderAt: undefined,
+              reminderId: undefined,
+              reminderPreset: undefined,
+            };
+            return attachQuestReminder(baseQuest, data.reminderPreset, data.reminderAt, previousReminderId).quest;
+          })()
           : q
       );
       const editedQuest = updatedQuests.find(q => q.id === editingQuestId);
