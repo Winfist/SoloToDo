@@ -1,6 +1,10 @@
 name: Deploy iOS to TestFlight
 
 on:
+  push:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
@@ -14,85 +18,28 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 'latest-stable'
+          xcode-version: "latest-stable"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
       - name: Patch HealthPlugin for Xcode 26 / Swift 6 compatibility
         run: |
+          set -euo pipefail
           echo "--- Running HealthPlugin patch ---"
           node patch-health-plugin.js
           echo "--- Verifying patch ---"
           SWIFT_FILE="node_modules/@capgo/capacitor-health/ios/Sources/HealthPlugin/HealthPlugin.swift"
           if grep -q "let impl = self.implementation" "$SWIFT_FILE"; then
-            echo "✅ Patch verified successfully."
+            echo "Patch verified successfully."
           else
-            echo "❌ Patch verification FAILED — applying emergency fix..."
-            python3 - <<'PYEOF'
-import re, sys
-
-path = "node_modules/@capgo/capacitor-health/ios/Sources/HealthPlugin/HealthPlugin.swift"
-with open(path, "r") as f:
-    content = f.read()
-
-if "let impl = self.implementation" in content:
-    print("Already patched (impl variant).")
-    sys.exit(0)
-
-# Find method boundaries using brace counting
-start_marker = "@objc func requestAuthorization(_ call: CAPPluginCall)"
-start_idx = content.find(start_marker)
-if start_idx == -1:
-    print("ERROR: Could not find requestAuthorization", file=sys.stderr)
-    sys.exit(1)
-
-depth = 0
-found_first = False
-end_idx = -1
-for i in range(start_idx, len(content)):
-    if content[i] == '{':
-        depth += 1
-        found_first = True
-    elif content[i] == '}':
-        depth -= 1
-        if found_first and depth == 0:
-            end_idx = i
-            break
-
-if end_idx == -1:
-    print("ERROR: Could not find end of method", file=sys.stderr)
-    sys.exit(1)
-
-patched = """@objc func requestAuthorization(_ call: CAPPluginCall) {
-        let read = (call.getArray("read") as? [String]) ?? []
-        let write = (call.getArray("write") as? [String]) ?? []
-
-        let impl = self.implementation
-        DispatchQueue.main.async {
-            impl.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case let .success(payload):
-                        call.resolve(payload.toDictionary())
-                    case let .failure(error):
-                        call.reject(error.localizedDescription, nil, error)
-                    }
-                }
-            }
-        }
-    }"""
-
-new_content = content[:start_idx] + patched + content[end_idx+1:]
-with open(path, "w") as f:
-    f.write(new_content)
-print("✅ Emergency Python patch applied successfully.")
-PYEOF
+            echo "Patch verification failed: HealthPlugin.swift was not updated."
+            exit 1
           fi
 
       - name: Build Web & Sync Capacitor
