@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { healthService } from '../services/healthService';
 import { Capacitor } from '@capacitor/core';
 import { getLocalDateKey, getToday } from '../data/dateUtils.js';
@@ -28,6 +28,39 @@ function formatDateShort(dateKey) {
   const d = new Date(`${dateKey}T00:00:00`);
   if (Number.isNaN(d.getTime())) return '--';
   return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.`;
+}
+
+function getCachedHealthArrays(state) {
+  const history = { ...(state?.healthDailyHistory || {}) };
+  const todayKey = getToday();
+  const today = { ...(history[todayKey] || {}) };
+  if (today.steps === undefined && Number(state?.dailySteps) > 0) today.steps = state.dailySteps;
+  if (today.sleepHours === undefined && Number(state?.dailySleepHours) > 0) today.sleepHours = state.dailySleepHours;
+  if (today.steps !== undefined || today.sleepHours !== undefined) history[todayKey] = today;
+  const steps = [];
+  const sleep = [];
+  Object.keys(history).sort().forEach(date => {
+    const day = history[date] || {};
+    steps.push({ date, value: Math.max(0, Math.floor(Number(day.steps) || 0)) });
+    sleep.push({ date, hours: Math.max(0, Number(day.sleepHours) || 0) });
+  });
+  return { steps, sleep };
+}
+
+function getCachedToday(state) {
+  const todayKey = getToday();
+  const today = state?.healthDailyHistory?.[todayKey] || {};
+  return {
+    steps: Math.max(0, Math.floor(Number(today.steps ?? state?.dailySteps) || 0)),
+    sleepHours: Math.max(0, Number(today.sleepHours ?? state?.dailySleepHours) || 0),
+    lastSync: today.syncedAt || state?.lastNativeSync || null
+  };
+}
+
+function getHistorySignature(stepsData = [], sleepData = []) {
+  const stepSig = (stepsData || []).map(row => `${row.date}:${Math.max(0, Math.floor(Number(row.value) || 0))}`).join(',');
+  const sleepSig = (sleepData || []).map(row => `${row.date}:${Math.max(0, Number((row.hours ?? row.value) || 0)).toFixed(1)}`).join(',');
+  return `${stepSig}|${sleepSig}`;
 }
 
 function buildHistoryRows(rangeDays, stepsData = [], sleepData = [], manualSleepLog = {}, sleepMode = 'auto', manualSleepToday = 0, offsetDays = 0) {
@@ -206,12 +239,13 @@ function StatMini({ icon, label, value, color, detail }) {
 // ═══════════════════════════════════════════════════════════════
 export default function NativeStatsDashboard({ state, persist, updateHealthData, claimHealthReward }) {
   const [tab, setTab] = useState('overview');
+  const cachedToday = getCachedToday(state);
 
-  const [steps, setSteps] = useState(0);
-  const [sleep, setSleep] = useState({ hours: '0.0', minutes: 0 });
+  const [steps, setSteps] = useState(cachedToday.steps);
+  const [sleep, setSleep] = useState({ hours: cachedToday.sleepHours.toFixed(1), minutes: Math.round(cachedToday.sleepHours * 60) });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [lastSyncTime, setLastSyncTime] = useState(state?.lastNativeSync || null);
+  const [lastSyncTime, setLastSyncTime] = useState(cachedToday.lastSync);
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [diagLog, setDiagLog] = useState([]);
@@ -226,6 +260,14 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
   const [historyRange, setHistoryRange] = useState(state?.healthPreferences?.healthHistoryRange || '7d');
   const [manualSleepHours, setManualSleepHours] = useState(state?.healthPreferences?.manualSleepToday || 0);
   const [savedManual, setSavedManual] = useState(false);
+  const lastHistoryPersistKey = useRef('');
+
+  useEffect(() => {
+    const cached = getCachedToday(state);
+    setSteps(cached.steps);
+    setSleep({ hours: cached.sleepHours.toFixed(1), minutes: Math.round(cached.sleepHours * 60) });
+    setLastSyncTime(cached.lastSync);
+  }, [state?.dailySteps, state?.dailySleepHours, state?.lastNativeSync, state?.healthDailyHistory]);
 
   const addLog = useCallback((msg) => {
     setDiagLog(prev => [...prev, `[${new Date().toLocaleTimeString('de-DE')}] ${msg}`]);
@@ -236,25 +278,41 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
     const range = getHistoryRangeConfig(historyRange);
     const totalDays = range.days * 2;
     const manualLog = state?.healthPreferences?.manualSleepLog || {};
+    const cached = getCachedHealthArrays(state);
+    const cachedCurrent = buildHistoryRows(range.days, cached.steps, cached.sleep, manualLog, sleepMode, manualSleepHours, 0);
+    const cachedPrevious = buildHistoryRows(range.days, cached.steps, cached.sleep, manualLog, sleepMode, manualSleepHours, range.days);
+    const hasCachedData = cachedCurrent.steps.some(row => (parseFloat(row.value) || 0) > 0)
+      || cachedCurrent.sleep.some(row => (parseFloat(row.value) || 0) > 0);
+    setHistorySteps(cachedCurrent.steps); setHistorySleep(cachedCurrent.sleep);
+    setPreviousSteps(cachedPrevious.steps); setPreviousSleep(cachedPrevious.sleep);
+    setHistoryLoading(!hasCachedData);
 
     if (!IS_NATIVE) {
-      const current = buildHistoryRows(range.days, [], [], manualLog, sleepMode, manualSleepHours, 0);
-      const previous = buildHistoryRows(range.days, [], [], manualLog, sleepMode, manualSleepHours, range.days);
-      setHistorySteps(current.steps); setHistorySleep(current.sleep);
-      setPreviousSteps(previous.steps); setPreviousSleep(previous.sleep);
       setHistoryLoading(false);
       return;
     }
     try {
-      setHistoryLoading(true);
+      if (!hasCachedData) setHistoryLoading(true);
       const sData = await healthService.getStepsHistory(totalDays);
       const slData = await healthService.getSleepHistory(totalDays);
       const current = buildHistoryRows(range.days, sData, slData, manualLog, sleepMode, manualSleepHours, 0);
       const previous = buildHistoryRows(range.days, sData, slData, manualLog, sleepMode, manualSleepHours, range.days);
       setHistorySteps(current.steps); setHistorySleep(current.sleep);
       setPreviousSteps(previous.steps); setPreviousSleep(previous.sleep);
+      const todaySteps = current.steps[current.steps.length - 1]?.value || 0;
+      const todaySleep = current.sleep[current.sleep.length - 1]?.value || 0;
+      if (todaySteps > 0) setSteps(todaySteps);
+      if (todaySleep > 0 && sleepMode !== 'manual') setSleep({ hours: todaySleep.toFixed(1), minutes: Math.round(todaySleep * 60) });
+      const persistKey = `${range.days}:${todaySteps}:${todaySleep}:${getHistorySignature(sData, slData)}`;
+      if (updateHealthData && (sData?.length || slData?.length) && lastHistoryPersistKey.current !== persistKey) {
+        lastHistoryPersistKey.current = persistKey;
+        updateHealthData(todaySteps, sleepMode === 'manual' ? manualSleepHours : todaySleep, {
+          stepsHistory: sData,
+          sleepHistory: slData
+        });
+      }
     } catch (err) { console.warn("History:", err); } finally { setHistoryLoading(false); }
-  }, [historyRange, manualSleepHours, sleepMode, state?.healthPreferences?.manualSleepLog]);
+  }, [historyRange, manualSleepHours, sleepMode, state?.healthPreferences?.manualSleepLog, state?.healthDailyHistory, updateHealthData]);
 
   useEffect(() => { loadHistory(); }, [loadHistory]);
 

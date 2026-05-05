@@ -34,6 +34,7 @@ export const DEFAULT_STATE = {
     manualSleepLog: {},
     healthHistoryRange: "7d"
   },
+  healthDailyHistory: {},
   microHabits: { habits: null, daily: {} },
   hiddenQuests: { discovered: [], completed: [] },
   weeklyQuestReset: null,

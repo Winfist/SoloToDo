@@ -420,7 +420,7 @@ export default function DashboardView({
       case "health_summary":
         if (isCollapsed) return { content: null, isEmpty: false };
         return {
-          content: <HealthSummaryWidget state={state} theme={theme} openDetails={() => setShowHealthModal(true)} />,
+          content: <HealthSummaryWidget state={state} theme={theme} openDetails={() => setShowHealthModal(true)} updateHealthData={updateHealthData} />,
           isEmpty: false
         };
 

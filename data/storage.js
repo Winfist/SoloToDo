@@ -34,6 +34,10 @@ export function migrateState(oldState) {
     ...DEFAULT_STATE.healthPreferences.manualSleepLog,
     ...(oldState.healthPreferences?.manualSleepLog || {})
   };
+  s.healthDailyHistory = {
+    ...DEFAULT_STATE.healthDailyHistory,
+    ...(oldState.healthDailyHistory || {})
+  };
   s.story = { ...DEFAULT_STATE.story, ...(oldState.story || {}) };
   s.shadowRegression = { ...DEFAULT_STATE.shadowRegression, ...(oldState.shadowRegression || {}) };
   s.soulLink = { ...DEFAULT_STATE.soulLink, ...(oldState.soulLink || {}) };

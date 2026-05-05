@@ -553,15 +553,48 @@ export function useGameState(initialHunterName, onLogout) {
     setQReminderAt("");
   }, []);
 
-  const updateHealthData = useCallback((steps, sleepHours) => {
-    if (!state) return;
-    persist({
-      ...state,
-      dailySteps: steps,
-      dailySleepHours: sleepHours,
-      lastNativeSync: new Date().toLocaleString('de-DE')
+  const updateHealthData = useCallback((steps, sleepHours, options = {}) => {
+    const current = stateRef.current;
+    if (!current) return;
+    const dateKey = options.dateKey || getToday();
+    const syncedAt = new Date().toLocaleString('de-DE');
+    const nextHistory = { ...(current.healthDailyHistory || {}) };
+    const upsertDay = (key, patch) => {
+      if (!key) return;
+      nextHistory[key] = {
+        ...(nextHistory[key] || {}),
+        date: key,
+        ...patch,
+        syncedAt
+      };
+    };
+    const numericSteps = Math.max(0, Math.floor(Number(steps) || 0));
+    const numericSleep = Math.max(0, Number(sleepHours) || 0);
+
+    (options.stepsHistory || []).forEach(row => {
+      const value = Math.max(0, Math.floor(Number(row.value) || 0));
+      if (row.date && value > 0) upsertDay(row.date, { steps: value });
     });
-  }, [state, persist]);
+    (options.sleepHistory || []).forEach(row => {
+      const value = Math.max(0, Number(row.hours ?? row.value) || 0);
+      if (row.date && value > 0) upsertDay(row.date, { sleepHours: value });
+    });
+    if (numericSteps > 0 || numericSleep > 0) {
+      upsertDay(dateKey, {
+        ...(numericSteps > 0 ? { steps: numericSteps } : {}),
+        ...(numericSleep > 0 ? { sleepHours: numericSleep } : {})
+      });
+    }
+
+    persist({
+      ...current,
+      dailySteps: numericSteps || current.dailySteps || 0,
+      dailySleepHours: numericSleep || current.dailySleepHours || 0,
+      healthDailyHistory: nextHistory,
+      healthSyncDate: current.healthSyncDate || syncedAt,
+      lastNativeSync: syncedAt
+    });
+  }, [persist]);
 
   const claimHealthReward = useCallback((milestoneKey, xp, gold, title, subtitle) => {
     if (!state) return;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { healthService } from '../../services/healthService';
 import { Capacitor } from '@capacitor/core';
 import { AnimatedNumber } from '../../hooks/useAnimatedCounter.jsx';
@@ -37,19 +37,68 @@ function buildWeekStats(stepHistory = [], sleepHistory = [], sleepMode = 'auto',
     };
 }
 
-export function HealthSummaryWidget({ state, theme, openDetails }) {
-    const [steps, setSteps] = useState(0);
-    const [sleep, setSleep] = useState({ hours: '0.0' });
-    const [weekStats, setWeekStats] = useState({ avgSteps: 0, avgSleep: '0.0' });
-    const [hasChecked, setHasChecked] = useState(false);
+function getCachedHealthArrays(state) {
+    const history = { ...(state?.healthDailyHistory || {}) };
+    const todayKey = getToday();
+    const today = { ...(history[todayKey] || {}) };
+    if (today.steps === undefined && Number(state?.dailySteps) > 0) today.steps = state.dailySteps;
+    if (today.sleepHours === undefined && Number(state?.dailySleepHours) > 0) today.sleepHours = state.dailySleepHours;
+    if (today.steps !== undefined || today.sleepHours !== undefined) history[todayKey] = today;
+    const steps = [];
+    const sleep = [];
+    Object.keys(history).sort().forEach(date => {
+        const day = history[date] || {};
+        steps.push({ date, value: Math.max(0, Math.floor(Number(day.steps) || 0)) });
+        sleep.push({ date, hours: Math.max(0, Number(day.sleepHours) || 0) });
+    });
+    return { steps, sleep };
+}
+
+function getCachedToday(state) {
+    const todayKey = getToday();
+    const today = state?.healthDailyHistory?.[todayKey] || {};
+    return {
+        steps: Math.max(0, Math.floor(Number(today.steps ?? state?.dailySteps) || 0)),
+        sleepHours: Math.max(0, Number(today.sleepHours ?? state?.dailySleepHours) || 0),
+    };
+}
+
+function getHistorySignature(stepsData = [], sleepData = []) {
+    const stepSig = (stepsData || []).map(row => `${row.date}:${Math.max(0, Math.floor(Number(row.value) || 0))}`).join(',');
+    const sleepSig = (sleepData || []).map(row => `${row.date}:${Math.max(0, Number((row.hours ?? row.value) || 0)).toFixed(1)}`).join(',');
+    return `${stepSig}|${sleepSig}`;
+}
+
+export function HealthSummaryWidget({ state, theme, openDetails, updateHealthData }) {
+    const cachedToday = getCachedToday(state);
     const sleepMode = state?.healthPreferences?.sleepMode || 'auto';
     const manualSleepToday = state?.healthPreferences?.manualSleepToday || 0;
     const manualSleepLog = state?.healthPreferences?.manualSleepLog;
+    const cachedHistory = getCachedHealthArrays(state);
+    const [steps, setSteps] = useState(cachedToday.steps);
+    const [sleep, setSleep] = useState({ hours: cachedToday.sleepHours.toFixed(1) });
+    const [weekStats, setWeekStats] = useState(buildWeekStats(cachedHistory.steps, cachedHistory.sleep, sleepMode, manualSleepLog, manualSleepToday));
+    const [hasChecked, setHasChecked] = useState(false);
+    const lastPersistKey = useRef('');
+
+    useEffect(() => {
+        const cached = getCachedToday(state);
+        const history = getCachedHealthArrays(state);
+        setSteps(cached.steps);
+        setSleep({ hours: cached.sleepHours.toFixed(1) });
+        setWeekStats(buildWeekStats(history.steps, history.sleep, sleepMode, manualSleepLog, manualSleepToday));
+    }, [state?.dailySteps, state?.dailySleepHours, state?.healthDailyHistory, sleepMode, manualSleepLog, manualSleepToday]);
 
     const fetchHealthQuietly = useCallback(async (activeObj = { active: true }) => {
+        const cached = getCachedToday(state);
+        const cachedHistoryRows = getCachedHealthArrays(state);
+        if (activeObj.active) {
+            setSteps(cached.steps);
+            setSleep({ hours: cached.sleepHours.toFixed(1) });
+            setWeekStats(buildWeekStats(cachedHistoryRows.steps, cachedHistoryRows.sleep, sleepMode, manualSleepLog, manualSleepToday));
+        }
+
         if (!IS_NATIVE) {
-            const manualStats = buildWeekStats([], [], sleepMode, manualSleepLog, manualSleepToday);
-            if (activeObj.active) setWeekStats(manualStats);
             if (activeObj.active) setHasChecked(true);
             return;
         }
@@ -60,27 +109,48 @@ export function HealthSummaryWidget({ state, theme, openDetails }) {
                 return;
             }
             const silentLog = () => { };
+            let fetchedSteps = cached.steps;
+            let fetchedSleepHours = cached.sleepHours;
+            let stepsHistory = cachedHistoryRows.steps;
+            let sleepHistory = cachedHistoryRows.sleep;
+
             try {
                 const s = await healthService.getTodaySteps(silentLog);
+                fetchedSteps = Math.max(0, Math.floor(Number(s) || 0));
                 if (activeObj.active) setSteps(s);
             } catch (e) { }
 
             try {
                 const sl = await healthService.getLastNightSleep(silentLog);
+                fetchedSleepHours = Math.max(0, Number(sl?.hours) || 0);
                 if (activeObj.active) setSleep(sl);
             } catch (e) { }
 
             try {
-                const sHistory = await healthService.getStepsHistory(7, silentLog);
-                const slHistory = await healthService.getSleepHistory(7, silentLog);
-                if (activeObj.active) setWeekStats(buildWeekStats(sHistory, slHistory, sleepMode, manualSleepLog, manualSleepToday));
+                stepsHistory = await healthService.getStepsHistory(7, silentLog);
+                sleepHistory = await healthService.getSleepHistory(7, silentLog);
+                if (activeObj.active) setWeekStats(buildWeekStats(stepsHistory, sleepHistory, sleepMode, manualSleepLog, manualSleepToday));
             } catch (e) { }
+
+            const sleepForPersist = sleepMode === 'manual' ? manualSleepToday : fetchedSleepHours;
+            const persistKey = `${fetchedSteps}:${sleepForPersist}:${getHistorySignature(stepsHistory, sleepHistory)}`;
+            if (
+                updateHealthData &&
+                (fetchedSteps > 0 || sleepForPersist > 0 || stepsHistory?.length || sleepHistory?.length) &&
+                lastPersistKey.current !== persistKey
+            ) {
+                lastPersistKey.current = persistKey;
+                updateHealthData(fetchedSteps, sleepMode === 'off' ? 0 : sleepForPersist, {
+                    stepsHistory,
+                    sleepHistory: sleepMode === 'off' ? [] : sleepHistory
+                });
+            }
         } catch (err) {
             console.warn("[HealthSummary] Quiet fetch failed:", err);
         } finally {
             if (activeObj.active) setHasChecked(true);
         }
-    }, [manualSleepLog, manualSleepToday, sleepMode]);
+    }, [manualSleepLog, manualSleepToday, sleepMode, state?.dailySteps, state?.dailySleepHours, state?.healthDailyHistory, updateHealthData]);
 
     useEffect(() => {
         let activeObj = { active: true };
@@ -95,16 +165,17 @@ export function HealthSummaryWidget({ state, theme, openDetails }) {
 
         // Fetch on window focus/resume
         const onFocus = () => fetchHealthQuietly(activeObj);
-        window.addEventListener('focus', onFocus);
-        document.addEventListener('visibilitychange', () => {
+        const onVisibilityChange = () => {
             if (document.visibilityState === 'visible') onFocus();
-        });
+        };
+        window.addEventListener('focus', onFocus);
+        document.addEventListener('visibilitychange', onVisibilityChange);
 
         return () => {
             activeObj.active = false;
             clearInterval(intervalId);
             window.removeEventListener('focus', onFocus);
-            document.removeEventListener('visibilitychange', onFocus);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
         };
     }, [fetchHealthQuietly]);
 
