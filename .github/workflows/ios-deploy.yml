@@ -24,6 +24,77 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Patch HealthPlugin for Xcode 26 / Swift 6 compatibility
+        run: |
+          echo "--- Running HealthPlugin patch ---"
+          node patch-health-plugin.js
+          echo "--- Verifying patch ---"
+          SWIFT_FILE="node_modules/@capgo/capacitor-health/ios/Sources/HealthPlugin/HealthPlugin.swift"
+          if grep -q "let impl = self.implementation" "$SWIFT_FILE"; then
+            echo "✅ Patch verified successfully."
+          else
+            echo "❌ Patch verification FAILED — applying emergency fix..."
+            python3 - <<'PYEOF'
+import re, sys
+
+path = "node_modules/@capgo/capacitor-health/ios/Sources/HealthPlugin/HealthPlugin.swift"
+with open(path, "r") as f:
+    content = f.read()
+
+if "let impl = self.implementation" in content:
+    print("Already patched (impl variant).")
+    sys.exit(0)
+
+# Find method boundaries using brace counting
+start_marker = "@objc func requestAuthorization(_ call: CAPPluginCall)"
+start_idx = content.find(start_marker)
+if start_idx == -1:
+    print("ERROR: Could not find requestAuthorization", file=sys.stderr)
+    sys.exit(1)
+
+depth = 0
+found_first = False
+end_idx = -1
+for i in range(start_idx, len(content)):
+    if content[i] == '{':
+        depth += 1
+        found_first = True
+    elif content[i] == '}':
+        depth -= 1
+        if found_first and depth == 0:
+            end_idx = i
+            break
+
+if end_idx == -1:
+    print("ERROR: Could not find end of method", file=sys.stderr)
+    sys.exit(1)
+
+patched = """@objc func requestAuthorization(_ call: CAPPluginCall) {
+        let read = (call.getArray("read") as? [String]) ?? []
+        let write = (call.getArray("write") as? [String]) ?? []
+
+        let impl = self.implementation
+        DispatchQueue.main.async {
+            impl.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case let .success(payload):
+                        call.resolve(payload.toDictionary())
+                    case let .failure(error):
+                        call.reject(error.localizedDescription, nil, error)
+                    }
+                }
+            }
+        }
+    }"""
+
+new_content = content[:start_idx] + patched + content[end_idx+1:]
+with open(path, "w") as f:
+    f.write(new_content)
+print("✅ Emergency Python patch applied successfully.")
+PYEOF
+          fi
+
       - name: Build Web & Sync Capacitor
         run: npm run build:cap
 

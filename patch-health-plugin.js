@@ -18,38 +18,63 @@ const pluginPath = path.join(
 
 console.log(`[HealthPatch] Checking for HealthPlugin.swift at ${pluginPath}`);
 
-if (fs.existsSync(pluginPath)) {
-    let content = fs.readFileSync(pluginPath, 'utf8');
+if (!fs.existsSync(pluginPath)) {
+    console.log('[HealthPatch] iOS HealthPlugin source not found. Skipping patch.');
+    process.exit(0);
+}
 
-    // Check if our patch is already applied (look for 'let impl = self.implementation')
-    if (content.includes('let impl = self.implementation')) {
-        console.log('[HealthPatch] Fix already applied.');
-        process.exit(0);
+let content = fs.readFileSync(pluginPath, 'utf8');
+
+// ─── Check if our robust patch is already applied ───────────────────────────
+if (content.includes('let impl = self.implementation')) {
+    console.log('[HealthPatch] Fix already applied (impl capture variant). Skipping.');
+    process.exit(0);
+}
+
+// ─── Approach 1: Capture list missing 'in' keyword (Swift 6 incompatible) ──
+// Original npm package ships with:
+//   DispatchQueue.main.async { [weak self]
+// Swift 6 / Xcode 26 requires:
+//   DispatchQueue.main.async { [weak self] in
+// We do a full method replacement for maximum reliability.
+
+// Find the start of the requestAuthorization method
+const methodStart = '@objc func requestAuthorization(_ call: CAPPluginCall)';
+const methodStartIdx = content.indexOf(methodStart);
+
+if (methodStartIdx === -1) {
+    console.warn('[HealthPatch] Could not locate requestAuthorization method. Plugin may have changed structure.');
+    process.exit(0);
+}
+
+// Walk forward from method start to find the matching closing brace
+let braceDepth = 0;
+let methodEnd = -1;
+let foundFirstBrace = false;
+
+for (let i = methodStartIdx; i < content.length; i++) {
+    if (content[i] === '{') {
+        braceDepth++;
+        foundFirstBrace = true;
+    } else if (content[i] === '}') {
+        braceDepth--;
+        if (foundFirstBrace && braceDepth === 0) {
+            methodEnd = i;
+            break;
+        }
     }
+}
 
-    // The original plugin code for requestAuthorization looks like this:
-    //   implementation.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in
-    //       ...
-    //   }
-    //
-    // OR a previously-broken patch may have wrapped it in:
-    //   DispatchQueue.main.async { [weak self] in
-    //       guard let self = self else { return }
-    //       self.implementation.requestAuthorization(...)
-    //   }
-    //
-    // Both patterns fail on Xcode 26 / Swift 6. Our fix:
-    //   let impl = self.implementation
-    //   DispatchQueue.main.async {
-    //       impl.requestAuthorization(readIdentifiers: read, writeIdentifiers: write) { result in
-    //           DispatchQueue.main.async { ... }
-    //       }
-    //   }
+if (methodEnd === -1) {
+    console.warn('[HealthPatch] Could not find end of requestAuthorization method.');
+    process.exit(0);
+}
 
-    // Strategy: replace the entire requestAuthorization method body
-    const methodRegex = /@objc\s+func\s+requestAuthorization\s*\(\s*_\s+call:\s*CAPPluginCall\s*\)\s*\{[\s\S]*?\n    \}/;
+const originalMethod = content.substring(methodStartIdx, methodEnd + 1);
+console.log('[HealthPatch] Found requestAuthorization method, applying patch...');
 
-    const replacement = `@objc func requestAuthorization(_ call: CAPPluginCall) {
+// Replacement: avoid [weak self] capture entirely — capture impl before async block
+const patchedMethod = `@objc func requestAuthorization(_ call: CAPPluginCall) {
         let read = (call.getArray("read") as? [String]) ?? []
         let write = (call.getArray("write") as? [String]) ?? []
 
@@ -68,13 +93,6 @@ if (fs.existsSync(pluginPath)) {
         }
     }`;
 
-    if (methodRegex.test(content)) {
-        content = content.replace(methodRegex, replacement);
-        fs.writeFileSync(pluginPath, content, 'utf8');
-        console.log('[HealthPatch] Successfully patched requestAuthorization for Xcode 26 / Swift 6 compatibility.');
-    } else {
-        console.warn('[HealthPatch] Could not find requestAuthorization method to patch. Plugin may have changed.');
-    }
-} else {
-    console.log('[HealthPatch] iOS HealthPlugin source not found. Skipping patch.');
-}
+const patchedContent = content.substring(0, methodStartIdx) + patchedMethod + content.substring(methodEnd + 1);
+fs.writeFileSync(pluginPath, patchedContent, 'utf8');
+console.log('[HealthPatch] ✅ Successfully patched requestAuthorization for Xcode 26 / Swift 6 compatibility.');
