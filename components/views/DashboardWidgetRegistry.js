@@ -16,6 +16,7 @@ export const DASHBOARD_WIDGETS = [
   { key: "micro_habits", label: "Micro-Habits", icon: "✨", color: "#06b6d4", desc: "Kleine tägliche Aufgaben", requires: "micro_habits", removable: true },
   { key: "next_unlock", label: "System-Update", icon: "🔓", color: "#6366f1", desc: "Nächstes Feature-Unlock", requires: null, removable: true },
   { key: "health_summary", label: "Bewegung & Health", icon: "👟", color: "#38bdf8", desc: "HealthTracker & Belohnungen", requires: null, removable: true },
+  { key: "screen_time_summary", label: "Bildschirmzeit", icon: "FOCUS", color: "#f59e0b", desc: "Handyzeit, Limits & Fokus-Bonus", requires: null, removable: true },
 ];
 
 // The default layout order — new users get this
@@ -28,6 +29,7 @@ export const DEFAULT_DASHBOARD_LAYOUT = [
   "micro_habits",
   "vision_board",
   "health_summary",
+  "screen_time_summary",
   "next_unlock",
 ];
 

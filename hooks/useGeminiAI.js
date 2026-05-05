@@ -119,6 +119,23 @@ export function useGeminiAI(state) {
     }
   }, []);
 
+  const extractScreenTimeScreenshot = useCallback(async (imageFile) => {
+    if (rateLimitErrorRef.current) return null;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { base64, mimeType } = await fileToBase64(imageFile);
+      const fn = httpsCallable(functions, "extractScreenTimeScreenshot");
+      const result = await fn({ imageBase64: base64, mimeType });
+      return result.data;
+    } catch (err) {
+      handleError(err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // ─── Feature B1: Generate dynamic daily quests ────────────────────────────
 
   const generateQuests = useCallback(async () => {
@@ -230,6 +247,7 @@ export function useGeminiAI(state) {
     clearError: () => { setError(null); rateLimitErrorRef.current = false; setRateLimitError(false); clearRateLimitExpiry(); },
     verifyQuest,
     scanTaskPhoto,
+    extractScreenTimeScreenshot,
     generateQuests,
     generateSystemMsg,
     askCoach,

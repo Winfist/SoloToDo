@@ -9,6 +9,7 @@ const { callGemini, callGeminiWithImage, parseJSON } = require("./geminiService"
 const {
   VERIFY_QUEST_PROMPT,
   EXTRACT_TASKS_PROMPT,
+  EXTRACT_SCREEN_TIME_PROMPT,
   GENERATE_QUESTS_PROMPT,
   SYSTEM_MESSAGE_PROMPT,
   COACH_PROMPT,
@@ -85,6 +86,53 @@ exports.scanTaskPhoto = onCall(CALL_OPTIONS, async (request) => {
 });
 
 // ─── Feature B1: Generate Dynamic Quests ─────────────────────────────────────
+
+// Last-resort fallback: extract iOS Screen Time minutes from a screenshot.
+exports.extractScreenTimeScreenshot = onCall(CALL_OPTIONS, async (request) => {
+  const uid = requireAuth(request);
+  const { imageBase64, mimeType } = request.data;
+
+  if (!imageBase64) {
+    throw new HttpsError("invalid-argument", "imageBase64 ist erforderlich.");
+  }
+
+  await checkAndIncrementRateLimit(uid);
+
+  const raw = await callGeminiWithImage(EXTRACT_SCREEN_TIME_PROMPT, imageBase64, mimeType || "image/jpeg");
+  const result = parseJSON(raw, {
+    valid: false,
+    date: null,
+    totalMinutes: 0,
+    confidence: 0,
+    apps: [],
+    categories: [],
+    reason: "Analyse fehlgeschlagen.",
+  });
+
+  const cleanBreakdown = (items) => Array.isArray(items)
+    ? items.slice(0, 10).map((item) => ({
+        name: String(item.name || item.category || item.bundleIdentifier || "").slice(0, 80),
+        minutes: Math.max(0, Math.floor(Number(item.minutes ?? item.totalMinutes ?? item.durationMinutes) || 0)),
+      })).filter(item => item.name)
+    : [];
+
+  const date = typeof result.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(result.date)
+    ? result.date
+    : null;
+  const totalMinutes = Math.max(0, Math.floor(Number(result.totalMinutes) || 0));
+  const confidence = Math.max(0, Math.min(100, Math.floor(Number(result.confidence) || 0)));
+  const valid = Boolean(result.valid) && confidence >= 60;
+
+  return {
+    valid,
+    date,
+    totalMinutes,
+    confidence,
+    apps: cleanBreakdown(result.apps),
+    categories: cleanBreakdown(result.categories),
+    reason: String(result.reason || (valid ? "Bildschirmzeit erkannt." : "Kein valider Bildschirmzeit-Screenshot.")),
+  };
+});
 
 exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);

@@ -38,6 +38,27 @@ Antworte NUR mit diesem JSON (kein Markdown, kein Extra-Text):
 
 Schwierigkeiten: "easy", "normal", "hard". Maximal 10 Aufgaben.`;
 
+const EXTRACT_SCREEN_TIME_PROMPT = `${SYSTEM_PERSONA}
+
+Analysiere dieses Bild als letzten Fallback fuer Bildschirmzeit-Tracking.
+Akzeptiere nur klare Screenshots von iOS Bildschirmzeit oder vergleichbaren systemeigenen Digital-Wellbeing-Ansichten.
+Lehne Fotos, bearbeitete Bilder, unklare Screenshots, App-Statistiken ohne Tagesgesamtwert und normale App-Screens ab.
+
+Extrahiere:
+- Datum, wenn sichtbar. Sonst null.
+- Tagesgesamtzeit in Minuten.
+- Confidence von 0-100.
+- Optional die wichtigsten Apps und Kategorien mit Minuten.
+
+Regeln:
+- Keine Schaetzungen ohne sichtbare Grundlage.
+- Tagesgesamtzeit muss ein Wert fuer einen konkreten Tag sein.
+- App- oder Kategoriezeiten duerfen nicht als Gesamtzeit addiert werden, wenn bereits ein Gesamtwert sichtbar ist.
+- Wenn kein valider Bildschirmzeit-Screenshot vorliegt, valid=false.
+
+Antworte NUR mit diesem JSON (kein Markdown, kein Extra-Text):
+{"valid": true, "date": "YYYY-MM-DD", "totalMinutes": 210, "confidence": 85, "apps": [{"name": "Safari", "minutes": 42}], "categories": [{"name": "Social", "minutes": 64}], "reason": "Kurze Begruendung"}`;
+
 // Feature B1: Generate personalized daily quests based on hunter stats
 function GENERATE_QUESTS_PROMPT(stats, level, weakStat, recentQuests) {
   const statNames = { str: "Kraft", int: "Intelligenz", vit: "Vitalität", agi: "Agilität", cha: "Charisma" };
@@ -141,6 +162,7 @@ module.exports = {
   SYSTEM_PERSONA,
   VERIFY_QUEST_PROMPT,
   EXTRACT_TASKS_PROMPT,
+  EXTRACT_SCREEN_TIME_PROMPT,
   GENERATE_QUESTS_PROMPT,
   SYSTEM_MESSAGE_PROMPT,
   COACH_PROMPT,

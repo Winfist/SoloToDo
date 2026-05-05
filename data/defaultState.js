@@ -35,6 +35,16 @@ export const DEFAULT_STATE = {
     healthHistoryRange: "7d"
   },
   healthDailyHistory: {},
+  screenTimePreferences: {
+    enabled: false,
+    dailyLimitMinutes: 180,
+    screenTimeHistoryRange: "7d",
+    fallbackEnabled: false,
+    lastCapability: null
+  },
+  screenTimeDailyHistory: {},
+  screenTimeRewardsClaimed: {},
+  screenTimeSyncDate: null,
   microHabits: { habits: null, daily: {} },
   hiddenQuests: { discovered: [], completed: [] },
   weeklyQuestReset: null,

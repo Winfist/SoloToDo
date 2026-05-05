@@ -632,6 +632,121 @@ export function useGameState(initialHunterName, onLogout) {
     });
   }, [state, persist, enqueueRewardFlow]);
 
+  const updateScreenTimeData = useCallback((totalMinutes, options = {}) => {
+    const current = stateRef.current;
+    if (!current) return;
+
+    const syncedAt = new Date().toLocaleString('de-DE');
+    const nextHistory = { ...(current.screenTimeDailyHistory || {}) };
+    const prefs = {
+      ...(current.screenTimePreferences || {}),
+      ...(options.preferences || {}),
+    };
+    const defaultLimit = Math.max(1, Math.floor(Number(prefs.dailyLimitMinutes) || 180));
+
+    if (options.capabilities) {
+      prefs.lastCapability = {
+        ...options.capabilities,
+        checkedAt: syncedAt,
+      };
+    }
+
+    const normalizeBreakdown = (items) => Array.isArray(items)
+      ? items
+        .map(item => ({
+          name: String(item.name || item.bundleIdentifier || item.category || '').trim(),
+          minutes: Math.max(0, Math.floor(Number(item.minutes ?? item.totalMinutes ?? item.durationMinutes) || 0)),
+        }))
+        .filter(item => item.name && item.minutes >= 0)
+        .slice(0, 20)
+      : undefined;
+
+    const upsertDay = (date, row = {}) => {
+      if (!date) return;
+      const minutes = Math.max(0, Math.floor(Number(row.totalMinutes ?? row.minutes ?? row.value ?? 0)));
+      const limitMinutes = Math.max(1, Math.floor(Number(row.limitMinutes ?? defaultLimit) || defaultLimit));
+      nextHistory[date] = {
+        ...(nextHistory[date] || {}),
+        date,
+        totalMinutes: minutes,
+        limitMinutes,
+        underLimit: minutes <= limitMinutes,
+        source: row.source || options.source || 'native-screen-time',
+        syncedAt: row.syncedAt || syncedAt,
+        ...(row.confidence !== undefined ? { confidence: Math.max(0, Math.min(100, Math.floor(Number(row.confidence) || 0))) } : {}),
+        ...(normalizeBreakdown(row.apps) ? { apps: normalizeBreakdown(row.apps) } : {}),
+        ...(normalizeBreakdown(row.categories) ? { categories: normalizeBreakdown(row.categories) } : {}),
+      };
+    };
+
+    (options.history || options.days || []).forEach(row => {
+      if (!row?.date) return;
+      upsertDay(row.date, row);
+    });
+
+    const dateKey = options.dateKey || options.date || getToday();
+    const hasTotal = totalMinutes !== undefined && totalMinutes !== null && totalMinutes !== '';
+    if (hasTotal) {
+      upsertDay(dateKey, {
+        totalMinutes,
+        limitMinutes: options.limitMinutes,
+        source: options.source,
+        confidence: options.confidence,
+        apps: options.apps,
+        categories: options.categories,
+      });
+    }
+
+    const today = nextHistory[getToday()];
+    persist({
+      ...current,
+      screenTimePreferences: prefs,
+      screenTimeDailyHistory: nextHistory,
+      dailyScreenTimeMinutes: today?.totalMinutes ?? current.dailyScreenTimeMinutes ?? 0,
+      screenTimeSyncDate: syncedAt,
+      lastScreenTimeSync: syncedAt,
+    });
+  }, [persist]);
+
+  const claimScreenTimeReward = useCallback((dateKey, xp = 20, gold = 60, title = "Bildschirmzeit unter Limit", subtitle = "Fokus-Bonus") => {
+    const current = stateRef.current;
+    if (!current || !dateKey) return;
+    const rewardKey = `screen_time_${dateKey}`;
+    if (current.screenTimeRewardsClaimed?.[rewardKey]) return;
+    const day = current.screenTimeDailyHistory?.[dateKey];
+    if (!day || day.underLimit !== true) return;
+
+    const nextClaimed = { ...(current.screenTimeRewardsClaimed || {}), [rewardKey]: true };
+    const leveledState = calculateLevelUp({
+      ...current,
+      screenTimeRewardsClaimed: nextClaimed,
+      gold: (current.gold || 0) + gold,
+      totalGoldEarned: (current.totalGoldEarned || 0) + gold
+    }, xp);
+
+    persist(leveledState);
+
+    const animationQueue = [{
+      type: 'system_message',
+      payload: { title: "ERFOLG: " + title, lines: [`Verdiente Belohnung: +${xp} XP, +${gold} Gold`, subtitle] }
+    }];
+
+    if (leveledState.level > current.level) {
+      animationQueue.push({ type: 'levelup', payload: { oldLevel: current.level, level: leveledState.level, earnedPoints: (leveledState.level - current.level) * 3 } });
+    }
+
+    enqueueRewardFlow({
+      title: "FOKUS-ERFOLG",
+      subtitle: title,
+      xpReceived: xp,
+      goldReceived: gold,
+      animationQueue,
+      deferredUi: {
+        passiveToasts: [{ msg: `Belohnung abgeholt: ${title}`, type: 'success', delayMs: 400 }]
+      }
+    });
+  }, [persist, enqueueRewardFlow]);
+
   const normalizeSubQuestInput = useCallback((items = []) => {
     return (items || [])
       .map((sq) => typeof sq === "string" ? { title: sq } : sq)
@@ -1787,6 +1902,9 @@ export function useGameState(initialHunterName, onLogout) {
     claimDailyGemBonus,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
+    // Screen Time gamification
+    updateScreenTimeData,
+    claimScreenTimeReward,
     GEM_SHOP_ITEMS,
     // Rating system
     rateCompletedQuest,

@@ -3,6 +3,7 @@ import { NAV_ICONS, STAT_ICONS, STORY_ICONS, SHADOW_ICONS, ITEM_ICONS, SHOP_ICON
 import { db, auth } from "../firebase.js";
 import { doc, getDoc } from "firebase/firestore";
 import NativeStatsDashboard from "./NativeStatsDashboard";
+import ScreenTimeDashboard from "./ScreenTimeDashboard.jsx";
 import { Capacitor } from "@capacitor/core";
 
 // ─── NAV TAB REGISTRY ─────────────────────────────────────────
@@ -427,7 +428,7 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
 // ═════════════════════════════════════════════════════════════════
 //  MAIN SETTINGS VIEW
 // ═════════════════════════════════════════════════════════════════
-export default function SettingsView({ state, persist, theme, can, onLogout, updateHealthData, claimHealthReward }) {
+export default function SettingsView({ state, persist, theme, can, onLogout, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI }) {
   // ── Section states ──
   const [openSection, setOpenSection] = useState(null);
   const toggleSection = (key) => setOpenSection(prev => prev === key ? null : key);
@@ -791,6 +792,18 @@ export default function SettingsView({ state, persist, theme, can, onLogout, upd
       <SettingsSection title="Health & Sensoren" icon="❤️" color="#ef4444" open={openSection === "health"} onToggle={() => toggleSection("health")} theme={theme}>
         <div style={{ padding: "0 0 16px 0" }}>
           <NativeStatsDashboard state={state} persist={persist} updateHealthData={updateHealthData} claimHealthReward={claimHealthReward} />
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="Bildschirmzeit & Fokus" icon="FOCUS" color="#f59e0b" open={openSection === "screenTime"} onToggle={() => toggleSection("screenTime")} theme={theme}>
+        <div style={{ padding: "0 0 16px 0" }}>
+          <ScreenTimeDashboard
+            state={state}
+            persist={persist}
+            updateScreenTimeData={updateScreenTimeData}
+            claimScreenTimeReward={claimScreenTimeReward}
+            geminiAI={geminiAI}
+          />
         </div>
       </SettingsSection>
 

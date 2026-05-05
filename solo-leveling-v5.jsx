@@ -253,6 +253,9 @@ function App({ initialHunterName, onLogout }) {
     // Health gamification
     updateHealthData,
     claimHealthReward,
+    // Screen Time gamification
+    updateScreenTimeData,
+    claimScreenTimeReward,
     // Gem system
     watchRewardedAd,
     buyGemItem,
@@ -1196,6 +1199,9 @@ function App({ initialHunterName, onLogout }) {
                 getActiveGemBoosters={getActiveGemBoosters}
                 updateHealthData={updateHealthData}
                 claimHealthReward={claimHealthReward}
+                updateScreenTimeData={updateScreenTimeData}
+                claimScreenTimeReward={claimScreenTimeReward}
+                geminiAI={geminiAI}
               />
             )}
 
@@ -1518,7 +1524,18 @@ function App({ initialHunterName, onLogout }) {
             {/* ◆ ◆ ◆  SETTINGS ◆ ◆ ◆  */}
             {
               view === "settings" && (
-                <SettingsView state={state} persist={persist} theme={theme} can={can} onLogout={onLogout} updateHealthData={updateHealthData} claimHealthReward={claimHealthReward} />
+                <SettingsView
+                  state={state}
+                  persist={persist}
+                  theme={theme}
+                  can={can}
+                  onLogout={onLogout}
+                  updateHealthData={updateHealthData}
+                  claimHealthReward={claimHealthReward}
+                  updateScreenTimeData={updateScreenTimeData}
+                  claimScreenTimeReward={claimScreenTimeReward}
+                  geminiAI={geminiAI}
+                />
               )
             }
           </MotionBlurTransition>

@@ -16,6 +16,8 @@ import GlitchText from "../ui/GlitchText.jsx";
 import { getToday } from "../../data/dateUtils.js";
 import { HealthSummaryWidget } from "./HealthSummaryWidget.jsx";
 import NativeStatsDashboard from "../NativeStatsDashboard.jsx";
+import { ScreenTimeSummaryWidget } from "./ScreenTimeSummaryWidget.jsx";
+import ScreenTimeDashboard from "../ScreenTimeDashboard.jsx";
 
 // ─── CSS KEYFRAMES for edit mode ──────────────────────────────
 const EDIT_MODE_CSS = `
@@ -63,7 +65,10 @@ export default function DashboardView({
   setShowDawnDusk,
   setShowSoulLink,
   updateHealthData,
-  claimHealthReward
+  claimHealthReward,
+  updateScreenTimeData,
+  claimScreenTimeReward,
+  geminiAI
 }) {
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
 
@@ -80,15 +85,16 @@ export default function DashboardView({
   const [editMode, setEditMode] = useState(false);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
+  const [showScreenTimeModal, setShowScreenTimeModal] = useState(false);
 
-  // Lock body scroll when health modal is open
+  // Lock body scroll when detail modals are open
   useEffect(() => {
-    if (showHealthModal) {
+    if (showHealthModal || showScreenTimeModal) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = prev; };
     }
-  }, [showHealthModal]);
+  }, [showHealthModal, showScreenTimeModal]);
 
   // local layout for drag reordering
   const [localLayout, setLocalLayout] = useState(dashConfig.layout);
@@ -421,6 +427,13 @@ export default function DashboardView({
         if (isCollapsed) return { content: null, isEmpty: false };
         return {
           content: <HealthSummaryWidget state={state} theme={theme} openDetails={() => setShowHealthModal(true)} updateHealthData={updateHealthData} />,
+          isEmpty: false
+        };
+
+      case "screen_time_summary":
+        if (isCollapsed) return { content: null, isEmpty: false };
+        return {
+          content: <ScreenTimeSummaryWidget state={state} theme={theme} openDetails={() => setShowScreenTimeModal(true)} updateScreenTimeData={updateScreenTimeData} />,
           isEmpty: false
         };
 
@@ -979,6 +992,52 @@ export default function DashboardView({
                 persist={persist}
                 updateHealthData={updateHealthData}
                 claimHealthReward={claimHealthReward}
+              />
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showScreenTimeModal && typeof document !== "undefined" && createPortal(
+        <div
+          onTouchMove={e => e.stopPropagation()}
+          onWheel={e => e.stopPropagation()}
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)",
+            zIndex: 9999, display: "flex", flexDirection: "column",
+            animation: "fadeIn 0.25s ease",
+            touchAction: "none", overscrollBehavior: "contain"
+          }}>
+          <div style={{ padding: "max(env(safe-area-inset-top, 0px), 24px) 20px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", color: "#f59e0b", letterSpacing: 2 }}>
+              SYSTEM:// SCREEN_TIME
+            </div>
+            <button
+              onClick={() => setShowScreenTimeModal(false)}
+              style={{
+                background: "rgba(255,255,255,0.1)", border: "none",
+                width: 36, height: 36, borderRadius: 18,
+                color: "#fff", fontSize: 18, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center"
+              }}
+            >âœ•</button>
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 40px", touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}>
+            <div style={{
+              background: "rgba(15,23,42,0.6)", borderRadius: 24, padding: "20px",
+              border: "1px solid rgba(245,158,11,0.2)",
+              boxShadow: "0 16px 40px rgba(0,0,0,0.3), inset 0 0 20px rgba(245,158,11,0.05)",
+              maxWidth: 480, margin: "0 auto"
+            }}>
+              <ScreenTimeDashboard
+                state={state}
+                persist={persist}
+                updateScreenTimeData={updateScreenTimeData}
+                claimScreenTimeReward={claimScreenTimeReward}
+                geminiAI={geminiAI}
               />
             </div>
           </div>

@@ -38,6 +38,19 @@ export function migrateState(oldState) {
     ...DEFAULT_STATE.healthDailyHistory,
     ...(oldState.healthDailyHistory || {})
   };
+  s.screenTimePreferences = {
+    ...DEFAULT_STATE.screenTimePreferences,
+    ...(oldState.screenTimePreferences || {})
+  };
+  s.screenTimeDailyHistory = {
+    ...DEFAULT_STATE.screenTimeDailyHistory,
+    ...(oldState.screenTimeDailyHistory || {})
+  };
+  s.screenTimeRewardsClaimed = {
+    ...DEFAULT_STATE.screenTimeRewardsClaimed,
+    ...(oldState.screenTimeRewardsClaimed || {})
+  };
+  s.screenTimeSyncDate = oldState.screenTimeSyncDate || DEFAULT_STATE.screenTimeSyncDate;
   s.story = { ...DEFAULT_STATE.story, ...(oldState.story || {}) };
   s.shadowRegression = { ...DEFAULT_STATE.shadowRegression, ...(oldState.shadowRegression || {}) };
   s.soulLink = { ...DEFAULT_STATE.soulLink, ...(oldState.soulLink || {}) };
