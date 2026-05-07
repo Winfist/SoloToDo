@@ -1,89 +1,86 @@
-// ─── DASHBOARD WIDGET REGISTRY ────────────────────────────────
-// Single source of truth for all widgets available on the dashboard.
-// Each widget defines its key, label, icon, feature requirement, and
-// whether the user may remove it.
+// Single source of truth for all dashboard widgets.
+// The visual dashboard renders carousel widgets as a compact summary strip.
 
 export const DASHBOARD_WIDGETS = [
-  { key: "today_command", label: "Heute", icon: "NOW", color: "#22d3ee", desc: "Top 3, Reminder und Risiken", requires: null, removable: false },
-  { key: "gem_booster", label: "Gem Boosters", icon: "💎", color: "#a855f7", desc: "Aktive Premium-Booster", requires: "gem_shop", removable: true },
-  { key: "hunter_status", label: "Hunter Status", icon: "⚔️", color: "#22d3ee", desc: "Level, Stats & XP-Übersicht", requires: null, removable: true },
-  { key: "streak_display", label: "Streak-Anzeige", icon: "🔥", color: "#f97316", desc: "Dein Streak mit Flammen-Effekt", requires: null, removable: true },
-  { key: "daily_progress", label: "Tagesfortschritt", icon: "📊", color: "#22c55e", desc: "Wie viel du heute geschafft hast", requires: null, removable: true },
-  { key: "quests", label: "Hunter Quests", icon: "📜", color: "#f59e0b", desc: "Aktive Quests & Filter", requires: null, removable: false },
-  { key: "quick_access", label: "Schnellzugriff", icon: "⚡", color: "#6366f1", desc: "Shortcuts zu Features", requires: null, removable: true },
-  { key: "vision_board", label: "Vision Board", icon: "🔮", color: "#a855f7", desc: "Affirmationen & Motivation", requires: "vision_board", removable: true },
-  { key: "habits", label: "Habit Tracker", icon: "🎯", color: "#22c55e", desc: "Tägliche Gewohnheiten", requires: "habit_tracker", removable: true },
-  { key: "micro_habits", label: "Micro-Habits", icon: "✨", color: "#06b6d4", desc: "Kleine tägliche Aufgaben", requires: "micro_habits", removable: true },
-  { key: "next_unlock", label: "System-Update", icon: "🔓", color: "#6366f1", desc: "Nächstes Feature-Unlock", requires: null, removable: true },
-  { key: "health_summary", label: "Bewegung & Health", icon: "👟", color: "#38bdf8", desc: "HealthTracker & Belohnungen", requires: null, removable: true },
-  { key: "screen_time_summary", label: "Bildschirmzeit", icon: "FOCUS", color: "#f59e0b", desc: "Handyzeit, Limits & Fokus-Bonus", requires: null, removable: true },
+  { key: "hunter_status", label: "Hunter Status", icon: "LV", color: "#22d3ee", desc: "Level und XP", requires: null, removable: true },
+  { key: "today_command", label: "Heute", icon: "NOW", color: "#22d3ee", desc: "Fokus, Reminder und Risiken", requires: null, removable: false },
+  { key: "streak_display", label: "Serie", icon: "STR", color: "#f97316", desc: "Aktuelle Serie", requires: null, removable: true, carousel: true },
+  { key: "daily_progress", label: "Tagesfortschritt", icon: "DAY", color: "#22c55e", desc: "Erledigt und offen", requires: null, removable: true, carousel: true },
+  { key: "health_summary", label: "Biometrics", icon: "BIO", color: "#38bdf8", desc: "Schritte und Schlaf", requires: null, removable: true, carousel: true },
+  { key: "screen_time_summary", label: "Bildschirmzeit", icon: "FOC", color: "#f59e0b", desc: "Limit und Trend", requires: null, removable: true, carousel: true },
+  { key: "quests", label: "Quest Board", icon: "QST", color: "#f59e0b", desc: "Aktive Quests", requires: null, removable: false },
+  { key: "gem_booster", label: "Gem Boosters", icon: "GEM", color: "#a855f7", desc: "Aktive Booster", requires: "gem_shop", removable: true },
+  { key: "habits", label: "Habit Tracker", icon: "HAB", color: "#22c55e", desc: "Gewohnheiten", requires: "habit_tracker", removable: true },
+  { key: "micro_habits", label: "Micro-Habits", icon: "MIC", color: "#06b6d4", desc: "Kleine Aufgaben", requires: "micro_habits", removable: true },
+  { key: "next_unlock", label: "System-Update", icon: "UPD", color: "#6366f1", desc: "Naechstes Unlock", requires: null, removable: true },
+  { key: "quick_access", label: "Schnellzugriff", icon: "GO", color: "#6366f1", desc: "Shortcuts", requires: null, removable: true },
+  { key: "vision_board", label: "Vision Board", icon: "VIS", color: "#a855f7", desc: "Affirmationen", requires: "vision_board", removable: true },
 ];
 
-// The default layout order — new users get this
 export const DEFAULT_DASHBOARD_LAYOUT = [
   "today_command",
-  "gem_booster",
   "hunter_status",
-  "quests",
-  "habits",
-  "micro_habits",
-  "vision_board",
+  "streak_display",
+  "daily_progress",
   "health_summary",
   "screen_time_summary",
+  "quests",
+  "gem_booster",
+  "habits",
+  "micro_habits",
   "next_unlock",
 ];
 
-// Which widgets are hidden by default (new widgets start hidden so existing
-// users don't get a changed dashboard unexpectedly)
-export const DEFAULT_HIDDEN_WIDGETS = ["streak_display", "daily_progress", "quick_access"];
+export const DEFAULT_HIDDEN_WIDGETS = ["quick_access", "vision_board"];
 
-/**
- * Merge a saved config with the latest registry.
- * Handles: new widgets added, removed widgets, missing fields.
- */
+const LEGACY_CLEANUP_LAYOUT = [
+  "today_command",
+  "gem_booster",
+  "hunter_status",
+  "streak_display",
+  "daily_progress",
+  "health_summary",
+  "screen_time_summary",
+  "quests",
+  "habits",
+  "micro_habits",
+  "next_unlock",
+];
+
+function sameOrder(a = [], b = []) {
+  return a.length === b.length && a.every((key, index) => key === b[index]);
+}
+
 export function mergeConfig(saved, can) {
   const allKeys = DASHBOARD_WIDGETS.map(w => w.key);
-
-  // layout: saved order, but only valid keys
-  let layout = (saved?.layout || DEFAULT_DASHBOARD_LAYOUT).filter(k => allKeys.includes(k));
-
-  // hidden: saved hidden list
+  const savedLayout = saved?.layout || null;
+  let layout = (sameOrder(savedLayout, LEGACY_CLEANUP_LAYOUT) ? DEFAULT_DASHBOARD_LAYOUT : (savedLayout || DEFAULT_DASHBOARD_LAYOUT))
+    .filter(k => allKeys.includes(k));
   let hidden = saved?.hidden ?? [...DEFAULT_HIDDEN_WIDGETS];
+  const collapsed = saved?.collapsed ?? {};
 
-  // collapsed: saved collapsed map
-  let collapsed = saved?.collapsed ?? {};
-
-  // Enforce mandatory widgets
   const mandatoryKeys = DASHBOARD_WIDGETS.filter(w => !w.removable).map(w => w.key);
-  for (const m of mandatoryKeys) {
-    if (!layout.includes(m)) {
-      layout.unshift(m);
-      hidden = hidden.filter(k => k !== m);
+  for (const key of mandatoryKeys) {
+    if (!layout.includes(key)) {
+      layout.unshift(key);
+      hidden = hidden.filter(k => k !== key);
     }
   }
 
-  // Any new widgets not in layout AND not in hidden → add to hidden
   const known = new Set([...layout, ...hidden]);
   for (const key of allKeys) {
     if (!known.has(key)) {
-      if (key === "today_command") {
-        layout.unshift(key);
-      } else {
-        hidden.push(key);
-      }
+      if (key === "today_command") layout.unshift(key);
+      else hidden.push(key);
     }
   }
 
-  // Remove keys that no longer exist in registry
   layout = layout.filter(k => allKeys.includes(k));
   hidden = hidden.filter(k => allKeys.includes(k));
 
   return { layout, hidden, collapsed };
 }
 
-/**
- * Get the widget definition by key.
- */
 export function getWidgetDef(key) {
   return DASHBOARD_WIDGETS.find(w => w.key === key) || null;
 }

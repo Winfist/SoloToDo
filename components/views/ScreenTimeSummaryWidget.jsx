@@ -117,6 +117,65 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
     };
   }, [capabilities?.canExportDurations, limit, updateScreenTimeData]);
 
+  const trend = getTrend(currentTotal, previousTotal);
+  const underLimit = currentToday.totalMinutes <= limit;
+
+  return (
+    <div
+      onClick={openDetails}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') openDetails?.();
+      }}
+      style={{
+        background: 'linear-gradient(180deg, rgba(8,12,24,0.94), rgba(5,7,15,0.98))',
+        border: '1px solid rgba(148,163,184,0.14)',
+        borderTop: `1px solid ${statusColor}38`,
+        borderRadius: 14,
+        padding: 14,
+        cursor: 'pointer',
+        position: 'relative',
+        overflow: 'hidden',
+        minHeight: 138,
+        boxShadow: '0 10px 28px rgba(0,0,0,0.24)',
+        outline: 'none',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: statusColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.4 }}>FOKUS</div>
+          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>Bildschirmzeit</div>
+        </div>
+        <div style={{ fontSize: 10, color: underLimit ? '#22c55e' : '#ef4444', fontFamily: "'JetBrains Mono',monospace", padding: '4px 8px', borderRadius: 8, border: `1px solid ${underLimit ? '#22c55e35' : '#ef444435'}`, background: underLimit ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)' }}>
+          {underLimit ? 'Unter Limit' : 'Limit'}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+          <div style={{ color: '#f8fafc', fontSize: 34, fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>
+            <AnimatedNumber value={currentToday.totalMinutes} duration={900} format="number" />
+          </div>
+          <div style={{ color: '#94a3b8', fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>min</div>
+        </div>
+        <div style={{ color: '#94a3b8', fontSize: 11, textAlign: 'right', lineHeight: 1.45 }}>
+          Limit {formatMinutes(limit)}<br />
+          Avg {formatMinutes(avg)}
+        </div>
+      </div>
+
+      <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.07)', overflow: 'hidden', marginTop: 12 }}>
+        <div style={{ width: `${progress}%`, height: '100%', background: statusColor, borderRadius: 999, transition: 'width 0.7s ease' }} />
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, color: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>
+        <span>Trend</span>
+        <strong style={{ color: currentTotal <= previousTotal ? '#22c55e' : '#ef4444', fontSize: 12 }}>{trend}</strong>
+      </div>
+    </div>
+  );
+
   return (
     <div
       onClick={openDetails}

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import { createPortal } from "react-dom";
 import { CATEGORIES, ACHIEVEMENTS } from "../../data/gameData.js";
 import { getUnlocksAtLevel } from "../../data/featureUnlocks.js";
-import { STAT_ICONS, GATE_ICONS, QUEST_ICONS, SHADOW_ICONS, NAV_ICONS } from "../../data/icons.js";
+import { STAT_ICONS, GATE_ICONS, QUEST_ICONS } from "../../data/icons.js";
 import { StatRadar, QuestCard, EmergencyQuestCard } from "../../data/constants";
 import HabitTracker from "../HabitTracker.jsx";
 import MicroHabits from "../MicroHabits.jsx";
@@ -12,14 +12,14 @@ import { StreakDisplayWidget, DailyProgressWidget, QuickAccessWidget, TodayComma
 import ScrollReveal from "../ui/ScrollReveal.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
 import { AnimatedNumber } from "../../hooks/useAnimatedCounter.jsx";
-import GlitchText from "../ui/GlitchText.jsx";
 import { getToday } from "../../data/dateUtils.js";
 import { HealthSummaryWidget } from "./HealthSummaryWidget.jsx";
 import NativeStatsDashboard from "../NativeStatsDashboard.jsx";
 import { ScreenTimeSummaryWidget } from "./ScreenTimeSummaryWidget.jsx";
 import ScreenTimeDashboard from "../ScreenTimeDashboard.jsx";
+import { ScreenTimeVerifyModal } from "../ScreenTimeVerifyModal.jsx";
 
-// ─── CSS KEYFRAMES for edit mode ──────────────────────────────
+// ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
 const EDIT_MODE_CSS = `
 @keyframes widgetJelly {
   0%, 100% { transform: rotate(-0.4deg); }
@@ -28,6 +28,31 @@ const EDIT_MODE_CSS = `
 @keyframes addWidgetPulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.02); }
+}
+`;
+
+const CAROUSEL_CSS = `
+.dash-carousel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 0 8px;
+}
+.dash-carousel::-webkit-scrollbar { display: none; }
+.dash-carousel-card {
+  scroll-snap-align: start;
+  flex: 0 0 84%;
+  max-width: 360px;
+  min-width: 0;
+}
+@media (min-width: 520px) {
+  .dash-carousel-card {
+    flex: 0 0 calc(50% - 4px);
+    max-width: none;
+  }
 }
 `;
 
@@ -71,6 +96,21 @@ export default function DashboardView({
   geminiAI
 }) {
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
+
+  // --- Screen Time OCR Modal State ---
+  const [showScreenTimeScanner, setShowScreenTimeScanner] = useState(false);
+  const [activeScreenTimeQuest, setActiveScreenTimeQuest] = useState(null);
+
+  const handleInterceptComplete = useCallback((questId, rect) => {
+    const allQuests = filteredQuests || [];
+    const q = allQuests.find(qu => qu.id === questId);
+    if (q && q.isScreenTime) {
+      setActiveScreenTimeQuest(q);
+      setShowScreenTimeScanner(true);
+      return;
+    }
+    completeQuest(questId, rect);
+  }, [filteredQuests, completeQuest]);
 
   // ── Quest sub-state (unchanged from original) ──
   const [originFilter, setOriginFilter] = useState("all");
@@ -251,17 +291,40 @@ export default function DashboardView({
   }, [commitConfig]);
 
   // ── Compute visible widgets ──
-  // In normal mode, filter out widgets that are gated by features not yet unlocked
-  // In edit mode, show all widgets in the layout (gated ones won't render content)
-  const visibleWidgets = useMemo(() => {
-    return localLayout
+  // Split into carousel (horizontal strip) and regular (vertical stack)
+  const { carouselWidgets, regularWidgets } = useMemo(() => {
+    const all = localLayout
       .map(key => getWidgetDef(key))
       .filter(w => {
         if (!w) return false;
         if (w.requires && !can(w.requires)) return false;
         return true;
       });
-  }, [localLayout, can]);
+    if (editMode) return { carouselWidgets: [], regularWidgets: all };
+    return {
+      carouselWidgets: all.filter(w => w.carousel),
+      regularWidgets: all.filter(w => !w.carousel),
+    };
+  }, [localLayout, can, editMode]);
+
+  // For edit mode & drag: all widgets flat
+  const visibleWidgets = useMemo(() => {
+    if (editMode) return regularWidgets;
+    return regularWidgets;
+  }, [editMode, regularWidgets]);
+
+  // Carousel scroll state for dot indicators
+  const carouselRef = useRef(null);
+  const [activeCarouselIdx, setActiveCarouselIdx] = useState(0);
+
+  const handleCarouselScroll = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el || !el.children.length) return;
+    const scrollLeft = el.scrollLeft;
+    const cardWidth = el.children[0].offsetWidth + 8;
+    const idx = Math.round(scrollLeft / cardWidth);
+    setActiveCarouselIdx(Math.max(0, Math.min(idx, carouselWidgets.length - 1)));
+  }, [carouselWidgets.length]);
 
   // Available widgets to add (hidden + feature-unlocked)
   const availableWidgets = useMemo(() => {
@@ -352,63 +415,89 @@ export default function DashboardView({
           isEmpty: false,
           content: (
             <>
-              {/* ── PLAYER STATS (LEVEL & RADAR) ── */}
-              {!editMode && (
-                <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 0 16px" }}>
-                  <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
-                  <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER STATUS</div>
-                  <button
-                    onClick={() => setShowDashboardStats(!showDashboardStats)}
-                    style={{ background: showDashboardStats ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg,${theme.primary}22,${theme.primary}0a)`, border: `1px solid ${theme.primary}55`, borderRadius: 12, padding: "4px 10px", fontSize: 9, color: showDashboardStats ? "#94a3b8" : theme.primary, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", transition: "all 0.2s" }}
-                  >
-                    {showDashboardStats ? "VERBERGEN ▲" : "ANZEIGEN ▼"}
-                  </button>
-                  <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
+              {/* ── COMPACT HUNTER STATUS ── */}
+              <button
+                onClick={() => setShowDashboardStats(!showDashboardStats)}
+                style={{
+                  width: "100%", background: "rgba(8,12,24,0.82)", border: "1px solid rgba(148,163,184,0.12)",
+                  borderRadius: 12, padding: "12px 13px", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 14,
+                  marginBottom: showDashboardStats ? 12 : 0,
+                  transition: "all 0.25s ease",
+                  boxShadow: "0 8px 22px rgba(0,0,0,0.18)",
+                }}
+              >
+                {/* Level badge */}
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  background: `${theme.primary}12`,
+                  border: `1px solid ${theme.primary}30`,
+                }}>
+                  <div style={{ fontSize: 8, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, lineHeight: 1 }}>LVL</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1 }}>{state.level}</div>
                 </div>
-              )}
 
-              {(showDashboardStats || editMode) && (
+                {/* XP bar + info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif" }}>{state.hunterName}</span>
+                    <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>
+                      {state.xp.toLocaleString()} / {xpNeeded.toLocaleString()} XP
+                    </span>
+                  </div>
+                  <div style={{ height: 6, background: "rgba(15,15,30,0.9)", borderRadius: 3, overflow: "hidden", border: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{
+                      width: `${xpPercent}%`, height: "100%", borderRadius: 3,
+                      background: `linear-gradient(90deg,${theme.primary},${theme.accent})`,
+                      transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
+                      position: "relative", overflow: "hidden",
+                    }}>
+                    </div>
+                  </div>
+                  {(streakBonus > 0 || formationBonus.dungeonBonus > 0) && (
+                    <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                      {streakBonus > 0 && <span style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace" }}>Serie +{streakBonus}%</span>}
+                      {formationBonus.dungeonBonus > 0 && <span style={{ fontSize: 9, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace" }}>Formation +{formationBonus.dungeonBonus}%</span>}
+                    </div>
+                  )}
+                </div>
+
+                {/* Expand chevron */}
+                <div style={{
+                  fontSize: 11, color: theme.primary, transition: "transform 0.3s",
+                  transform: showDashboardStats ? "rotate(180deg)" : "rotate(0deg)",
+                  flexShrink: 0,
+                }}>v</div>
+              </button>
+
+              {/* Expanded stats (radar + attributes) */}
+              {showDashboardStats && (
                 <>
                   <ScrollReveal animation="scaleIn" duration={0.5}>
                     <TiltCard tiltIntensity={6} glareIntensity={0.1} holographic borderGlow={theme.primary}>
-                      <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "24px 22px 20px", marginBottom: 16, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)` }}>
-                        <div style={{ position: "absolute", top: 0, right: 0, width: "60%", height: "100%", background: `radial-gradient(circle at 100% 30%,${theme.primary}0a,transparent 70%)`, pointerEvents: "none" }} />
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, position: "relative" }}>
+                      <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "20px 18px 16px", marginBottom: 12, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3)` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div>
-                            <GlitchText variant="scan" duration={1200} color="#22d3ee">
-                              {`> SYSTEM ONLINE. WILLKOMMEN, ${state.hunterName.toUpperCase()}.`}
-                            </GlitchText>
-                            <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 4, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, marginTop: 10 }}>HUNTER LEVEL</div>
-                            <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 40px ${theme.primary}33` }}><AnimatedNumber value={state.level} duration={600} format="number" /></div>
-                            {streakBonus > 0 && <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}><img src={STAT_ICONS.str} alt="Streak" style={{ width: 12, height: 12, objectFit: "contain", filter: "drop-shadow(0 0 4px #f59e0b88)" }} /> +{streakBonus}% XP</div>}
-                            {formationBonus.dungeonBonus > 0 && <div style={{ fontSize: 10, color: "#a78bfa", marginTop: 3, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}><img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 12, height: 12, objectFit: "contain", filter: "drop-shadow(0 0 4px #a78bfa88) brightness(0.6) invert(1)" }} /> +{formationBonus.dungeonBonus}% Dungeon</div>}
+                            <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>POWER LEVEL</div>
+                            <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 30px ${theme.primary}33` }}><AnimatedNumber value={state.level} duration={600} format="number" /></div>
                           </div>
-                          <StatRadar stats={state.stats} theme={theme} size={110} />
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>
-                          <span style={{ letterSpacing: 2 }}>EXP</span><span><AnimatedNumber value={state.xp} duration={800} format="locale" /> / {xpNeeded.toLocaleString()}</span>
-                        </div>
-                        <div style={{ height: 10, background: "rgba(15,15,30,0.9)", borderRadius: 5, overflow: "hidden", position: "relative", border: "1px solid rgba(255,255,255,0.04)" }}>
-                          <div style={{ width: `${xpPercent}%`, height: "100%", borderRadius: 5, background: `linear-gradient(90deg,${theme.primary},${theme.accent})`, boxShadow: `0 0 16px ${theme.glow},0 2px 8px ${theme.primary}44`, transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)", position: "relative", overflow: "hidden" }}>
-                            <div style={{ position: "absolute", top: 0, left: "-100%", width: "60%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)", animation: "shimmer 2.5s ease-in-out infinite" }} />
-                          </div>
+                          <StatRadar stats={state.stats} theme={theme} size={100} />
                         </div>
                       </div>
                     </TiltCard>
                   </ScrollReveal>
-                  <ScrollReveal animation="slideUp" stagger={0.06}>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8, marginBottom: 24 }}>
-                      {CATEGORIES.map((cat, i) => (
-                        <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}20`, borderRadius: 16, padding: "12px 4px 10px", textAlign: "center", backdropFilter: "blur(8px)", transition: "border-color 0.3s,transform 0.2s,box-shadow 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${cat.color}18`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "20"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
-                          <div style={{ width: 44, height: 44, margin: "0 auto", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "50%", background: `radial-gradient(circle, ${cat.color}18 0%, ${cat.color}08 70%, transparent 100%)`, border: `1.5px solid ${cat.color}30`, overflow: "hidden", boxShadow: `0 0 20px ${cat.color}20, inset 0 0 12px ${cat.color}10` }}>
-                            {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "110%", height: "110%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 6px ${cat.color}66)`, transform: "scale(1.15)" }} /> : <span style={{ fontSize: 20 }}>{cat.icon}</span>}
-                          </div>
-                          <div style={{ fontSize: 9, color: cat.color, marginTop: 5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1.5, textShadow: `0 0 8px ${cat.color}44` }}>{cat.stat}</div>
-                          <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 2, textShadow: "0 0 12px rgba(255,255,255,0.1)" }}><AnimatedNumber value={(state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0)} duration={700} delay={i * 80} format="number" /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6, marginBottom: 16 }}>
+                    {CATEGORIES.map((cat, i) => (
+                      <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}20`, borderRadius: 12, padding: "8px 2px 6px", textAlign: "center", backdropFilter: "blur(8px)", transition: "border-color 0.3s" }}>
+                        <div style={{ width: 32, height: 32, margin: "0 auto", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "50%", background: `radial-gradient(circle, ${cat.color}18 0%, transparent 100%)`, border: `1px solid ${cat.color}25`, overflow: "hidden" }}>
+                          {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "110%", height: "110%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 4px ${cat.color}66)`, transform: "scale(1.1)" }} /> : <span style={{ fontSize: 16 }}>{cat.icon}</span>}
                         </div>
-                      ))}
-                    </div>
-                  </ScrollReveal>
+                        <div style={{ fontSize: 8, color: cat.color, marginTop: 3, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1 }}>{cat.stat}</div>
+                        <div style={{ fontSize: 15, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 1 }}><AnimatedNumber value={(state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0)} duration={700} delay={i * 80} format="number" /></div>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
             </>
@@ -443,76 +532,89 @@ export default function DashboardView({
           isEmpty: false,
           content: (
             <>
-              {/* ── HUNTER QUESTS ── */}
-              {!editMode && (
-                <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0 16px" }}>
-                  <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
-                  <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
-                  <div style={{ height: 1, flex: 1, background: `linear-gradient(270deg,transparent,${theme.primary}55)` }} />
-                </div>
-              )}
-
               {/* ── EMERGENCY QUEST ── */}
               {can('emergency_quests') && state.emergencyQuest && (
                 <EmergencyQuestCard quest={state.emergencyQuest} done={state.emergencyDone} failed={state.emergencyFailed} onComplete={completeEmergencyQuest} theme={theme} />
               )}
 
-              {/* ── QUEST FILTERS + ADD ── */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 6, flexWrap: "wrap" }}>
-                {can('quest_filters') && <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 2, flex: 1 }}>
+              {/* ── COMPACT QUEST BAR: Filters + Actions in one row ── */}
+              <div style={{
+                display: "flex",
+                alignItems: "flex-end",
+                justifyContent: "space-between",
+                gap: 12,
+                margin: "2px 0 10px",
+              }}>
+                <div>
+                  <div style={{ fontSize: 10, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.4 }}>AUFTRAEGE</div>
+                  <div style={{ fontSize: 18, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900, lineHeight: 1.1 }}>Quest Board</div>
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>
+                  {visibleQuests.length} offen
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12, padding: 8, borderRadius: 12, background: "rgba(8,12,24,0.78)", border: "1px solid rgba(148,163,184,0.12)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {can('quest_filters') && <div style={{ display: "flex", gap: 4, overflowX: "auto", flex: 1, scrollbarWidth: "none" }}>
                   {[
                     { key: "all", label: "Alle", color: theme.accent },
                     { key: "daily", label: "Daily", color: "#22d3ee" },
                     { key: "side", label: "Side", color: "#a78bfa" },
-                    ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly", color: "#8b5cf6" }] : []),
+                    ...(can('weekly_quests') ? [{ key: "weekly", label: "Woche", color: "#8b5cf6" }] : []),
                     ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
-                    ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: hiddenQuestCount, color: "#6366f1", icon: QUEST_ICONS.hidden }] : []),
+                    ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: `Hidden ${hiddenQuestCount}`, color: "#6366f1", icon: QUEST_ICONS.hidden }] : []),
                   ].map(f => (
                     <button key={f.key} onClick={() => setQuestFilter(f.key)} style={{
-                      padding: "5px 10px", borderRadius: 8, fontSize: 10, fontWeight: 600, flexShrink: 0,
-                      background: questFilter === f.key ? f.color + "22" : "transparent",
+                      padding: "6px 9px", borderRadius: 8, fontSize: 10, fontWeight: 800, flexShrink: 0,
+                      background: questFilter === f.key ? f.color + "1a" : "transparent",
                       color: questFilter === f.key ? f.color : "#475569",
-                      border: `1px solid ${questFilter === f.key ? f.color + "44" : "transparent"}`,
-                      transition: "all 0.25s", fontFamily: "'JetBrains Mono',monospace"
+                      border: `1px solid ${questFilter === f.key ? f.color + "44" : "rgba(255,255,255,0.05)"}`,
+                      transition: "all 0.2s", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5,
                     }}>
-                      {f.icon ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><img src={f.icon} alt="" style={{ width: 12, height: 12, objectFit: "contain" }} />{f.label}</span> : f.label}
+                      {f.icon ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><img src={f.icon} alt="" style={{ width: 10, height: 10, objectFit: "contain" }} />{f.label}</span> : f.label}
                     </button>
                   ))}
-                </div>}
-                {can('ai_task_scan') && setShowTaskScan && (
-                  <button onClick={() => setShowTaskScan(true)} style={{ padding: "8px 12px", borderRadius: 12, fontSize: 11, fontWeight: 700, background: "rgba(0,200,255,0.1)", color: "#0af", border: "1px solid rgba(0,200,255,0.3)", fontFamily: "'Courier New',monospace", letterSpacing: 1, display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>📷 SCAN</button>
+                  </div>}
+                  <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                  {can('ai_task_scan') && setShowTaskScan && (
+                    <button onClick={() => setShowTaskScan(true)} style={{ height: 34, padding: "0 10px", borderRadius: 9, background: "rgba(34,211,238,0.08)", color: theme.primary, border: `1px solid ${theme.primary}2c`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>SCAN</button>
+                  )}
+                  {createQuest && (
+                    <button onClick={() => quickAddMode ? setQuickAddMode(false) : setQuickAddMode(true)} style={{ width: 32, height: 32, borderRadius: 10, background: quickAddMode ? theme.primary + "22" : "rgba(255,255,255,0.04)", color: quickAddMode ? theme.primary : "#64748b", border: `1px solid ${quickAddMode ? theme.primary + "55" : "rgba(255,255,255,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 700, transition: "all 0.2s" }}>+</button>
+                  )}
+                  <button onClick={() => setShowCreate(true)} style={{ padding: "0 12px", height: 32, borderRadius: 10, fontSize: 10, fontWeight: 900, background: `${theme.primary}18`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}34`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s" }}>NEU</button>
+                  </div>
+                </div>
+                {can('quest_filters') && (
+                  <div style={{ display: "flex", gap: 5, marginTop: 7 }}>
+                    {[
+                      { key: "all", label: "Alle Quellen" },
+                      { key: "system", label: "System" },
+                      { key: "custom", label: "Eigene" },
+                    ].map(f => (
+                      <button
+                        key={f.key}
+                        onClick={() => setOriginFilter(f.key)}
+                        style={{
+                          flex: 1,
+                          padding: "6px 4px",
+                          borderRadius: 8,
+                          background: originFilter === f.key ? "rgba(255,255,255,0.06)" : "transparent",
+                          border: `1px solid ${originFilter === f.key ? "rgba(148,163,184,0.2)" : "rgba(255,255,255,0.05)"}`,
+                          color: originFilter === f.key ? "#cbd5e1" : "#475569",
+                          fontSize: 9,
+                          fontWeight: 800,
+                          fontFamily: "'JetBrains Mono',monospace",
+                          cursor: "pointer",
+                        }}
+                      >{f.label}</button>
+                    ))}
+                  </div>
                 )}
-                <button onClick={() => setShowCreate(true)} style={{ padding: "8px 14px", borderRadius: 12, fontSize: 11, fontWeight: 900, background: `linear-gradient(135deg,${theme.primary},${theme.secondary})`, color: "#fff", border: "none", boxShadow: `0 4px 16px ${theme.glow}`, textShadow: "0 1px 4px rgba(0,0,0,0.4)", fontFamily: "'Cinzel',serif", letterSpacing: 1.5, display: "flex", alignItems: "center", gap: 6, flexShrink: 0, transition: "all 0.3s", transform: "translateY(-1px)", animation: "float 3s ease-in-out infinite" }}>+ QUEST</button>
               </div>
 
-              {/* ── ORIGIN FILTER + QUICK ADD ── */}
-              <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
-                {[
-                  { key: "all", label: "◈ ALLE", color: "#64748b" },
-                  { key: "system", label: "⚙ SYSTEM", color: "#06b6d4" },
-                  { key: "custom", label: "✦ EIGENE", color: "#f59e0b" },
-                ].map(f => (
-                  <button key={f.key} onClick={() => setOriginFilter(f.key)} style={{
-                    padding: "4px 10px", borderRadius: 7, fontSize: 9, fontWeight: 700,
-                    background: originFilter === f.key ? f.color + "1a" : "transparent",
-                    color: originFilter === f.key ? f.color : "#334155",
-                    border: `1px solid ${originFilter === f.key ? f.color + "44" : "rgba(255,255,255,0.05)"}`,
-                    fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1,
-                    transition: "all 0.2s", cursor: "pointer",
-                  }}>{f.label}</button>
-                ))}
-                <div style={{ flex: 1 }} />
-                {createQuest && (
-                  <button onClick={() => { setQuickAddMode(v => !v); setQuickAddTitle(""); }} style={{
-                    padding: "4px 10px", borderRadius: 7, fontSize: 13, fontWeight: 700,
-                    background: quickAddMode ? theme.primary + "1a" : "transparent",
-                    color: quickAddMode ? theme.primary : "#475569",
-                    border: `1px solid ${quickAddMode ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
-                    fontFamily: "'JetBrains Mono',monospace", lineHeight: 1,
-                    transition: "all 0.2s", cursor: "pointer",
-                  }}>+</button>
-                )}
-              </div>
+
 
               {/* ── QUICK ADD INPUT ── */}
               {quickAddMode && (
@@ -528,7 +630,7 @@ export default function DashboardView({
                       }
                       if (e.key === "Escape") { setQuickAddTitle(""); setQuickAddMode(false); }
                     }}
-                    placeholder="Quest-Titel... [Enter] ✓  [Esc] ✗"
+                    placeholder="Neue Quest... Enter speichert, Esc bricht ab"
                     style={{
                       flex: 1, padding: "8px 12px", borderRadius: 8,
                       background: "rgba(255,255,255,0.03)",
@@ -557,7 +659,7 @@ export default function DashboardView({
                         <>
                           <SectionHeader title="SYSTEM-AUFTRÄGE" icon="⚙" color="#06b6d4" count={systemQuests.length} sectionKey="system" />
                           {!collapsedSections.system && systemQuests.map((q, i) => (
-                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
+                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
                           ))}
                         </>
                       )}
@@ -565,14 +667,14 @@ export default function DashboardView({
                         <>
                           <SectionHeader title="DEINE QUESTS" icon="✦" color="#f59e0b" count={userQuests.length} sectionKey="user" />
                           {!collapsedSections.user && userQuests.map((q, i) => (
-                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
+                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
                           ))}
                         </>
                       )}
                     </>
                   ) : (
                     sortedVisibleQuests.map((q, i) => (
-                      <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
+                      <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
                     ))
                   )}
                 </div>
@@ -683,36 +785,75 @@ export default function DashboardView({
     }
   };
 
+  const renderSummaryCarousel = () => {
+    if (editMode || carouselWidgets.length === 0) return null;
+    const cards = carouselWidgets.map(widget => {
+      const { content, isEmpty } = renderWidget(widget.key);
+      if (isEmpty || !content) return null;
+      return (
+        <div key={widget.key} className="dash-carousel-card">
+          {content}
+        </div>
+      );
+    }).filter(Boolean);
+
+    if (cards.length === 0) return null;
+
+    return (
+      <div style={{ marginTop: 14 }}>
+        <div
+          ref={carouselRef}
+          className="dash-carousel"
+          onScroll={handleCarouselScroll}
+        >
+          {cards}
+        </div>
+        {cards.length > 1 && (
+          <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 2 }}>
+            {carouselWidgets.map((w, i) => (
+              <div key={w.key} style={{
+                width: activeCarouselIdx === i ? 16 : 5,
+                height: 5,
+                borderRadius: 3,
+                background: activeCarouselIdx === i ? theme.accent : "rgba(255,255,255,0.12)",
+                transition: "all 0.25s ease",
+              }} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div style={{ animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
+      <style>{CAROUSEL_CSS}</style>
       {editMode && <style>{EDIT_MODE_CSS}</style>}
 
       {/* ── EDIT MODE HEADER ── */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: editMode ? 16 : 4, padding: editMode ? "12px 16px" : 0,
-        background: editMode ? `linear-gradient(135deg, ${theme.primary}12, ${theme.primary}06)` : "transparent",
-        border: editMode ? `1px solid ${theme.primary}30` : "none",
-        borderRadius: 16,
+        marginBottom: editMode ? 16 : 8, padding: editMode ? "12px 16px" : "0 2px",
+        background: editMode ? "rgba(8,12,24,0.88)" : "transparent",
+        border: editMode ? `1px solid ${theme.primary}24` : "none",
+        borderRadius: 14,
         transition: "all 0.3s ease",
       }}>
         {editMode ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 16 }}>✏️</span>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#e2e8f0", fontFamily: "'Cinzel',serif", letterSpacing: 1 }}>DASHBOARD ANPASSEN</div>
-                <div style={{ fontSize: 9, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>DRAG · HIDE · REORDER</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif" }}>Dashboard anpassen</div>
+                <div style={{ fontSize: 9, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>DRAG / HIDE / REORDER</div>
               </div>
             </div>
             <button
               onClick={() => setEditMode(false)}
               style={{
                 padding: "8px 16px", borderRadius: 10,
-                background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary || theme.primary})`,
-                color: "#fff", border: "none", fontSize: 11, fontWeight: 800,
-                fontFamily: "'Cinzel',serif", letterSpacing: 2, cursor: "pointer",
-                boxShadow: `0 4px 16px ${theme.glow}`,
+                background: `${theme.primary}18`,
+                color: theme.accent || theme.primary, border: `1px solid ${theme.primary}32`, fontSize: 11, fontWeight: 800,
+                fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
                 transition: "all 0.2s",
               }}
             >FERTIG</button>
@@ -723,9 +864,9 @@ export default function DashboardView({
               onClick={() => setEditMode(true)}
               style={{
                 display: "flex", alignItems: "center", gap: 5,
-                padding: "5px 12px", borderRadius: 10,
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                padding: "5px 10px", borderRadius: 9,
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.06)",
                 color: "#64748b", fontSize: 10, fontWeight: 600,
                 fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
                 transition: "all 0.25s",
@@ -733,7 +874,7 @@ export default function DashboardView({
               onMouseEnter={e => { e.currentTarget.style.borderColor = theme.primary + "44"; e.currentTarget.style.color = theme.accent; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#64748b"; }}
             >
-              ✏️ ANPASSEN
+              Layout
             </button>
           </div>
         )}
@@ -852,6 +993,7 @@ export default function DashboardView({
 
               {/* Actual widget content */}
               {content}
+              {!editMode && def.key === "today_command" && renderSummaryCarousel()}
             </div>
           );
         })}
@@ -1022,7 +1164,7 @@ export default function DashboardView({
                 color: "#fff", fontSize: 18, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center"
               }}
-            >âœ•</button>
+            >x</button>
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 40px", touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}>
@@ -1043,6 +1185,25 @@ export default function DashboardView({
           </div>
         </div>,
         document.body
+      )}
+      {showScreenTimeScanner && activeScreenTimeQuest && (
+        <ScreenTimeVerifyModal
+          quest={activeScreenTimeQuest}
+          geminiAI={geminiAI}
+          dailyLimitMinutes={state?.screenTimePreferences?.dailyLimitMinutes || 120}
+          theme={theme}
+          onComplete={(verified) => {
+            setShowScreenTimeScanner(false);
+            if (verified) {
+              completeQuest(activeScreenTimeQuest.id, null);
+            }
+            setActiveScreenTimeQuest(null);
+          }}
+          onSkip={() => {
+            setShowScreenTimeScanner(false);
+            setActiveScreenTimeQuest(null);
+          }}
+        />
       )}
     </div>
   );

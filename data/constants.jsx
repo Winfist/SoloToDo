@@ -753,7 +753,7 @@ function QuestTimer({ expiresAt, color = "#ef4444" }) {
       animation: urgent && timeLeft < 600 ? "breathe 0.8s infinite" : "none",
       letterSpacing: 1,
     }}>
-      ⏱ {h > 0 ? `${pad(h)}:` : ""}{pad(m)}:{pad(s)}
+      T-{h > 0 ? `${pad(h)}:` : ""}{pad(m)}:{pad(s)}
     </span>
   );
 }
@@ -916,6 +916,198 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
     }
     setTimeout(() => onComplete(quest.id, rect ? { x: rect.left + rect.width / 2, y: rect.top } : null), 500);
   };
+
+  const questAccent = isOverdue ? "#ef4444" : isDueToday ? "#f59e0b" : isSystemQuest ? "#38bdf8" : isHidden ? typeCfg.color : diff.color;
+  const completionBlocked = subQuests.length > 0 && !allSubsDone;
+  const subQuestProgress = subQuests.length > 0 ? (completedSubs / subQuests.length) * 100 : 0;
+  const dueLabel = isOverdue ? "UEBERFAELLIG" : isDueToday ? "HEUTE" : quest.dueDate;
+  const typeLabel = (typeCfg.label || quest.type || "Quest").toUpperCase();
+  const categoryLabel = cat.stat || quest.category || "STAT";
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div
+        ref={cardRef}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        onClick={() => { if (onOpenDetail) onOpenDetail(quest); }}
+        style={{
+          background: completing ? `${questAccent}0f` : "rgba(8,12,24,0.92)",
+          border: `1px solid ${hover ? questAccent + "4d" : "rgba(148,163,184,0.12)"}`,
+          borderLeft: `3px solid ${questAccent}${hover ? "aa" : "66"}`,
+          borderRadius: 12,
+          padding: "12px",
+          display: "grid",
+          gridTemplateColumns: "36px minmax(0,1fr) auto",
+          gap: 11,
+          alignItems: "flex-start",
+          boxShadow: hover ? "0 12px 28px rgba(0,0,0,0.28)" : "0 6px 18px rgba(0,0,0,0.18)",
+          transform: hover && !completing ? "translateY(-1px)" : "none",
+          transition: "border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease",
+          opacity: completing ? 0.5 : isEasy ? 0.93 : 1,
+          cursor: onOpenDetail ? "pointer" : "default",
+        }}
+      >
+        <button
+          onClick={(e) => { e.stopPropagation(); handleComplete(); }}
+          className="press-feedback"
+          title={completionBlocked ? "Erst Etappen abschliessen" : "Quest abschliessen"}
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 9,
+            background: confirming ? "rgba(245,158,11,0.12)" : completionBlocked ? "rgba(255,255,255,0.025)" : `${questAccent}10`,
+            border: `1px solid ${confirming ? "#f59e0b88" : completionBlocked ? "rgba(148,163,184,0.16)" : questAccent + "55"}`,
+            color: confirming ? "#f59e0b" : completionBlocked ? "#64748b" : questAccent,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 10,
+            fontWeight: 900,
+            fontFamily: "'JetBrains Mono',monospace",
+            cursor: completionBlocked ? "default" : "pointer",
+            transition: "background 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
+          }}
+        >
+          {completing ? "OK" : confirming ? "JA?" : completionBlocked ? `${completedSubs}/${subQuests.length}` : (
+            <span style={{ width: 9, height: 9, borderRadius: 999, background: "currentColor", opacity: 0.45 }} />
+          )}
+        </button>
+
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginBottom: 6 }}>
+            <span style={{ padding: "2px 7px", borderRadius: 7, color: questAccent, background: `${questAccent}12`, border: `1px solid ${questAccent}26`, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.4 }}>
+              {typeLabel}
+            </span>
+            <span style={{ padding: "2px 7px", borderRadius: 7, color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+              {isSystemQuest ? "System" : "Eigen"}
+            </span>
+            <span style={{ padding: "2px 7px", borderRadius: 7, color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+              {categoryLabel}
+            </span>
+            {quest.dueDate && (
+              <span style={{ padding: "2px 7px", borderRadius: 7, color: isOverdue ? "#ef4444" : isDueToday ? "#f59e0b" : "#94a3b8", background: isOverdue ? "rgba(239,68,68,0.1)" : isDueToday ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.035)", border: `1px solid ${isOverdue ? "#ef444433" : isDueToday ? "#f59e0b33" : "rgba(255,255,255,0.07)"}`, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+                {dueLabel}
+              </span>
+            )}
+            {reminderLabel && (
+              <span style={{ padding: "2px 7px", borderRadius: 7, color: theme.primary, background: `${theme.primary}10`, border: `1px solid ${theme.primary}24`, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+                REM
+              </span>
+            )}
+            {quest.type === "weekly" && quest.timeLimit && <QuestTimer expiresAt={quest.timeLimit} color="#8b5cf6" />}
+          </div>
+
+          {quest.systemMessage && (
+            <div style={{ fontSize: 10, color: "#f87171", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, background: "rgba(248,113,113,0.08)", padding: "5px 7px", borderRadius: 7, border: "1px solid rgba(248,113,113,0.18)" }}>
+              {quest.systemMessage}
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div
+              onClick={(e) => {
+                if (onOpenDetail) { e.stopPropagation(); onOpenDetail(quest); }
+                else if (hasDetails) { e.stopPropagation(); setExpanded(!expanded); }
+              }}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                fontSize: 14,
+                fontWeight: 750,
+                color: completing ? "#64748b" : "#e5e7eb",
+                textDecoration: completing ? "line-through" : "none",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: expanded ? "normal" : "nowrap",
+                fontFamily: "'Outfit',sans-serif",
+                lineHeight: 1.35,
+                cursor: (onOpenDetail || hasDetails) ? "pointer" : "inherit",
+              }}
+            >
+              {quest.title}
+            </div>
+            <span style={{ flexShrink: 0, color: "#a78bfa", fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+              +{xpGain} XP
+            </span>
+          </div>
+
+          {quest.description && quest.description.trim() && !expanded && (
+            <div style={{ marginTop: 4, color: "#64748b", fontSize: 11, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>
+              {quest.description}
+            </div>
+          )}
+
+          {(quest.priority || quest.energy || quest.context || quest.tags?.length > 0) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 8 }}>
+              <span style={{ color: priorityMeta?.color || "#94a3b8", background: `${priorityMeta?.color || "#94a3b8"}12`, border: `1px solid ${priorityMeta?.color || "#94a3b8"}24`, borderRadius: 7, padding: "2px 7px", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+                {priorityMeta?.label || "MITTEL"}
+              </span>
+              {energyMeta && <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "2px 7px", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{energyMeta}</span>}
+              {quest.context && <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "2px 7px", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{quest.context}</span>}
+              {quest.tags?.slice(0, 2).map((t, i) => (
+                <span key={i} style={{ color: "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}>#{t}</span>
+              ))}
+            </div>
+          )}
+
+          {quest.type === "chained" && <ChainedQuestProgress quest={quest} />}
+
+          {subQuests.length > 0 && !expanded && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+              <div style={{ flex: 1, height: 5, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${subQuestProgress}%`, borderRadius: 999, background: allSubsDone ? "#22c55e" : questAccent, transition: "width 0.3s ease" }} />
+              </div>
+              <span style={{ color: allSubsDone ? "#22c55e" : "#64748b", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{completedSubs}/{subQuests.length}</span>
+            </div>
+          )}
+
+          {expanded && (
+            <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              {quest.description && quest.description.trim() && (
+                <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.5, marginBottom: subQuests.length ? 10 : 0 }}>
+                  {quest.description}
+                </div>
+              )}
+              {subQuests.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 9, letterSpacing: 1.4, color: questAccent, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, marginBottom: 7 }}>ETAPPEN</div>
+                  {subQuests.map((sq, si) => (
+                    <div key={sq.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: si === 0 ? "none" : "1px solid rgba(255,255,255,0.055)" }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); if (!sq.completed && onCompleteSubQuest) onCompleteSubQuest(quest.id, sq.id); }}
+                        disabled={sq.completed}
+                        className="press-feedback"
+                        style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, background: sq.completed ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.025)", border: `1px solid ${sq.completed ? "#22c55e55" : questAccent + "3a"}`, color: sq.completed ? "#22c55e" : questAccent, fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", cursor: sq.completed ? "default" : "pointer", fontFamily: "'JetBrains Mono',monospace", fontWeight: 900 }}
+                      >
+                        {sq.completed ? "OK" : ""}
+                      </button>
+                      <span style={{ flex: 1, minWidth: 0, color: sq.completed ? "#64748b" : "#dbe4ef", textDecoration: sq.completed ? "line-through" : "none", fontSize: 12, lineHeight: 1.35 }}>{sq.title}</span>
+                      <span style={{ color: "#475569", fontSize: 8, fontFamily: "'JetBrains Mono',monospace" }}>{si + 1}/{subQuests.length}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: "#475569", fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>
+            <span>{goldGain > 0 ? `+${goldGain} G` : "Belohnung offen"}</span>
+            {hasDetails && (
+              <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} style={{ color: "#64748b", border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", borderRadius: 7, padding: "3px 7px", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>
+                {expanded ? "WENIGER" : "MEHR"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-end" }}>
+          {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(quest); }} className="press-feedback" style={{ width: 30, height: 24, borderRadius: 7, color: "#60a5fa", background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>EDIT</button>}
+          {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(quest.id); }} className="press-feedback" style={{ width: 30, height: 24, borderRadius: 7, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>DEL</button>}
+        </div>
+      </div>
+    </div>
+  );
 
   // Difficulty-based styling
   const cardBg = completing

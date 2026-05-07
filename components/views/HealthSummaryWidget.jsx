@@ -185,6 +185,90 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
     // Grab manual sleep if necessary
     const displaySleep = sleepMode === 'manual' ? manualSleepToday : sleep.hours;
 
+    const sleepValue = parseFloat(displaySleep) || 0;
+    const sleepProgress = Math.min((sleepValue / 9) * 100, 100);
+    const stepGoalReached = steps >= 10000;
+
+    return (
+        <div
+            onClick={openDetails}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') openDetails?.();
+            }}
+            style={{
+                background: 'linear-gradient(180deg, rgba(8,12,24,0.94), rgba(5,7,15,0.98))',
+                border: '1px solid rgba(148,163,184,0.14)',
+                borderTop: `1px solid ${primaryColor}38`,
+                borderRadius: 14,
+                padding: 14,
+                cursor: 'pointer',
+                position: 'relative',
+                overflow: 'hidden',
+                minHeight: 138,
+                boxShadow: '0 10px 28px rgba(0,0,0,0.24)',
+                outline: 'none',
+            }}
+        >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
+                <div>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.4 }}>BIOMETRICS</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>Koerperstatus</div>
+                </div>
+                <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'JetBrains Mono',monospace", padding: '4px 8px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.04)' }}>
+                    Details
+                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: sleepMode === 'off' ? '1fr' : '1fr 1fr', gap: 10 }}>
+                <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>
+                        <span>Schritte</span>
+                        <span style={{ color: stepGoalReached ? '#22c55e' : '#64748b' }}>{stepGoalReached ? 'Ziel' : '10k'}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                        <div style={{ color: '#f8fafc', fontSize: 28, fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>
+                            <AnimatedNumber value={steps} duration={1200} format="locale" />
+                        </div>
+                    </div>
+                    <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.07)', overflow: 'hidden', marginTop: 9 }}>
+                        <div style={{ width: `${progressSteps}%`, height: '100%', background: stepGoalReached ? '#22c55e' : primaryColor, borderRadius: 999, transition: 'width 0.7s ease' }} />
+                    </div>
+                </div>
+
+                {sleepMode !== 'off' && (
+                    <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>
+                            <span>Schlaf</span>
+                            <span style={{ color: sleepValue >= 7 ? '#a78bfa' : '#64748b' }}>{sleepMode === 'manual' ? 'Manuell' : 'Ziel 7h'}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                            <div style={{ color: '#f8fafc', fontSize: 28, fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>
+                                {displaySleep}
+                            </div>
+                            <div style={{ color: '#94a3b8', fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>h</div>
+                        </div>
+                        <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.07)', overflow: 'hidden', marginTop: 9 }}>
+                            <div style={{ width: `${sleepProgress}%`, height: '100%', background: '#a78bfa', borderRadius: 999, transition: 'width 0.7s ease' }} />
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: sleepMode === 'off' ? '1fr' : '1fr 1fr', gap: 8, marginTop: 12 }}>
+                <div style={{ color: '#94a3b8', fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>
+                    7T Schnitt <strong style={{ color: primaryColor, fontSize: 11 }}>{weekStats.avgSteps.toLocaleString()}</strong>
+                </div>
+                {sleepMode !== 'off' && (
+                    <div style={{ color: '#94a3b8', fontSize: 10, fontFamily: "'JetBrains Mono',monospace", textAlign: 'right' }}>
+                        Schlaf <strong style={{ color: '#a78bfa', fontSize: 11 }}>{weekStats.avgSleep}h</strong>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
     return (
         <div
             onClick={openDetails}
