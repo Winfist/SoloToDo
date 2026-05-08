@@ -105,10 +105,10 @@ export function generateDungeons(playerRankName) {
 export function generateDailySystemQuests(count = 3, state = null) {
   const level = state?.level || 1;
   const stats = state?.stats || { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
-  
+
   // Pool nach Level filtern
   const validPool = QUEST_POOL.filter(q => level >= (q.minLevel || 1));
-  
+
   // Finde stärkste Defizite
   let lowestStat = null;
   let lowestVal = Infinity;
@@ -119,7 +119,7 @@ export function generateDailySystemQuests(count = 3, state = null) {
   });
 
   const needsDeficiencyFocus = (highestVal - lowestVal >= 3) || (level >= 5 && lowestStat);
-  
+
   const selected = [];
   const generatedIds = new Set();
 
@@ -140,9 +140,30 @@ export function generateDailySystemQuests(count = 3, state = null) {
     }
   }
 
+  // --- Inject Screen Time OCR Quest ---
+  const limitMinutes = state?.screenTimePreferences?.dailyLimitMinutes || 120;
+  const hours = Math.floor(limitMinutes / 60);
+  const minutes = limitMinutes % 60;
+  const timeString = minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+
+  generatedIds.add("screen_time_quest");
+  selected.push({
+    id: `sys_screentime_${genId()}`,
+    title: `Weniger als ${timeString} Bildschirmzeit heute`,
+    desc: "Beweisfoto (Einstellungen -> Bildschirmzeit) hochladen und KI den Fokus verifizieren lassen.",
+    category: "int",
+    difficulty: "hard", // Making it a bit harder to encourage focus!
+    type: "daily",
+    isSystem: true,
+    isScreenTime: true, // Special flag for our Modal intercept
+    xpMult: 2.0,
+    goldMult: 2.5,
+    createdAt: getToday()
+  });
+
   const shuffled = validPool.filter(q => !generatedIds.has(q.id)).sort(() => Math.random() - 0.5);
   for (const q of shuffled) {
-    if (selected.length >= count) break;
+    if (selected.length >= count) break; // Now selected.length will correctly count the injected quest
     selected.push({
       ...q,
       id: `sys_${genId()}`,

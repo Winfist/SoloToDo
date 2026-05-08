@@ -73,11 +73,11 @@ function normalizeHistory(raw = {}) {
 
 async function callNative(method, payload, onLog) {
   if (!isNative()) {
-    onLog?.('Web: Native Bildschirmzeit ist nicht verfuegbar.');
+    onLog?.('Web: Native Bildschirmzeit ist nicht verfügbar.');
     return null;
   }
   if (!isIOS()) {
-    onLog?.('Nur iOS ist fuer native Bildschirmzeit aktiviert.');
+    onLog?.('Nur iOS ist für native Bildschirmzeit aktiviert.');
     throw new Error('ios-only');
   }
   try {

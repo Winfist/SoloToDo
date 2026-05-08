@@ -223,7 +223,7 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
               </svg>
             </div>
             <div style={{ fontSize: 8, color: currentToday.totalMinutes > limit ? '#fca5a5' : '#86efac', fontFamily: "'JetBrains Mono',monospace", textAlign: 'right' }}>
-              {currentToday.totalMinutes > limit ? 'UEBER LIMIT' : 'UNTER LIMIT'}
+              {currentToday.totalMinutes > limit ? '\u00dcBER LIMIT' : 'UNTER LIMIT'}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>

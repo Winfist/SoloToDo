@@ -15,13 +15,13 @@ const CornerBracket = ({ pos }) => {
   );
 };
 
-export default function QuestDetailModal({ 
-  quest, 
-  theme, 
-  onClose, 
-  onComplete, 
-  onEdit, 
-  onDelete, 
+export default function QuestDetailModal({
+  quest,
+  theme,
+  onClose,
+  onComplete,
+  onEdit,
+  onDelete,
   onCompleteSubQuest,
   onSaveNotes,
   completedQuests = [], // Pass from parent for history
@@ -29,7 +29,7 @@ export default function QuestDetailModal({
 }) {
   const [notes, setNotes] = useState(quest.notes || "");
   const [activeTab, setActiveTab] = useState("details"); // details, history
-  
+
   useEffect(() => {
     setNotes(quest.notes || "");
   }, [quest]);
@@ -39,13 +39,13 @@ export default function QuestDetailModal({
   const diff = DIFFICULTIES.find(d => d.key === quest.difficulty) || DIFFICULTIES[0];
   const cat = CATEGORIES.find(c => c.key === quest.category) || CATEGORIES[0];
   const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
-  
+
   const xpGain = Math.round((diff?.xp || 50) * (quest.chainMultiplier || 1) * (typeCfg.xpMult || 1));
   const goldGain = Math.round((diff?.gold || 25) * (quest.chainMultiplier || 1) * (typeCfg.goldMult || 1));
-  
+
   const isBoss = quest.difficulty === 'boss';
   const isSystemQuest = quest.isSystem === true;
-  
+
   const subQuests = quest.subQuests || [];
   const completedSubs = subQuests.filter(sq => sq.completed).length;
   const allSubsDone = subQuests.length > 0 && completedSubs === subQuests.length;
@@ -59,7 +59,7 @@ export default function QuestDetailModal({
   if (gameState && activeTab === "details") {
     const questsToday = (gameState.completedQuests || []).filter(q => q.completedAt === todayKey).length;
     const habitsToday = (gameState.habits || []).filter(h => h.history?.[todayKey]?.completed).length;
-    
+
     // 1. Streak Warning
     if (gameState.streak >= 3 && questsToday === 0 && habitsToday === 0 && !quest.completed) {
       hints.push({
@@ -99,7 +99,7 @@ export default function QuestDetailModal({
 
   // History calculation
   const history = completedQuests.filter(cq => cq.id.startsWith(quest.id.split('_')[0]) || cq.title === quest.title).slice(0, 5);
-  const avgRating = history.length > 0 
+  const avgRating = history.length > 0
     ? (history.reduce((acc, cq) => acc + (cq.rating || 0), 0) / history.filter(cq => cq.rating).length || 0).toFixed(1)
     : 0;
 
@@ -148,9 +148,9 @@ export default function QuestDetailModal({
               [ QUEST INTEL FILE ]
             </div>
             {isBoss ? (
-               <GlitchText variant="scan" duration={1200} color={primary} style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>
-                 {quest.title}
-               </GlitchText>
+              <GlitchText variant="scan" duration={1200} color={primary} style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>
+                {quest.title}
+              </GlitchText>
             ) : (
               <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>
                 {quest.title}
@@ -174,7 +174,7 @@ export default function QuestDetailModal({
         <div style={{ flex: 1, overflowY: "auto", paddingRight: 4 }}>
           {activeTab === "details" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              
+
               {/* Tactical Hints */}
               {hints.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -207,10 +207,31 @@ export default function QuestDetailModal({
                 </div>
               </div>
 
+              {/* BUG FIX #4: Penalty / Consequences section */}
+              {(isSystemQuest || gameState?.penaltyZone?.active) && (
+                <div style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.06), transparent)", borderRadius: 12, padding: "12px 16px", border: "1px solid rgba(239,68,68,0.15)" }}>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>KONSEQUENZEN</div>
+                  {gameState?.penaltyZone?.active && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: isSystemQuest ? 8 : 0, padding: "6px 10px", borderRadius: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                      <span style={{ fontSize: 14 }}>⚠️</span>
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace" }}>PENALTY ZONE AKTIV</div>
+                        <div style={{ fontSize: 10, color: "#f87171" }}>XP-Malus: -20% auf alle Quests</div>
+                      </div>
+                    </div>
+                  )}
+                  {isSystemQuest && !quest.completed && (
+                    <div style={{ fontSize: 11, color: "#f87171", lineHeight: 1.4, fontFamily: "'Outfit',sans-serif" }}>
+                      Nichterfüllung von System-Quests kann die Penalty Zone aktivieren (−20% XP auf alle Quests).
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Description */}
               {quest.description && (
                 <div>
-                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>BESCHREIBUng</div>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>BESCHREIBUNG</div>
                   <div style={{ fontSize: 13, color: "#e2e8f0", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>
                     {quest.description}
                   </div>
@@ -326,7 +347,7 @@ export default function QuestDetailModal({
             ✓ ABSCHLIESSEN
           </button>
           {onDelete && (
-             <button
+            <button
               onClick={() => { onClose(); onDelete(quest.id); }}
               style={{ gridColumn: "1 / -1", padding: "8px", borderRadius: 8, background: "transparent", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
             >

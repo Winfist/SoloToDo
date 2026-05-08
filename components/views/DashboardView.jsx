@@ -557,33 +557,33 @@ export default function DashboardView({
               <div style={{ marginBottom: 12, padding: 8, borderRadius: 12, background: "rgba(8,12,24,0.78)", border: "1px solid rgba(148,163,184,0.12)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   {can('quest_filters') && <div style={{ display: "flex", gap: 4, overflowX: "auto", flex: 1, scrollbarWidth: "none" }}>
-                  {[
-                    { key: "all", label: "Alle", color: theme.accent },
-                    { key: "daily", label: "Daily", color: "#22d3ee" },
-                    { key: "side", label: "Side", color: "#a78bfa" },
-                    ...(can('weekly_quests') ? [{ key: "weekly", label: "Woche", color: "#8b5cf6" }] : []),
-                    ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
-                    ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: `Hidden ${hiddenQuestCount}`, color: "#6366f1", icon: QUEST_ICONS.hidden }] : []),
-                  ].map(f => (
-                    <button key={f.key} onClick={() => setQuestFilter(f.key)} style={{
-                      padding: "6px 9px", borderRadius: 8, fontSize: 10, fontWeight: 800, flexShrink: 0,
-                      background: questFilter === f.key ? f.color + "1a" : "transparent",
-                      color: questFilter === f.key ? f.color : "#475569",
-                      border: `1px solid ${questFilter === f.key ? f.color + "44" : "rgba(255,255,255,0.05)"}`,
-                      transition: "all 0.2s", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5,
-                    }}>
-                      {f.icon ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><img src={f.icon} alt="" style={{ width: 10, height: 10, objectFit: "contain" }} />{f.label}</span> : f.label}
-                    </button>
-                  ))}
+                    {[
+                      { key: "all", label: "Alle", color: theme.accent },
+                      { key: "daily", label: "Daily", color: "#22d3ee" },
+                      { key: "side", label: "Side", color: "#a78bfa" },
+                      ...(can('weekly_quests') ? [{ key: "weekly", label: "Woche", color: "#8b5cf6" }] : []),
+                      ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
+                      ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: `Hidden ${hiddenQuestCount}`, color: "#6366f1", icon: QUEST_ICONS.hidden }] : []),
+                    ].map(f => (
+                      <button key={f.key} onClick={() => setQuestFilter(f.key)} style={{
+                        padding: "6px 9px", borderRadius: 8, fontSize: 10, fontWeight: 800, flexShrink: 0,
+                        background: questFilter === f.key ? f.color + "1a" : "transparent",
+                        color: questFilter === f.key ? f.color : "#475569",
+                        border: `1px solid ${questFilter === f.key ? f.color + "44" : "rgba(255,255,255,0.05)"}`,
+                        transition: "all 0.2s", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5,
+                      }}>
+                        {f.icon ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><img src={f.icon} alt="" style={{ width: 10, height: 10, objectFit: "contain" }} />{f.label}</span> : f.label}
+                      </button>
+                    ))}
                   </div>}
                   <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                  {can('ai_task_scan') && setShowTaskScan && (
-                    <button onClick={() => setShowTaskScan(true)} style={{ height: 34, padding: "0 10px", borderRadius: 9, background: "rgba(34,211,238,0.08)", color: theme.primary, border: `1px solid ${theme.primary}2c`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>SCAN</button>
-                  )}
-                  {createQuest && (
-                    <button onClick={() => quickAddMode ? setQuickAddMode(false) : setQuickAddMode(true)} style={{ width: 32, height: 32, borderRadius: 10, background: quickAddMode ? theme.primary + "22" : "rgba(255,255,255,0.04)", color: quickAddMode ? theme.primary : "#64748b", border: `1px solid ${quickAddMode ? theme.primary + "55" : "rgba(255,255,255,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 700, transition: "all 0.2s" }}>+</button>
-                  )}
-                  <button onClick={() => setShowCreate(true)} style={{ padding: "0 12px", height: 32, borderRadius: 10, fontSize: 10, fontWeight: 900, background: `${theme.primary}18`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}34`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s" }}>NEU</button>
+                    {can('ai_task_scan') && setShowTaskScan && (
+                      <button onClick={() => setShowTaskScan(true)} style={{ height: 34, padding: "0 10px", borderRadius: 9, background: "rgba(34,211,238,0.08)", color: theme.primary, border: `1px solid ${theme.primary}2c`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>SCAN</button>
+                    )}
+                    {createQuest && (
+                      <button onClick={() => quickAddMode ? setQuickAddMode(false) : setQuickAddMode(true)} style={{ width: 32, height: 32, borderRadius: 10, background: quickAddMode ? theme.primary + "22" : "rgba(255,255,255,0.04)", color: quickAddMode ? theme.primary : "#64748b", border: `1px solid ${quickAddMode ? theme.primary + "55" : "rgba(255,255,255,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 700, transition: "all 0.2s" }}>+</button>
+                    )}
+                    <button onClick={() => setShowCreate(true)} style={{ padding: "0 12px", height: 32, borderRadius: 10, fontSize: 10, fontWeight: 900, background: `${theme.primary}18`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}34`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s" }}>NEU</button>
                   </div>
                 </div>
                 {can('quest_filters') && (
@@ -966,6 +966,24 @@ export default function DashboardView({
                     >▼</button>
                   )}
 
+                  {/* BUG FIX #6: Configure button for carousel widgets (health, screen time) */}
+                  {(def.key === "health_summary" || def.key === "screen_time_summary") && (
+                    <button
+                      onClick={() => {
+                        if (def.key === "health_summary") setShowHealthModal(true);
+                        if (def.key === "screen_time_summary") setShowScreenTimeModal(true);
+                      }}
+                      style={{
+                        width: 28, height: 28, borderRadius: 8, border: "none",
+                        background: `${def.color}14`,
+                        color: def.color, cursor: "pointer", fontSize: 13,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.2s",
+                      }}
+                      title="Widget konfigurieren"
+                    >⚙</button>
+                  )}
+
                   {/* Remove button */}
                   {def.removable ? (
                     <button
@@ -1164,7 +1182,7 @@ export default function DashboardView({
                 color: "#fff", fontSize: 18, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center"
               }}
-            >x</button>
+            >✕</button>
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 40px", touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}>

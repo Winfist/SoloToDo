@@ -131,7 +131,11 @@ export function useGameState(initialHunterName, onLogout) {
     setPendingRatingQuest(null);
   }, [state, persist]);
 
-  // Real-time Cloud Sync
+  // Real-time Cloud Sync — BUG FIX #1: Timestamp-based conflict resolution
+  // Instead of ignoring cloud data entirely when local state exists, we compare
+  // lastInteractionTimeMs to determine which state is newer. This fixes the
+  // "reset on device switch" bug where switching between mobile and laptop
+  // could discard the most recent state.
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -139,14 +143,31 @@ export function useGameState(initialHunterName, onLogout) {
     console.log("System: Cloud-Synchronisierung aktiviert für", user.uid);
     const docRef = doc(db, "users", user.uid);
 
-    // Listen for remote changes ─ only apply cloud data when local state is absent
-    // (e.g. first load on a new device). Never overwrite an active session to
-    // prevent cloud overwrites from wiping locally-created quests/habits/goals.
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const cloudData = migrateState(docSnap.data());
         setState(prev => {
+          // First load (no local state) — use cloud data directly
           if (!prev) return cloudData;
+
+          // Both exist — compare timestamps, newer wins
+          const localTime = prev.lastInteractionTimeMs || 0;
+          const cloudTime = cloudData.lastInteractionTimeMs || 0;
+
+          // If cloud is significantly newer (> 5s gap), merge it in
+          // but preserve any local widget/dashboard config to avoid Bug #5
+          if (cloudTime > localTime + 5000) {
+            console.log('[SoloToDo] Cloud state is newer, merging...', { localTime, cloudTime });
+            return {
+              ...cloudData,
+              // Preserve local dashboard config if cloud doesn't have it
+              dashboardConfig: cloudData.dashboardConfig || prev.dashboardConfig,
+              healthDailyHistory: { ...(prev.healthDailyHistory || {}), ...(cloudData.healthDailyHistory || {}) },
+              screenTimeDailyHistory: { ...(prev.screenTimeDailyHistory || {}), ...(cloudData.screenTimeDailyHistory || {}) },
+            };
+          }
+
+          // Local is current — keep it
           return prev;
         });
       }
@@ -174,9 +195,11 @@ export function useGameState(initialHunterName, onLogout) {
     return () => unsub();
   }, [state?.soulLink?.linkCode]);
 
+  // BUG FIX #10: Check entire queue for duplicates, not just the last item
   const triggerSystemMessage = useCallback((title, lines, onComplete) => {
     setSystemMessageQueue(prev => {
-      if (prev.length > 0 && prev[prev.length - 1].title === title) {
+      // Prevent duplicate messages anywhere in the queue
+      if (prev.some(msg => msg.title === title)) {
         return prev;
       }
       return [...prev, { id: genId(), title, lines, onComplete }];
@@ -305,14 +328,27 @@ export function useGameState(initialHunterName, onLogout) {
               s.todayModifier = getDailyModifier();
             }
           }
+          // BUG FIX #3: Only show STATUS-CHECK once per session, and only when
+          // there is genuinely new information. Bundled into a single message.
           setTimeout(() => {
+            const statusCheckKey = 'sl_status_check_' + today;
+            try {
+              if (sessionStorage.getItem(statusCheckKey) === 'shown') return;
+              sessionStorage.setItem(statusCheckKey, 'shown');
+            } catch { /* sessionStorage may not be available */ }
+
+            // Gather all relevant status lines into one bundled message
+            const statusLines = [
+              `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`
+            ];
             const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
-            const urgentMsg = (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) ? "⚠️ NOTFALL-MISSION AKTIV" : "Ihre Aufgaben warten.";
-            triggerSystemMessage("STATUS-CHECK", [
-              `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`,
-              `Aktive Tages-Quests: ${activeDailies.length}`,
-              urgentMsg
-            ]);
+            if (activeDailies.length > 0) statusLines.push(`Aktive Tages-Quests: ${activeDailies.length}`);
+            if (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) statusLines.push("⚠️ NOTFALL-MISSION AKTIV");
+            if (s.penaltyZone?.active) statusLines.push("⚠️ PENALTY ZONE AKTIV: XP-Malus -20%");
+            if (s.shadowRegression?.active) statusLines.push("🔥 SHADOW REGRESSION: Redemption-Quests verfügbar");
+            if (s.streak >= 5) statusLines.push(`🔥 Serie: ${s.streak} Tage — Weiter so!`);
+
+            triggerSystemMessage("STATUS-CHECK", statusLines);
           }, 1500);
           if (s.statPoints === undefined) s.statPoints = 0;
           if (!s.hunterName && initialHunterName) {

@@ -127,19 +127,20 @@ function Root() {
     }
   };
 
-  // Loading screen
+  // Loading screen — BUG FIX #2: Ensure content is vertically centered
+  // with flexDirection column. Image uses display:block + margin:auto
+  // for reliable centering on all devices.
   if (isAuthenticated === null) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--theme-bg, #06060e)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <img
-            src={SYSTEM_ICONS.logo}
-            alt="System lädt"
-            style={{ width: 56, height: 56, objectFit: "contain", marginBottom: 16, animation: "pulse 1.5s ease-in-out infinite", filter: "drop-shadow(0 0 20px var(--theme-glow, #7c3aed88))" }}
-          />
-          <div style={{ fontSize: "var(--text-xs, 11px)", letterSpacing: 4, color: "var(--theme-primary, #7c3aed)", fontFamily: "var(--font-mono, monospace)", animation: "pulse 1.5s ease-in-out infinite" }}>
-            LOADING SYSTEM...
-          </div>
+      <div style={{ minHeight: "100vh", background: "var(--theme-bg, #06060e)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <style>{`@keyframes slPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }`}</style>
+        <img
+          src={SYSTEM_ICONS.logo}
+          alt="System lädt"
+          style={{ display: "block", width: 56, height: 56, objectFit: "contain", margin: "0 auto 16px", animation: "slPulse 1.5s ease-in-out infinite", filter: "drop-shadow(0 0 20px var(--theme-glow, #7c3aed88))" }}
+        />
+        <div style={{ fontSize: "var(--text-xs, 11px)", letterSpacing: 4, color: "var(--theme-primary, #7c3aed)", fontFamily: "var(--font-mono, monospace)", animation: "slPulse 1.5s ease-in-out infinite", textAlign: "center" }}>
+          LOADING SYSTEM...
         </div>
       </div>
     );

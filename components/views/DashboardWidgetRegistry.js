@@ -12,7 +12,7 @@ export const DASHBOARD_WIDGETS = [
   { key: "gem_booster", label: "Gem Boosters", icon: "GEM", color: "#a855f7", desc: "Aktive Booster", requires: "gem_shop", removable: true },
   { key: "habits", label: "Habit Tracker", icon: "HAB", color: "#22c55e", desc: "Gewohnheiten", requires: "habit_tracker", removable: true },
   { key: "micro_habits", label: "Micro-Habits", icon: "MIC", color: "#06b6d4", desc: "Kleine Aufgaben", requires: "micro_habits", removable: true },
-  { key: "next_unlock", label: "System-Update", icon: "UPD", color: "#6366f1", desc: "Naechstes Unlock", requires: null, removable: true },
+  { key: "next_unlock", label: "System-Update", icon: "UPD", color: "#6366f1", desc: "Nächstes Unlock", requires: null, removable: true },
   { key: "quick_access", label: "Schnellzugriff", icon: "GO", color: "#6366f1", desc: "Shortcuts", requires: null, removable: true },
   { key: "vision_board", label: "Vision Board", icon: "VIS", color: "#a855f7", desc: "Affirmationen", requires: "vision_board", removable: true },
 ];
@@ -63,6 +63,18 @@ export function mergeConfig(saved, can) {
   for (const key of mandatoryKeys) {
     if (!layout.includes(key)) {
       layout.unshift(key);
+      hidden = hidden.filter(k => k !== key);
+    }
+  }
+
+  // Carousel widgets must always be in layout (they render in the horizontal strip).
+  // If the user's saved config predates these widgets, they'd end up in "hidden" and never show.
+  const carouselKeys = DASHBOARD_WIDGETS.filter(w => w.carousel).map(w => w.key);
+  for (const key of carouselKeys) {
+    if (!layout.includes(key)) {
+      // Insert after today_command so they're grouped at the top
+      const todayIdx = layout.indexOf('today_command');
+      layout.splice(todayIdx + 1, 0, key);
       hidden = hidden.filter(k => k !== key);
     }
   }

@@ -5,7 +5,7 @@
 const admin = require("firebase-admin");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { checkAndIncrementRateLimit } = require("./rateLimiter");
-const { callGemini, callGeminiWithImage, parseJSON } = require("./geminiService");
+const { callGemini, callGeminiWithImage, callGeminiWithImages, parseJSON } = require("./geminiService");
 const {
   VERIFY_QUEST_PROMPT,
   EXTRACT_TASKS_PROMPT,
@@ -76,10 +76,10 @@ exports.scanTaskPhoto = onCall(CALL_OPTIONS, async (request) => {
 
   const tasks = Array.isArray(result.tasks)
     ? result.tasks.slice(0, 10).map((t) => ({
-        title: String(t.title || "Unbekannte Aufgabe"),
-        category: ["str", "int", "vit", "agi", "cha"].includes(t.category) ? t.category : "str",
-        difficulty: ["easy", "normal", "hard"].includes(t.difficulty) ? t.difficulty : "normal",
-      }))
+      title: String(t.title || "Unbekannte Aufgabe"),
+      category: ["str", "int", "vit", "agi", "cha"].includes(t.category) ? t.category : "str",
+      difficulty: ["easy", "normal", "hard"].includes(t.difficulty) ? t.difficulty : "normal",
+    }))
     : [];
 
   return { tasks };
@@ -88,48 +88,84 @@ exports.scanTaskPhoto = onCall(CALL_OPTIONS, async (request) => {
 // ─── Feature B1: Generate Dynamic Quests ─────────────────────────────────────
 
 // Last-resort fallback: extract iOS Screen Time minutes from a screenshot.
-exports.extractScreenTimeScreenshot = onCall(CALL_OPTIONS, async (request) => {
+// Accepts single image (imageBase64) or multiple images (images[]).
+exports.extractScreenTime = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
-  const { imageBase64, mimeType } = request.data;
+  const { imageBase64, mimeType, images } = request.data;
 
-  if (!imageBase64) {
-    throw new HttpsError("invalid-argument", "imageBase64 ist erforderlich.");
+  // Build images array — support both single & multi
+  let imageArray = [];
+  if (Array.isArray(images) && images.length > 0) {
+    imageArray = images.slice(0, 4).map(img => ({
+      base64: img.base64,
+      mimeType: img.mimeType || "image/jpeg",
+    }));
+  } else if (imageBase64) {
+    imageArray = [{ base64: imageBase64, mimeType: mimeType || "image/jpeg" }];
+  }
+
+  if (imageArray.length === 0) {
+    throw new HttpsError("invalid-argument", "Mindestens ein Bild ist erforderlich.");
   }
 
   await checkAndIncrementRateLimit(uid);
 
-  const raw = await callGeminiWithImage(EXTRACT_SCREEN_TIME_PROMPT, imageBase64, mimeType || "image/jpeg");
+  // Use multi-image or single-image call
+  let raw;
+  if (imageArray.length === 1) {
+    raw = await callGeminiWithImage(EXTRACT_SCREEN_TIME_PROMPT, imageArray[0].base64, imageArray[0].mimeType);
+  } else {
+    raw = await callGeminiWithImages(EXTRACT_SCREEN_TIME_PROMPT, imageArray);
+  }
+
   const result = parseJSON(raw, {
     valid: false,
+    viewMode: null,
     date: null,
     totalMinutes: 0,
+    weekTotalMinutes: null,
     confidence: 0,
     apps: [],
     categories: [],
+    topApp: null,
+    needsMore: false,
+    hint: null,
     reason: "Analyse fehlgeschlagen.",
   });
 
   const cleanBreakdown = (items) => Array.isArray(items)
     ? items.slice(0, 10).map((item) => ({
-        name: String(item.name || item.category || item.bundleIdentifier || "").slice(0, 80),
-        minutes: Math.max(0, Math.floor(Number(item.minutes ?? item.totalMinutes ?? item.durationMinutes) || 0)),
-      })).filter(item => item.name)
+      name: String(item.name || item.category || item.bundleIdentifier || "").slice(0, 80),
+      minutes: Math.max(0, Math.floor(Number(item.minutes ?? item.totalMinutes ?? item.durationMinutes) || 0)),
+    })).filter(item => item.name)
     : [];
 
   const date = typeof result.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(result.date)
     ? result.date
     : null;
   const totalMinutes = Math.max(0, Math.floor(Number(result.totalMinutes) || 0));
+  const weekTotalMinutes = result.weekTotalMinutes != null
+    ? Math.max(0, Math.floor(Number(result.weekTotalMinutes) || 0))
+    : null;
   const confidence = Math.max(0, Math.min(100, Math.floor(Number(result.confidence) || 0)));
   const valid = Boolean(result.valid) && confidence >= 60;
+  const viewMode = ["tag", "woche"].includes(result.viewMode) ? result.viewMode : null;
+  const topApp = typeof result.topApp === "string" ? result.topApp.slice(0, 80) : null;
+  const needsMore = Boolean(result.needsMore);
+  const hint = typeof result.hint === "string" ? result.hint.slice(0, 200) : null;
 
   return {
     valid,
+    viewMode,
     date,
     totalMinutes,
+    weekTotalMinutes,
     confidence,
     apps: cleanBreakdown(result.apps),
     categories: cleanBreakdown(result.categories),
+    topApp,
+    needsMore,
+    hint,
     reason: String(result.reason || (valid ? "Bildschirmzeit erkannt." : "Kein valider Bildschirmzeit-Screenshot.")),
   };
 });
@@ -150,16 +186,16 @@ exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
 
   const quests = Array.isArray(result.quests)
     ? result.quests.slice(0, 3).map((q) => ({
-        title: String(q.title || "System-Quest"),
-        category: ["str", "int", "vit", "agi", "cha"].includes(q.category) ? q.category : "str",
-        difficulty: ["easy", "normal", "hard"].includes(q.difficulty) ? q.difficulty : "normal",
-        desc: String(q.desc || ""),
-        subQuests: Array.isArray(q.subQuests)
-          ? q.subQuests.slice(0, 5).map((s) => ({ title: String(s.title || s) }))
-          : [],
-        isSystem: true,
-        aiGenerated: true,
-      }))
+      title: String(q.title || "System-Quest"),
+      category: ["str", "int", "vit", "agi", "cha"].includes(q.category) ? q.category : "str",
+      difficulty: ["easy", "normal", "hard"].includes(q.difficulty) ? q.difficulty : "normal",
+      desc: String(q.desc || ""),
+      subQuests: Array.isArray(q.subQuests)
+        ? q.subQuests.slice(0, 5).map((s) => ({ title: String(s.title || s) }))
+        : [],
+      isSystem: true,
+      aiGenerated: true,
+    }))
     : [];
 
   return { quests };
@@ -229,3 +265,7 @@ exports.generateQuestDescription = onCall(CALL_OPTIONS, async (request) => {
       : "normal",
   };
 });
+// Trigger redeploy
+
+exports.dummyTestAbc = onCall(CALL_OPTIONS, async (request) => { return {ok: true}; });
+

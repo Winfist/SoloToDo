@@ -4,19 +4,42 @@ import { useState, useCallback, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
 
-// Helper: convert File/Blob or <input type="file"> result to base64 string
-export async function fileToBase64(file) {
+// Helper: Resize and convert to Base64 to prevent 413 Payload Too Large
+const compressFileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      // Strip the data URL prefix (e.g. "data:image/jpeg;base64,")
-      const base64 = reader.result.split(",")[1];
-      resolve({ base64, mimeType: file.type || "image/jpeg" });
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        // Limit max dimension to 1024px for OCR speed and payload limits
+        const MAX_DIM = 1024;
+        if (width > height && width > MAX_DIM) {
+          height = Math.round(height * (MAX_DIM / width));
+          width = MAX_DIM;
+        } else if (height > MAX_DIM) {
+          width = Math.round(width * (MAX_DIM / height));
+          height = MAX_DIM;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Export as heavily compressed JPEG
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        const base64 = dataUrl.split(",")[1];
+        resolve({ base64, mimeType: "image/jpeg" });
+      };
+      img.onerror = () => reject(new Error("Bild konnte nicht geladen werden"));
+      img.src = e.target.result;
     };
-    reader.onerror = reject;
+    reader.onerror = (error) => reject(error);
     reader.readAsDataURL(file);
   });
-}
+};
 
 const RATE_LIMIT_KEY = "sl_ai_rate_limit_until";
 
@@ -119,14 +142,20 @@ export function useGeminiAI(state) {
     }
   }, []);
 
-  const extractScreenTimeScreenshot = useCallback(async (imageFile) => {
+  const extractScreenTime = useCallback(async (imageFileOrFiles) => {
     if (rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
-      const { base64, mimeType } = await fileToBase64(imageFile);
-      const fn = httpsCallable(functions, "extractScreenTimeScreenshot");
-      const result = await fn({ imageBase64: base64, mimeType });
+      // Support both single file and array of files
+      const files = Array.isArray(imageFileOrFiles) ? imageFileOrFiles : [imageFileOrFiles];
+      const images = [];
+      for (const file of files.slice(0, 4)) {
+        const { base64, mimeType } = await compressFileToBase64(file);
+        images.push({ base64, mimeType });
+      }
+      const fn = httpsCallable(functions, "extractScreenTime");
+      const result = await fn({ images });
       return result.data;
     } catch (err) {
       handleError(err);
@@ -247,7 +276,7 @@ export function useGeminiAI(state) {
     clearError: () => { setError(null); rateLimitErrorRef.current = false; setRateLimitError(false); clearRateLimitExpiry(); },
     verifyQuest,
     scanTaskPhoto,
-    extractScreenTimeScreenshot,
+    extractScreenTime,
     generateQuests,
     generateSystemMsg,
     askCoach,

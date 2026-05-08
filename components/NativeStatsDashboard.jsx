@@ -166,53 +166,53 @@ function BarChart({ data, primaryColor, labelFormatter }) {
   return (
     <div style={{ overflowX: needsScroll ? 'auto' : 'visible', overflowY: 'hidden', paddingBottom: needsScroll ? 4 : 0 }}>
       <div style={{ position: 'relative', height: 140, padding: '10px 0 0', minWidth: innerWidth }}>
-      {/* Grid lines */}
-      {[0.5, 1].map(r => (
-        <div key={r} style={{ position: 'absolute', bottom: `calc(${r * 80}% + 24px)`, left: 0, right: 0, borderTop: '1px dashed rgba(255,255,255,0.04)', zIndex: 0 }} />
-      ))}
+        {/* Grid lines */}
+        {[0.5, 1].map(r => (
+          <div key={r} style={{ position: 'absolute', bottom: `calc(${r * 80}% + 24px)`, left: 0, right: 0, borderTop: '1px dashed rgba(255,255,255,0.04)', zIndex: 0 }} />
+        ))}
 
-      {/* Empty state overlay */}
-      {allZero && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
-          <div style={{ fontSize: 9, color: '#475569', fontFamily: "'JetBrains Mono',monospace", background: 'rgba(0,0,0,0.6)', padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.04)' }}>
-            Synchronisiere um Daten zu laden
-          </div>
-        </div>
-      )}
-
-      {/* Bars */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: needsScroll ? 'flex-start' : 'space-around', gap: needsScroll ? 4 : 0, height: '100%', paddingBottom: 24 }}>
-        {data.map((item, i) => {
-          const val = parseFloat(item.value) || 0;
-          const heightPct = allZero ? 3 : Math.max((val / maxValue) * 100, 3);
-          const isToday = i === data.length - 1;
-          const showLabel = !needsScroll || item.showLabel || isToday;
-          const showValue = !needsScroll || item.showValue || isToday;
-          return (
-            <div key={item.date || i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: needsScroll ? 14 : `${85 / data.length}%`, flex: needsScroll ? '0 0 14px' : '0 1 auto', position: 'relative', zIndex: 1, animation: `healthSlideUp 0.5s ease ${Math.min(i, 12) * 0.04}s both` }}>
-              {/* Value label */}
-              <div style={{ height: 10, fontSize: 7, color: isToday ? primaryColor : 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 800 : 400 }}>
-                {!allZero && val > 0 && showValue ? labelFormatter(val) : ''}
-              </div>
-              {/* Bar */}
-              <div style={{
-                width: '100%', maxWidth: 28, height: `${heightPct}%`, minHeight: 4,
-                background: allZero ? `${primaryColor}15`
-                  : isToday ? `linear-gradient(180deg, ${primaryColor}, ${primaryColor}88)`
-                    : `linear-gradient(180deg, ${primaryColor}66, ${primaryColor}18)`,
-                borderRadius: '5px 5px 2px 2px',
-                boxShadow: isToday && !allZero ? `0 0 12px ${primaryColor}44, inset 0 1px 0 rgba(255,255,255,0.25)` : 'none',
-                opacity: allZero ? 0.25 : 1,
-                transition: 'all 0.6s cubic-bezier(0.34,1.56,0.64,1)',
-              }} />
-              {/* Day label */}
-              <div style={{ height: 10, fontSize: 8, color: isToday ? '#fff' : '#4a5568', marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 700 : 400, letterSpacing: 0.5 }}>
-                {showLabel ? item.label : ''}
-              </div>
+        {/* Empty state overlay */}
+        {allZero && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
+            <div style={{ fontSize: 9, color: '#475569', fontFamily: "'JetBrains Mono',monospace", background: 'rgba(0,0,0,0.6)', padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.04)' }}>
+              Synchronisiere um Daten zu laden
             </div>
-          );
-        })}
-      </div>
+          </div>
+        )}
+
+        {/* Bars */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: needsScroll ? 'flex-start' : 'space-around', gap: needsScroll ? 4 : 0, height: '100%', paddingBottom: 24 }}>
+          {data.map((item, i) => {
+            const val = parseFloat(item.value) || 0;
+            const heightPct = allZero ? 3 : Math.max((val / maxValue) * 100, 3);
+            const isToday = i === data.length - 1;
+            const showLabel = !needsScroll || item.showLabel || isToday;
+            const showValue = !needsScroll || item.showValue || isToday;
+            return (
+              <div key={item.date || i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: needsScroll ? 14 : `${85 / data.length}%`, flex: needsScroll ? '0 0 14px' : '0 1 auto', position: 'relative', zIndex: 1, animation: `healthSlideUp 0.5s ease ${Math.min(i, 12) * 0.04}s both` }}>
+                {/* Value label */}
+                <div style={{ height: 10, fontSize: 7, color: isToday ? primaryColor : 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 800 : 400 }}>
+                  {!allZero && val > 0 && showValue ? labelFormatter(val) : ''}
+                </div>
+                {/* Bar */}
+                <div style={{
+                  width: '100%', maxWidth: 28, height: `${heightPct}%`, minHeight: 4,
+                  background: allZero ? `${primaryColor}15`
+                    : isToday ? `linear-gradient(180deg, ${primaryColor}, ${primaryColor}88)`
+                      : `linear-gradient(180deg, ${primaryColor}66, ${primaryColor}18)`,
+                  borderRadius: '5px 5px 2px 2px',
+                  boxShadow: isToday && !allZero ? `0 0 12px ${primaryColor}44, inset 0 1px 0 rgba(255,255,255,0.25)` : 'none',
+                  opacity: allZero ? 0.25 : 1,
+                  transition: 'all 0.6s cubic-bezier(0.34,1.56,0.64,1)',
+                }} />
+                {/* Day label */}
+                <div style={{ height: 10, fontSize: 8, color: isToday ? '#fff' : '#4a5568', marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: isToday ? 700 : 400, letterSpacing: 0.5 }}>
+                  {showLabel ? item.label : ''}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -544,7 +544,7 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
             {sleepMode !== 'off' && (
               <StatMini
                 icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round"><path d="M12 3v18" /><path d="M7 8h10" /><path d="M7 16h10" /></svg>}
-                label="7H+ NACHTE" value={`${currentStats.sleepGoalNights}/${rangeConfig.days}`} color="#a78bfa" detail={`BESTE ${(parseFloat(currentStats.bestSleepNight?.value) || 0).toFixed(1)}h`}
+                label="7H+ N\u00c4CHTE" value={`${currentStats.sleepGoalNights}/${rangeConfig.days}`} color="#a78bfa" detail={`BESTE ${(parseFloat(currentStats.bestSleepNight?.value) || 0).toFixed(1)}h`}
               />
             )}
           </div>

@@ -140,7 +140,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
 
   const dueLabel = (quest) => {
     if (!quest.dueDate) return quest.energy || "Offen";
-    if (quest.dueDate < today) return "Ueberfaellig";
+    if (quest.dueDate < today) return "Überfällig";
     if (quest.dueDate === today) return "Heute";
     return quest.dueDate;
   };
@@ -158,7 +158,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
           <div style={{ fontSize: 10, letterSpacing: 1.4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>HEUTE</div>
           <h2 style={{ margin: "3px 0 0", fontSize: 22, lineHeight: 1.05, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900 }}>Einsatzplan</h2>
           <div style={{ marginTop: 5, color: "#94a3b8", fontSize: 12 }}>
-            {overdueCount > 0 ? `${overdueCount} ueberfaellig` : "Keine Altlasten"} / {dueNowCount} Schritte offen
+            {overdueCount > 0 ? `${overdueCount} überfällig` : "Keine Altlasten"} / {dueNowCount} Schritte offen
           </div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -172,7 +172,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
       </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
-        <div style={{ color: "#64748b", fontSize: 10, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.2 }}>NAECHSTE SCHRITTE</div>
+        <div style={{ color: "#64748b", fontSize: 10, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.2 }}>NÄCHSTE SCHRITTE</div>
         {can?.("focus_mode") && (
           <button onClick={() => setShowFocusMode?.(true)} style={{
             minHeight: 30,

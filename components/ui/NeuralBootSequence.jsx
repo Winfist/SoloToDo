@@ -1,8 +1,9 @@
 // NeuralBootSequence.jsx — AAA-game style boot sequence on app start
-// Shows only once per browser session via sessionStorage
+// BUG FIX #9: Uses localStorage with daily key so boot shows once per day,
+// not once per tab (sessionStorage) which caused repeats on new tabs.
 import React, { useState, useEffect, useRef, useMemo } from "react";
 
-const BOOT_KEY = "sl_boot_shown";
+const BOOT_KEY_PREFIX = "sl_boot_shown_";
 
 export default function NeuralBootSequence({ hunterName = "HUNTER", rankName = "E", level = 1, onComplete, disabled = false }) {
   const [phase, setPhase] = useState(0); // 0=idle, 1-6=boot phases, 7=done
@@ -13,9 +14,12 @@ export default function NeuralBootSequence({ hunterName = "HUNTER", rankName = "
   const [glitchFlash, setGlitchFlash] = useState(false);
   const timerRefs = useRef([]);
 
-  // Already shown this session?
+  // Already shown today? Uses localStorage with daily key for cross-tab persistence
   const alreadyShown = useMemo(() => {
-    try { return sessionStorage.getItem(BOOT_KEY) === "true"; }
+    try {
+      const todayKey = BOOT_KEY_PREFIX + new Date().toISOString().slice(0, 10);
+      return localStorage.getItem(todayKey) === "true";
+    }
     catch { return false; }
   }, []);
 
@@ -36,8 +40,18 @@ export default function NeuralBootSequence({ hunterName = "HUNTER", rankName = "
       return;
     }
 
-    try { sessionStorage.setItem(BOOT_KEY, "true"); }
-    catch {}
+    try {
+      const todayKey = BOOT_KEY_PREFIX + new Date().toISOString().slice(0, 10);
+      localStorage.setItem(todayKey, "true");
+      // Clean up old boot keys (older than today)
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(BOOT_KEY_PREFIX) && key !== todayKey) {
+          localStorage.removeItem(key);
+        }
+      }
+    }
+    catch { }
 
     setVisible(true);
     setPhase(1);

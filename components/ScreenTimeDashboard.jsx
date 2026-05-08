@@ -199,7 +199,13 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
   const [fallbackFile, setFallbackFile] = useState(null);
   const [fallbackDate, setFallbackDate] = useState(getToday());
   const [localLimit, setLocalLimit] = useState(getLimit(state));
+  // OCR single-image state
+  const [ocrFiles, setOcrFiles] = useState([]);
+  const [ocrResult, setOcrResult] = useState(null);
+  const ocrInputRef = useRef(null);
   const lastPersistKey = useRef('');
+  // Overwrite confirmation modal state
+  const [overwritePending, setOverwritePending] = useState(null);
 
   const color = '#f59e0b';
   const danger = '#ef4444';
@@ -216,7 +222,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
   const capabilities = prefs.lastCapability || null;
   const canExport = capabilities?.canExportDurations === true;
   const nativeBlocked = capabilities && capabilities.canExportDurations !== true;
-  const fallbackAvailable = nativeBlocked && (state?.ai?.enabled ?? true) && typeof geminiAI?.extractScreenTimeScreenshot === 'function';
+  const fallbackAvailable = nativeBlocked && (state?.ai?.enabled ?? true) && typeof geminiAI?.extractScreenTime === 'function';
   const yesterdayKey = getYesterdayKey();
   const yesterday = state?.screenTimeDailyHistory?.[yesterdayKey] || null;
   const yesterdayRewardKey = `screen_time_${yesterdayKey}`;
@@ -248,7 +254,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
     try {
       const cap = await screenTimeService.getCapabilities(addLog);
       persistPrefs({ lastCapability: { ...cap, checkedAt: new Date().toLocaleString('de-DE') } });
-      setSuccess(cap.canExportDurations ? 'Native Minutenwerte verfuegbar.' : 'Native Minutenwerte derzeit nicht exportierbar.');
+      setSuccess(cap.canExportDurations ? 'Native Minutenwerte verfügbar.' : 'Native Minutenwerte derzeit nicht exportierbar.');
       return cap;
     } finally {
       setLoading(false);
@@ -262,7 +268,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
     try {
       const cap = await screenTimeService.requestAuthorization(addLog);
       persistPrefs({ enabled: true, lastCapability: { ...cap, checkedAt: new Date().toLocaleString('de-DE') } });
-      setSuccess(cap.canExportDurations ? 'Freigabe aktiv. Sync kann starten.' : 'Freigabe geprueft, aber kein exportierbarer Minutenpfad.');
+      setSuccess(cap.canExportDurations ? 'Freigabe aktiv. Sync kann starten.' : 'Freigabe geprüft, aber kein exportierbarer Minutenpfad.');
       return cap;
     } catch (err) {
       setError(err?.message || String(err));
@@ -280,7 +286,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
       const result = await screenTimeService.syncToday(addLog);
       persistPrefs({ enabled: true, lastCapability: { ...(result.capabilities || {}), checkedAt: new Date().toLocaleString('de-DE') } });
       if (!result?.capabilities?.canExportDurations) {
-        setSuccess('Native Quelle geprueft. Direkter Minutenexport ist nicht verfuegbar.');
+        setSuccess('Native Quelle geprüft. Direkter Minutenexport ist nicht verfügbar.');
         return;
       }
       const day = result.day || result;
@@ -309,7 +315,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
       const result = await screenTimeService.syncHistory(range.days * 2, addLog);
       persistPrefs({ enabled: true, lastCapability: { ...(result.capabilities || {}), checkedAt: new Date().toLocaleString('de-DE') } });
       if (!result?.capabilities?.canExportDurations) {
-        setSuccess('Verlauf geprueft. Direkter Minutenexport ist nicht verfuegbar.');
+        setSuccess('Verlauf geprüft. Direkter Minutenexport ist nicht verfügbar.');
         return;
       }
       const days = Array.isArray(result.days) ? result.days : [];
@@ -347,7 +353,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
     setError('');
     setSuccess('');
     try {
-      const result = await geminiAI.extractScreenTimeScreenshot(fallbackFile);
+      const result = await geminiAI.extractScreenTime(fallbackFile);
       if (!result?.valid || !Number.isFinite(Number(result.totalMinutes)) || Number(result.confidence || 0) < 60) {
         setError(result?.reason || 'Screenshot konnte nicht sicher als Bildschirmzeit erkannt werden.');
         return;
@@ -363,7 +369,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
       });
       persistPrefs({ fallbackEnabled: true });
       setFallbackFile(null);
-      setSuccess(`Fallback gespeichert: ${formatMinutes(result.totalMinutes)} fuer ${formatDateShort(dateKey)}.`);
+      setSuccess(`Fallback gespeichert: ${formatMinutes(result.totalMinutes)} für ${formatDateShort(dateKey)}.`);
     } catch (err) {
       setError(err?.message || String(err));
     } finally {
@@ -371,9 +377,162 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
     }
   };
 
+  const handleOcrUpload = async () => {
+    if (ocrFiles.length === 0 || geminiAI?.isRateLimited?.()) return;
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    setOcrResult(null);
+    try {
+      const result = await geminiAI.extractScreenTime(ocrFiles);
+      if (!result) {
+        setError('Analyse fehlgeschlagen. Bitte erneut versuchen.');
+        return;
+      }
+      setOcrResult(result);
+      if (result.needsMore) {
+        setError(result.hint || 'Bitte weitere Screenshots hochladen.');
+        return;
+      }
+      if (!result.valid) {
+        setError(result.reason || 'Screenshot konnte nicht erkannt werden.');
+        return;
+      }
+      const dateKey = result.date || getToday();
+      const totalMinutes = Math.max(0, Math.floor(Number(result.totalMinutes) || 0));
+
+      const existingData = state?.screenTimeDailyHistory?.[dateKey];
+      if (existingData && existingData.totalMinutes > 0) {
+        // Show custom overwrite modal instead of saving immediately
+        setOverwritePending({
+          dateKey,
+          totalMinutes,
+          oldMinutes: existingData.totalMinutes,
+          result,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // No existing data — save directly
+      updateScreenTimeData?.(totalMinutes, {
+        dateKey,
+        limitMinutes: limit,
+        source: 'screenshot-ai',
+        confidence: result.confidence,
+        viewMode: result.viewMode,
+        apps: result.apps,
+        categories: result.categories,
+      });
+      setSuccess(`Tageswert: ${formatMinutes(totalMinutes)} für ${formatDateShort(dateKey)}.`);
+      setOcrFiles([]);
+    } catch (err) {
+      setError(err?.message || String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmOverwrite = () => {
+    if (!overwritePending) return;
+    const { dateKey, totalMinutes, result } = overwritePending;
+    updateScreenTimeData?.(totalMinutes, {
+      dateKey,
+      limitMinutes: limit,
+      source: 'screenshot-ai',
+      confidence: result.confidence,
+      viewMode: result.viewMode,
+      apps: result.apps,
+      categories: result.categories,
+    });
+    setSuccess(`Tageswert überschrieben: ${formatMinutes(totalMinutes)} für ${formatDateShort(dateKey)}.`);
+    setOcrFiles([]);
+    setOverwritePending(null);
+  };
+
+  const cancelOverwrite = () => {
+    setOverwritePending(null);
+    setSuccess('Überschreiben abgebrochen. Alter Wert bleibt erhalten.');
+  };
+
   return (
     <div style={{ color: '#e2e8f0', fontFamily: "'Outfit',sans-serif" }}>
       <style>{SCREEN_TIME_CSS}</style>
+
+      {/* ── SOLO LEVELING OVERWRITE MODAL ── */}
+      {overwritePending && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 99999,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: 'linear-gradient(180deg, #0d0d1a 0%, #060610 100%)',
+            border: '1px solid rgba(245,158,11,0.4)',
+            borderRadius: 16, width: 'min(420px, 90vw)', padding: '0',
+            boxShadow: '0 0 80px rgba(245,158,11,0.12), inset 0 1px 0 rgba(245,158,11,0.15)',
+            fontFamily: "'JetBrains Mono','Courier New',monospace",
+            overflow: 'hidden',
+          }}>
+            {/* Header bar */}
+            <div style={{
+              padding: '14px 20px 10px', borderBottom: '1px solid rgba(245,158,11,0.2)',
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.08), transparent)',
+            }}>
+              <div style={{ fontSize: 9, letterSpacing: 3, color: '#f59e0b', fontWeight: 800 }}>⚠️ SYSTEM WARNUNG</div>
+              <div style={{ fontSize: 14, color: '#fde68a', fontWeight: 900, marginTop: 4, fontFamily: "'Cinzel',serif" }}>Daten überschreiben?</div>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
+              <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', lineHeight: 1.6 }}>
+                Für <span style={{ color: '#fde68a', fontWeight: 700 }}>{formatDateShort(overwritePending.dateKey)}</span> existieren bereits gespeicherte Daten.
+              </div>
+
+              {/* Old vs New comparison */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 12, alignItems: 'center', width: '100%', maxWidth: 320 }}>
+                <div style={{
+                  textAlign: 'center', padding: '12px 8px', borderRadius: 10,
+                  background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                }}>
+                  <div style={{ fontSize: 8, color: '#ef4444', letterSpacing: 2, fontWeight: 800, marginBottom: 4 }}>AKTUELL</div>
+                  <div style={{ fontSize: 20, color: '#fca5a5', fontWeight: 900 }}>{formatMinutes(overwritePending.oldMinutes)}</div>
+                </div>
+                <div style={{ fontSize: 20, color: '#f59e0b' }}>→</div>
+                <div style={{
+                  textAlign: 'center', padding: '12px 8px', borderRadius: 10,
+                  background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+                }}>
+                  <div style={{ fontSize: 8, color: '#22c55e', letterSpacing: 2, fontWeight: 800, marginBottom: 4 }}>NEU</div>
+                  <div style={{ fontSize: 20, color: '#86efac', fontWeight: 900 }}>{formatMinutes(overwritePending.totalMinutes)}</div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 10, color: '#64748b', textAlign: 'center', lineHeight: 1.5 }}>
+                Diese Aktion kann nicht rückgängig gemacht werden.
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 4 }}>
+                <button onClick={cancelOverwrite} style={{
+                  flex: 1, padding: '12px 10px', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#94a3b8', fontSize: 10, fontWeight: 800, cursor: 'pointer',
+                  fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1,
+                }}>✕ ABBRECHEN</button>
+                <button onClick={confirmOverwrite} style={{
+                  flex: 1, padding: '12px 10px', borderRadius: 10,
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08))',
+                  border: '1px solid rgba(245,158,11,0.5)',
+                  color: '#fde68a', fontSize: 10, fontWeight: 800, cursor: 'pointer',
+                  fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1,
+                  boxShadow: '0 0 20px rgba(245,158,11,0.1)',
+                }}>⚡ ÜBERSCHREIBEN</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
         <div style={{ width: 42, height: 42, borderRadius: 12, background: `${color}14`, border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -432,7 +591,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
               <div style={{ fontSize: 9, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 6 }}>TAGESLIMIT</div>
               <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', fontFamily: "'Cinzel',serif" }}>{formatMinutes(limit)}</div>
               <div style={{ fontSize: 11, color: today.totalMinutes > limit ? '#fca5a5' : '#86efac', marginTop: 4 }}>
-                {today.totalMinutes > limit ? `${formatMinutes(today.totalMinutes - limit)} ueber Limit` : `${formatMinutes(limit - today.totalMinutes)} Puffer`}
+                {today.totalMinutes > limit ? `${formatMinutes(today.totalMinutes - limit)} über Limit` : `${formatMinutes(limit - today.totalMinutes)} Puffer`}
               </div>
               <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 12 }}>
                 <div style={{ width: `${progress}%`, maxWidth: '100%', height: '100%', background: statusColor, borderRadius: 3 }} />
@@ -485,8 +644,57 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
             <button onClick={syncHistory} disabled={loading} style={{ padding: 12, borderRadius: 12, border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', fontWeight: 900, fontSize: 10, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5, cursor: loading ? 'default' : 'pointer' }}>VERLAUF SYNC</button>
           </div>
 
-          <BreakdownList title="APPS" items={today.apps} color={color} />
-          <BreakdownList title="KATEGORIEN" items={today.categories} color="#38bdf8" />
+          {/* ── OCR SCREENSHOT UPLOAD ── */}
+          <div style={{ background: 'linear-gradient(135deg, rgba(0,170,255,0.06), rgba(0,0,0,0.25))', border: '1px solid rgba(0,170,255,0.25)', borderRadius: 16, padding: 14 }}>
+            <div style={{ fontSize: 10, color: '#0af', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, fontWeight: 800, marginBottom: 4 }}>📷 SCREENSHOT VERIFIZIERUNG</div>
+            <div style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.5, marginBottom: 10 }}>
+              Lade einen Screenshot deiner heutigen Bildschirmzeit hoch. Die App-Liste und Gesamtzeit wird automatisch erkannt.
+            </div>
+            {ocrFiles.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                {ocrFiles.map((f, i) => (
+                  <div key={i} style={{ position: 'relative', width: 60, height: 60, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(0,170,255,0.3)' }}>
+                    <img src={URL.createObjectURL(f)} alt={`#${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button onClick={() => setOcrFiles(prev => prev.filter((_, j) => j !== i))} style={{ position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: '50%', background: 'rgba(200,0,0,0.8)', border: 'none', color: '#fff', fontSize: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, padding: 0 }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input ref={ocrInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
+              const newFiles = Array.from(e.target.files || []);
+              if (newFiles.length > 0) {
+                setOcrFiles([newFiles[0]]);
+              }
+              setOcrResult(null);
+              e.target.value = '';
+            }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <button onClick={() => ocrInputRef.current?.click()} style={{ padding: 11, borderRadius: 10, border: '1px solid rgba(0,170,255,0.35)', background: 'rgba(0,170,255,0.08)', color: '#7dd3fc', fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: 'pointer' }}>{ocrFiles.length > 0 ? '🔄 BILD ÄNDERN' : '+ BILD (0/1)'}</button>
+              <button onClick={handleOcrUpload} disabled={ocrFiles.length === 0 || loading} style={{ padding: 11, borderRadius: 10, border: `1px solid ${ocrFiles.length > 0 ? '#0af66' : 'rgba(255,255,255,0.07)'}`, background: ocrFiles.length > 0 ? `rgba(0,170,255,0.12)` : 'rgba(255,255,255,0.03)', color: ocrFiles.length > 0 ? '#0af' : '#475569', fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: ocrFiles.length > 0 ? 'pointer' : 'default' }}>🔍 ANALYSIEREN</button>
+            </div>
+            {ocrResult && ocrResult.valid && (
+              <div style={{ marginTop: 10, padding: 10, background: 'rgba(0,0,0,0.3)', borderRadius: 10, border: '1px solid rgba(0,200,100,0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#86efac', marginBottom: 4 }}>
+                  <span>{ocrResult.viewMode === 'woche' ? '📆 Woche' : '📅 Tag'}{ocrResult.date ? ` — ${formatDateShort(ocrResult.date)}` : ''}</span>
+                  <span style={{ fontWeight: 900 }}>{formatMinutes(ocrResult.totalMinutes)}</span>
+                </div>
+                {ocrResult.topApp && <div style={{ fontSize: 9, color: '#f5a623', marginBottom: 4 }}>🏆 Top: {ocrResult.topApp}</div>}
+                {ocrResult.apps?.length > 0 && (
+                  <div style={{ fontSize: 9, color: '#94a3b8', lineHeight: 1.6 }}>
+                    {ocrResult.apps.slice(0, 5).map((a, i) => <div key={i}>{a.name} — {formatMinutes(a.minutes)}</div>)}
+                  </div>
+                )}
+              </div>
+            )}
+            {ocrResult && ocrResult.needsMore && ocrResult.hint && (
+              <div style={{ marginTop: 10, padding: 10, background: 'rgba(245,166,35,0.06)', borderRadius: 10, border: '1px solid rgba(245,166,35,0.2)', fontSize: 10, color: '#f5a623' }}>
+                ⚠️ {ocrResult.hint}
+              </div>
+            )}
+          </div>
+
+          <BreakdownList title="APPS" items={ocrResult?.apps?.length > 0 ? ocrResult.apps : today.apps} color={color} />
+          <BreakdownList title="KATEGORIEN" items={ocrResult?.categories?.length > 0 ? ocrResult.categories : today.categories} color="#38bdf8" />
         </div>
       )}
 
@@ -533,10 +741,10 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><span style={{ color: '#64748b' }}>Authorization</span><span style={{ color: '#cbd5e1' }}>{capabilities?.authorizationStatus || 'unbekannt'}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><span style={{ color: '#64748b' }}>Data Access</span><span style={{ color: capabilities?.dataAccessAvailable ? '#86efac' : '#fca5a5' }}>{String(capabilities?.dataAccessAvailable ?? false)}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><span style={{ color: '#64748b' }}>Minutenexport</span><span style={{ color: canExport ? '#86efac' : '#fca5a5' }}>{String(canExport)}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><span style={{ color: '#64748b' }}>Grund</span><span style={{ color: '#cbd5e1', textAlign: 'right' }}>{capabilities?.reason || 'noch nicht geprueft'}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><span style={{ color: '#64748b' }}>Grund</span><span style={{ color: '#cbd5e1', textAlign: 'right' }}>{capabilities?.reason || 'noch nicht geprüft'}</span></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
-              <button onClick={handleCapabilities} disabled={loading} style={{ padding: 11, borderRadius: 10, border: `1px solid ${color}44`, background: `${color}12`, color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: loading ? 'default' : 'pointer' }}>PRUEFEN</button>
+              <button onClick={handleCapabilities} disabled={loading} style={{ padding: 11, borderRadius: 10, border: `1px solid ${color}44`, background: `${color}12`, color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: loading ? 'default' : 'pointer' }}>PRÜFEN</button>
               <button onClick={handleAuthorize} disabled={authLoading} style={{ padding: 11, borderRadius: 10, border: '1px solid rgba(56,189,248,0.35)', background: 'rgba(56,189,248,0.1)', color: '#7dd3fc', fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: authLoading ? 'default' : 'pointer' }}>FREIGABE</button>
             </div>
           </div>
@@ -565,7 +773,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
               <div style={{ display: 'grid', gap: 8 }}>
                 <input type="date" value={fallbackDate} onChange={e => setFallbackDate(e.target.value)} style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', borderRadius: 10, padding: '10px 12px', fontSize: 12 }} />
                 <input type="file" accept="image/*" onChange={e => setFallbackFile(e.target.files?.[0] || null)} style={{ color: '#94a3b8', fontSize: 11 }} />
-                <button onClick={uploadFallback} disabled={!fallbackFile || loading || geminiAI?.isLoading || geminiAI?.isRateLimited?.()} style={{ padding: 12, borderRadius: 10, border: `1px solid ${fallbackFile ? color + '44' : 'rgba(255,255,255,0.07)'}`, background: fallbackFile ? `${color}12` : 'rgba(255,255,255,0.03)', color: fallbackFile ? color : '#475569', fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: fallbackFile ? 'pointer' : 'default' }}>SCREENSHOT PRUEFEN</button>
+                <button onClick={uploadFallback} disabled={!fallbackFile || loading || geminiAI?.isLoading || geminiAI?.isRateLimited?.()} style={{ padding: 12, borderRadius: 10, border: `1px solid ${fallbackFile ? color + '44' : 'rgba(255,255,255,0.07)'}`, background: fallbackFile ? `${color}12` : 'rgba(255,255,255,0.03)', color: fallbackFile ? color : '#475569', fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: fallbackFile ? 'pointer' : 'default' }}>SCREENSHOT PRÜFEN</button>
               </div>
             </div>
           )}

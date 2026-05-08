@@ -214,7 +214,7 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
                 <div>
                     <div style={{ fontSize: 10, fontWeight: 800, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.4 }}>BIOMETRICS</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>Koerperstatus</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>Körperstatus</div>
                 </div>
                 <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'JetBrains Mono',monospace", padding: '4px 8px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.04)' }}>
                     Details
