@@ -45,24 +45,49 @@ jobs:
       - name: Build Web & Sync Capacitor
         run: npm run build:cap
 
-      - name: Fix broken SPM reference from Capacitor sync
+      - name: Fix broken CapacitorWidgetBridge SPM reference
         run: |
           PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
-          echo "--- Checking for broken SPM hash-based GUIDs ---"
-          if grep -q '0ca3007d900a678c2b4d53418799ee3d' "$PBXPROJ"; then
-            echo "Found broken CapacitorWidgetBridge SPM reference, removing..."
-            sed -i '' '/0ca3007d900a678c2b4d53418799ee3d/d' "$PBXPROJ"
-            echo "Cleaned up broken reference."
-          else
-            echo "No broken SPM references found."
-          fi
-          echo "--- Verifying pbxproj is clean ---"
-          if grep -q '0ca3007d900a678c2b4d53418799ee3d' "$PBXPROJ"; then
-            echo "ERROR: Broken reference still present!"
-            exit 1
-          else
-            echo "pbxproj is clean."
-          fi
+          echo "--- Removing direct CapacitorWidgetBridge references from pbxproj ---"
+          echo "=== Before: CapacitorWidgetBridge lines ==="
+          grep -n 'CapacitorWidgetBridge' "$PBXPROJ" || echo "(none found in pbxproj)"
+          echo ""
+          echo "=== Before: capacitor-widget-bridge lines ==="
+          grep -n 'capacitor-widget-bridge' "$PBXPROJ" || echo "(none found in pbxproj)"
+          echo ""
+          # Remove direct CapacitorWidgetBridge product dependency entries from pbxproj
+          # (NOT the CapApp-SPM reference which is the wrapper - those are fine)
+          # These cause Xcode 26 to generate broken hash GUIDs (0ca3007d...)
+          node -e "
+          const fs = require('fs');
+          let content = fs.readFileSync('$PBXPROJ', 'utf-8');
+          const before = content.length;
+
+          // 1. Remove XCSwiftPackageProductDependency blocks for CapacitorWidgetBridge
+          content = content.replace(/\t\t[A-F0-9]{24} \/\* CapacitorWidgetBridge \*\/ = \{[^}]*isa = XCSwiftPackageProductDependency;[^}]*productName = CapacitorWidgetBridge;[^}]*\};?\n/gs, '');
+
+          // 2. Remove PBXBuildFile entries referencing CapacitorWidgetBridge (not via CapApp-SPM)
+          content = content.replace(/\t\t[A-F0-9]{24} \/\* CapacitorWidgetBridge [^*]*\*\/ = \{isa = PBXBuildFile;[^}]*CapacitorWidgetBridge[^}]*\};\n/g, '');
+
+          // 3. Remove CapacitorWidgetBridge from packageProductDependencies arrays
+          content = content.replace(/\t{4,}[A-F0-9]{24} \/\* CapacitorWidgetBridge \*\/,?\n/g, '');
+
+          // 4. Remove XCLocalSwiftPackageReference for capacitor-widget-bridge
+          content = content.replace(/\t\t[A-F0-9]{24} \/\* XCLocalSwiftPackageReference \"capacitor-widget-bridge\" \*\/ = \{[^}]*\};?\n/gs, '');
+
+          // 5. Remove capacitor-widget-bridge from project package references
+          content = content.replace(/\t{4,}[A-F0-9]{24} \/\* XCLocalSwiftPackageReference \"capacitor-widget-bridge\" \*\/,?\n/g, '');
+
+          const after = content.length;
+          fs.writeFileSync('$PBXPROJ', content);
+          console.log('Removed ' + (before - after) + ' characters of CapacitorWidgetBridge references');
+          "
+          echo ""
+          echo "=== After: CapacitorWidgetBridge lines ==="
+          grep -n 'CapacitorWidgetBridge' "$PBXPROJ" || echo "(none - clean!)"
+          echo ""
+          echo "=== After: capacitor-widget-bridge lines ==="
+          grep -n 'capacitor-widget-bridge' "$PBXPROJ" || echo "(none - clean!)"
 
       - name: Patch Widget Extension into Xcode Project
         run: |
