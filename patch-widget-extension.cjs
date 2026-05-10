@@ -197,7 +197,7 @@ if (pbxproj.includes(copyFilesEnd)) {
 
 // Add embed phase to main App target's buildPhases
 pbxproj = pbxproj.replace(
-  /(\/\* App \*\/ = \{[^}]*buildPhases = \(\s*(?:[^)]*?))((\s*\);))/s,
+  /(\/\* App \*\/ = \{\s*isa = PBXNativeTarget;[\s\S]*?buildPhases = \(\s*(?:[^)]*?))((\s*\);))/s,
   `$1\t\t\t\t${UUIDS.embedPhase} /* Embed App Extensions */,\n$2`
 );
 
@@ -235,6 +235,11 @@ const containerProxy = `\t\t${UUIDS.targetProxy} /* PBXContainerItemProxy */ = {
 
 if (pbxproj.includes(containerProxyEnd)) {
   pbxproj = pbxproj.replace(containerProxyEnd, containerProxy + '\n' + containerProxyEnd);
+} else {
+  pbxproj = pbxproj.replace(
+    '/* End PBXProject section */',
+    `/* Begin PBXContainerItemProxy section */\n${containerProxy}\n/* End PBXContainerItemProxy section */\n\n/* End PBXProject section */`
+  );
 }
 
 const targetDepEnd = '/* End PBXTargetDependency section */';
@@ -246,11 +251,16 @@ const targetDep = `\t\t${UUIDS.targetDependency} /* PBXTargetDependency */ = {
 
 if (pbxproj.includes(targetDepEnd)) {
   pbxproj = pbxproj.replace(targetDepEnd, targetDep + '\n' + targetDepEnd);
+} else {
+  pbxproj = pbxproj.replace(
+    '/* End PBXProject section */',
+    `/* Begin PBXTargetDependency section */\n${targetDep}\n/* End PBXTargetDependency section */\n\n/* End PBXProject section */`
+  );
 }
 
 // Add dependency to App target
 pbxproj = pbxproj.replace(
-  /(\/\* App \*\/ = \{[^}]*dependencies = \(\s*(?:[^)]*?))((\s*\);))/s,
+  /(\/\* App \*\/ = \{\s*isa = PBXNativeTarget;[\s\S]*?dependencies = \(\s*(?:[^)]*?))((\s*\);))/s,
   `$1\t\t\t\t${UUIDS.targetDependency} /* PBXTargetDependency */,\n$2`
 );
 
