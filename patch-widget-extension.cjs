@@ -134,6 +134,16 @@ if (rootGroupRegex.test(pbxproj)) {
   console.log('[Widget Patch] WARNING: Could not find root group 504EC2FB1FED79650016851F to add widget group reference.');
 }
 
+// ─── 3.5. Add App Extension Product to Products Group ──────────
+// Xcode requires products to be in the Products group (504EC3051FED79650016851F for Capacitor apps)
+const productsGroupId = '504EC3051FED79650016851F';
+const productsGroupRegex = new RegExp(`(${productsGroupId} \\/\\* Products \\*\\/ = \\{[\\s\\S]*?children = \\()`, 'm');
+if (productsGroupRegex.test(pbxproj)) {
+  pbxproj = pbxproj.replace(productsGroupRegex, `$1\n\t\t\t\t${UUIDS.widgetProduct} /* SoloToDoWidgetExtension.appex */,`);
+} else {
+  console.log('[Widget Patch] WARNING: Could not find Products group to add widget product.');
+}
+
 // ─── 4. Add Widget Target Sources Build Phase ────────────────
 const sourcesEnd = '/* End PBXSourcesBuildPhase section */';
 const widgetSourcesPhase = `\t\t${UUIDS.widgetSourcesPhase} /* Sources */ = {
