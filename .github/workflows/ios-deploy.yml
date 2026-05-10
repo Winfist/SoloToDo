@@ -42,39 +42,18 @@ jobs:
             exit 1
           fi
 
-      - name: Patch WidgetBridge for Xcode 26 SPM compatibility
-        run: |
-          set -euo pipefail
-          echo "--- Running WidgetBridge Package.swift patch ---"
-          node patch-widget-bridge.cjs
-          echo "--- Verifying patch ---"
-          PACKAGE_SWIFT="node_modules/capacitor-widget-bridge/Package.swift"
-          if grep -q 'targets: \["CapacitorWidgetBridge"\]' "$PACKAGE_SWIFT" && ! grep -q 'name: "WidgetBridgePlugin"' "$PACKAGE_SWIFT"; then
-            echo "WidgetBridge patch verified successfully."
-          else
-            echo "WidgetBridge patch verification failed."
-            cat "$PACKAGE_SWIFT"
-            exit 1
-          fi
-
       - name: Build Web & Sync Capacitor
         run: npm run build:cap
 
       - name: Clean DerivedData
         run: rm -rf ~/Library/Developer/Xcode/DerivedData
 
-      - name: Patch Widget Extension into Xcode Project
-        run: |
-          set -euo pipefail
-          echo "--- Running Widget Extension patch ---"
-          node patch-widget-extension.cjs
-          echo "--- Verifying widget patch ---"
-          if grep -q "SoloToDoWidgetExtension" ios/App/App.xcodeproj/project.pbxproj; then
-            echo "Widget Extension patch verified successfully."
-          else
-            echo "Widget Extension patch verification failed."
-            exit 1
-          fi
+      # Widget Extension patch temporarily disabled for build isolation test
+      # - name: Patch Widget Extension into Xcode Project
+      #   run: |
+      #     set -euo pipefail
+      #     echo "--- Running Widget Extension patch ---"
+      #     node patch-widget-extension.cjs
 
       - name: Clean SPM cache
         run: rm -rf ~/Library/Caches/org.swift.swiftpm
