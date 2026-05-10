@@ -74,5 +74,7 @@
 	<string>Lade Screenshots aus deiner Galerie hoch, um Quests zu verifizieren.</string>
 	<key>NSSiriUsageDescription</key>
 	<string>Nutze Siri um Quests zu erstellen und deinen Fortschritt abzufragen.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 </dict>
 </plist>

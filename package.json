@@ -8,7 +8,7 @@
     "build": "vite build && cd admin-dashboard && npm run build",
     "build:cap": "vite build && npx cap sync",
     "preview": "vite preview",
-    "predeploy": "cmd /c \"if exist dist_firebase rmdir /s /q dist_firebase\" && cmd /c \"mkdir dist_firebase && xcopy /E /I dist\\* dist_firebase\\ && xcopy /E /I admin-dist\\* dist_firebase\\admin\\\"",
+    "predeploy": "cmd /c \"if exist dist_firebase rmdir /s /q dist_firebase\" && cmd /c \"mkdir dist_firebase && xcopy /E /I dist\\* dist_firebase\\ && xcopy /E /I admin-dashboard\\dist\\* dist_firebase\\admin\\\"",
     "deploy": "firebase deploy",
     "postinstall": "node patch-health-plugin.js"
   },
@@ -24,6 +24,7 @@
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@react-three/postprocessing": "^3.0.4",
+    "capacitor-widget-bridge": "^8.1.0",
     "firebase": "^12.11.0",
     "gsap": "^3.14.2",
     "react": "^18.2.0",

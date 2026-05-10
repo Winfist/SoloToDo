@@ -42,6 +42,19 @@ jobs:
             exit 1
           fi
 
+      - name: Patch Widget Extension into Xcode Project
+        run: |
+          set -euo pipefail
+          echo "--- Running Widget Extension patch ---"
+          node patch-widget-extension.js
+          echo "--- Verifying widget patch ---"
+          if grep -q "SoloToDoWidgetExtension" ios/App/App.xcodeproj/project.pbxproj; then
+            echo "Widget Extension patch verified successfully."
+          else
+            echo "Widget Extension patch verification failed."
+            exit 1
+          fi
+
       - name: Build Web & Sync Capacitor
         run: npm run build:cap
 

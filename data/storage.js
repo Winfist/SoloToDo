@@ -6,6 +6,7 @@ import { db, auth } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { DEFAULT_STATE } from "./defaultState.js";
 import { calcShadowXpToNext, genId, getToday, recalculateLevelFromTotalXp } from "./helpers.js";
+import { syncWidgetData } from "../services/widgetDataService.js";
 
 // ─── DATA MIGRATION ───────────────────────────────────────────
 export function migrateState(oldState) {
@@ -138,6 +139,8 @@ export async function saveState(s) {
       }
       await setDoc(docRef, cleanState, { merge: true });
     }
+    // Sync widget data (non-blocking, fails silently on non-iOS)
+    syncWidgetData(s).catch(() => {});
   } catch (e) {
     console.error("System: Speicherfehler:", e);
   }

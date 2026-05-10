@@ -149,4 +149,18 @@ export const DEFAULT_STATE = {
   settings: {
     autoSystemTasks: false,
   },
+  widgetConfig: {
+    modules: ['streak_xp', 'quests', 'habits', 'micro_habits', 'hunter_card'],
+    questFilter: 'all',
+    questSort: 'focus',
+    maxQuests: 3,
+    showHunterCard: true,
+    showSystemMessage: true,
+    syncTheme: true,
+    liveActivity: {
+      emergencyQuest: true,
+      streakWarning: true,
+      deadlineAlert: true,
+    },
+  },
 };

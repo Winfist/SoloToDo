@@ -807,6 +807,165 @@ export default function SettingsView({ state, persist, theme, can, onLogout, upd
         </div>
       </SettingsSection>
 
+
+      {/* ════════════════════════════════════════════════════════════
+           SECTION: WIDGET INTERFACE
+         ════════════════════════════════════════════════════════════ */}
+      <SettingsSection title="Widget Interface" icon="📡" color="#22d3ee" open={openSection === "widget"} onToggle={() => toggleSection("widget")} theme={theme} badge="iOS WIDGET">
+        <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, marginBottom: 14 }}>
+          Konfiguriere, welche Daten auf deinem iOS Home Screen und Lock Screen Widget angezeigt werden.
+        </div>
+
+        {/* ── Quest Filter ── */}
+        <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Quest-Filter</div>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>Welche Quests im Widget anzeigen</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {[
+              { key: "all", label: "Alle" },
+              { key: "system", label: "System" },
+              { key: "custom", label: "Eigene" },
+              { key: "daily", label: "Dailies" },
+            ].map(opt => {
+              const wc = state.widgetConfig || {};
+              const active = (wc.questFilter || "all") === opt.key;
+              return (
+                <button key={opt.key} onClick={() => { const widgetConfig = { ...(state.widgetConfig || {}), questFilter: opt.key }; persist({ ...state, widgetConfig }); }}
+                  style={{ flex: 1, minWidth: 60, padding: "8px 6px", borderRadius: 10, background: active ? `${theme.primary}22` : "rgba(255,255,255,0.03)", border: `1.5px solid ${active ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: active ? theme.accent : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.25s", fontFamily: "'Outfit',sans-serif" }}
+                >{opt.label}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Quest Sort ── */}
+        <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Sortierung</div>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>Quest-Reihenfolge im Widget</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[
+              { key: "focus", label: "🎯 Fokus" },
+              { key: "priority", label: "⚡ Priorität" },
+              { key: "deadline", label: "⏰ Deadline" },
+            ].map(opt => {
+              const wc = state.widgetConfig || {};
+              const active = (wc.questSort || "focus") === opt.key;
+              return (
+                <button key={opt.key} onClick={() => { const widgetConfig = { ...(state.widgetConfig || {}), questSort: opt.key }; persist({ ...state, widgetConfig }); }}
+                  style={{ flex: 1, padding: "8px 6px", borderRadius: 10, background: active ? `${theme.primary}22` : "rgba(255,255,255,0.03)", border: `1.5px solid ${active ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: active ? theme.accent : "#64748b", fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.25s", fontFamily: "'Outfit',sans-serif" }}
+                >{opt.label}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Max Quests ── */}
+        <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Angezeigte Quests</div>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>Maximale Anzahl im Widget</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[1, 2, 3, 4, 5].map(n => {
+              const wc = state.widgetConfig || {};
+              const active = (wc.maxQuests || 3) === n;
+              return (
+                <button key={n} onClick={() => { const widgetConfig = { ...(state.widgetConfig || {}), maxQuests: n }; persist({ ...state, widgetConfig }); }}
+                  style={{ width: 40, height: 36, borderRadius: 10, background: active ? `${theme.primary}22` : "rgba(255,255,255,0.03)", border: `1.5px solid ${active ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: active ? theme.accent : "#64748b", fontSize: 14, fontWeight: 900, cursor: "pointer", transition: "all 0.25s", fontFamily: "'JetBrains Mono',monospace" }}
+                >{n}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Module Toggles ── */}
+        <div style={{ paddingTop: 14 }}>
+          <div style={{ fontSize: 9, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>WIDGET MODULE</div>
+          {[
+            { key: 'streak_xp', label: 'Streak & XP', icon: '🔥', color: '#f97316', desc: 'Serie + Level + XP-Fortschritt' },
+            { key: 'quests', label: 'Quest Board', icon: '🗡️', color: '#f59e0b', desc: 'Aktive Quests als Liste' },
+            { key: 'daily_quests', label: 'Daily Quests', icon: '📋', color: '#22d3ee', desc: 'Nur tägliche Quests' },
+            { key: 'focus_quest', label: 'Focus Quest', icon: '🎯', color: '#ef4444', desc: 'Wichtigste Quest prominent' },
+            { key: 'habits', label: 'Habit Progress', icon: '💪', color: '#22c55e', desc: 'Heutige Habits als Checklist' },
+            { key: 'micro_habits', label: 'Micro-Habits', icon: '🧬', color: '#06b6d4', desc: 'Kompakte Counter-Leiste' },
+            { key: 'hunter_card', label: 'Hunter Card', icon: '🏆', color: '#a855f7', desc: 'Level, Rang, Titel, Stats' },
+            { key: 'health', label: 'Biometrics', icon: '❤️', color: '#ef4444', desc: 'Schritte + Schlaf' },
+            { key: 'screen_time', label: 'Screen Time', icon: '📱', color: '#f59e0b', desc: 'Limit vs. Aktuell' },
+            { key: 'deadline_alert', label: 'Deadline Alert', icon: '⏰', color: '#dc2626', desc: 'Nächstes Fälligkeitsdatum' },
+            { key: 'system_message', label: 'System Message', icon: '💬', color: '#6366f1', desc: 'Motivations-Spruch' },
+            { key: 'week_heatmap', label: 'Wochen-Heatmap', icon: '📊', color: '#22c55e', desc: '7-Tage Aktivitäts-Grid' },
+            { key: 'streak_shield', label: 'Streak Shield', icon: '🛡️', color: '#3b82f6', desc: 'Schutz-Status' },
+            { key: 'shadow_army', label: 'Shadow Army', icon: '👻', color: '#64748b', desc: 'Shadows + Stärkstes' },
+          ].map(mod => {
+            const wc = state.widgetConfig || {};
+            const activeModules = wc.modules || ['streak_xp', 'quests', 'habits', 'micro_habits', 'hunter_card'];
+            const isActive = activeModules.includes(mod.key);
+            return (
+              <div key={mod.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: `${mod.color}15`, border: `1px solid ${mod.color}25`, fontSize: 14 }}>{mod.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? "#e2e8f0" : "#475569" }}>{mod.label}</div>
+                    <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{mod.desc}</div>
+                  </div>
+                </div>
+                <Toggle value={isActive} onChange={() => { const modules = isActive ? activeModules.filter(k => k !== mod.key) : [...activeModules, mod.key]; const widgetConfig = { ...(state.widgetConfig || {}), modules }; persist({ ...state, widgetConfig }); }} color={mod.color} />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Additional Toggles ── */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>ERWEITERTE OPTIONEN</div>
+        <SettingRow label="Theme synchronisieren" desc="Widget nutzt dein App-Theme" value={(state.widgetConfig || {}).syncTheme !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, syncTheme: !(wc.syncTheme !== false) } }); }} color="#22d3ee" theme={theme} />
+        <SettingRow label="System-Nachrichten" desc="Motivations-Sprüche im Widget" value={(state.widgetConfig || {}).showSystemMessage !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, showSystemMessage: !(wc.showSystemMessage !== false) } }); }} color="#6366f1" theme={theme} />
+
+        {/* ── Live Activity Toggles ── */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>LIVE ACTIVITIES</div>
+        <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>Temporäre Lock Screen Anzeigen für zeitkritische Events (max. 8h).</div>
+        <SettingRow label="Emergency Quests" desc="Live Alert bei Emergency Quest" value={(state.widgetConfig?.liveActivity || {}).emergencyQuest !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), emergencyQuest: !(wc.liveActivity?.emergencyQuest !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#ef4444" theme={theme} />
+        <SettingRow label="Streak-Warnung" desc="Live Alert wenn Streak in Gefahr" value={(state.widgetConfig?.liveActivity || {}).streakWarning !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), streakWarning: !(wc.liveActivity?.streakWarning !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#f97316" theme={theme} />
+        <SettingRow label="Deadline-Countdown" desc="Live Timer bei Quest Deadline < 2h" value={(state.widgetConfig?.liveActivity || {}).deadlineAlert !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), deadlineAlert: !(wc.liveActivity?.deadlineAlert !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#dc2626" theme={theme} />
+
+        {/* ── Widget Preview ── */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>WIDGET PREVIEW</div>
+        <div style={{ padding: "14px 16px", borderRadius: 16, background: "linear-gradient(135deg, rgba(6,6,14,0.95), rgba(10,10,26,0.9))", border: `1px solid ${theme.primary}33`, position: "relative", overflow: "hidden" }}>
+          {/* Scanline effect */}
+          <div style={{ position: "absolute", inset: 0, opacity: 0.04, pointerEvents: "none", background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)" }} />
+          {/* Edge glow */}
+          <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: `linear-gradient(90deg, transparent, ${theme.primary}, transparent)` }} />
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontSize: 8, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{"「SYSTEM INTERFACE」"}</span>
+            <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>LVL {state.level || 1}</span>
+          </div>
+
+          {/* Streak + XP */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#f97316", fontFamily: "'Cinzel',serif", textShadow: "0 0 12px rgba(249,115,22,0.5)" }}>🔥 {state.streak || 0}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${Math.min(((state.xp || 0) / 100) * 100, 100)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})`, borderRadius: 2, transition: "width 0.4s" }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Mini quest list */}
+          {(state.quests || []).filter(q => !q.completed).slice(0, 2).map((q, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+              <span style={{ fontSize: 8, width: 8, height: 8, borderRadius: 2, background: q.difficulty === 'boss' ? '#ef4444' : q.difficulty === 'hard' ? '#a78bfa' : q.difficulty === 'normal' ? '#22d3ee' : '#6b7280' }} />
+              <span style={{ fontSize: 10, color: "#cbd5e1", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.title || "Quest"}</span>
+              <span style={{ fontSize: 7, letterSpacing: 1, padding: "2px 5px", borderRadius: 4, background: "rgba(255,255,255,0.05)", color: "#64748b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{(q.category || "AGI").toUpperCase()}</span>
+            </div>
+          ))}
+          {(state.quests || []).filter(q => !q.completed).length === 0 && (
+            <div style={{ fontSize: 10, color: "#334155", textAlign: "center", padding: "8px 0", fontStyle: "italic" }}>Keine offenen Quests</div>
+          )}
+          <div style={{ fontSize: 7, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginTop: 8, textAlign: "center", letterSpacing: 2 }}>SOLOTODO WIDGET · LIVE PREVIEW</div>
+        </div>
+      </SettingsSection>
+
       {/* ════════════════════════════════════════════════════════════
            SECTION 6: DATEN & ACCOUNT
          ════════════════════════════════════════════════════════════ */}
