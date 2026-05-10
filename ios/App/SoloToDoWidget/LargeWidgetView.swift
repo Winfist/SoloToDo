@@ -102,7 +102,7 @@ struct LargeWidgetView: View {
                 // ── Stats Footer ──
                 HStack(spacing: 4) {
                     StatPill(label: "STR", value: data.stats.str, color: SLDesign.strColor)
-                    StatPill(label: "INT", value: data.stats.int, color: SLDesign.intColor)
+                    StatPill(label: "INT", value: data.stats.intelligence, color: SLDesign.intColor)
                     StatPill(label: "VIT", value: data.stats.vit, color: SLDesign.vitColor)
                     StatPill(label: "AGI", value: data.stats.agi, color: SLDesign.agiColor)
                     StatPill(label: "CHA", value: data.stats.cha, color: SLDesign.chaColor)
