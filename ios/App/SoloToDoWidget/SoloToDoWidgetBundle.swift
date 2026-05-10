@@ -39,10 +39,15 @@ struct SoloToDoMainWidget: Widget {
     
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: SoloToDoProvider()) { entry in
-            SoloToDoWidgetEntryView(entry: entry)
-                .containerBackground(for: .widget) {
-                    Color(hex: entry.data.theme.bg)
-                }
+            if #available(iOS 17.0, *) {
+                SoloToDoWidgetEntryView(entry: entry)
+                    .containerBackground(for: .widget) {
+                        Color(hex: entry.data.theme.bg)
+                    }
+            } else {
+                SoloToDoWidgetEntryView(entry: entry)
+                    .background(Color(hex: entry.data.theme.bg))
+            }
         }
         .configurationDisplayName("SoloToDo")
         .description("Dein Hunter Dashboard — Quests, Streak, Habits auf einen Blick.")
@@ -56,7 +61,15 @@ struct SoloToDoLockScreenWidget: Widget {
     
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: SoloToDoProvider()) { entry in
-            SoloToDoLockScreenEntryView(entry: entry)
+            if #available(iOS 17.0, *) {
+                SoloToDoLockScreenEntryView(entry: entry)
+                    .containerBackground(for: .widget) {
+                        Color.clear
+                    }
+            } else {
+                SoloToDoLockScreenEntryView(entry: entry)
+                    .background(Color.clear)
+            }
         }
         .configurationDisplayName("SoloToDo Lock")
         .description("Streak & Quests auf dem Sperrbildschirm.")
