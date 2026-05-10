@@ -49,7 +49,7 @@ jobs:
           node patch-widget-bridge.cjs
           echo "--- Verifying patch ---"
           PACKAGE_SWIFT="node_modules/capacitor-widget-bridge/Package.swift"
-          if grep -q 'name: "CapacitorWidgetBridge"' "$PACKAGE_SWIFT" && ! grep -q 'WidgetBridgePlugin' "$PACKAGE_SWIFT"; then
+          if grep -q 'targets: \["CapacitorWidgetBridge"\]' "$PACKAGE_SWIFT" && ! grep -q 'name: "WidgetBridgePlugin"' "$PACKAGE_SWIFT"; then
             echo "WidgetBridge patch verified successfully."
           else
             echo "WidgetBridge patch verification failed."
