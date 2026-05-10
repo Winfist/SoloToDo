@@ -35,27 +35,20 @@ platform :ios do
       api_key: api_key,
       app_identifier: "com.solotodo.app"
     )
+    app_profile_name = ENV["SIGH_NAME"]
+
     sigh(
       api_key: api_key,
       app_identifier: "com.solotodo.app.widget"
     )
+    widget_profile_name = ENV["SIGH_NAME"]
 
     # Extract the true Team ID safely from Fastlane state or raw profile fallback
     profile_path = lane_context[SharedValues::SIGH_PROFILE_PATH] || Dir.glob("../*.mobileprovision").first || Dir.glob("*.mobileprovision").first
     team_id = sh("security cms -D -i '#{profile_path}' 2>/dev/null | grep -A2 'TeamIdentifier' | grep 'string' | sed -E 's/<[^>]+>//g'").strip
     UI.message("Extracted Team ID from Profile: #{team_id}")
-
-    # Find widget provisioning profile name
-    widget_profiles = Dir.glob("../*.mobileprovision") + Dir.glob("*.mobileprovision")
-    widget_profile_name = nil
-    widget_profiles.each do |pp|
-      content = sh("security cms -D -i '#{pp}' 2>/dev/null") rescue ""
-      if content.include?("com.solotodo.app.widget")
-        name_match = content.match(/<key>Name<\/key>\s*<string>([^<]+)<\/string>/)
-        widget_profile_name = name_match[1] if name_match
-      end
-    end
-    UI.message("Widget profile name: #{widget_profile_name || 'auto'}")
+    UI.message("App profile name: #{app_profile_name}")
+    UI.message("Widget profile name: #{widget_profile_name}")
 
     increment_build_number(
       build_number: ENV["GITHUB_RUN_NUMBER"],
@@ -67,7 +60,7 @@ platform :ios do
       path: "App.xcodeproj",
       team_id: team_id,
       targets: ["App"],
-      profile_name: ENV["SIGH_NAME"],
+      profile_name: app_profile_name,
       code_sign_identity: "Apple Distribution"
     )
 
