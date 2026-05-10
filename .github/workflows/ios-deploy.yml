@@ -45,6 +45,29 @@ jobs:
       - name: Build Web & Sync Capacitor
         run: npm run build:cap
 
+      - name: Debug - Dump pbxproj SPM references after cap sync
+        run: |
+          echo "=== XCSwiftPackageProductDependency ==="
+          grep -A3 'XCSwiftPackageProductDependency' ios/App/App.xcodeproj/project.pbxproj || true
+          echo ""
+          echo "=== packageProductDependencies ==="
+          grep -A10 'packageProductDependencies' ios/App/App.xcodeproj/project.pbxproj || true
+          echo ""
+          echo "=== XCLocalSwiftPackageReference ==="
+          grep -A3 'XCLocalSwiftPackageReference' ios/App/App.xcodeproj/project.pbxproj || true
+          echo ""
+          echo "=== XCRemoteSwiftPackageReference ==="
+          grep -A3 'XCRemoteSwiftPackageReference' ios/App/App.xcodeproj/project.pbxproj || true
+          echo ""
+          echo "=== WidgetBridge references ==="
+          grep -i 'widget' ios/App/App.xcodeproj/project.pbxproj || true
+          echo ""
+          echo "=== 0ca300 references ==="
+          grep '0ca300' ios/App/App.xcodeproj/project.pbxproj || true
+          echo ""
+          echo "=== BuildFile entries with long GUIDs ==="
+          grep -E '[0-9a-f]{32,}' ios/App/App.xcodeproj/project.pbxproj || true
+
       - name: Patch Widget Extension into Xcode Project
         run: |
           set -euo pipefail
