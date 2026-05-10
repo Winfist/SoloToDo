@@ -46,7 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "--- Running Widget Extension patch ---"
-          node patch-widget-extension.js
+          node patch-widget-extension.cjs
           echo "--- Verifying widget patch ---"
           if grep -q "SoloToDoWidgetExtension" ios/App/App.xcodeproj/project.pbxproj; then
             echo "Widget Extension patch verified successfully."
