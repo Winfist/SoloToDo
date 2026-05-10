@@ -328,16 +328,16 @@ export async function syncWidgetData(state) {
     if (hash === _lastPayloadHash) return;
     _lastPayloadHash = hash;
 
-    const { WidgetBridge } = await import('capacitor-widget-bridge');
+    const { WidgetBridgePlugin } = await import('capacitor-widget-bridge');
 
-    await WidgetBridge.setItem({
+    await WidgetBridgePlugin.setItem({
       group: APP_GROUP,
       key: WIDGET_DATA_KEY,
       value: payloadStr,
     });
 
     // Trigger widget timeline reload
-    await WidgetBridge.reloadAllTimelines();
+    await WidgetBridgePlugin.reloadAllTimelines();
 
     console.log('[Widget] Data synced successfully');
   } catch (err) {
