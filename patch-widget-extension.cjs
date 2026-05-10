@@ -124,15 +124,14 @@ ${SWIFT_FILES.map(f => `\t\t\t\t${f.refId} /* ${f.name} */,`).join('\n')}
 pbxproj = pbxproj.replace(mainGroupEnd, widgetGroupEntry + '\n' + mainGroupEnd);
 
 // Add widget group reference to root group
-// Find the root group's children array and add the widget group
-const rootGroupChildrenPattern = /(children = \(\s*(?:.*?\n)*?)((\s*\);[\s\S]*?sourceTree = "<group>";\s*\};[\s\S]*?\/\* End PBXGroup))/;
-const rootMatch = pbxproj.match(rootGroupChildrenPattern);
-if (rootMatch) {
-  // Just add to the first children array we find
-  pbxproj = pbxproj.replace(
-    /(\t\t\t\tchildren = \()/,
-    `$1\n\t\t\t\t\t${UUIDS.widgetGroup} /* SoloToDoWidget */,`
-  );
+// The mainGroup is defined by ID in PBXProject: mainGroup = 504EC2FB1FED79650016851F;
+const rootGroupId = '504EC2FB1FED79650016851F';
+// Find the root group block and insert the widget group reference into its children list
+const rootGroupRegex = new RegExp(`(${rootGroupId} = \\{[\\s\\S]*?children = \\()`, 'm');
+if (rootGroupRegex.test(pbxproj)) {
+  pbxproj = pbxproj.replace(rootGroupRegex, `$1\n\t\t\t\t${UUIDS.widgetGroup} /* SoloToDoWidget */,`);
+} else {
+  console.log('[Widget Patch] WARNING: Could not find root group 504EC2FB1FED79650016851F to add widget group reference.');
 }
 
 // ─── 4. Add Widget Target Sources Build Phase ────────────────

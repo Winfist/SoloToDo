@@ -48,12 +48,11 @@ jobs:
       - name: Clean DerivedData
         run: rm -rf ~/Library/Developer/Xcode/DerivedData
 
-      # Widget Extension patch temporarily disabled for build isolation test
-      # - name: Patch Widget Extension into Xcode Project
-      #   run: |
-      #     set -euo pipefail
-      #     echo "--- Running Widget Extension patch ---"
-      #     node patch-widget-extension.cjs
+      - name: Patch Widget Extension into Xcode Project
+        run: |
+          set -euo pipefail
+          echo "--- Running Widget Extension patch ---"
+          node patch-widget-extension.cjs
 
       - name: Clean SPM cache
         run: rm -rf ~/Library/Caches/org.swift.swiftpm
