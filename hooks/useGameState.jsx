@@ -108,6 +108,10 @@ export function useGameState(initialHunterName, onLogout) {
     setState(next);
     stateRef.current = next;
     saveState(next);
+    // Widget Sync: push state snapshot to iOS WidgetKit via shared App Group
+    import('../services/widgetDataService.js').then(({ syncWidgetData }) => {
+      syncWidgetData(next);
+    }).catch(() => { });
     // Soul Link: push live status to Firestore on every save
     if (next.soulLink?.linkCode && auth.currentUser) {
       import('../multiplayer/soulLinkFirebase.js').then(({ updateSoulLinkStatus }) => {
@@ -356,6 +360,11 @@ export function useGameState(initialHunterName, onLogout) {
           }
           setState(s);
           if (!s.hunterName) setShowSetup(true);
+
+          // Initial widget sync on app boot
+          import('../services/widgetDataService.js').then(({ syncWidgetData }) => {
+            syncWidgetData(s);
+          }).catch(() => { });
 
           // If we loaded from local, save to cloud now that we have a user
           if (source === "local" && user) {
