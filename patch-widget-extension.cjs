@@ -326,7 +326,7 @@ pbxproj = pbxproj.replace(configListEnd, widgetConfigList + '\n' + configListEnd
 
 // ─── 10. Add Widget Target to PBXProject targets ─────────────
 pbxproj = pbxproj.replace(
-  /(targets = \(\s*504EC3041FED79650016851F \/\* App \*\/,?)/,
+  /(targets = \(\s*[A-Z0-9]+ \/\* App \*\/,?)/,
   `$1\n\t\t\t\t${UUIDS.widgetTarget} /* SoloToDoWidgetExtension */,`
 );
 
