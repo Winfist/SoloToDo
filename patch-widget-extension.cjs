@@ -197,8 +197,8 @@ if (pbxproj.includes(copyFilesEnd)) {
 
 // Add embed phase to main App target's buildPhases
 pbxproj = pbxproj.replace(
-  /(\/\* App \*\/ = \{\s*isa = PBXNativeTarget;[\s\S]*?buildPhases = \(\s*(?:[^)]*?))((\s*\);))/s,
-  `$1\t\t\t\t${UUIDS.embedPhase} /* Embed App Extensions */,\n$2`
+  /(\/\* App \*\/ = \{\s*isa = PBXNativeTarget;[\s\S]*?buildPhases = \([^)]*?)(?=\s*\);)/s,
+  `$1\n\t\t\t\t${UUIDS.embedPhase} /* Embed App Extensions */,`
 );
 
 // ─── 7. Add Widget Native Target ─────────────────────────────
@@ -260,8 +260,8 @@ if (pbxproj.includes(targetDepEnd)) {
 
 // Add dependency to App target
 pbxproj = pbxproj.replace(
-  /(\/\* App \*\/ = \{\s*isa = PBXNativeTarget;[\s\S]*?dependencies = \(\s*(?:[^)]*?))((\s*\);))/s,
-  `$1\t\t\t\t${UUIDS.targetDependency} /* PBXTargetDependency */,\n$2`
+  /(\/\* App \*\/ = \{\s*isa = PBXNativeTarget;[\s\S]*?dependencies = \([^)]*?)(?=\s*\);)/s,
+  `$1\n\t\t\t\t${UUIDS.targetDependency} /* PBXTargetDependency */,`
 );
 
 // ─── 9. Add Build Configuration for Widget Target ────────────
