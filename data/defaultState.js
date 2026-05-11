@@ -12,7 +12,7 @@ export const DEFAULT_STATE = {
   stats: { str: 0, int: 0, vit: 0, agi: 0, cha: 0 },
   statPoints: 0,
   quests: [], completedQuests: [], streak: 0, lastActiveDate: null, lastWelcomeDate: null,
-  shopPurchases: [], selectedTheme: "default", selectedTitle: "",
+  shopPurchases: [], selectedTheme: "default", selectedTitle: "", selectedPageTransition: "domain_shift",
   shadowArmy: { shadows: [], capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 },
   totalXpEarned: 0, totalQuestsCompleted: 0,
   dailyUserQuestsCreated: 0, extraDailySlots: 0, dailyUserXP: 0, integrityScore: 100,
@@ -148,6 +148,7 @@ export const DEFAULT_STATE = {
   },
   settings: {
     autoSystemTasks: false,
+    pageTransitionSpeed: 1,
   },
   widgetConfig: {
     modules: ['streak_xp', 'quests', 'habits', 'micro_habits', 'hunter_card'],

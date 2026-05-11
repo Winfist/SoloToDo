@@ -378,6 +378,7 @@ function App({ initialHunterName, onLogout }) {
   // ─ Page Transition State ─
   const [isPageTransitioning, setIsPageTransitioning] = React.useState(false);
   const [transitionTargetView, setTransitionTargetView] = React.useState(null);
+  const [transitionPreview, setTransitionPreview] = React.useState(null);
   const VIEW_LABELS = useMemo(() => ({
     dashboard: "HEUTE", stats: "HUNTER STATS", shadows: "SHADOW ARMY",
     dungeon: "DUNGEON GATES", story: "STORY", equipment: "ARSENAL",
@@ -387,10 +388,10 @@ function App({ initialHunterName, onLogout }) {
     settings: "EINSTELLUNGEN", sanctum: "INNER SANCTUM",
   }), []);
   const navigateTo = useCallback((newView) => {
-    if (newView === view || isPageTransitioning) return;
+    if (newView === view || isPageTransitioning || transitionPreview) return;
     setTransitionTargetView(newView);
     setIsPageTransitioning(true);
-  }, [view, isPageTransitioning]);
+  }, [view, isPageTransitioning, transitionPreview]);
   const onTransitionMid = useCallback(() => {
     if (transitionTargetView) setView(transitionTargetView);
   }, [transitionTargetView]);
@@ -398,6 +399,14 @@ function App({ initialHunterName, onLogout }) {
     setIsPageTransitioning(false);
     setTransitionTargetView(null);
   }, []);
+  const previewPageTransition = useCallback((variant, label = "EQUIPPED") => {
+    if (isPageTransitioning) return;
+    setTransitionPreview({
+      id: Date.now(),
+      variant: variant || "domain_shift",
+      label: (label || "EQUIPPED").toUpperCase(),
+    });
+  }, [isPageTransitioning]);
 
   // ─ Progressive Feature Unlock System ─
   const { can, nextLevel } = useFeatureUnlocks(state?.level || 1);
@@ -743,9 +752,23 @@ function App({ initialHunterName, onLogout }) {
             isActive={isPageTransitioning}
             targetLabel={VIEW_LABELS[transitionTargetView] || (transitionTargetView || "").toUpperCase()}
             theme={theme}
+            variant={state.selectedPageTransition || "domain_shift"}
+            speed={state.settings?.pageTransitionSpeed || 1}
             onMidpoint={onTransitionMid}
             onComplete={onTransitionEnd}
           />
+          {transitionPreview && (
+            <PageTransition
+              key={`transition-preview-${transitionPreview.id}`}
+              isActive={!!transitionPreview}
+              targetLabel={transitionPreview.label}
+              theme={theme}
+              variant={transitionPreview.variant}
+              speed={state.settings?.pageTransitionSpeed || 1}
+              onMidpoint={() => { }}
+              onComplete={() => setTransitionPreview(null)}
+            />
+          )}
         </React.Suspense>
 
         {/* FOCUS MODE */}
@@ -906,28 +929,48 @@ function App({ initialHunterName, onLogout }) {
                   <div style={{ fontSize: 10, color: rank.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 1, opacity: 0.9, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: `0 0 8px ${rank.color}44` }}>{state.selectedTitle || rank.label}</div>
                 </div>
               </div>
-              <button onClick={onLogout} className="press-feedback" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, color: "#ef4444", fontSize: 10, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", padding: "6px 12px", fontWeight: 800, letterSpacing: 1, transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)" }} title="System beenden" onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.22)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"; e.currentTarget.style.boxShadow = "none"; }}>
-                EXIT
-              </button>
-              {/* Music mute — always visible in top row */}
-              {can('music') && <button
-                onClick={() => setIsMusicPlaying(prev => {
-                  const next = !prev;
-                  localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
-                  return next;
-                })}
-                className="press-feedback"
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 32, height: 32, borderRadius: 8,
-                  background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
-                  border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
-                  color: isMusicPlaying ? theme.accent : "#475569",
-                  cursor: "pointer", fontSize: 16, transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)"
-                }}
-              >
-                {isMusicPlaying ? "\u266B" : "\u266A"}
-              </button>}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <button onClick={onLogout} className="press-feedback" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, color: "#ef4444", fontSize: 10, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", padding: "6px 12px", fontWeight: 800, letterSpacing: 1, transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)" }} title="System beenden" onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.22)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"; e.currentTarget.style.boxShadow = "none"; }}>
+                  EXIT
+                </button>
+                {/* Music mute — always visible in top row */}
+                {can('music') && <button
+                  onClick={() => setIsMusicPlaying(prev => {
+                    const next = !prev;
+                    localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
+                    return next;
+                  })}
+                  className="press-feedback"
+                  title={isMusicPlaying ? "Musik pausieren" : "Musik starten"}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 32, height: 32, borderRadius: 8,
+                    background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
+                    color: isMusicPlaying ? theme.accent : "#475569",
+                    cursor: "pointer", fontSize: 16, transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)"
+                  }}
+                >
+                  {isMusicPlaying ? "\u266B" : "\u266A"}
+                </button>}
+                <button
+                  onClick={() => navigateTo("settings")}
+                  className="press-feedback"
+                  title="Einstellungen"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 32, height: 32, borderRadius: 8,
+                    background: view === "settings" ? `${theme.primary}24` : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${view === "settings" ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`,
+                    color: view === "settings" ? theme.accent : "#64748b",
+                    cursor: "pointer",
+                    transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+                    boxShadow: view === "settings" ? `0 0 14px ${theme.primary}24` : "none",
+                  }}
+                >
+                  <GameIcon src={NAV_ICONS.settings} fallback="⚙" size={17} glow={view === "settings"} glowColor={theme.glow} />
+                </button>
+              </div>
             </div>
 
             {/* Energy Line Separator */}
@@ -1487,6 +1530,7 @@ function App({ initialHunterName, onLogout }) {
                   claimDailyGemBonus={claimDailyGemBonus}
                   getActiveGemBoosters={getActiveGemBoosters}
                   onWatchAd={() => setShowAdModal(true)}
+                  onPreviewPageTransition={previewPageTransition}
                 />
               )
             }
@@ -1530,6 +1574,12 @@ function App({ initialHunterName, onLogout }) {
                   theme={theme}
                   can={can}
                   onLogout={onLogout}
+                  onOpenShop={(tab = "gems", gemCategory = null) => {
+                    window.__SHOP_START_TAB = tab;
+                    if (gemCategory) window.__GEM_SHOP_START_CATEGORY = gemCategory;
+                    navigateTo("shop");
+                  }}
+                  onPreviewPageTransition={previewPageTransition}
                   updateHealthData={updateHealthData}
                   claimHealthReward={claimHealthReward}
                   updateScreenTimeData={updateScreenTimeData}

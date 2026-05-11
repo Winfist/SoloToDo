@@ -73,6 +73,8 @@ export function migrateState(oldState) {
   s.gemPurchases = oldState.gemPurchases || [];
   s.adsWatchedToday = oldState.adsWatchedToday || 0;
   s.lastAdWatchDate = oldState.lastAdWatchDate || null;
+  s.selectedPageTransition = oldState.selectedPageTransition || DEFAULT_STATE.selectedPageTransition;
+  s.settings = { ...DEFAULT_STATE.settings, ...(oldState.settings || {}) };
 
   // V4 → V5 Legacy: convert shadows to shadowArmy
   if (!oldState.shadowArmy && oldState.shadows) {

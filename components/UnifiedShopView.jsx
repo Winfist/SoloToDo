@@ -3,6 +3,7 @@ import { GEM_ICONS, QUEST_ICONS, STORY_ICONS, STAT_ICONS } from '../data/icons.j
 import { getToday as getLocalToday } from '../data/dateUtils.js';
 
 const GEM_CATEGORIES = [
+  { key: "transition", label: "Animationen", icon: "FX", color: "#c084fc" },
   { key: "all", label: "Alle", icon: "💎", color: "#a855f7" },
   { key: "booster", label: "Booster", icon: "⚡", color: "#f59e0b" },
   { key: "theme", label: "Themes", icon: "🎨", color: "#06b6d4" },
@@ -37,10 +38,11 @@ export default function UnifiedShopView({
   shopUnlocked, rank, getRankIndex,
   buyItem, buyGemItem, persist, notify, can,
   genId, getToday,
-  watchRewardedAd, claimDailyGemBonus, getActiveGemBoosters, onWatchAd
+  watchRewardedAd, claimDailyGemBonus, getActiveGemBoosters, onWatchAd,
+  onPreviewPageTransition
 }) {
   const [activeShop, setActiveShop] = useState(window.__SHOP_START_TAB || "gold");
-  const [activeGemTab, setActiveGemTab] = useState("all");
+  const [activeGemTab, setActiveGemTab] = useState(window.__GEM_SHOP_START_CATEGORY || "all");
   const [hoveredItem, setHoveredItem] = useState(null);
   const [purchaseFlash, setPurchaseFlash] = useState(null);
 
@@ -48,6 +50,10 @@ export default function UnifiedShopView({
     if (window.__SHOP_START_TAB) {
       setActiveShop(window.__SHOP_START_TAB);
       window.__SHOP_START_TAB = null;
+    }
+    if (window.__GEM_SHOP_START_CATEGORY) {
+      setActiveGemTab(window.__GEM_SHOP_START_CATEGORY);
+      window.__GEM_SHOP_START_CATEGORY = null;
     }
   }, []);
 
@@ -67,9 +73,29 @@ export default function UnifiedShopView({
   const activeBoosters = getActiveGemBoosters ? getActiveGemBoosters() : [];
 
   const handleGemBuy = (item) => {
+    const willEquipTransition = item.type === "transition"
+      && (state.gems || 0) >= item.cost
+      && (item.repeatable || !(state.gemPurchases || []).includes(item.id));
     setPurchaseFlash(item.id);
     buyGemItem(item);
+    if (willEquipTransition) {
+      window.setTimeout(() => onPreviewPageTransition?.(item.transitionKey || "domain_shift", item.name), 180);
+    }
     setTimeout(() => setPurchaseFlash(null), 600);
+  };
+
+  const handleGemUse = (item) => {
+    if (item.type === "theme") {
+      persist({ ...state, selectedTheme: item.themeKey });
+      notify(`${item.name} aktiviert!`, "named");
+    } else if (item.type === "title") {
+      persist({ ...state, selectedTitle: item.name });
+      notify(`${item.name} aktiviert!`, "named");
+    } else if (item.type === "transition") {
+      persist({ ...state, selectedPageTransition: item.transitionKey || "domain_shift" });
+      notify(`${item.name} aktiviert!`, "named");
+      onPreviewPageTransition?.(item.transitionKey || "domain_shift", item.name);
+    }
   };
 
   const gemFilteredItems = useMemo(() => {
@@ -311,7 +337,7 @@ export default function UnifiedShopView({
             display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 20,
             WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none",
           }}>
-            {GEM_CATEGORIES.map(cat => {
+            {GEM_CATEGORIES.slice().sort((a, b) => (a.key === "all" ? -1 : b.key === "all" ? 1 : 0)).map(cat => {
               const isActive = activeGemTab === cat.key;
               return (
                 <button
@@ -342,14 +368,16 @@ export default function UnifiedShopView({
                 {items.map((item, idx) => {
                   const owned = !item.repeatable && (state.gemPurchases || []).includes(item.id);
                   const canAfford = (state.gems || 0) >= item.cost;
-                  const isActive = (item.type === "theme" && state.selectedTheme === item.themeKey) || (item.type === "title" && state.selectedTitle === item.name);
+                  const isActive = (item.type === "theme" && state.selectedTheme === item.themeKey)
+                    || (item.type === "title" && state.selectedTitle === item.name)
+                    || (item.type === "transition" && (state.selectedPageTransition || "domain_shift") === item.transitionKey);
                   return (
                     <ShopItemCard 
                       key={item.id} item={item} color={getGemCatColor(cat)}
                       isHovered={hoveredItem === item.id} onHover={setHoveredItem} purchaseFlash={purchaseFlash === item.id}
                       isActive={isActive} isOwned={owned} canBuy={canAfford}
                       currencyIcon={GEM_ICONS.gem} delay={gi * 0.1 + idx * 0.05}
-                      onBuy={() => handleGemBuy(item)} onUse={() => handleGemBuy(item)}
+                      onBuy={() => handleGemBuy(item)} onUse={() => handleGemUse(item)}
                     />
                   );
                 })}
@@ -360,14 +388,16 @@ export default function UnifiedShopView({
               {gemFilteredItems.map((item, idx) => {
                 const owned = !item.repeatable && (state.gemPurchases || []).includes(item.id);
                 const canAfford = (state.gems || 0) >= item.cost;
-                const isActive = (item.type === "theme" && state.selectedTheme === item.themeKey) || (item.type === "title" && state.selectedTitle === item.name);
+                const isActive = (item.type === "theme" && state.selectedTheme === item.themeKey)
+                  || (item.type === "title" && state.selectedTitle === item.name)
+                  || (item.type === "transition" && (state.selectedPageTransition || "domain_shift") === item.transitionKey);
                 return (
                   <ShopItemCard 
                     key={item.id} item={item} color={getGemCatColor(activeGemTab)}
                     isHovered={hoveredItem === item.id} onHover={setHoveredItem} purchaseFlash={purchaseFlash === item.id}
                     isActive={isActive} isOwned={owned} canBuy={canAfford}
                     currencyIcon={GEM_ICONS.gem} delay={idx * 0.05}
-                    onBuy={() => handleGemBuy(item)} onUse={() => handleGemBuy(item)}
+                    onBuy={() => handleGemBuy(item)} onUse={() => handleGemUse(item)}
                   />
                 );
               })}
@@ -421,16 +451,19 @@ function ShopItemCard({ item, color, isHovered, onHover, purchaseFlash, isActive
         border: `1px solid ${isActive ? color + "35" : "rgba(255,255,255,0.08)"}`,
         boxShadow: isActive ? `0 0 16px ${color}22` : "none", transition: "all 0.3s ease",
       }}>
-        {item.iconSrc ? (
+        {item.type === "transition" ? (
+          <TransitionMiniPreview item={item} color={color} active={isActive} />
+        ) : item.iconSrc ? (
           <img src={item.iconSrc} alt={item.name} style={{ width: 26, height: 26, objectFit: "contain", filter: `drop-shadow(0 0 6px ${color}77)`, transform: isHovered ? "scale(1.15) rotate(5deg)" : "scale(1)", transition: "transform 0.3s ease" }} />
         ) : (
           <span style={{ fontSize: 22 }}>✨</span>
         )}
       </div>
 
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? color : "#f1f5f9", fontFamily: "'Cinzel',serif" }}>{item.name}</div>
+          {item.type === "transition" && item.rarity && <div style={{ fontSize: 8, color: item.previewColor || color, padding: "2px 7px", borderRadius: 4, background: `${item.previewColor || color}12`, border: `1px solid ${(item.previewColor || color)}33`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, textTransform: "uppercase" }}>{item.rarity}</div>}
           {isActive && <div style={{ fontSize: 8, color, padding: "2px 8px", borderRadius: 4, background: `linear-gradient(90deg, ${color}25, ${color}10)`, border: `1px solid ${color}33`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>✦ AKTIV</div>}
           {isOwned && !isActive && <div style={{ fontSize: 8, color: "#4ade80", padding: "2px 8px", borderRadius: 4, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.2)", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>✓ BESITZT</div>}
         </div>
@@ -440,7 +473,7 @@ function ShopItemCard({ item, color, isHovered, onHover, purchaseFlash, isActive
 
       <div style={{ position: "relative", zIndex: 1 }}>
         {isOwned ? (
-          (item.type === "theme" || item.type === "title") ? (
+          (item.type === "theme" || item.type === "title" || item.type === "transition") ? (
             <button className="shop-btn-hover" onClick={onUse} style={{ padding: "10px 18px", borderRadius: 12, fontSize: 10, fontWeight: 800, background: isActive ? `linear-gradient(145deg, ${color}25, ${color}10)` : "rgba(255,255,255,0.03)", color: isActive ? color : "#64748b", border: `1px solid ${isActive ? color + "44" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", boxShadow: isActive ? `0 4px 16px ${color}22` : "none" }}>{isActive ? "AKTIV" : "NUTZEN"}</button>
           ) : (
             <div style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", color: "#4ade80", fontSize: 16 }}>✓</div>
@@ -455,6 +488,34 @@ function ShopItemCard({ item, color, isHovered, onHover, purchaseFlash, isActive
       </div>
     </div>
   )
+}
+
+function TransitionMiniPreview({ item, color, active }) {
+  const c = item.previewColor || color;
+  const isSlash = item.transitionKey === "shadow_step";
+  const isGate = item.transitionKey === "red_gate" || item.transitionKey === "dragons_breath";
+  const isFrost = item.transitionKey === "frost_seal";
+  const isSystem = item.transitionKey === "system_override";
+  const isEclipse = item.transitionKey === "eclipse_monarch";
+  const bg = isGate
+    ? `radial-gradient(circle at 50% 50%, ${c}44, transparent 46%), linear-gradient(145deg, rgba(0,0,0,0.7), ${c}18)`
+    : isFrost
+      ? `linear-gradient(135deg, rgba(224,242,254,0.22), ${c}18 48%, rgba(3,7,18,0.85))`
+      : isSystem
+        ? `linear-gradient(180deg, rgba(1,16,12,0.9), ${c}16)`
+        : `radial-gradient(circle, ${c}35, transparent 58%), linear-gradient(145deg, rgba(5,5,16,0.92), rgba(0,0,0,0.55))`;
+
+  return (
+    <div style={{ width: 34, height: 34, borderRadius: 10, position: "relative", overflow: "hidden", background: bg, boxShadow: `inset 0 0 14px ${c}22, 0 0 ${active ? 18 : 8}px ${c}55` }}>
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(105deg, transparent 20%, ${c}55 45%, transparent 70%)`, backgroundSize: "200% 100%", animation: "holoShimmer 1.8s linear infinite", opacity: 0.55 }} />
+      {isGate && <div style={{ position: "absolute", inset: 7, borderRadius: "50%", border: `2px solid ${c}`, boxShadow: `0 0 10px ${c}, inset 0 0 10px ${c}55`, animation: "gemPulseRing 1.6s ease-out infinite" }} />}
+      {isSlash && [0, 1, 2].map(i => <div key={i} style={{ position: "absolute", width: 46, height: 2, left: -6, top: 9 + i * 7, background: `linear-gradient(90deg, transparent, ${c}, #fff, transparent)`, transform: "rotate(-28deg)", boxShadow: `0 0 8px ${c}`, animation: `shopBtnShine ${1.1 + i * 0.2}s linear ${i * 0.08}s infinite` }} />)}
+      {isFrost && [0, 1, 2, 3].map(i => <div key={i} style={{ position: "absolute", left: 8 + i * 5, top: 5 + (i % 2) * 8, width: 1, height: 26, background: `linear-gradient(180deg, transparent, #fff, ${c}, transparent)`, transform: `rotate(${35 + i * 24}deg)`, opacity: 0.75, boxShadow: `0 0 6px ${c}` }} />)}
+      {isSystem && [0, 1, 2, 3].map(i => <div key={i} style={{ position: "absolute", left: 5 + i * 7, top: -8, width: 2, height: 48, background: `repeating-linear-gradient(180deg, ${c}00 0 4px, ${c} 5px 7px)`, opacity: 0.5, animation: `shopParticle ${1.4 + i * 0.2}s linear infinite`, "--sp-tx": "0px", "--sp-ty": "34px" }} />)}
+      {isEclipse && <div style={{ position: "absolute", inset: 8, borderRadius: "50%", background: "#03030a", border: `1px solid ${c}`, boxShadow: `0 0 0 4px ${c}22, 0 0 18px ${c}` }} />}
+      {!isSlash && !isGate && !isFrost && !isSystem && !isEclipse && <div style={{ position: "absolute", inset: 8, borderRadius: "50%", border: `1px solid ${c}`, boxShadow: `0 0 12px ${c}` }} />}
+    </div>
+  );
 }
 
 function ActiveBoosters({ boosters }) {

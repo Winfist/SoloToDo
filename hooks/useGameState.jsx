@@ -1775,6 +1775,13 @@ export function useGameState(initialHunterName, onLogout) {
       effects.selectedTheme = item.themeKey;
     } else if (item.type === "title") {
       effects.selectedTitle = item.name;
+    } else if (item.type === "transition") {
+      effects.selectedPageTransition = item.transitionKey || "domain_shift";
+      triggerSystemMessage("GATE COSMETIC UNLOCKED", [
+        `${item.name} wurde in dein System geladen.`,
+        item.desc || "Neue Seitenwechsel-Animation aktiviert.",
+        "Navigationseffekte wurden aktualisiert."
+      ]);
     } else if (item.type === "consumable") {
       // Handle specific consumables
       if (item.id === "gem_extra_slot") {

@@ -89,6 +89,16 @@ export function buildBuyGemItemState(item, state, processAchievements) {
     effects.selectedTheme = item.themeKey;
   } else if (item.type === "title") {
     effects.selectedTitle = item.name;
+  } else if (item.type === "transition") {
+    effects.selectedPageTransition = item.transitionKey || "domain_shift";
+    gemSystemMessage = {
+      title: "GATE COSMETIC UNLOCKED",
+      lines: [
+        `${item.name} wurde in dein System geladen.`,
+        item.desc || "Neue Seitenwechsel-Animation aktiviert.",
+        "Navigationseffekte wurden aktualisiert."
+      ]
+    };
   } else if (item.type === "consumable") {
     if (item.id === "gem_extra_slot") {
       effects.extraDailySlots = (state.extraDailySlots || 0) + 1;

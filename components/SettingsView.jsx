@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { NAV_ICONS, STAT_ICONS, STORY_ICONS, SHADOW_ICONS, ITEM_ICONS, SHOP_ICONS, GEM_ICONS, CHA_ICONS } from "../data/icons.js";
+import { GEM_SHOP_ITEMS, SHOP_ITEMS, THEMES } from "../data/gameData.js";
 import { db, auth } from "../firebase.js";
 import { doc, getDoc } from "firebase/firestore";
 import NativeStatsDashboard from "./NativeStatsDashboard";
@@ -39,6 +40,46 @@ const FONT_SIZE_OPTIONS = [
   { key: "normal", label: "Normal", value: 16 },
   { key: "large", label: "Groß", value: 18 },
 ];
+
+const THEME_FLAVOR = {
+  default: "Klares System-HUD mit kaltem Mana-Glow und ruhiger Hunter-UI.",
+  crimson: "Ein roter Gate-Riss, als hätte der Dungeon die Oberfläche erreicht.",
+  shadow: "Tiefe Schatten, violette Energie und ein Blick direkt ins Monarchenreich.",
+  ice: "Kristallines Frostlicht mit sauberer, gefährlich stiller UI-Präsenz.",
+  golden: "Herrscher-Aura, warmes Gold und ein HUD wie ein Befehl von oben.",
+  celestial: "Weißgoldene Lichtkanten für ein fast göttliches System-Interface.",
+  void: "Dunkler Void-Druck mit lila Raumrissen und schwerer Portalenergie.",
+  dragon: "Drachenfeuer, Ascheglut und aggressive orange-rote Akzente.",
+  starfall: "Kosmischer Nachthimmel mit Sternenlicht und ruhiger S-Rank-Eleganz.",
+  blood_sovereign: "Blutroter Monarch-Stil, schwer, selten und kompromisslos.",
+};
+
+const TRANSITION_FLAVOR = {
+  domain_shift: "Der klassische System-Shift mit Mana-Sweep und sauberem HUD-Reveal.",
+  shadow_step: "Ein lautloser Dash durch Schattenklingen und Nachbilder.",
+  red_gate: "Ein rotes Dungeon-Tor reisst die Oberfläche der App auf.",
+  frost_seal: "Frostige Runen, Glasbruch und ein eiskalter Monarchen-Schnitt.",
+  dragons_breath: "Drachenfeuer, Aschefunken und ein brennender Portal-Durchbruch.",
+  celestial_judgment: "Goldene Lichtlanzen und Herrscher-Geometrie im First-Class-Look.",
+  system_override: "Terminal-Glitch, Hex-Fragmente und ein kompletter Interface-Rewrite.",
+  eclipse_monarch: "Die Ultra-Premium Eclipse mit Schattenkrone und Arise-Partikeln.",
+};
+
+const clampTransitionSpeed = (value) => Math.min(1.8, Math.max(0.7, Number(value) || 1));
+
+const getThemeTokens = (key, customThemeData) => {
+  if (key === "custom" && customThemeData) {
+    return {
+      primary: customThemeData.primary || "#3b82f6",
+      secondary: customThemeData.secondary || customThemeData.accent || "#60a5fa",
+      accent: customThemeData.accent || customThemeData.primary || "#60a5fa",
+      bg: customThemeData.bg || "#0a0a1a",
+      card: customThemeData.card || "rgba(15,15,30,0.85)",
+      glow: customThemeData.glow || customThemeData.primary || "rgba(59,130,246,0.35)",
+    };
+  }
+  return THEMES[key] || THEMES.default;
+};
 
 // ─── REUSABLE TOGGLE ──────────────────────────────────────────
 function Toggle({ value, onChange, color, disabled }) {
@@ -116,12 +157,509 @@ function SettingsSection({ title, icon, color, open, onToggle, children, theme, 
         }}>▼</div>
       </button>
       <div style={{
-        maxHeight: open ? 2000 : 0, overflow: "hidden",
+        maxHeight: open ? 5000 : 0, overflow: "hidden",
         transition: "max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
       }}>
         <div style={{ padding: "0 18px 18px" }}>
           {children}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── THEME SWITCHER ─────────────────────────────────────────────
+function ThemeSwitcher({ state, persist, theme, onOpenShop }) {
+  const selectedTheme = state.selectedTheme || "default";
+  const ownedGold = state.shopPurchases || [];
+  const ownedGems = state.gemPurchases || [];
+  const goldThemes = SHOP_ITEMS.filter(item => item.type === "theme");
+  const gemThemes = GEM_SHOP_ITEMS.filter(item => item.type === "theme");
+
+  const themeOptions = [
+    {
+      key: "default",
+      name: "System Core",
+      desc: THEME_FLAVOR.default,
+      source: "Basis",
+      iconSrc: NAV_ICONS.settings,
+      unlocked: true,
+    },
+    ...goldThemes.map(item => ({
+      key: item.themeKey,
+      name: item.name,
+      desc: THEME_FLAVOR[item.themeKey] || item.desc,
+      source: "Gold Shop",
+      iconSrc: item.iconSrc || SHOP_ICONS.theme,
+      price: item.cost,
+      currency: "gold",
+      shopTab: "gold",
+      unlocked: ownedGold.includes(item.id) || selectedTheme === item.themeKey,
+    })),
+    ...gemThemes.map(item => ({
+      key: item.themeKey,
+      name: item.name,
+      desc: THEME_FLAVOR[item.themeKey] || item.desc,
+      source: "Gem Shop",
+      iconSrc: item.iconSrc || SHOP_ICONS.theme,
+      price: item.cost,
+      currency: "gems",
+      shopTab: "gems",
+      unlocked: ownedGems.includes(item.id) || selectedTheme === item.themeKey,
+    })),
+  ];
+
+  if (state.customThemeData) {
+    themeOptions.push({
+      key: "custom",
+      name: "Eigene Signatur",
+      desc: "Dein handgebauter Hunter-Look aus dem Custom Theme Creator.",
+      source: "Custom",
+      iconSrc: SHOP_ICONS.theme,
+      unlocked: true,
+    });
+  }
+
+  const selectTheme = (option) => {
+    if (!option.unlocked) {
+      onOpenShop?.(option.shopTab || "gems", option.currency === "gems" ? "theme" : null);
+      return;
+    }
+    if (option.key !== selectedTheme) {
+      persist({ ...state, selectedTheme: option.key });
+    }
+  };
+
+  return (
+    <div style={{ padding: "2px 0 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", marginBottom: 4 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: 2.5, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 5 }}>
+            THEME MATRIX
+          </div>
+          <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.45 }}>
+            Wechsel gekaufte Designs sofort, inklusive Premium-Themes aus dem Gem Shop.
+          </div>
+        </div>
+        <div style={{
+          padding: "6px 8px", borderRadius: 999, border: `1px solid ${theme.primary}33`,
+          background: `${theme.primary}10`, color: theme.accent, fontSize: 9,
+          fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.2,
+          whiteSpace: "nowrap",
+        }}>
+          {themeOptions.filter(option => option.unlocked).length}/{themeOptions.length} AKTIVIERBAR
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(136px, 1fr))", gap: 10 }}>
+        {themeOptions.map(option => {
+          const tokens = getThemeTokens(option.key, state.customThemeData);
+          const active = selectedTheme === option.key;
+          const unlocked = option.unlocked;
+          const primary = tokens.primary || theme.primary;
+          const secondary = tokens.secondary || tokens.accent || primary;
+          const accent = tokens.accent || primary;
+          const priceIcon = option.currency === "gems" ? GEM_ICONS.gem : "/icon/coin.png";
+
+          return (
+            <button
+              key={option.key}
+              onClick={() => selectTheme(option)}
+              aria-pressed={active}
+              className="press-feedback"
+              style={{
+                position: "relative",
+                minHeight: 178,
+                padding: 10,
+                borderRadius: 14,
+                overflow: "hidden",
+                textAlign: "left",
+                background: active
+                  ? `linear-gradient(180deg, ${primary}1f, rgba(8,8,18,0.78))`
+                  : "linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+                border: `1.5px solid ${active ? primary + "88" : unlocked ? primary + "2f" : "rgba(255,255,255,0.06)"}`,
+                boxShadow: active ? `0 0 24px ${primary}33, inset 0 1px 0 rgba(255,255,255,0.16)` : "inset 0 1px 0 rgba(255,255,255,0.06)",
+                cursor: "pointer",
+                transition: "transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.borderColor = active ? primary + "aa" : primary + "66";
+                e.currentTarget.style.boxShadow = `0 10px 28px rgba(0,0,0,0.28), 0 0 24px ${primary}22`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.borderColor = active ? primary + "88" : unlocked ? primary + "2f" : "rgba(255,255,255,0.06)";
+                e.currentTarget.style.boxShadow = active ? `0 0 24px ${primary}33, inset 0 1px 0 rgba(255,255,255,0.16)` : "inset 0 1px 0 rgba(255,255,255,0.06)";
+              }}
+            >
+              <div style={{
+                position: "absolute", inset: 0, opacity: unlocked ? 1 : 0.55,
+                background: `radial-gradient(circle at 20% 0%, ${primary}32, transparent 34%), radial-gradient(circle at 88% 18%, ${secondary}26, transparent 34%)`,
+                pointerEvents: "none",
+              }} />
+              <div style={{ position: "relative", zIndex: 1, filter: unlocked ? "none" : "grayscale(0.45) brightness(0.72)" }}>
+                <div style={{
+                  height: 72,
+                  borderRadius: 11,
+                  background: `linear-gradient(135deg, ${tokens.bg || "#06060e"} 0%, ${tokens.card || "rgba(10,10,22,0.88)"} 54%, ${primary}2b 100%)`,
+                  border: `1px solid ${primary}55`,
+                  overflow: "hidden",
+                  position: "relative",
+                  marginBottom: 10,
+                }}>
+                  <div style={{
+                    position: "absolute", inset: 8,
+                    border: `1px solid ${primary}44`,
+                    boxShadow: `inset 0 0 18px ${primary}18`,
+                    clipPath: "polygon(8% 0, 100% 0, 92% 100%, 0 100%)",
+                  }} />
+                  <div style={{
+                    position: "absolute", left: 14, top: 15, width: 42, height: 4,
+                    background: `linear-gradient(90deg, ${primary}, transparent)`,
+                    boxShadow: `0 0 10px ${primary}`,
+                  }} />
+                  <div style={{
+                    position: "absolute", left: 14, top: 28, width: 68, height: 5,
+                    background: "rgba(255,255,255,0.16)", borderRadius: 999,
+                  }} />
+                  <div style={{
+                    position: "absolute", left: 14, top: 41, width: 46, height: 5,
+                    background: `${accent}55`, borderRadius: 999,
+                  }} />
+                  <div style={{
+                    position: "absolute", right: 12, bottom: 10, width: 26, height: 26,
+                    borderRadius: "50%", border: `1px solid ${accent}77`,
+                    boxShadow: `0 0 18px ${accent}55`,
+                  }} />
+                  <div style={{
+                    position: "absolute", top: 0, bottom: 0, width: 24, left: active ? "76%" : "18%",
+                    background: `linear-gradient(90deg, transparent, ${accent}33, transparent)`,
+                    transform: "skewX(-18deg)",
+                    opacity: active ? 0.9 : 0.45,
+                    transition: "left 0.45s ease",
+                  }} />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                    <img src={option.iconSrc} alt="" style={{ width: 16, height: 16, objectFit: "contain", filter: `drop-shadow(0 0 6px ${primary}88)` }} />
+                    <div style={{ color: "#f8fafc", fontSize: 12, fontWeight: 900, fontFamily: "'Cinzel',serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {option.name}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+                    {[primary, secondary, accent].map((color, index) => (
+                      <span key={`${option.key}-${index}`} style={{ width: 8, height: 8, borderRadius: "50%", background: color, boxShadow: `0 0 8px ${color}88` }} />
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 9.5, color: "#94a3b8", lineHeight: 1.35, minHeight: 38, marginBottom: 10 }}>
+                  {option.desc}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <span style={{
+                    fontSize: 8.5, letterSpacing: 1.1, color: active ? "#020617" : unlocked ? accent : "#64748b",
+                    background: active ? accent : unlocked ? `${primary}18` : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${active ? accent : unlocked ? primary + "44" : "rgba(255,255,255,0.07)"}`,
+                    padding: "4px 6px", borderRadius: 999, fontFamily: "'JetBrains Mono',monospace", fontWeight: 900,
+                    whiteSpace: "nowrap",
+                  }}>
+                    {active ? "AKTIV" : unlocked ? "AUSWÄHLEN" : "SHOP"}
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, color: unlocked ? "#64748b" : "#cbd5e1", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>
+                    {!unlocked && option.price ? <img src={priceIcon} alt="" style={{ width: 12, height: 12, objectFit: "contain" }} /> : null}
+                    {!unlocked && option.price ? `${option.price} ${option.currency === "gems" ? "GEMS" : "GOLD"}` : option.source}
+                  </span>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── PAGE TRANSITION SWITCHER ──────────────────────────────────
+function TransitionSwitcher({ state, persist, theme, onOpenShop, onPreviewPageTransition }) {
+  const selectedTransition = state.selectedPageTransition || "domain_shift";
+  const ownedGems = state.gemPurchases || [];
+  const persistedSpeed = clampTransitionSpeed(state.settings?.pageTransitionSpeed || 1);
+  const [draftSpeed, setDraftSpeed] = useState(persistedSpeed);
+  const transitionItems = GEM_SHOP_ITEMS.filter(item => item.type === "transition");
+  const transitionOptions = [
+    {
+      key: "domain_shift",
+      name: "Domain Shift",
+      desc: TRANSITION_FLAVOR.domain_shift,
+      source: "Basis",
+      iconSrc: STORY_ICONS.systeminit,
+      color: theme.primary,
+      rarity: "system",
+      unlocked: true,
+    },
+    ...transitionItems.map(item => ({
+      key: item.transitionKey,
+      name: item.name,
+      desc: TRANSITION_FLAVOR[item.transitionKey] || item.desc,
+      source: "Gem Shop",
+      iconSrc: item.iconSrc || STORY_ICONS.arise,
+      color: item.previewColor || theme.primary,
+      rarity: item.rarity || "rare",
+      price: item.cost,
+      unlocked: ownedGems.includes(item.id) || selectedTransition === item.transitionKey,
+    })),
+  ];
+  const activeTransitionName = transitionOptions.find(option => option.key === selectedTransition)?.name || "Transition";
+
+  useEffect(() => {
+    setDraftSpeed(persistedSpeed);
+  }, [persistedSpeed]);
+
+  const selectTransition = (option) => {
+    if (!option.unlocked) {
+      onOpenShop?.("gems", "transition");
+      return;
+    }
+    if (option.key !== selectedTransition) {
+      persist({ ...state, selectedPageTransition: option.key });
+    }
+    onPreviewPageTransition?.(option.key, option.name);
+  };
+
+  const commitSpeed = (value, preview = true) => {
+    const nextSpeed = clampTransitionSpeed(value);
+    setDraftSpeed(nextSpeed);
+    persist({
+      ...state,
+      settings: {
+        ...(state.settings || {}),
+        pageTransitionSpeed: nextSpeed,
+      },
+    });
+    if (preview) {
+      window.setTimeout(() => {
+        onPreviewPageTransition?.(selectedTransition, `${activeTransitionName} ${nextSpeed.toFixed(2)}X`);
+      }, 80);
+    }
+  };
+
+  return (
+    <div style={{ padding: "18px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", marginBottom: 4 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: 2.5, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 5 }}>
+            GATE TRANSITIONS
+          </div>
+          <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.45 }}>
+            Wähle, wie sich Seiten öffnen: Shadow Step, Red Gate, Eclipse und mehr.
+          </div>
+        </div>
+        <div style={{
+          padding: "6px 8px", borderRadius: 999, border: `1px solid ${theme.primary}33`,
+          background: `${theme.primary}10`, color: theme.accent, fontSize: 9,
+          fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.2,
+          whiteSpace: "nowrap",
+        }}>
+          {transitionOptions.filter(option => option.unlocked).length}/{transitionOptions.length} FREI
+        </div>
+      </div>
+
+      <div style={{
+        padding: 12,
+        borderRadius: 14,
+        border: `1px solid ${theme.primary}24`,
+        background: `linear-gradient(135deg, ${theme.primary}10, rgba(255,255,255,0.025))`,
+        marginBottom: 12,
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 1,
+          background: `linear-gradient(90deg, transparent, ${theme.primary}66, transparent)`,
+          pointerEvents: "none",
+        }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 800, fontFamily: "'Cinzel',serif", letterSpacing: 1 }}>
+              Animationsgeschwindigkeit
+            </div>
+            <div style={{ fontSize: 9.5, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
+              Kürzer für schnelle UI, länger für Kino-Effekt.
+            </div>
+          </div>
+          <div style={{
+            padding: "6px 8px",
+            borderRadius: 9,
+            color: theme.accent,
+            background: `${theme.primary}16`,
+            border: `1px solid ${theme.primary}35`,
+            fontFamily: "'JetBrains Mono',monospace",
+            fontSize: 11,
+            fontWeight: 900,
+            minWidth: 54,
+            textAlign: "center",
+            boxShadow: `0 0 14px ${theme.primary}16`,
+          }}>
+            {draftSpeed.toFixed(2)}X
+          </div>
+        </div>
+        <input
+          type="range"
+          min="0.7"
+          max="1.8"
+          step="0.05"
+          value={draftSpeed}
+          onChange={e => setDraftSpeed(clampTransitionSpeed(e.target.value))}
+          onPointerUp={e => commitSpeed(e.currentTarget.value)}
+          onBlur={e => commitSpeed(e.currentTarget.value, false)}
+          style={{
+            width: "100%",
+            accentColor: theme.primary,
+            cursor: "pointer",
+            height: 22,
+          }}
+          aria-label="Animationsgeschwindigkeit"
+        />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2, fontSize: 8.5, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
+          <span>CINEMA</span>
+          <span>NORMAL</span>
+          <span>BLITZ</span>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(146px, 1fr))", gap: 10 }}>
+        {transitionOptions.map(option => {
+          const active = selectedTransition === option.key;
+          const color = option.color || theme.primary;
+          const locked = !option.unlocked;
+          const isGate = option.key.includes("gate") || option.key.includes("dragon");
+          const isSystem = option.key.includes("system");
+          const isEclipse = option.key.includes("eclipse");
+
+          return (
+            <button
+              key={option.key}
+              onClick={() => selectTransition(option)}
+              aria-pressed={active}
+              className="press-feedback"
+              style={{
+                position: "relative",
+                minHeight: 166,
+                padding: 10,
+                borderRadius: 14,
+                overflow: "hidden",
+                textAlign: "left",
+                background: active
+                  ? `linear-gradient(180deg, ${color}1f, rgba(5,5,14,0.84))`
+                  : "linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+                border: `1.5px solid ${active ? color + "99" : option.unlocked ? color + "35" : "rgba(255,255,255,0.06)"}`,
+                boxShadow: active ? `0 0 26px ${color}35, inset 0 1px 0 rgba(255,255,255,0.15)` : "inset 0 1px 0 rgba(255,255,255,0.06)",
+                cursor: "pointer",
+                transition: "transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.borderColor = color + "77";
+                e.currentTarget.style.boxShadow = `0 10px 28px rgba(0,0,0,0.28), 0 0 24px ${color}22`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.borderColor = active ? color + "99" : option.unlocked ? color + "35" : "rgba(255,255,255,0.06)";
+                e.currentTarget.style.boxShadow = active ? `0 0 26px ${color}35, inset 0 1px 0 rgba(255,255,255,0.15)` : "inset 0 1px 0 rgba(255,255,255,0.06)";
+              }}
+            >
+              <div style={{
+                position: "absolute", inset: 0, opacity: locked ? 0.45 : 1,
+                background: `radial-gradient(circle at 50% -10%, ${color}36, transparent 42%), linear-gradient(135deg, ${color}12, transparent 48%)`,
+                pointerEvents: "none",
+              }} />
+
+              <div style={{ position: "relative", zIndex: 1, filter: locked ? "grayscale(0.5) brightness(0.72)" : "none" }}>
+                <div style={{
+                  height: 66,
+                  borderRadius: 11,
+                  position: "relative",
+                  overflow: "hidden",
+                  marginBottom: 10,
+                  background: `linear-gradient(135deg, rgba(2,6,23,0.95), ${color}18 55%, rgba(15,23,42,0.86))`,
+                  border: `1px solid ${color}55`,
+                  boxShadow: active ? `inset 0 0 24px ${color}18` : "inset 0 0 16px rgba(0,0,0,0.4)",
+                }}>
+                  <div style={{
+                    position: "absolute", left: "50%", top: "50%", width: isGate ? 54 : 42, height: isGate ? 54 : 42,
+                    transform: "translate(-50%, -50%)",
+                    borderRadius: isGate ? "50%" : 8,
+                    border: `1.5px solid ${color}88`,
+                    boxShadow: `0 0 20px ${color}55, inset 0 0 18px ${color}22`,
+                    animation: active ? "pulse 1.8s ease-in-out infinite" : "none",
+                  }} />
+                  {isEclipse && (
+                    <div style={{
+                      position: "absolute", left: "50%", top: "50%", width: 22, height: 22,
+                      transform: "translate(-50%, -50%)",
+                      borderRadius: "50%", background: "#030712",
+                      boxShadow: `0 0 0 8px ${color}22, 0 0 22px ${color}`,
+                    }} />
+                  )}
+                  {isSystem ? Array.from({ length: 5 }, (_, i) => (
+                    <div key={`sys-${option.key}-${i}`} style={{
+                      position: "absolute", left: 10 + i * 17, top: 13 + (i % 2) * 18,
+                      width: 14, height: 10, borderRadius: 3,
+                      border: `1px solid ${color}55`, background: `${color}14`,
+                      boxShadow: `0 0 10px ${color}22`,
+                    }} />
+                  )) : Array.from({ length: 4 }, (_, i) => (
+                    <div key={`cut-${option.key}-${i}`} style={{
+                      position: "absolute", left: `${8 + i * 23}%`, top: `${12 + (i % 2) * 18}%`,
+                      width: 2, height: 62,
+                      background: `linear-gradient(180deg, transparent, ${color}, transparent)`,
+                      transform: `rotate(${isGate ? 18 : -28}deg)`,
+                      opacity: active ? 0.95 : 0.55,
+                      boxShadow: `0 0 12px ${color}`,
+                    }} />
+                  ))}
+                  <div style={{
+                    position: "absolute", left: active ? "72%" : "18%", top: 0, bottom: 0, width: 26,
+                    background: `linear-gradient(90deg, transparent, ${color}44, transparent)`,
+                    transform: "skewX(-18deg)",
+                    transition: "left 0.5s ease",
+                  }} />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6, minWidth: 0 }}>
+                  <img src={option.iconSrc} alt="" style={{ width: 17, height: 17, objectFit: "contain", filter: `drop-shadow(0 0 6px ${color}88)` }} />
+                  <div style={{ color: "#f8fafc", fontSize: 12, fontWeight: 900, fontFamily: "'Cinzel',serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {option.name}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 9.5, color: "#94a3b8", lineHeight: 1.35, minHeight: 38, marginBottom: 10 }}>
+                  {option.desc}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <span style={{
+                    fontSize: 8.5, letterSpacing: 1.1, color: active ? "#020617" : option.unlocked ? color : "#64748b",
+                    background: active ? color : option.unlocked ? `${color}18` : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${active ? color : option.unlocked ? color + "44" : "rgba(255,255,255,0.07)"}`,
+                    padding: "4px 6px", borderRadius: 999, fontFamily: "'JetBrains Mono',monospace", fontWeight: 900,
+                    whiteSpace: "nowrap",
+                  }}>
+                    {active ? "AKTIV" : option.unlocked ? "AUSWÄHLEN" : "SHOP"}
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, color: option.unlocked ? "#64748b" : "#cbd5e1", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, textTransform: "uppercase" }}>
+                    {!option.unlocked && option.price ? <img src={GEM_ICONS.gem} alt="" style={{ width: 12, height: 12, objectFit: "contain" }} /> : null}
+                    {!option.unlocked && option.price ? `${option.price} GEMS` : option.rarity}
+                  </span>
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -428,7 +966,7 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
 // ═════════════════════════════════════════════════════════════════
 //  MAIN SETTINGS VIEW
 // ═════════════════════════════════════════════════════════════════
-export default function SettingsView({ state, persist, theme, can, onLogout, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI }) {
+export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI }) {
   // ── Section states ──
   const [openSection, setOpenSection] = useState(null);
   const toggleSection = (key) => setOpenSection(prev => prev === key ? null : key);
@@ -511,6 +1049,10 @@ export default function SettingsView({ state, persist, theme, can, onLogout, upd
            SECTION 1: ERSCHEINUNGSBILD
          ════════════════════════════════════════════════════════════ */}
       <SettingsSection title="Erscheinungsbild" icon="🎨" color="#a78bfa" open={openSection === "look"} onToggle={() => toggleSection("look")} theme={theme} badge="THEME · DISPLAY">
+
+        <ThemeSwitcher state={state} persist={persist} theme={theme} onOpenShop={onOpenShop} />
+
+        <TransitionSwitcher state={state} persist={persist} theme={theme} onOpenShop={onOpenShop} onPreviewPageTransition={onPreviewPageTransition} />
 
         {/* Particles Toggle */}
         <SettingRow label="Partikel-Effekte" desc="Schwebende Partikel im Hintergrund" value={getSetting("particles", true)} onChange={() => toggleSetting("particles", true)} theme={theme} />
