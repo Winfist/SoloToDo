@@ -1,28 +1,80 @@
 // ─── SOLOTODO WIDGET BUNDLE ──────────────────────────────────
 // @main entry point for the Widget Extension.
 // Registers all widget families: Small, Medium, Large + Lock Screen.
+// Quest Rotation: Generates multiple timeline entries to cycle
+// through quest batches — configurable via widgetConfig.
 
 import SwiftUI
 import WidgetKit
 
-// MARK: - Timeline Provider
+// MARK: - Timeline Provider (with Quest Rotation)
 struct SoloToDoProvider: TimelineProvider {
     func placeholder(in context: Context) -> SoloToDoEntry {
-        SoloToDoEntry(date: Date(), data: placeholderData)
+        SoloToDoEntry(date: Date(), data: placeholderData, questBatchIndex: 0)
     }
     
     func getSnapshot(in context: Context, completion: @escaping (SoloToDoEntry) -> Void) {
         let data = loadWidgetData() ?? placeholderData
-        completion(SoloToDoEntry(date: Date(), data: data))
+        completion(SoloToDoEntry(date: Date(), data: data, questBatchIndex: 0))
     }
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<SoloToDoEntry>) -> Void) {
-        let data = loadWidgetData() ?? placeholderData
-        let entry = SoloToDoEntry(date: Date(), data: data)
+        let fullData = loadWidgetData() ?? placeholderData
+        let config = fullData.config
         
-        // Refresh every 15 minutes
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+        // Determine max quests based on widget family
+        let batchSize: Int
+        switch context.family {
+        case .systemLarge:
+            batchSize = min(config.maxQuests, 6)
+        case .systemMedium:
+            batchSize = min(config.maxQuests, 3)
+        default:
+            batchSize = 1 // Small widget doesn't show quest list
+        }
+        
+        let allQuests = fullData.quests
+        var entries: [SoloToDoEntry] = []
+        
+        // If rotation is enabled and there are more quests than batch size
+        if config.rotationEnabled && allQuests.count > batchSize && batchSize > 0 {
+            let intervalMinutes = max(5, config.rotationIntervalMinutes)
+            var batchIndex = 0
+            var offset = 0
+            
+            while offset < allQuests.count {
+                let batchEnd = min(offset + batchSize, allQuests.count)
+                let batchQuests = Array(allQuests[offset..<batchEnd])
+                
+                var batchData = fullData
+                batchData.quests = batchQuests
+                
+                let entryDate = Calendar.current.date(
+                    byAdding: .minute,
+                    value: intervalMinutes * batchIndex,
+                    to: Date()
+                )!
+                
+                entries.append(SoloToDoEntry(date: entryDate, data: batchData, questBatchIndex: batchIndex))
+                
+                batchIndex += 1
+                offset += batchSize
+            }
+        } else {
+            // No rotation — single entry with top quests
+            var singleData = fullData
+            if batchSize > 0 && batchSize < allQuests.count {
+                singleData.quests = Array(allQuests.prefix(batchSize))
+            }
+            entries.append(SoloToDoEntry(date: Date(), data: singleData, questBatchIndex: 0))
+        }
+        
+        // Refresh timeline after all entries have been shown (or 15 min)
+        let totalDuration = config.rotationEnabled
+            ? max(15, config.rotationIntervalMinutes * max(entries.count, 1))
+            : 15
+        let nextUpdate = Calendar.current.date(byAdding: .minute, value: totalDuration, to: Date())!
+        let timeline = Timeline(entries: entries, policy: .after(nextUpdate))
         completion(timeline)
     }
 }
@@ -30,7 +82,8 @@ struct SoloToDoProvider: TimelineProvider {
 // MARK: - Timeline Entry
 struct SoloToDoEntry: TimelineEntry {
     let date: Date
-    let data: WidgetData
+    var data: WidgetData
+    let questBatchIndex: Int
 }
 
 // MARK: - Main Widget (Home Screen)

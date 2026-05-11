@@ -919,6 +919,67 @@ export default function SettingsView({ state, persist, theme, can, onLogout, upd
         <SettingRow label="Theme synchronisieren" desc="Widget nutzt dein App-Theme" value={(state.widgetConfig || {}).syncTheme !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, syncTheme: !(wc.syncTheme !== false) } }); }} color="#22d3ee" theme={theme} />
         <SettingRow label="System-Nachrichten" desc="Motivations-Sprüche im Widget" value={(state.widgetConfig || {}).showSystemMessage !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, showSystemMessage: !(wc.showSystemMessage !== false) } }); }} color="#6366f1" theme={theme} />
 
+        {/* ── Quest Rotation ── */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>QUEST-ROTATION</div>
+        <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>
+          Bei vielen Quests rotiert das Widget automatisch alle paar Minuten durch verschiedene Quest-Gruppen, statt nur die Top-3 zu zeigen.
+        </div>
+
+        <SettingRow label="Quest-Rotation" desc="Automatisch durch Quest-Batches rotieren" value={(state.widgetConfig || {}).rotationEnabled !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, rotationEnabled: !(wc.rotationEnabled !== false) } }); }} color="#f59e0b" theme={theme} />
+
+        {(state.widgetConfig || {}).rotationEnabled !== false && (
+          <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Rotations-Intervall</div>
+            <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>Wie oft das Widget die nächsten Quests zeigt</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[5, 10, 15, 30].map(n => {
+                const wc = state.widgetConfig || {};
+                const active = (wc.rotationIntervalMinutes || 5) === n;
+                return (
+                  <button key={n} onClick={() => { const widgetConfig = { ...(state.widgetConfig || {}), rotationIntervalMinutes: n }; persist({ ...state, widgetConfig }); }}
+                    style={{ flex: 1, padding: "8px 4px", borderRadius: 10, background: active ? `${theme.primary}22` : "rgba(255,255,255,0.03)", border: `1.5px solid ${active ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: active ? theme.accent : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.25s", fontFamily: "'JetBrains Mono',monospace" }}
+                  >{n} Min</button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Widget Display Sections ── */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>WIDGET SEKTIONEN</div>
+        <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>
+          Bestimme welche Bereiche im Large Widget sichtbar sind.
+        </div>
+
+        {[
+          { key: "streak", label: "Streak & XP", desc: "Serie, Level, XP-Fortschritt", color: "#f97316" },
+          { key: "quests", label: "Quest-Liste", desc: "Aktive Quests mit Difficulty-Icons", color: "#f59e0b" },
+          { key: "habits", label: "Habits", desc: "Heutige Habits als Checkmarks", color: "#22c55e" },
+          { key: "microHabits", label: "Micro-Habits", desc: "Mini-Fortschritts-Dots", color: "#06b6d4" },
+          { key: "stats", label: "Stats-Footer", desc: "STR INT VIT AGI CHA Anzeige", color: "#a78bfa" },
+          { key: "heatmap", label: "Wochen-Heatmap", desc: "7-Tage Aktivitäts-Übersicht", color: "#22c55e" },
+          { key: "systemMessage", label: "Motivations-Spruch", desc: "Tägliche System-Nachricht", color: "#6366f1" },
+        ].map(section => {
+          const wc = state.widgetConfig || {};
+          const sections = wc.showSections || {};
+          const active = sections[section.key] !== false;
+          return (
+            <div key={section.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: active ? "#e2e8f0" : "#475569" }}>{section.label}</div>
+                <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{section.desc}</div>
+              </div>
+              <Toggle value={active} onChange={() => {
+                const showSections = { ...(wc.showSections || {}), [section.key]: !active };
+                const widgetConfig = { ...wc, showSections };
+                persist({ ...state, widgetConfig });
+              }} color={section.color} />
+            </div>
+          );
+        })}
+
         {/* ── Live Activity Toggles ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
         <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>LIVE ACTIVITIES</div>
@@ -930,40 +991,131 @@ export default function SettingsView({ state, persist, theme, can, onLogout, upd
         {/* ── Widget Preview ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
         <div style={{ fontSize: 9, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>WIDGET PREVIEW</div>
-        <div style={{ padding: "14px 16px", borderRadius: 16, background: "linear-gradient(135deg, rgba(6,6,14,0.95), rgba(10,10,26,0.9))", border: `1px solid ${theme.primary}33`, position: "relative", overflow: "hidden" }}>
-          {/* Scanline effect */}
-          <div style={{ position: "absolute", inset: 0, opacity: 0.04, pointerEvents: "none", background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)" }} />
-          {/* Edge glow */}
-          <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: `linear-gradient(90deg, transparent, ${theme.primary}, transparent)` }} />
+        
+        {/* Large Widget Preview */}
+        <div style={{ borderRadius: 20, background: "linear-gradient(145deg, #03030a, #06060e, #0a0a16, #06060e)", border: `1px solid ${theme.primary}22`, position: "relative", overflow: "hidden" }}>
+          {/* Scanlines */}
+          <div style={{ position: "absolute", inset: 0, opacity: 0.02, pointerEvents: "none", background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.15) 2px, rgba(255,255,255,0.15) 2.5px)" }} />
+          {/* Top edge glow */}
+          <div style={{ position: "absolute", top: 0, left: "5%", right: "5%", height: 1.5, background: `linear-gradient(90deg, transparent, ${theme.primary}99, ${theme.primary}, ${theme.primary}99, transparent)`, boxShadow: `0 3px 20px ${theme.primary}33, 0 1px 8px ${theme.primary}55` }} />
+          {/* Bloom beneath glow */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 30, background: `linear-gradient(to bottom, ${theme.primary}0a, transparent)`, pointerEvents: "none" }} />
+          {/* Bottom edge */}
+          <div style={{ position: "absolute", bottom: 0, left: "15%", right: "15%", height: 0.5, background: `linear-gradient(90deg, transparent, ${theme.primary}33, transparent)` }} />
+          {/* Corner vignette */}
+          <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.25))", pointerEvents: "none" }} />
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontSize: 8, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{"「SYSTEM INTERFACE」"}</span>
-            <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>LVL {state.level || 1}</span>
-          </div>
-
-          {/* Streak + XP */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <div style={{ fontSize: 20, fontWeight: 900, color: "#f97316", fontFamily: "'Cinzel',serif", textShadow: "0 0 12px rgba(249,115,22,0.5)" }}>🔥 {state.streak || 0}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${Math.min(((state.xp || 0) / 100) * 100, 100)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})`, borderRadius: 2, transition: "width 0.4s" }} />
+          <div style={{ padding: "14px 16px", position: "relative" }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <span style={{ fontSize: 7, letterSpacing: 2.5, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>
+                <span style={{ color: `${theme.accent}66` }}>「</span>
+                <span style={{ color: theme.accent, textShadow: `0 0 6px ${theme.accent}44` }}>SYSTEM</span>
+                <span style={{ color: `${theme.accent}66` }}>」</span>
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: theme.primary, boxShadow: `0 0 6px ${theme.primary}88` }} />
+                <span style={{ fontSize: 12, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", color: (() => { const r = (state.level || 1); if (r >= 30) return '#e879f9'; if (r >= 25) return '#ef4444'; if (r >= 20) return '#f59e0b'; if (r >= 15) return '#a78bfa'; if (r >= 10) return '#34d399'; if (r >= 5) return '#22d3ee'; return '#6b7280'; })(), textShadow: "0 0 8px currentColor" }}>
+                  {state.level >= 30 ? 'S' : state.level >= 25 ? 'A' : state.level >= 20 ? 'B' : state.level >= 15 ? 'C' : state.level >= 10 ? 'D' : 'E'}
+                </span>
               </div>
             </div>
-          </div>
 
-          {/* Mini quest list */}
-          {(state.quests || []).filter(q => !q.completed).slice(0, 2).map((q, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-              <span style={{ fontSize: 8, width: 8, height: 8, borderRadius: 2, background: q.difficulty === 'boss' ? '#ef4444' : q.difficulty === 'hard' ? '#a78bfa' : q.difficulty === 'normal' ? '#22d3ee' : '#6b7280' }} />
-              <span style={{ fontSize: 10, color: "#cbd5e1", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.title || "Quest"}</span>
-              <span style={{ fontSize: 7, letterSpacing: 1, padding: "2px 5px", borderRadius: 4, background: "rgba(255,255,255,0.05)", color: "#64748b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{(q.category || "AGI").toUpperCase()}</span>
+            {/* Hunter info */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 3 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{state.hunterName || "Hunter"}</div>
+                <div style={{ fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", color: "#64748b", letterSpacing: 1.5 }}>LEVEL {state.level || 1}</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono',monospace", fontWeight: 900, color: (state.streak || 0) >= 7 ? "#f97316" : "#fbbf24", textShadow: (state.streak || 0) > 0 ? "0 0 6px currentColor" : "none" }}>🔥{state.streak || 0}</span>
+                <span style={{ fontSize: 8, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: "#fbbf24" }}>◆{state.gold || 0}</span>
+              </div>
             </div>
-          ))}
-          {(state.quests || []).filter(q => !q.completed).length === 0 && (
-            <div style={{ fontSize: 10, color: "#334155", textAlign: "center", padding: "8px 0", fontStyle: "italic" }}>Keine offenen Quests</div>
-          )}
-          <div style={{ fontSize: 7, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginTop: 8, textAlign: "center", letterSpacing: 2 }}>SOLOTODO WIDGET · LIVE PREVIEW</div>
+
+            {/* XP Bar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${Math.min(((state.xp || 0) / (state.xpNeeded || 100)) * 100, 100)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})`, borderRadius: 2, boxShadow: `0 0 8px ${theme.primary}66, 0 0 16px ${theme.primary}33` }} />
+              </div>
+              <span style={{ fontSize: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: "#334155" }}>{state.xp || 0}/{state.xpNeeded || 100}</span>
+            </div>
+
+            {/* Glow divider */}
+            <div style={{ height: 0.5, background: `linear-gradient(90deg, transparent, ${theme.primary}77, transparent)`, boxShadow: `0 0 4px ${theme.primary}33`, marginBottom: 6 }} />
+
+            {/* Section label */}
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+              <div style={{ width: 10, height: 1, borderRadius: 1, background: "#33415566" }} />
+              <span style={{ fontSize: 7, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", color: "#334155", letterSpacing: 2 }}>AKTIVE QUESTS</span>
+              <div style={{ flex: 1, height: 0.5, background: "#33415520" }} />
+            </div>
+
+            {/* Glass quest panel */}
+            <div style={{ borderRadius: 8, background: "rgba(255,255,255,0.02)", border: `0.5px solid ${theme.primary}22`, padding: "6px", marginBottom: 6, backgroundImage: `linear-gradient(to bottom, ${theme.primary}05, transparent)` }}>
+              {(state.quests || []).filter(q => !q.completed).slice(0, 3).map((q, i, arr) => (
+                <div key={i}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 0, padding: "4px 0" }}>
+                    {/* Left accent bar */}
+                    <div style={{ width: 2, height: 16, borderRadius: 1, marginRight: 6, background: q.difficulty === 'boss' ? '#ef4444' : q.difficulty === 'hard' ? '#a78bfa' : q.difficulty === 'normal' ? '#22d3ee' : '#64748b', boxShadow: `0 0 4px ${q.difficulty === 'boss' ? '#ef444466' : q.difficulty === 'hard' ? '#a78bfa66' : '#22d3ee66'}` }} />
+                    {/* Difficulty icon text */}
+                    <span style={{ fontSize: 9, fontWeight: 700, color: q.difficulty === 'boss' ? '#ef4444' : q.difficulty === 'hard' ? '#a78bfa' : '#22d3ee', marginRight: 6 }}>
+                      {q.difficulty === 'boss' ? '♛' : q.difficulty === 'hard' ? '★' : '◆'}
+                    </span>
+                    {/* Title */}
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#f1f5f9", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.title || "Quest"}</span>
+                    {/* Category tag */}
+                    <span style={{ fontSize: 6, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5, padding: "2px 5px", borderRadius: 3, background: `${q.category === 'str' ? '#ef4444' : q.category === 'int' ? '#60a5fa' : q.category === 'vit' ? '#34d399' : q.category === 'agi' ? '#fbbf24' : q.category === 'cha' ? '#c084fc' : '#64748b'}15`, color: q.category === 'str' ? '#ef4444' : q.category === 'int' ? '#60a5fa' : q.category === 'vit' ? '#34d399' : q.category === 'agi' ? '#fbbf24' : q.category === 'cha' ? '#c084fc' : '#64748b', border: `0.5px solid ${q.category === 'str' ? '#ef4444' : q.category === 'int' ? '#60a5fa' : q.category === 'vit' ? '#34d399' : q.category === 'agi' ? '#fbbf24' : q.category === 'cha' ? '#c084fc' : '#64748b'}22` }}>
+                      {(q.category || "AGI").toUpperCase()}
+                    </span>
+                  </div>
+                  {i < arr.length - 1 && <div style={{ height: 0.5, background: "rgba(255,255,255,0.025)", marginLeft: 8 }} />}
+                </div>
+              ))}
+              {(state.quests || []).filter(q => !q.completed).length === 0 && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0" }}>
+                  <span style={{ fontSize: 11, color: "#34d399" }}>✓</span>
+                  <span style={{ fontSize: 9, color: "#334155", fontStyle: "italic" }}>Keine offenen Quests</span>
+                </div>
+              )}
+              {(state.quests || []).filter(q => !q.completed).length > 3 && (
+                <div style={{ textAlign: "right", paddingTop: 2 }}>
+                  <span style={{ fontSize: 7, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: `${theme.primary}66`, letterSpacing: 0.5 }}>+{(state.quests || []).filter(q => !q.completed).length - 3} weitere</span>
+                </div>
+              )}
+            </div>
+
+            {/* Stats footer */}
+            <div style={{ height: 0.5, background: `linear-gradient(90deg, transparent, ${theme.primary}33, transparent)`, marginBottom: 5 }} />
+            <div style={{ display: "flex", gap: 4 }}>
+              {[
+                { l: "STR", v: state.stats?.str || 0, c: "#ef4444" },
+                { l: "INT", v: state.stats?.int || 0, c: "#60a5fa" },
+                { l: "VIT", v: state.stats?.vit || 0, c: "#34d399" },
+                { l: "AGI", v: state.stats?.agi || 0, c: "#fbbf24" },
+                { l: "CHA", v: state.stats?.cha || 0, c: "#c084fc" },
+              ].map(s => (
+                <div key={s.l} style={{ display: "flex", alignItems: "center", gap: 2, padding: "3px 5px", borderRadius: 4, background: `${s.c}0d`, border: `0.5px solid ${s.c}1a` }}>
+                  <span style={{ fontSize: 5, fontWeight: 700, color: `${s.c}aa` }}>{s.l === "STR" ? "💪" : s.l === "INT" ? "🧠" : s.l === "VIT" ? "❤️" : s.l === "AGI" ? "⚡" : "👥"}</span>
+                  <span style={{ fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", color: s.c }}>{s.v}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Rotation indicator */}
+            {(state.widgetConfig || {}).rotationEnabled !== false && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, padding: "4px 8px", borderRadius: 5, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)" }}>
+                <span style={{ fontSize: 8, color: "#f59e0b" }}>↻</span>
+                <span style={{ fontSize: 7, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 0.5 }}>
+                  ROTATION: {(state.widgetConfig || {}).rotationIntervalMinutes || 5} MIN
+                </span>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Size label */}
+        <div style={{ fontSize: 7, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", marginTop: 8, textAlign: "center", letterSpacing: 2 }}>LARGE WIDGET · LIVE PREVIEW</div>
       </SettingsSection>
 
       {/* ════════════════════════════════════════════════════════════

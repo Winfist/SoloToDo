@@ -141,19 +141,17 @@ struct WidgetData: Codable {
 
 // MARK: - Sub-Models (all with default initializers)
 
-// Focus Quest — simpler than full WidgetQuest (only title/category/difficulty from JS)
 struct WidgetFocusQuest: Codable {
     var title: String
     var category: String
     var difficulty: String
     
-    var difficultyColor: String {
-        switch difficulty {
-        case "boss": return "#ef4444"
-        case "hard": return "#a78bfa"
-        case "normal": return "#22d3ee"
-        default: return "#6b7280"
-        }
+    enum CodingKeys: String, CodingKey { case title, category, difficulty }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        title = (try? c.decode(String.self, forKey: .title)) ?? "Quest"
+        category = (try? c.decode(String.self, forKey: .category)) ?? "agi"
+        difficulty = (try? c.decode(String.self, forKey: .difficulty)) ?? "normal"
     }
 }
 
@@ -183,23 +181,26 @@ struct WidgetQuest: Codable, Identifiable {
         isSystem = (try? c.decode(Bool.self, forKey: .isSystem)) ?? false
     }
     
-    var difficultyColor: String {
-        switch difficulty {
-        case "boss": return "#ef4444"
-        case "hard": return "#a78bfa"
-        case "normal": return "#22d3ee"
-        default: return "#6b7280"
-        }
-    }
-    
-    var categoryLabel: String {
-        category.uppercased()
+    // Direct initializer for placeholder
+    init(id: String = UUID().uuidString, title: String = "Quest", category: String = "agi",
+         difficulty: String = "normal", type: String = "side", priority: String = "medium",
+         dueDate: String? = nil, isSystem: Bool = false) {
+        self.id = id; self.title = title; self.category = category
+        self.difficulty = difficulty; self.type = type; self.priority = priority
+        self.dueDate = dueDate; self.isSystem = isSystem
     }
 }
 
 struct WidgetDeadline: Codable {
     var title: String
     var dueDate: String
+    
+    enum CodingKeys: String, CodingKey { case title, dueDate }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        title = (try? c.decode(String.self, forKey: .title)) ?? ""
+        dueDate = (try? c.decode(String.self, forKey: .dueDate)) ?? ""
+    }
 }
 
 struct WidgetHabit: Codable {
@@ -235,7 +236,6 @@ struct WidgetMicroHabit: Codable {
 }
 
 struct WidgetStats: Codable {
-    // Note: "int" is a Swift keyword, so we use CodingKeys to map it
     var str: Int
     var intelligence: Int
     var vit: Int
@@ -347,45 +347,98 @@ struct WidgetTheme: Codable {
     }
 }
 
+struct WidgetShowSections: Codable {
+    var streak: Bool
+    var quests: Bool
+    var habits: Bool
+    var microHabits: Bool
+    var stats: Bool
+    var heatmap: Bool
+    var systemMessage: Bool
+    
+    init(streak: Bool = true, quests: Bool = true, habits: Bool = true,
+         microHabits: Bool = true, stats: Bool = true, heatmap: Bool = true,
+         systemMessage: Bool = true) {
+        self.streak = streak; self.quests = quests; self.habits = habits
+        self.microHabits = microHabits; self.stats = stats
+        self.heatmap = heatmap; self.systemMessage = systemMessage
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        streak = (try? c.decode(Bool.self, forKey: .streak)) ?? true
+        quests = (try? c.decode(Bool.self, forKey: .quests)) ?? true
+        habits = (try? c.decode(Bool.self, forKey: .habits)) ?? true
+        microHabits = (try? c.decode(Bool.self, forKey: .microHabits)) ?? true
+        stats = (try? c.decode(Bool.self, forKey: .stats)) ?? true
+        heatmap = (try? c.decode(Bool.self, forKey: .heatmap)) ?? true
+        systemMessage = (try? c.decode(Bool.self, forKey: .systemMessage)) ?? true
+    }
+}
+
 struct WidgetConfig: Codable {
     var modules: [String]
     var maxQuests: Int
+    var rotationEnabled: Bool
+    var rotationIntervalMinutes: Int
+    var showSections: WidgetShowSections
     
-    init(modules: [String] = ["streak_xp", "quests", "habits"], maxQuests: Int = 3) {
+    init(modules: [String] = ["streak_xp", "quests", "habits"], maxQuests: Int = 5,
+         rotationEnabled: Bool = true, rotationIntervalMinutes: Int = 5,
+         showSections: WidgetShowSections = WidgetShowSections()) {
         self.modules = modules; self.maxQuests = maxQuests
+        self.rotationEnabled = rotationEnabled
+        self.rotationIntervalMinutes = rotationIntervalMinutes
+        self.showSections = showSections
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         modules = (try? c.decode([String].self, forKey: .modules)) ?? ["streak_xp", "quests", "habits"]
-        maxQuests = (try? c.decode(Int.self, forKey: .maxQuests)) ?? 3
+        maxQuests = (try? c.decode(Int.self, forKey: .maxQuests)) ?? 5
+        rotationEnabled = (try? c.decode(Bool.self, forKey: .rotationEnabled)) ?? true
+        rotationIntervalMinutes = (try? c.decode(Int.self, forKey: .rotationIntervalMinutes)) ?? 5
+        showSections = (try? c.decode(WidgetShowSections.self, forKey: .showSections)) ?? WidgetShowSections()
     }
 }
 
 // MARK: - Data Loading (with error logging)
 func loadWidgetData() -> WidgetData? {
     guard let defaults = UserDefaults(suiteName: appGroupId) else {
+        print("[SoloToDoWidget] ❌ Cannot open App Group: \(appGroupId)")
         return nil
     }
     
     guard let jsonString = defaults.string(forKey: widgetDataKey) else {
+        print("[SoloToDoWidget] ⚠️ No data found for key: \(widgetDataKey)")
         return nil
     }
     
     guard let data = jsonString.data(using: .utf8) else {
+        print("[SoloToDoWidget] ❌ Cannot convert JSON string to data")
         return nil
     }
     
     do {
         let decoder = JSONDecoder()
-        return try decoder.decode(WidgetData.self, from: data)
+        let result = try decoder.decode(WidgetData.self, from: data)
+        print("[SoloToDoWidget] ✅ Decoded: LVL\(result.level), \(result.quests.count) quests, streak \(result.streak)")
+        return result
     } catch {
-        // Log the error so we can debug in Console.app
-        print("[SoloToDoWidget] JSON decode error: \(error)")
+        print("[SoloToDoWidget] ❌ JSON decode error: \(error)")
+        // Try to log the raw JSON for debugging
+        if let rawStr = String(data: data.prefix(500), encoding: .utf8) {
+            print("[SoloToDoWidget] Raw JSON (first 500 chars): \(rawStr)")
+        }
         return nil
     }
 }
 
 // MARK: - Placeholder Data
 let placeholderData = WidgetData(
-    systemMessage: "Das System wartet auf dich, Hunter..."
+    hunterName: "Hunter",
+    level: 1,
+    quests: [
+        WidgetQuest(title: "Öffne die App", category: "agi", difficulty: "normal"),
+    ],
+    totalOpen: 1,
+    systemMessage: "Öffne die App, um deine Daten zu laden..."
 )

@@ -13,10 +13,23 @@ export const DEFAULT_WIDGET_CONFIG = {
   modules: ['streak_xp', 'quests', 'habits', 'micro_habits', 'hunter_card'],
   questFilter: 'all',       // 'all' | 'system' | 'custom' | 'daily' | 'priority'
   questSort: 'focus',        // 'focus' | 'priority' | 'deadline'
-  maxQuests: 3,
+  maxQuests: 5,
   showHunterCard: true,
   showSystemMessage: true,
   syncTheme: true,
+  // Rotation: widget cycles through quest batches automatically
+  rotationEnabled: true,
+  rotationIntervalMinutes: 5,  // 5 | 10 | 15 | 30
+  // Display sections: user can toggle what appears in widgets
+  showSections: {
+    streak: true,
+    quests: true,
+    habits: true,
+    microHabits: true,
+    stats: true,
+    heatmap: true,
+    systemMessage: true,
+  },
   liveActivity: {
     emergencyQuest: true,
     streakWarning: true,
@@ -115,10 +128,10 @@ function buildWidgetPayload(state) {
   const rank = getRankForLevel(state.level || 1);
   const today = new Date().toISOString().split('T')[0];
 
-  // Quest data
+  // Quest data — send ALL sorted quests so widget can handle rotation itself
   const filtered = filterQuests(state.quests, config.questFilter);
   const sorted = sortQuests(filtered, config.questSort);
-  const topQuests = sorted.slice(0, config.maxQuests || 3).map(q => ({
+  const allQuests = sorted.map(q => ({
     id: q.id,
     title: q.title || 'Quest',
     category: q.category || 'agi',
@@ -217,8 +230,10 @@ function buildWidgetPayload(state) {
     shadow: { primary: '#6366f1', accent: '#a5b4fc', glow: 'rgba(99,102,241,0.35)', bg: '#06060f' },
     ice: { primary: '#06b6d4', accent: '#a5f3fc', glow: 'rgba(6,182,212,0.35)', bg: '#060a0f' },
     golden: { primary: '#d97706', accent: '#fde68a', glow: 'rgba(217,119,6,0.35)', bg: '#0a0806' },
+    celestial: { primary: '#daa520', accent: '#ffe4b5', glow: 'rgba(218,165,32,0.35)', bg: '#0a0806' },
     void: { primary: '#7c3aed', accent: '#c4b5fd', glow: 'rgba(124,58,237,0.35)', bg: '#08060f' },
     dragon: { primary: '#ea580c', accent: '#fdba74', glow: 'rgba(234,88,12,0.35)', bg: '#0a0604' },
+    starfall: { primary: '#818cf8', accent: '#e0e7ff', glow: 'rgba(129,140,248,0.35)', bg: '#060610' },
     blood_sovereign: { primary: '#be123c', accent: '#fda4af', glow: 'rgba(190,18,60,0.35)', bg: '#0a0406' },
   };
 
@@ -243,8 +258,8 @@ function buildWidgetPayload(state) {
     gold: state.gold || 0,
     gems: state.gems || 0,
 
-    // Quest data
-    quests: topQuests,
+    // Quest data — ALL quests for widget-side rotation
+    quests: allQuests,
     focusQuest,
     totalOpen,
     completedToday,
@@ -254,7 +269,7 @@ function buildWidgetPayload(state) {
     } : null,
 
     // Habits
-    habits: habits.slice(0, 6),
+    habits: habits.slice(0, 8),
     habitsCompleted,
     habitsTotal,
 
@@ -285,16 +300,19 @@ function buildWidgetPayload(state) {
     // Streak shield status
     streakShield: {
       active: !!(state.activeGemBoosters || []).find(b => b.effect?.streakShield),
-      daysProtected: 0, // computed from booster expiry
+      daysProtected: 0,
     },
 
     // Theme
     theme: config.syncTheme !== false ? themeColors : THEMES_MAP.default,
 
-    // Config (so widget knows which modules to show)
+    // Config (so widget knows display preferences)
     config: {
       modules: config.modules || DEFAULT_WIDGET_CONFIG.modules,
-      maxQuests: config.maxQuests || 3,
+      maxQuests: config.maxQuests || 5,
+      rotationEnabled: config.rotationEnabled !== false,
+      rotationIntervalMinutes: config.rotationIntervalMinutes || 5,
+      showSections: config.showSections || DEFAULT_WIDGET_CONFIG.showSections,
     },
   };
 }
@@ -313,22 +331,39 @@ function getXpForLevelSimple(level) {
 // ─── Sync Widget Data ─────────────────────────────────────────
 // Call this in the persist() hook after every state change.
 let _lastPayloadHash = '';
+let _syncCount = 0;
 
 export async function syncWidgetData(state) {
   // Only sync on native iOS
-  if (!Capacitor.isNativePlatform()) return;
-  if (Capacitor.getPlatform() !== 'ios') return;
+  if (!Capacitor.isNativePlatform()) {
+    console.log('[Widget] Skipped: not native platform');
+    return;
+  }
+  if (Capacitor.getPlatform() !== 'ios') {
+    console.log('[Widget] Skipped: not iOS');
+    return;
+  }
 
   try {
     const payload = buildWidgetPayload(state);
     const payloadStr = JSON.stringify(payload);
 
-    // Skip if unchanged (debounce)
+    // Skip if unchanged (debounce) — but ALWAYS sync the first 3 calls
     const hash = simpleHash(payloadStr);
-    if (hash === _lastPayloadHash) return;
+    if (hash === _lastPayloadHash && _syncCount > 3) {
+      return;
+    }
     _lastPayloadHash = hash;
+    _syncCount++;
+
+    console.log(`[Widget] Syncing... (#${_syncCount}, payload: ${(payloadStr.length / 1024).toFixed(1)}KB, quests: ${payload.quests.length}, level: ${payload.level})`);
 
     const { WidgetBridgePlugin } = await import('capacitor-widget-bridge');
+
+    if (!WidgetBridgePlugin || !WidgetBridgePlugin.setItem) {
+      console.error('[Widget] WidgetBridgePlugin.setItem not available!');
+      return;
+    }
 
     await WidgetBridgePlugin.setItem({
       group: APP_GROUP,
@@ -337,12 +372,13 @@ export async function syncWidgetData(state) {
     });
 
     // Trigger widget timeline reload
-    await WidgetBridgePlugin.reloadAllTimelines();
+    if (WidgetBridgePlugin.reloadAllTimelines) {
+      await WidgetBridgePlugin.reloadAllTimelines();
+    }
 
-    console.log('[Widget] Data synced successfully');
+    console.log(`[Widget] ✅ Data synced successfully (#${_syncCount})`);
   } catch (err) {
-    // Silently fail — widget bridge might not be available
-    console.warn('[Widget] Sync failed (non-critical):', err.message);
+    console.error('[Widget] ❌ Sync failed:', err.message, err.stack);
   }
 }
 
