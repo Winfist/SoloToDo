@@ -103,7 +103,13 @@ export function useGameState(initialHunterName, onLogout) {
     });
   }, []);
 
-  const notify = useCallback((msg, type = "info") => setNotifications(prev => [...prev, { id: genId(), msg, type }]), []);
+  const notify = useCallback((msg, type = "info") => {
+    const text = String(msg || "");
+    setNotifications(prev => {
+      if (prev.some(n => n.msg === text && n.type === type)) return prev;
+      return [{ id: genId(), msg: text, type }, ...prev].slice(0, 4);
+    });
+  }, []);
   const persist = useCallback(s => {
     const next = { ...s, lastInteractionTimeMs: Date.now() };
     setState(next);

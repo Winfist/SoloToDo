@@ -644,7 +644,7 @@ function App({ initialHunterName, onLogout }) {
         <MusicPlayer play={isMusicPlaying} />
         {penaltyActive && <div style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", border: "2px solid #ef444422", animation: "penaltyPulse 2s infinite" }} />}
         {/* ── Independent reward UI — silenced while a RewardFlow is active ── */}
-        {!rewardFlowActive && notifications.map(n => <SystemNotification key={n.id} message={n.msg} type={n.type} onDone={() => removeNotif(n.id)} />)}
+        {!rewardFlowActive && notifications.map((n, index) => <SystemNotification key={n.id} message={n.msg} type={n.type} slot={index} onDone={() => removeNotif(n.id)} />)}
         {!rewardFlowActive && achQueue.slice(0, 1).map(a => <AchievementToast key={a.id} achievement={a} onDone={() => setAchQueue(prev => prev.slice(1))} />)}
         {!rewardFlowActive && xpFloats.map(f => <XpFloat key={f.id} x={f.x} y={f.y} xp={f.xp} gold={f.gold} />)}
 

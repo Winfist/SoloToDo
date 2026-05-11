@@ -25,8 +25,19 @@ input,select{font-family:inherit}
 @keyframes levelUpText{0%{transform:scale(0.3) translateY(40px);opacity:0}30%{transform:scale(1.1) translateY(0);opacity:1}50%{transform:scale(1)}100%{transform:scale(1);opacity:1}}
 @keyframes levelUpRays{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes levelUpRank{0%,40%{transform:translateY(20px);opacity:0}70%,100%{transform:translateY(0);opacity:1}}
-@keyframes sysNotifIn{0%{transform:translateY(-100%) scale(0.8);opacity:0}60%{transform:translateY(4px) scale(1.02);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
-@keyframes sysNotifOut{to{transform:translateY(-100%) scale(0.8);opacity:0}}
+@keyframes sysNotifIn{0%{transform:translate3d(-50%,-18px,0) scale(0.98);opacity:0}58%{transform:translate3d(-50%,2px,0) scale(1.01);opacity:1}100%{transform:translate3d(-50%,0,0) scale(1);opacity:1}}
+@keyframes sysNotifOut{0%{transform:translate3d(-50%,0,0) scale(1);opacity:1}100%{transform:translate3d(-50%,-14px,0) scale(0.98);opacity:0}}
+@keyframes sysNotifRail{0%,100%{opacity:0.55}50%{opacity:1}}
+@keyframes sysNotifSweep{0%{transform:translateX(0);opacity:0}12%{opacity:0.85}100%{transform:translateX(330%);opacity:0}}
+@keyframes sysNotifTimer{0%{transform:scaleX(1);opacity:0.95}100%{transform:scaleX(0);opacity:0.25}}
+@keyframes sysNotifPing{0%{transform:scale(0.88);opacity:0.45}70%,100%{transform:scale(1.22);opacity:0}}
+@media (prefers-reduced-motion: reduce){
+  @keyframes sysNotifIn{0%{transform:translate3d(-50%,0,0);opacity:0}100%{transform:translate3d(-50%,0,0);opacity:1}}
+  @keyframes sysNotifOut{0%{transform:translate3d(-50%,0,0);opacity:1}100%{transform:translate3d(-50%,0,0);opacity:0}}
+  @keyframes sysNotifRail{0%,100%{opacity:0.75}}
+  @keyframes sysNotifSweep{0%,100%{opacity:0;transform:none}}
+  @keyframes sysNotifPing{0%,100%{opacity:0;transform:none}}
+}
 @keyframes ringExpand{0%{transform:scale(0.5);opacity:0.8}100%{transform:scale(3);opacity:0}}
 @keyframes statBarFill{from{width:0}to{width:var(--fill)}}
 @keyframes shadowPulse{0%,100%{box-shadow:0 0 8px ${t.primary}22}50%{box-shadow:0 0 20px ${t.primary}44}}

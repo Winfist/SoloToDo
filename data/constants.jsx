@@ -130,19 +130,118 @@ function MusicPlayer({ play, volume = 0.3 }) {
 
 // ═══ SYSTEM NOTIFICATION ══════════════════════════════════════
 
-function SystemNotification({ message, type = "info", onDone }) {
+function getSystemNotificationMeta(message, type) {
+  const normalize = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const text = String(message || "");
+  const normalized = normalize(text);
+  const stat = CATEGORIES.find(cat => {
+    const label = normalize(cat.label);
+    const key = normalize(cat.key);
+    const statCode = normalize(cat.stat);
+    return normalized.includes(label) || normalized.includes(key) || normalized.includes(statCode);
+  });
+  const typeMeta = {
+    info: { color: "#38bdf8", label: "SYSTEM NOTICE", code: "SYS" },
+    success: { color: "#22f5c7", label: "OPERATION COMPLETE", code: "OK" },
+    warning: { color: "#f59e0b", label: "SYSTEM WARNING", code: "WARN" },
+    error: { color: "#fb7185", label: "ERROR", code: "ERR" },
+    gold: { color: "#fbbf24", label: "REWARD ACQUIRED", code: "GOLD" },
+    xp: { color: "#a78bfa", label: "XP TRANSFER", code: "XP" },
+    levelup: { color: "#f0abfc", label: "LEVEL UP", code: "LV" },
+    dungeon: { color: "#22d3ee", label: "GATE UPDATE", code: "GATE" },
+    defeat: { color: "#ef4444", label: "DEFEAT RECORDED", code: "FAIL" },
+    achievement: { color: "#f59e0b", label: "ACHIEVEMENT", code: "ACH" },
+    skill: { color: "#22d3ee", label: "SKILL READY", code: "SKILL" },
+    penalty: { color: "#ef4444", label: "PENALTY ZONE", code: "PEN" },
+    shadow: { color: "#a78bfa", label: "SHADOW ARMY", code: "SHA" },
+    named: { color: "#fbbf24", label: "MONARCH NOTICE", code: "MN" },
+  };
+  const meta = { ...(typeMeta[type] || typeMeta.info) };
+  if (stat && normalized.includes("erhoht")) {
+    meta.color = stat.color;
+    meta.label = "STAT ALLOCATION";
+    meta.code = stat.stat;
+    meta.iconSrc = stat.iconSrc;
+  }
+  return meta;
+}
+
+function SystemNotification({ message, type = "info", onDone, slot = 0 }) {
   const [exiting, setExiting] = useState(false);
-  useEffect(() => { const t1 = setTimeout(() => setExiting(true), 2400); const t2 = setTimeout(onDone, 2800); return () => { clearTimeout(t1); clearTimeout(t2); }; }, [onDone]);
-  const colors = { info: "#4f6ef7", success: "#22c55e", gold: "#f59e0b", xp: "#a78bfa", levelup: "#e879f9", dungeon: "#22d3ee", defeat: "#ef4444", achievement: "#f59e0b", skill: "#22d3ee", penalty: "#ef4444", shadow: "#7c3aed", named: "#f59e0b" };
-  const c = colors[type] || colors.info;
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
+  useEffect(() => { const t1 = setTimeout(() => setExiting(true), 3200); const t2 = setTimeout(() => onDoneRef.current?.(), 3620); return () => { clearTimeout(t1); clearTimeout(t2); }; }, []);
+  const meta = useMemo(() => getSystemNotificationMeta(message, type), [message, type]);
+  const c = meta.color;
+  const dim = slot > 0 ? Math.max(0.72, 1 - slot * 0.09) : 1;
   return (
-    <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 200, animation: exiting ? "sysNotifOut 0.4s ease forwards" : "sysNotifIn 0.5s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none", width: "calc(100% - 32px)", maxWidth: 420 }}>
-      <div style={{ background: "linear-gradient(135deg,rgba(8,8,16,0.97),rgba(16,12,28,0.97))", border: `1px solid ${c}55`, borderLeft: `3px solid ${c}`, borderRadius: 12, padding: "12px 18px", backdropFilter: "blur(16px)", boxShadow: `0 8px 32px rgba(0,0,0,0.6),0 0 20px ${c}22`, display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 6, height: 6, borderRadius: "50%", background: c, boxShadow: `0 0 8px ${c}`, animation: "breathe 1.5s infinite", flexShrink: 0 }} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: c, marginBottom: 2, fontFamily: "'JetBrains Mono',monospace" }}>SYSTEM</div>
-          <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 500, lineHeight: 1.4 }}>{message}</div>
+    <div style={{
+      position: "fixed",
+      top: `calc(max(14px, env(safe-area-inset-top)) + ${slot * 74}px)`,
+      left: "50%",
+      transform: "translate3d(-50%,0,0)",
+      zIndex: 240 - slot,
+      animation: exiting ? "sysNotifOut 360ms cubic-bezier(0.4,0,0.2,1) forwards" : "sysNotifIn 420ms cubic-bezier(0.16,1,0.3,1) both",
+      transition: "top 180ms cubic-bezier(0.4,0,0.2,1)",
+      pointerEvents: "none",
+      width: "min(466px, calc(100vw - 28px))",
+      opacity: dim,
+      willChange: "transform, opacity",
+      contain: "layout paint",
+    }}>
+      <div style={{
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 58,
+        background: `linear-gradient(135deg, rgba(3,7,18,0.96), rgba(9,12,29,0.94) 52%, ${c}12)`,
+        border: `1px solid ${c}66`,
+        borderRadius: 8,
+        clipPath: "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+        boxShadow: `0 18px 48px rgba(0,0,0,0.56), 0 0 28px ${c}26, inset 0 1px 0 rgba(255,255,255,0.10)`,
+        backdropFilter: "blur(10px) saturate(1.15)",
+        WebkitBackdropFilter: "blur(10px) saturate(1.15)",
+      }}>
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(255,255,255,0.08), transparent 38%)", opacity: 0.55, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, background: `repeating-linear-gradient(180deg, transparent 0 7px, ${c}10 8px, transparent 9px)`, opacity: 0.45, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 3, background: `linear-gradient(180deg, transparent, ${c}, transparent)`, boxShadow: `0 0 18px ${c}`, animation: "sysNotifRail 1.8s ease-in-out infinite", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 2, background: `linear-gradient(90deg, ${c}, ${c}66, transparent)`, transformOrigin: "left", animation: "sysNotifTimer 3.2s linear forwards", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: 0, left: "-45%", width: "42%", height: "100%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.13), transparent)", animation: "sysNotifSweep 2.6s ease-out 0.12s 1", pointerEvents: "none" }} />
+
+        <div style={{ position: "relative", display: "grid", gridTemplateColumns: "42px 1fr", gap: 12, alignItems: "center", padding: "11px 15px 12px 13px" }}>
+          <div style={{
+            width: 38,
+            height: 38,
+            display: "grid",
+            placeItems: "center",
+            clipPath: "polygon(18% 0, 100% 0, 100% 82%, 82% 100%, 0 100%, 0 18%)",
+            background: `radial-gradient(circle at 50% 40%, ${c}40, ${c}12 48%, rgba(2,6,23,0.78))`,
+            border: `1px solid ${c}70`,
+            boxShadow: `inset 0 0 18px ${c}18, 0 0 18px ${c}28`,
+            position: "relative",
+          }}>
+            {meta.iconSrc ? (
+              <img src={meta.iconSrc} alt="" style={{ width: 24, height: 24, objectFit: "contain", filter: `drop-shadow(0 0 8px ${c}) brightness(1.15)` }} />
+            ) : (
+              <span style={{ color: c, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 900, letterSpacing: 1 }}>{meta.code}</span>
+            )}
+            <span style={{ position: "absolute", inset: -5, border: `1px solid ${c}22`, clipPath: "inherit", animation: "sysNotifPing 1.8s ease-out infinite", pointerEvents: "none" }} />
+          </div>
+
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <span style={{ color: c, fontSize: 9, fontWeight: 900, letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", textShadow: `0 0 12px ${c}66`, whiteSpace: "nowrap" }}>SYSTEM</span>
+              <span style={{ height: 1, flex: 1, minWidth: 24, background: `linear-gradient(90deg, ${c}66, transparent)` }} />
+              <span style={{ color: "#64748b", fontSize: 8, fontWeight: 800, letterSpacing: 2, fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>{meta.label}</span>
+            </div>
+            <div style={{ color: "#edf7ff", fontSize: 13, fontWeight: 700, lineHeight: 1.35, textShadow: "0 1px 10px rgba(0,0,0,0.65)", overflowWrap: "anywhere" }}>{message}</div>
+          </div>
         </div>
+
+        <div style={{ position: "absolute", top: 7, left: 7, width: 12, height: 12, borderTop: `1px solid ${c}88`, borderLeft: `1px solid ${c}88`, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", right: 7, bottom: 7, width: 12, height: 12, borderRight: `1px solid ${c}88`, borderBottom: `1px solid ${c}88`, pointerEvents: "none" }} />
       </div>
     </div>
   );
