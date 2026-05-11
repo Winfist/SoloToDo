@@ -229,11 +229,11 @@ export default function QuestDetailModal({
               )}
 
               {/* Description */}
-              {quest.description && (
+              {(quest.description || quest.desc) && (
                 <div>
                   <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>BESCHREIBUNG</div>
                   <div style={{ fontSize: 13, color: "#e2e8f0", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>
-                    {quest.description}
+                    {quest.description || quest.desc}
                   </div>
                 </div>
               )}

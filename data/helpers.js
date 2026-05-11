@@ -664,11 +664,11 @@ export function checkHiddenQuestTriggers(state) {
 
 export function generateEmergencyQuest(playerLevel) {
   const templates = [
-    { title: "NOTFALL: Körperlicher Einsatz", category: "str", difficulty: "hard", desc: "Das System verlangt sofortige Bewegung. Mache sofort 20 Liegestütze oder 30 Kniebeugen!" },
-    { title: "NOTFALL: Geistiger Fokus", category: "int", difficulty: "hard", desc: "Stoppe alles Ablenkende. Lese 15 Minuten konzentriert oder meditiere, ohne Smartphone." },
-    { title: "NOTFALL: Dehydrations-Warnung", category: "vit", difficulty: "hard", desc: "VIT-Stats sinken! Trinke als Sofortmaßnahme 1 Liter Wasser." },
-    { title: "NOTFALL: Umgebungswechsel", category: "agi", difficulty: "hard", desc: "Sauerstoff-Mangel! Verlasse das aktuelle Gebiet sofort für 10 Minuten (frische Luft)." },
-    { title: "NOTFALL: Soziale Direktive", category: "cha", difficulty: "normal", desc: "Verbindung zu Fragmenten herstellen: Melde dich bei jemandem, mit dem du länger nicht gesprochen hast." },
+    { title: "URGENT: Physical Degradation", category: "str", difficulty: "hard", desc: "Das System registriert kritischen Abfall der Muskelspannung. Sofortige kinetische Entladung erforderlich. Führe 20 Liegestütze oder 30 Kniebeugen aus." },
+    { title: "URGENT: Cognitive Overload", category: "int", difficulty: "hard", desc: "Neuronale Netzwerke überlastet. Initiiere sofortige Isolation. 15 Minuten absolute Stille ohne digitale Stimulanz." },
+    { title: "URGENT: Critical Dehydration", category: "vit", difficulty: "hard", desc: "Lebenserhaltende Systeme melden Flüssigkeitsmangel. Konsumiere unverzüglich 1 Liter H2O zur Systemstabilisierung." },
+    { title: "URGENT: Oxygen Depletion", category: "agi", difficulty: "hard", desc: "Umgebungsanalyse: Toxische / Stagnierende Luft registriert. Verlasse die aktuelle Zone sofort für mindestens 10 Minuten." },
+    { title: "URGENT: Isolation Warning", category: "cha", difficulty: "normal", desc: "Soziales Netzwerk droht zu fragmentieren. Baue sofort eine Kommunikationsbrücke zu einem vernachlässigten Kontakt auf." },
   ];
   const seed = parseInt(getToday().replace(/-/g, "")) % templates.length;
   const tmpl = templates[seed];

@@ -4,8 +4,9 @@ import {
   Settings, RefreshCw, Trash2, Edit3, Heart,
   Coins, Star, Activity, AlertTriangle, Save, X,
   BookOpen, Briefcase, CheckSquare, Mail, Hexagon,
-  Swords, Crosshair, Sparkles
+  Swords, Crosshair, Sparkles, Target
 } from 'lucide-react';
+import QuestOverview from './QuestOverview';
 import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -18,6 +19,7 @@ export default function App() {
   const [error, setError] = useState('');
 
   const [activeView, setActiveView] = useState('list'); // list, detail
+  const [activeTab, setActiveTab] = useState('users'); // users, quests
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,9 +131,19 @@ export default function App() {
           </h1>
           <p className="text-muted" style={{ fontSize: '0.9rem' }}>Angemeldet als {user.email} <span style={{ userSelect: 'all', background: '#000', padding: '2px 4px', borderRadius: '4px' }}>{user.uid}</span></p>
         </div>
-        <button onClick={handleLogout} className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          Ausloggen
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="nav-tabs">
+            <button className={`nav-tab ${activeTab === 'users' ? 'active' : ''}`} onClick={() => { setActiveTab('users'); setActiveView('list'); setSelectedUser(null); }}>
+              <Users size={16} /> Spieler
+            </button>
+            <button className={`nav-tab ${activeTab === 'quests' ? 'active' : ''}`} onClick={() => setActiveTab('quests')}>
+              <Target size={16} /> Quests
+            </button>
+          </div>
+          <button onClick={handleLogout} className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Ausloggen
+          </button>
+        </div>
       </header>
 
       {fetchError && (
@@ -149,7 +161,7 @@ export default function App() {
 
       {!fetchError && (
         <main>
-          {activeView === 'list' && (
+          {activeTab === 'users' && activeView === 'list' && (
             <UserList
               users={users}
               searchQuery={searchQuery}
@@ -159,12 +171,16 @@ export default function App() {
             />
           )}
 
-          {activeView === 'detail' && selectedUser && (
+          {activeTab === 'users' && activeView === 'detail' && selectedUser && (
             <UserDetail
               user={selectedUser}
               onBack={() => { setActiveView('list'); setSelectedUser(null); }}
               onUpdate={fetchAllUsers}
             />
+          )}
+
+          {activeTab === 'quests' && (
+            <QuestOverview users={users} />
           )}
         </main>
       )}
@@ -582,6 +598,97 @@ function UserDetail({ user, onBack, onUpdate }) {
             ) : (
               <p className="text-muted" style={{ margin: 0, fontSize: '0.9rem' }}>Keine Story-Kapitel abgeschlossen.</p>
             )}
+          </div>
+
+          <div className="glass-panel" style={{ border: '1px solid #8b5cf6', background: 'linear-gradient(135deg, rgba(139,92,246,0.1), transparent)' }}>
+            <h3 className="section-title"><Mail className="text-accent" style={{ color: '#8b5cf6' }} /> Push-Direktive Senden</h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+              <div style={{ padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(139,92,246,0.3)' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: '#c4b5fd', fontSize: '0.95rem' }}>Einfache System-Nachricht</h4>
+                <div className="input-group">
+                  <input type="text" id="pushTitle" placeholder="Titel (z.B. SYSTEM-WARNUNG)" className="input-glass" style={{ marginBottom: '8px' }} />
+                  <textarea id="pushBody" placeholder="Nachricht..." className="input-glass" style={{ height: '60px', resize: 'none' }}></textarea>
+                </div>
+                <button 
+                  onClick={async () => {
+                    const title = document.getElementById('pushTitle').value;
+                    const body = document.getElementById('pushBody').value;
+                    if (!title || !body) return alert('Titel und Nachricht erforderlich');
+                    try {
+                      const { httpsCallable } = await import('firebase/functions');
+                      const { functions } = await import('./firebase');
+                      const sendPush = httpsCallable(functions, 'adminSendPushNotification');
+                      await sendPush({ targetUid: user.id, title, body });
+                      alert('Push gesendet!');
+                      document.getElementById('pushTitle').value = '';
+                      document.getElementById('pushBody').value = '';
+                    } catch(e) {
+                      alert('Fehler beim Push: ' + e.message);
+                    }
+                  }}
+                  className="btn-primary" style={{ background: '#8b5cf6', borderColor: '#7c3aed', width: '100%' }}>
+                  Push Senden
+                </button>
+              </div>
+
+              <div style={{ padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: '#fca5a5', fontSize: '0.95rem' }}>Sofortige Notfall-Quest (Emergency) Pushen</h4>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '12px' }}>
+                  Ersetzt die aktuelle Emergency Quest des Users und sendet einen lauten Push an sein Handy.
+                </p>
+                <button 
+                  onClick={async () => {
+                    const questDesc = prompt("Quest Beschreibung (z.B. Mache sofort 50 Liegestütze):");
+                    if (!questDesc) return;
+                    
+                    try {
+                      const expires = new Date();
+                      expires.setHours(expires.getHours() + 4);
+                      
+                      const emergencyQ = {
+                        id: `admin_emerg_${Date.now()}`,
+                        title: "URGENT: ADMIN DIRECTIVE",
+                        category: "str",
+                        difficulty: "boss",
+                        desc: questDesc,
+                        type: "emergency",
+                        timeLimit: expires.toISOString(),
+                        xpMult: 3.0,
+                        goldMult: 3.0,
+                        createdAt: new Date().toISOString().split('T')[0],
+                        systemMessage: "ADMIN OVERRIDE. Sofortiges Handeln erforderlich."
+                      };
+
+                      // 1. Write to Firestore
+                      const userRef = doc(db, 'users', user.id);
+                      await updateDoc(userRef, {
+                        emergencyQuest: emergencyQ,
+                        emergencyDone: false,
+                        emergencyFailed: false
+                      });
+
+                      // 2. Send Push
+                      const { httpsCallable } = await import('firebase/functions');
+                      const { functions } = await import('./firebase');
+                      const sendPush = httpsCallable(functions, 'adminSendPushNotification');
+                      await sendPush({ 
+                        targetUid: user.id, 
+                        title: "🚨 URGENT: ADMIN DIRECTIVE", 
+                        body: questDesc 
+                      });
+                      
+                      alert('Quest gepusht und Push-Benachrichtigung gesendet!');
+                      onUpdate();
+                    } catch(e) {
+                      alert('Fehler beim Quest-Push: ' + e.message);
+                    }
+                  }}
+                  className="btn-danger" style={{ width: '100%' }}>
+                  Emergency Quest Auslösen
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>

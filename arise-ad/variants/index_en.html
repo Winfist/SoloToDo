@@ -1,0 +1,241 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=1080,height=1920"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;700;900&family=Cinzel:wght@900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#030108;font-family:'Outfit',sans-serif;color:#fff}
+.clip{position:absolute;inset:0;overflow:hidden}
+.p{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(124,58,237,0.5);opacity:0}
+#scanoverlay{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:98}
+#s1-bg{position:absolute;inset:0;background:url('assets/bg_dungeon.png') center/cover;opacity:0.45}
+#s1-sub{position:absolute;top:54%;width:100%;text-align:center;font:300 20px 'Outfit';color:rgba(124,58,237,0.4);letter-spacing:6px;opacity:0}
+#s1-rule{position:absolute;top:51%;left:50%;width:0;height:1px;background:linear-gradient(90deg,transparent,rgba(124,58,237,0.4),transparent);opacity:0}
+#s1-vign{position:absolute;inset:0;background:radial-gradient(ellipse 55% 45% at 50% 45%,transparent 0%,rgba(3,1,8,0.7) 60%,#030108 100%)}
+#s1-stmt{position:absolute;top:42%;width:100%;text-align:center;font:900 52px 'Cinzel';line-height:1.35;padding:0 80px;opacity:0}
+#s1-glow{position:absolute;top:28%;left:50%;width:500px;height:500px;margin-left:-250px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.2) 0%,transparent 60%);opacity:0}
+#s1-ring{position:absolute;top:33%;left:50%;width:10px;height:10px;margin-left:-5px;margin-top:105px;border-radius:50%;border:2px solid rgba(124,58,237,0.6);opacity:0;box-shadow:0 0 20px rgba(124,58,237,0.3),inset 0 0 20px rgba(124,58,237,0.1)}
+#s1-entity{position:absolute;top:33%;left:50%;width:220px;height:220px;margin-left:-110px;opacity:0}
+#s1-entity img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 30px rgba(124,58,237,0.5))}
+#s1-arise{position:absolute;top:44%;width:100%;text-align:center;font:900 110px 'Cinzel';letter-spacing:14px;opacity:0;text-shadow:0 0 40px rgba(124,58,237,0.6)}
+#s2{opacity:0}
+#s2-bg{position:absolute;inset:0;background:url('assets/bg_dungeon.png') center/cover;opacity:0.2}
+#s2-vign{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 40%,transparent 0%,rgba(3,1,8,0.85) 60%,#030108 100%)}
+#s2-grid{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(34,211,238,0.03) 59px,rgba(34,211,238,0.03) 60px),repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(34,211,238,0.03) 59px,rgba(34,211,238,0.03) 60px)}
+#s2-tag{position:absolute;top:140px;width:100%;text-align:center;font:600 13px 'Outfit';letter-spacing:8px;color:rgba(34,211,238,0.4);opacity:0}
+#s2-h{position:absolute;top:175px;width:100%;text-align:center;font:700 46px 'Outfit';opacity:0}
+#s2-rule{position:absolute;top:240px;left:50%;width:0;height:1px;background:linear-gradient(90deg,transparent,rgba(34,211,238,0.2),transparent);opacity:0}
+.qc{position:absolute;left:60px;width:960px;padding:30px 32px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:18px;display:flex;align-items:center;gap:20px;opacity:0;overflow:hidden}
+.qc-shine{position:absolute;top:0;height:100%;width:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.05),transparent);pointer-events:none}
+#qc1{top:300px}#qc2{top:505px}#qc3{top:710px}
+.qi{width:64px;height:64px;flex-shrink:0}.qi img{width:100%;height:100%;object-fit:contain}
+.qb{flex:1}.qn{font:600 26px 'Outfit';margin-bottom:3px}.qd{font:400 15px 'Outfit';color:rgba(255,255,255,0.3)}
+.qr{text-align:right}.qx{font:700 22px 'Outfit';color:#22c55e}.qrk{font:600 11px 'Outfit';letter-spacing:2px;padding:4px 10px;border-radius:5px;margin-top:4px;display:inline-block}
+.rs{background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.15)}
+.ra{background:rgba(168,85,247,0.12);color:#a855f7;border:1px solid rgba(168,85,247,0.15)}
+.rb{background:rgba(220,38,38,0.12);color:#ef4444;border:1px solid rgba(220,38,38,0.15)}
+#s2-bar{position:absolute;top:920px;left:140px;width:800px;height:8px;background:rgba(255,255,255,0.04);border-radius:4px;opacity:0;overflow:hidden}
+#s2-barfill{height:100%;width:0;background:linear-gradient(90deg,#22c55e,#34d399);border-radius:4px}
+#s2-barlbl{position:absolute;top:940px;width:100%;text-align:center;font:400 13px 'Outfit';color:rgba(255,255,255,0.2);opacity:0}
+#s2-streak{position:absolute;top:980px;width:100%;text-align:center;font:700 20px 'Outfit';color:rgba(245,158,11,0.5);letter-spacing:2px;opacity:0}
+#s2-tot{position:absolute;top:1040px;width:100%;text-align:center;font:700 22px 'Outfit';color:rgba(34,197,94,0.6);letter-spacing:3px;opacity:0}
+#s3{opacity:0}
+#s3-bg{position:absolute;inset:0;background:url('assets/bg_portal.png') center/cover;opacity:0.3}
+#s3-vign{position:absolute;inset:0;background:radial-gradient(ellipse 60% 45% at 50% 40%,transparent 0%,rgba(3,1,8,0.75) 55%,#030108 100%)}
+#s3-tag{position:absolute;top:120px;width:100%;text-align:center;font:600 13px 'Outfit';letter-spacing:8px;color:rgba(124,58,237,0.4);opacity:0}
+#s3-title{position:absolute;top:155px;width:100%;text-align:center;font:700 44px 'Outfit';opacity:0}
+#s3-rule{position:absolute;top:215px;left:50%;width:0;height:1px;background:linear-gradient(90deg,transparent,rgba(124,58,237,0.3),transparent);opacity:0}
+.sh{position:absolute;opacity:0}.sh img{height:100%;object-fit:contain;filter:drop-shadow(0 0 30px rgba(124,58,237,0.4)) drop-shadow(0 12px 35px rgba(0,0,0,0.7))}
+#sh1{bottom:440px;left:60px;height:320px}#sh2{bottom:460px;left:360px;height:370px}#sh3{bottom:440px;left:700px;height:320px}
+#s3-lbl{position:absolute;bottom:390px;width:100%;text-align:center;font:600 12px 'Outfit';letter-spacing:6px;color:rgba(124,58,237,0.3);opacity:0}
+#s3-lvl{position:absolute;top:250px;left:50%;margin-left:-60px;width:120px;height:120px;border-radius:50%;border:2px solid rgba(124,58,237,0.2);display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0}
+#s3-lvl-num{font:900 42px 'Cinzel';color:#fff}
+#s3-lvl-txt{font:400 10px 'Outfit';color:rgba(255,255,255,0.3);letter-spacing:3px}
+#s3-stats{position:absolute;bottom:250px;width:100%;display:flex;justify-content:center;gap:56px}
+.st{text-align:center;opacity:0}.sv{font:700 36px 'Outfit'}.sl{font:400 11px 'Outfit';color:rgba(255,255,255,0.2);letter-spacing:3px;margin-top:2px}
+#s3-bar{position:absolute;bottom:195px;left:170px;width:740px;height:6px;background:rgba(255,255,255,0.04);border-radius:3px;opacity:0;overflow:hidden}
+#s3-fill{height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#a855f7);border-radius:3px}
+#s3-bl{position:absolute;bottom:172px;width:100%;text-align:center;font:400 12px 'Outfit';color:rgba(255,255,255,0.16);opacity:0}
+#s3-lu{position:absolute;top:38%;width:100%;text-align:center;opacity:0}
+#s3-lu-s{font:600 14px 'Outfit';letter-spacing:8px;color:rgba(245,158,11,0.4);margin-bottom:6px}
+#s3-lu-m{font:900 80px 'Cinzel';color:#f59e0b;letter-spacing:5px;text-shadow:0 0 50px rgba(245,158,11,0.5)}
+#s3-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#s4{opacity:0}
+#s4-bg{position:absolute;inset:0;background:url('assets/bg_portal.png') center/cover;opacity:0.35}
+#s4-sub{font:300 20px 'Outfit';color:rgba(255,255,255,0.4);letter-spacing:2px;margin-top:8px;opacity:0}
+#s4-ring{position:absolute;top:50%;left:50%;width:10px;height:10px;margin-left:-5px;margin-top:-250px;border-radius:50%;border:2px solid rgba(124,58,237,0.5);opacity:0;box-shadow:0 0 30px rgba(124,58,237,0.2)}
+#s4-glow{position:absolute;top:50%;left:50%;width:400px;height:400px;margin-left:-200px;margin-top:-350px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.12) 0%,transparent 60%);opacity:0}
+#s4-vign{position:absolute;inset:0;background:radial-gradient(ellipse 55% 45% at 50% 45%,transparent 0%,rgba(3,1,8,0.8) 55%,#030108 100%)}
+#s4-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#s4-crest{width:140px;height:140px;opacity:0}#s4-crest img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 40px rgba(124,58,237,0.5))}
+#s4-name{font:900 90px 'Cinzel';letter-spacing:14px;margin-top:16px;opacity:0;text-shadow:0 0 50px rgba(124,58,237,0.6)}
+#s4-soon{font:900 32px 'Outfit';letter-spacing:8px;color:#fff;margin-top:28px;opacity:0;padding:12px 36px;border:2px solid rgba(124,58,237,0.4);border-radius:12px;background:rgba(124,58,237,0.08);text-shadow:0 0 20px rgba(124,58,237,0.4)}
+#s4-platforms{display:flex;gap:28px;margin-top:32px}
+.s4-plat{font:700 22px 'Outfit';color:#fff;display:flex;align-items:center;gap:12px;padding:14px 32px;border:2px solid rgba(124,58,237,0.3);border-radius:14px;background:rgba(124,58,237,0.06);opacity:0;letter-spacing:1px}
+.s4-plat-icon{font-size:28px}
+#s4-flash{position:absolute;inset:0;background:rgba(124,58,237,0.15);opacity:0;pointer-events:none}
+</style></head><body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="16" data-fps="30" data-width="1080" data-height="1920">
+<div id="scanoverlay" class="clip" data-start="0" data-duration="16" data-track-index="20"></div>
+<div id="s1" class="clip" data-start="0" data-duration="4" data-track-index="0">
+<div id="s1-bg"></div><div id="s1-vign"></div>
+<div class="p" id="p1" style="left:8%;top:80%"></div><div class="p" id="p2" style="left:20%;top:90%;width:4px;height:4px"></div>
+<div class="p" id="p3" style="left:35%;top:70%"></div><div class="p" id="p4" style="left:50%;top:85%;width:4px;height:4px"></div>
+<div class="p" id="p5" style="left:65%;top:75%"></div><div class="p" id="p6" style="left:80%;top:95%"></div>
+<div class="p" id="p7" style="left:92%;top:60%;width:2px;height:2px"></div>
+<div id="s1-glow"></div><div id="s1-ring"></div><div id="s1-entity"><img src="assets/story_arise.webp"/></div>
+<div id="s1-stmt">I turned my life<br>into an RPG.</div><div id="s1-sub">EVERY TASK IS A QUEST</div><div id="s1-rule"></div><div id="s1-arise">ARISE</div>
+</div>
+<div id="s2" class="clip" data-start="4" data-duration="4.5" data-track-index="1">
+<div id="s2-bg"></div><div id="s2-vign"></div><div id="s2-grid"></div>
+<div id="s2-tag">QUEST LOG</div><div id="s2-h">Today's Missions</div><div id="s2-rule"></div>
+<div class="qc" id="qc1"><div class="qc-shine" id="qs1" style="left:-100%"></div><div class="qi"><img src="assets/quest_daily.webp"/></div><div class="qb"><div class="qn">Morning Workout</div><div class="qd">30 min strength · Streak: 12 days</div></div><div class="qr"><div class="qx">+200 XP</div><div class="qrk rs">S-RANK</div></div></div>
+<div class="qc" id="qc2"><div class="qc-shine" id="qs2" style="left:-100%"></div><div class="qi"><img src="assets/quest_chain.webp"/></div><div class="qb"><div class="qn">Deep Work Sprint</div><div class="qd">2h focused session · Chain quest</div></div><div class="qr"><div class="qx">+150 XP</div><div class="qrk ra">A-RANK</div></div></div>
+<div class="qc" id="qc3"><div class="qc-shine" id="qs3" style="left:-100%"></div><div class="qi"><img src="assets/quest_emergency.webp"/></div><div class="qb"><div class="qn">Boss: Project Deadline</div><div class="qd">Complete before midnight · Emergency</div></div><div class="qr"><div class="qx">+500 XP</div><div class="qrk rb">BOSS</div></div></div>
+<div id="s2-bar"><div id="s2-barfill"></div></div>
+<div id="s2-barlbl">Daily Progress: 3 of 5 Quests</div>
+<div id="s2-streak">🔥 12 DAY STREAK</div>
+<div id="s2-tot">+850 XP EARNED</div>
+</div>
+
+<div id="s3" class="clip" data-start="8.5" data-duration="4.5" data-track-index="2">
+<div id="s3-bg"></div><div id="s3-vign"></div>
+<div id="s3-tag">SHADOW ARMY</div><div id="s3-title">Your Warriors</div><div id="s3-rule"></div>
+<div id="s3-lvl"><div id="s3-lvl-num">47</div><div id="s3-lvl-txt">LEVEL</div></div>
+<div class="sh" id="sh1"><img src="assets/shadow_igris.webp"/></div><div class="sh" id="sh2"><img src="assets/shadow_bellion.webp"/></div><div class="sh" id="sh3"><img src="assets/shadow_beru.webp"/></div>
+<div id="s3-lbl">IGRIS · BELLION · BERU</div>
+<div id="s3-stats"><div class="st" id="st1"><div class="sv">52</div><div class="sl">STR</div></div><div class="st" id="st2"><div class="sv">41</div><div class="sl">VIT</div></div><div class="st" id="st3"><div class="sv">68</div><div class="sl">INT</div></div><div class="st" id="st4"><div class="sv">33</div><div class="sl">CHA</div></div></div>
+<div id="s3-bar"><div id="s3-fill"></div></div><div id="s3-bl">2,340 / 3,000 XP</div>
+<div id="s3-lu"><div id="s3-lu-s">CONGRATULATIONS</div><div id="s3-lu-m">LEVEL 48</div></div><div id="s3-flash"></div>
+</div>
+<div id="s4" class="clip" data-start="13" data-duration="3" data-track-index="3">
+<div id="s4-bg"></div><div id="s4-vign"></div>
+<div id="s4-glow"></div><div id="s4-ring"></div>
+<div id="s4-inner">
+<div id="s4-crest"><img src="assets/setup_logo.webp"/></div>
+<div id="s4-name">ARISE</div>
+<div id="s4-sub">Your life. Your RPG.</div>
+<div id="s4-soon">COMING SOON</div>
+<div id="s4-platforms">
+<div class="s4-plat" id="s4-ios">App Store</div>
+<div class="s4-plat" id="s4-and">Google Play</div>
+</div>
+</div>
+<div id="s4-flash"></div>
+</div>
+<audio id="bgm" data-start="0" data-duration="16" data-track-index="4" data-volume="0.25" src="assets/solo_grind.mp3"></audio>
+</div>
+<script>
+window.__timelines=window.__timelines||{};const tl=gsap.timeline({paused:true});
+// Particles via GSAP
+// Particles — smooth drift with scale
+["#p1","#p2","#p3","#p4","#p5","#p6","#p7"].forEach((p,i)=>{
+tl.fromTo(p,{opacity:0,y:0,scale:0.5},{opacity:0.8,y:-200,scale:1.5,duration:2,ease:"power1.out"},i*0.4);
+tl.to(p,{opacity:0,y:-500,scale:0.3,duration:1.5,ease:"power1.in"},i*0.4+2);
+});
+// S1: Ken Burns — smooth
+tl.fromTo("#s1-bg",{scale:1.1},{scale:1.25,duration:4,ease:"power1.inOut"},0);
+// Statement — chromatic aberration snaps into focus
+tl.fromTo("#s1-stmt",{opacity:0,textShadow:"8px 0 rgba(255,0,60,0.4),-8px 0 rgba(0,212,255,0.4)",scale:1.03},{opacity:1,textShadow:"0 0 transparent,0 0 transparent",scale:1,duration:0.25,ease:"power4.out"},0.3);
+// Hold statement, then glitch-dissolve out
+tl.to("#s1-stmt",{textShadow:"10px 0 rgba(255,0,60,0.5),-10px 0 rgba(0,212,255,0.5)",scale:1.02,duration:0.08},1.5);
+tl.to("#s1-stmt",{opacity:0,duration:0.06},1.58);
+// Expanding glow ring — the impressive reveal
+tl.to("#s1-glow",{opacity:1,duration:0.6,ease:"power2.out"},1.7);
+tl.fromTo("#s1-ring",{opacity:0,width:10,height:10,marginLeft:-5},{opacity:1,width:400,height:400,marginLeft:-200,marginTop:-95,duration:0.6,ease:"power2.out"},1.7);
+tl.to("#s1-ring",{opacity:0,width:600,height:600,marginLeft:-300,marginTop:-195,borderColor:"rgba(124,58,237,0)",duration:0.4,ease:"power1.in"},2.1);
+// Entity materializes inside ring
+tl.fromTo("#s1-entity",{opacity:0,scale:0.7,filter:"blur(6px)"},{opacity:1,scale:1,filter:"blur(0px)",duration:0.6,ease:"back.out(1.4)"},1.85);
+// Entity glows then fades
+tl.to("#s1-entity img",{filter:"drop-shadow(0 0 50px rgba(124,58,237,0.8))",duration:0.3,ease:"power1.in"},2.3);
+tl.to(["#s1-entity","#s1-glow"],{opacity:0,scale:1.1,duration:0.3,ease:"power2.in"},2.5);
+tl.fromTo("#s1-arise",{opacity:0,textShadow:"6px 0 rgba(255,0,60,0.5),-6px 0 rgba(0,212,255,0.5),0 0 0 transparent",scale:1.05},{opacity:1,textShadow:"0 0 transparent,0 0 transparent,0 0 50px rgba(124,58,237,0.7)",scale:1,duration:0.2,ease:"power4.out"},2.8);
+tl.fromTo("#s1-sub",{opacity:0,letterSpacing:"12px"},{opacity:1,letterSpacing:"6px",duration:0.4,ease:"power2.out"},2.9);
+tl.fromTo("#s1-rule",{opacity:0,width:0,marginLeft:0},{opacity:1,width:300,marginLeft:-150,duration:0.5,ease:"power2.out"},2.85);
+tl.to("#s1-arise",{textShadow:"0 0 80px rgba(124,58,237,0.9),0 0 160px rgba(124,58,237,0.3)",duration:0.5,ease:"sine.inOut"},3.0);
+// Smooth exit
+tl.to("#s1",{opacity:0,filter:"blur(6px)",scale:1.02,duration:0.4,ease:"power2.in"},3.6);
+tl.set("#s1",{opacity:0},4.0);
+// S2
+tl.to("#s2",{opacity:1,duration:0.3},4.0);
+tl.fromTo("#s2-tag",{opacity:0,y:5},{opacity:1,y:0,duration:0.3,ease:"power2.out"},4.15);
+tl.fromTo("#s2-h",{opacity:0,y:8},{opacity:1,y:0,duration:0.4,ease:"back.out(1.2)"},4.25);
+tl.fromTo("#s2-rule",{opacity:0,width:0,marginLeft:0},{opacity:1,width:400,marginLeft:-200,duration:0.4,ease:"power2.out"},4.4);
+// Cards slide in with scale bounce
+tl.fromTo("#qc1",{opacity:0,x:80,scale:0.95},{opacity:1,x:0,scale:1,duration:0.45,ease:"back.out(1.2)"},4.6);
+tl.to("#qs1",{left:"200%",duration:0.5,ease:"power1.in"},4.75);
+tl.to("#qc1",{boxShadow:"0 0 24px rgba(245,158,11,0.1),inset 0 0 0 1px rgba(245,158,11,0.12)",duration:0.3},4.95);
+tl.fromTo("#qc2",{opacity:0,x:80,scale:0.95},{opacity:1,x:0,scale:1,duration:0.45,ease:"back.out(1.2)"},5.0);
+tl.to("#qs2",{left:"200%",duration:0.5,ease:"power1.in"},5.15);
+tl.to("#qc2",{boxShadow:"0 0 24px rgba(168,85,247,0.1),inset 0 0 0 1px rgba(168,85,247,0.12)",duration:0.3},5.35);
+tl.fromTo("#qc3",{opacity:0,x:80,scale:0.95},{opacity:1,x:0,scale:1,duration:0.45,ease:"back.out(1.2)"},5.35);
+tl.to("#qs3",{left:"200%",duration:0.5,ease:"power1.in"},5.5);
+tl.to("#qc3",{boxShadow:"0 0 24px rgba(220,38,38,0.1),inset 0 0 0 1px rgba(220,38,38,0.12)",duration:0.3},5.7);
+// Progress bar fills
+tl.fromTo("#s2-bar",{opacity:0},{opacity:1,duration:0.2},6.0);
+tl.to("#s2-barfill",{width:"60%",duration:0.8,ease:"power2.inOut"},6.1);
+tl.fromTo("#s2-barlbl",{opacity:0},{opacity:1,duration:0.3},6.2);
+// Streak + XP
+tl.fromTo("#s2-streak",{opacity:0,scale:0.9},{opacity:1,scale:1,duration:0.35,ease:"back.out(1.3)"},6.6);
+tl.fromTo("#s2-tot",{opacity:0,y:6,scale:0.95},{opacity:1,y:0,scale:1,duration:0.35,ease:"back.out(1.2)"},7.0);
+tl.to("#s2",{opacity:0,filter:"blur(4px)",duration:0.35},8.15);
+tl.set("#s2",{opacity:0},8.5);
+// S3
+tl.to("#s3",{opacity:1,duration:0.3},8.5);
+// Header
+tl.fromTo("#s3-tag",{opacity:0,y:5},{opacity:1,y:0,duration:0.3,ease:"power2.out"},8.6);
+tl.fromTo("#s3-title",{opacity:0,y:8},{opacity:1,y:0,duration:0.4,ease:"back.out(1.2)"},8.7);
+tl.fromTo("#s3-rule",{opacity:0,width:0,marginLeft:0},{opacity:1,width:300,marginLeft:-150,duration:0.4,ease:"power2.out"},8.8);
+// Level badge
+tl.fromTo("#s3-lvl",{opacity:0,scale:0.7,rotation:-10},{opacity:1,scale:1,rotation:0,duration:0.6,ease:"back.out(1.5)"},8.9);
+tl.to("#s3-lvl",{borderColor:"rgba(124,58,237,0.5)",boxShadow:"0 0 25px rgba(124,58,237,0.15)",duration:0.5,yoyo:true,repeat:2,ease:"sine.inOut"},9.5);
+// Shadows with stagger
+tl.fromTo("#sh2",{opacity:0,y:50,scale:0.85},{opacity:1,y:0,scale:1,duration:0.7,ease:"back.out(1.3)"},9.0);
+tl.fromTo("#sh1",{opacity:0,y:40,scale:0.85},{opacity:0.8,y:0,scale:1,duration:0.6,ease:"back.out(1.3)"},9.2);
+tl.fromTo("#sh3",{opacity:0,y:40,scale:0.85},{opacity:0.8,y:0,scale:1,duration:0.6,ease:"back.out(1.3)"},9.4);
+// Float
+tl.to("#sh2",{y:-10,duration:2.2,yoyo:true,repeat:1,ease:"sine.inOut"},9.7);
+tl.to("#sh1",{y:-6,duration:2.5,yoyo:true,repeat:1,ease:"sine.inOut"},9.9);
+tl.to("#sh3",{y:-7,duration:2.0,yoyo:true,repeat:1,ease:"sine.inOut"},9.8);
+// Label
+tl.fromTo("#s3-lbl",{opacity:0,letterSpacing:"2px"},{opacity:1,letterSpacing:"6px",duration:0.4,ease:"power2.out"},9.6);
+tl.fromTo("#st1",{opacity:0,y:8},{opacity:1,y:0,duration:0.25,ease:"power2.out"},9.6);
+tl.fromTo("#st2",{opacity:0,y:8},{opacity:1,y:0,duration:0.25,ease:"power2.out"},9.75);
+tl.fromTo("#st3",{opacity:0,y:8},{opacity:1,y:0,duration:0.25,ease:"power2.out"},9.9);
+tl.fromTo("#st4",{opacity:0,y:8},{opacity:1,y:0,duration:0.25,ease:"power2.out"},10.05);
+tl.fromTo("#s3-bar",{opacity:0},{opacity:1,duration:0.2},10.2);
+tl.fromTo("#s3-bl",{opacity:0},{opacity:1,duration:0.2},10.2);
+tl.to("#s3-fill",{width:"100%",duration:1.2,ease:"power2.inOut"},10.3);
+tl.to(["#sh1","#sh2","#sh3","#s3-lbl",".st","#s3-bar","#s3-bl","#s3-tag","#s3-title","#s3-rule","#s3-lvl"],{opacity:0,duration:0.25},11.5);
+tl.to("#s3-flash",{opacity:0.7,duration:0.06},11.6);
+tl.to("#s3-flash",{opacity:0,duration:0.3},11.66);
+tl.fromTo("#s3-lu",{opacity:0,scale:0.9},{opacity:1,scale:1,duration:0.4,ease:"power3.out"},11.65);
+tl.to("#s3",{opacity:0,filter:"blur(4px)",duration:0.35},12.65);
+tl.set("#s3",{opacity:0},13.0);
+// S4: EPIC CTA
+// Flash on entry
+tl.to("#s4",{opacity:1,duration:0.15},13.0);
+tl.to("#s4-flash",{opacity:1,duration:0.08},13.0);
+tl.to("#s4-flash",{opacity:0,duration:0.3},13.08);
+// Glow ring expands
+tl.fromTo("#s4-glow",{opacity:0},{opacity:1,duration:0.6,ease:"power2.out"},13.0);
+tl.fromTo("#s4-ring",{opacity:0,width:10,height:10,marginLeft:-5},{opacity:1,width:300,height:300,marginLeft:-150,marginTop:-300,duration:0.7,ease:"power2.out"},13.0);
+tl.to("#s4-ring",{opacity:0,width:500,height:500,marginLeft:-250,marginTop:-400,duration:0.5},13.5);
+// Crest materializes
+tl.fromTo("#s4-crest",{opacity:0,scale:0.5,filter:"blur(6px)"},{opacity:1,scale:1,filter:"blur(0px)",duration:0.6,ease:"back.out(1.5)"},13.15);
+// Name with chromatic snap
+tl.fromTo("#s4-name",{opacity:0,textShadow:"5px 0 rgba(255,0,60,0.4),-5px 0 rgba(0,212,255,0.4),0 0 0 transparent",scale:1.04},{opacity:1,textShadow:"0 0 transparent,0 0 transparent,0 0 60px rgba(124,58,237,0.7)",scale:1,duration:0.2,ease:"power4.out"},13.6);
+// Glow surge on name
+tl.to("#s4-name",{textShadow:"0 0 100px rgba(124,58,237,1),0 0 200px rgba(124,58,237,0.4)",duration:0.6,ease:"power1.in"},13.9);
+tl.to("#s4-name",{textShadow:"0 0 60px rgba(124,58,237,0.6),0 0 120px rgba(124,58,237,0.2)",duration:0.5,ease:"power1.out"},14.5);
+// Sub
+tl.fromTo("#s4-sub",{opacity:0,y:6},{opacity:1,y:0,duration:0.4,ease:"power2.out"},14.0);
+// COMING SOON — big reveal
+tl.fromTo("#s4-soon",{opacity:0,scale:0.8,borderColor:"rgba(124,58,237,0)"},{opacity:1,scale:1,borderColor:"rgba(124,58,237,0.5)",duration:0.5,ease:"back.out(1.4)"},14.2);
+tl.to("#s4-soon",{boxShadow:"0 0 30px rgba(124,58,237,0.15)",duration:0.4,yoyo:true,repeat:1,ease:"sine.inOut"},14.7);
+// Platform badges — staggered with bounce
+tl.fromTo("#s4-ios",{opacity:0,x:-30,scale:0.9},{opacity:1,x:0,scale:1,duration:0.5,ease:"back.out(1.4)"},14.5);
+tl.to("#s4-ios",{boxShadow:"0 0 20px rgba(124,58,237,0.12)",borderColor:"rgba(124,58,237,0.4)",duration:0.3},14.8);
+tl.fromTo("#s4-and",{opacity:0,x:30,scale:0.9},{opacity:1,x:0,scale:1,duration:0.5,ease:"back.out(1.4)"},14.6);
+tl.to("#s4-and",{boxShadow:"0 0 20px rgba(124,58,237,0.12)",borderColor:"rgba(124,58,237,0.4)",duration:0.3},14.9);
+window.__timelines["main"]=tl;
+</script></body></html>

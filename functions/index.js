@@ -269,3 +269,59 @@ exports.generateQuestDescription = onCall(CALL_OPTIONS, async (request) => {
 
 exports.dummyTestAbc = onCall(CALL_OPTIONS, async (request) => { return {ok: true}; });
 
+// ─── Feature F: Admin Push Notification ────────────────────────────────────────
+
+exports.adminSendPushNotification = onCall(CALL_OPTIONS, async (request) => {
+  const callerUid = requireAuth(request);
+  const adminUid = "4FPoiwjIDneGrJqgYDZLPbPOJZu2"; // SoloToDo Admin UID
+
+  if (callerUid !== adminUid && !process.env.FUNCTIONS_EMULATOR) {
+    throw new HttpsError("permission-denied", "Nur der System Administrator kann Push-Direktiven senden.");
+  }
+
+  const { targetUid, title, body, data } = request.data;
+  
+  if (!targetUid || !title || !body) {
+    throw new HttpsError("invalid-argument", "targetUid, title und body sind erforderlich.");
+  }
+
+  try {
+    const userDoc = await admin.firestore().collection("users").doc(targetUid).get();
+    if (!userDoc.exists) {
+      throw new HttpsError("not-found", "User nicht gefunden.");
+    }
+
+    const userData = userDoc.data();
+    const fcmToken = userData.fcmToken;
+
+    if (!fcmToken) {
+      throw new HttpsError("failed-precondition", "User hat kein Push-Token registriert.");
+    }
+
+    const message = {
+      token: fcmToken,
+      notification: {
+        title: title,
+        body: body,
+      },
+      data: data || {},
+      android: {
+        priority: "high",
+        notification: { sound: "default" }
+      },
+      apns: {
+        payload: {
+          aps: { sound: "default" }
+        }
+      }
+    };
+
+    const response = await admin.messaging().send(message);
+    return { success: true, messageId: response };
+    
+  } catch (error) {
+    console.error("Fehler beim Senden des Push:", error);
+    throw new HttpsError("internal", "Push konnte nicht versendet werden: " + error.message);
+  }
+});
+
