@@ -26,6 +26,7 @@ export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
   const stateRef = useRef(null);
   const initDoneRef = useRef(false);
+  const bootTimestampRef = useRef(Date.now());
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
@@ -308,19 +309,13 @@ export function useGameState(initialHunterName, onLogout) {
           }
           s.lastActiveDate = today;
           // Emergency quests only generate if feature is unlocked (level >= 3)
+          let isNewEmergency = false;
           if (isFeatureUnlocked('emergency_quests', s.level || 1)) {
             if (!s.emergencyQuest || !s.emergencyQuest.id.endsWith(today)) {
               s.emergencyQuest = generateEmergencyQuest(s.level || 1);
               s.emergencyDone = false;
               s.emergencyFailed = false;
-              setTimeout(() => {
-                triggerSystemMessage("NOTFALL-MISSION ENTDECKT", [
-                  "ACHTUNG: Eine temporale Anomalie wurde registriert.",
-                  `Mission: ${s.emergencyQuest.title}`,
-                  "Die Belohnungen für diese Aufgabe wurden verdoppelt.",
-                  "Versagen wird nicht toleriert."
-                ]);
-              }, 2500);
+              isNewEmergency = true;
             }
           }
           if (!s.hiddenQuests) s.hiddenQuests = { discovered: [], completed: [] };
@@ -332,8 +327,8 @@ export function useGameState(initialHunterName, onLogout) {
               s.todayModifier = getDailyModifier();
             }
           }
-          // BUG FIX #3: Only show STATUS-CHECK once per session, and only when
-          // there is genuinely new information. Bundled into a single message.
+          // UNIFIED BOOT BRIEFING: Bundle ALL startup info into a single system
+          // message instead of multiple separate modals. Shown quickly (300ms).
           setTimeout(() => {
             const statusCheckKey = 'sl_status_check_' + today;
             try {
@@ -341,19 +336,27 @@ export function useGameState(initialHunterName, onLogout) {
               sessionStorage.setItem(statusCheckKey, 'shown');
             } catch { /* sessionStorage may not be available */ }
 
-            // Gather all relevant status lines into one bundled message
+            // Gather ALL relevant status lines into one bundled briefing
             const statusLines = [
               `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`
             ];
             const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
             if (activeDailies.length > 0) statusLines.push(`Aktive Tages-Quests: ${activeDailies.length}`);
-            if (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) statusLines.push("⚠️ NOTFALL-MISSION AKTIV");
+            // Emergency quest info (replaces the former separate modal)
+            if (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) {
+              if (isNewEmergency) {
+                statusLines.push(`⚠ NOTFALL-MISSION: ${s.emergencyQuest.title}`);
+                statusLines.push("Belohnungen verdoppelt. Versagen wird nicht toleriert.");
+              } else {
+                statusLines.push("⚠️ NOTFALL-MISSION AKTIV");
+              }
+            }
             if (s.penaltyZone?.active) statusLines.push("⚠️ PENALTY ZONE AKTIV: XP-Malus -20%");
             if (s.shadowRegression?.active) statusLines.push("🔥 SHADOW REGRESSION: Redemption-Quests verfügbar");
             if (s.streak >= 5) statusLines.push(`🔥 Serie: ${s.streak} Tage — Weiter so!`);
 
             triggerSystemMessage("STATUS-CHECK", statusLines);
-          }, 1500);
+          }, 300);
           if (s.statPoints === undefined) s.statPoints = 0;
           if (!s.hunterName && initialHunterName) {
             s.hunterName = initialHunterName;
@@ -437,11 +440,14 @@ export function useGameState(initialHunterName, onLogout) {
           xpMult: 1, goldMult: 1, isSystem: true
         };
 
-        triggerSystemMessage("NEUE AUFGABE", [
-          "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
-          `"${randTask.title}"`,
-          "Schließen Sie diese zeitnah ab, Hunter."
-        ]);
+        // Only show full modal after boot phase (first 10s) to avoid modal spam on startup
+        if (Date.now() - bootTimestampRef.current > 10000) {
+          triggerSystemMessage("NEUE AUFGABE", [
+            "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
+            `"${randTask.title}"`,
+            "Schließen Sie diese zeitnah ab, Hunter."
+          ]);
+        }
 
         persist({
           ...currentState,
