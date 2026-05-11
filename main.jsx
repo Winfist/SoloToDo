@@ -16,6 +16,53 @@ try {
   document.documentElement.dataset.theme = "default";
 }
 
+// ── NATIVE APP: Block ALL zoom gestures (pinch, double-tap, Ctrl+scroll) ──
+// Prevents the WebView from ever revealing it's a browser
+document.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 1) { e.preventDefault(); }
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
+  if (e.touches.length > 1) { e.preventDefault(); }
+}, { passive: false });
+
+// Block double-tap zoom
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(e) {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) { e.preventDefault(); }
+  lastTouchEnd = now;
+}, { passive: false });
+
+// Block Ctrl+scroll (desktop browser zoom) and Ctrl+Plus/Minus
+document.addEventListener('wheel', function(e) {
+  if (e.ctrlKey) { e.preventDefault(); }
+}, { passive: false });
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+    e.preventDefault();
+  }
+});
+
+// Block context menu (long-press on mobile shows browser context menu)
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
+
+// Block Safari-specific gesture zoom events (proprietary Safari API)
+document.addEventListener('gesturestart', function(e) {
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('gesturechange', function(e) {
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('gestureend', function(e) {
+  e.preventDefault();
+}, { passive: false });
+
 // ── GLOBAL ERROR CATCHER FOR NATIVE WEBVIEWS ──
 // Enhanced: captures error.stack when available to bypass cross-origin masking
 window.mobileErrors = [];
