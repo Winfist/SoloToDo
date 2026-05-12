@@ -148,6 +148,7 @@ export const DEFAULT_STATE = {
   },
   settings: {
     autoSystemTasks: false,
+    questIntensity: "hunter_patrol",
     pageTransitionSpeed: 1,
   },
   widgetConfig: {

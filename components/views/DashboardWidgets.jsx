@@ -1,5 +1,6 @@
 import React from "react";
 import { STAT_ICONS, NAV_ICONS, GATE_ICONS, SHADOW_ICONS, STORY_ICONS } from "../../data/icons.js";
+import { CATEGORIES, DIFFICULTIES, QUEST_TYPES_CONFIG } from "../../data/gameData.js";
 import StreakFlame from "../ui/StreakFlame.jsx";
 import { getToday, formatLocalDateTime } from "../../data/dateUtils.js";
 
@@ -109,7 +110,93 @@ export function DailyProgressWidget({ state, theme }) {
   );
 }
 
-export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeReminder }) {
+export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeReminder, setShowTaskScan, setShowCreate }) {
+  const today = getToday();
+  const activeQuests = (state.quests || []).filter(q => !q.completed);
+  const completedTodayCount = (state.completedQuests || []).filter(q => q.completedAt === today).length;
+  const dueNowCount = activeQuests.filter(q => q.type === "daily" || !q.dueDate || q.dueDate <= today).length;
+  const overdueCount = activeQuests.filter(q => q.dueDate && q.dueDate < today).length;
+  const totalToday = dueNowCount + completedTodayCount;
+  const progressPct = totalToday ? Math.round((completedTodayCount / totalToday) * 100) : 0;
+  const habitsOpen = (state.habits || []).filter(h => h.active !== false && !h.history?.[today]).length;
+  const streakRisk = (state.streak || 0) > 0 && completedTodayCount === 0 && (state.streak || 0) > 0;
+  const nextReminder = (state.reminders || [])
+    .filter(r => !r.fired && r.reminderAt && new Date(r.reminderAt).getTime() > Date.now())
+    .sort((a, b) => new Date(a.reminderAt) - new Date(b.reminderAt))[0];
+  const statusColor = overdueCount > 0 ? "#ef4444" : progressPct >= 100 ? "#22c55e" : theme.primary;
+
+  return (
+    <section style={{
+      background: "linear-gradient(180deg, rgba(8,12,24,0.9), rgba(5,7,15,0.96))",
+      border: "1px solid rgba(148,163,184,0.12)",
+      borderTop: `1px solid ${statusColor}38`,
+      borderRadius: 16,
+      padding: 14,
+      boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
+      overflow: "hidden",
+    }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 12, alignItems: "center" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 10, letterSpacing: 1.4, color: statusColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>HEUTE</div>
+          <h2 style={{ margin: "3px 0 0", color: "#f8fafc", fontSize: 21, lineHeight: 1.05, fontFamily: "'Outfit',sans-serif", fontWeight: 900 }}>Tagesstatus</h2>
+          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5, lineHeight: 1.35 }}>
+            {overdueCount > 0 ? `${overdueCount} ueberfaellig` : "Keine Altlasten"} / {dueNowCount} offene Quests
+          </div>
+        </div>
+        <div style={{
+          width: 54,
+          height: 54,
+          borderRadius: 16,
+          display: "grid",
+          placeItems: "center",
+          background: `conic-gradient(${statusColor} ${progressPct * 3.6}deg, rgba(255,255,255,0.08) 0deg)`,
+          boxShadow: `0 0 22px ${statusColor}18`,
+        }}>
+          <div style={{ width: 43, height: 43, borderRadius: 13, background: "rgba(5,7,15,0.97)", display: "grid", placeItems: "center", textAlign: "center" }}>
+            <div>
+              <div style={{ fontSize: 15, color: "#f8fafc", fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>{progressPct}%</div>
+              <div style={{ color: "#64748b", fontSize: 8, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>DONE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 13 }}>
+        {[
+          { label: "ERLEDIGT", value: completedTodayCount, color: progressPct >= 100 ? "#22c55e" : theme.primary },
+          { label: "SERIE", value: streakRisk ? "offen" : `${state.streak || 0}d`, color: streakRisk ? "#f59e0b" : "#f97316" },
+          { label: "HABITS", value: habitsOpen, color: habitsOpen > 0 ? "#22c55e" : "#64748b" },
+        ].map(item => (
+          <div key={item.label} style={{
+            padding: "9px 10px",
+            borderRadius: 11,
+            background: "rgba(255,255,255,0.026)",
+            border: `1px solid ${item.color}22`,
+            minWidth: 0,
+          }}>
+            <div style={{ color: item.color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{item.label}</div>
+            <div style={{ color: "#e2e8f0", fontSize: 13, marginTop: 4, fontWeight: 800, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis" }}>{item.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {nextReminder && (
+        <div style={{ marginTop: 10, padding: "9px 10px", borderRadius: 11, background: "rgba(255,255,255,0.024)", border: `1px solid ${theme.primary}22`, display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 8, alignItems: "center" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: theme.primary, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>REMINDER</div>
+            <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis" }}>{formatLocalDateTime(nextReminder.reminderAt)}</div>
+          </div>
+          <div style={{ display: "flex", gap: 5 }}>
+            <button onClick={() => snoozeReminder?.(nextReminder.id, 15)} style={{ padding: "5px 7px", borderRadius: 7, background: `${theme.primary}14`, border: `1px solid ${theme.primary}24`, color: theme.primary, fontSize: 9, fontWeight: 800 }}>+15</button>
+            <button onClick={() => snoozeReminder?.(nextReminder.id, 60)} style={{ padding: "5px 7px", borderRadius: 7, background: `${theme.primary}14`, border: `1px solid ${theme.primary}24`, color: theme.primary, fontSize: 9, fontWeight: 800 }}>+60</button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeReminder, onCompleteQuest, onOpenQuest, createQuest, setShowTaskScan, setShowCreate }) {
   const today = getToday();
   const priorityRank = { high: 0, medium: 1, low: 2 };
   const typeRank = { daily: 0, weekly: 1, side: 2, chained: 3, hidden: 4 };
@@ -129,7 +216,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
         || (a.isSystem ? 1 : 0) - (b.isSystem ? 1 : 0)
         || (typeRank[a.type] ?? 5) - (typeRank[b.type] ?? 5);
     })
-    .slice(0, 3);
+    .slice(0, 4);
   const nextReminder = (state.reminders || [])
     .filter(r => !r.fired && r.reminderAt && new Date(r.reminderAt).getTime() > Date.now())
     .sort((a, b) => new Date(a.reminderAt) - new Date(b.reminderAt))[0];
@@ -137,6 +224,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
   const habitsOpen = (state.habits || []).filter(h => h.active !== false && !h.history?.[today]).length;
   const streakRisk = (state.streak || 0) > 0 && !completedToday;
   const overdueCount = activeQuests.filter(q => q.dueDate && q.dueDate < today).length;
+  const primaryQuest = focusQuests[0] || null;
 
   const dueLabel = (quest) => {
     if (!quest.dueDate) return quest.energy || "Offen";
@@ -145,31 +233,173 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
     return quest.dueDate;
   };
 
+  const questMeta = (quest) => {
+    const diff = DIFFICULTIES.find(d => d.key === quest?.difficulty) || DIFFICULTIES[1] || DIFFICULTIES[0];
+    const cat = CATEGORIES.find(c => c.key === quest?.category) || CATEGORIES[0];
+    const typeCfg = QUEST_TYPES_CONFIG[quest?.type] || QUEST_TYPES_CONFIG.side;
+    const urgent = quest?.dueDate && quest.dueDate < today;
+    const accent = urgent ? "#ef4444" : quest?.priority === "high" ? "#f59e0b" : diff?.color || theme.primary;
+    const xp = Math.round((diff?.xp || 15) * (quest?.chainMultiplier || 1) * (typeCfg?.xpMult || 1));
+    const gold = Math.round((diff?.gold || 25) * (quest?.chainMultiplier || 1) * (typeCfg?.goldMult || 1));
+    const subQuests = quest?.subQuests || [];
+    const completedSubs = subQuests.filter(sq => sq.completed).length;
+    const blocked = subQuests.length > 0 && completedSubs < subQuests.length;
+    return { diff, cat, accent, xp, gold, subQuests, completedSubs, blocked };
+  };
+
+  const primaryMeta = primaryQuest ? questMeta(primaryQuest) : null;
+  const primaryActionLabel = primaryQuest?.isScreenTime ? "PRUEFEN" : primaryMeta?.blocked ? "ETAPPEN" : "ERLEDIGT";
+
+  const handleQuestAction = (quest) => {
+    if (!quest) {
+      if (setShowCreate) setShowCreate(true);
+      else if (createQuest) createQuest({ title: "5 Minuten Ordnung schaffen", difficulty: "easy", category: "agi", type: "side", priority: "medium", energy: "quick" });
+      return;
+    }
+    const meta = questMeta(quest);
+    if (meta.blocked) {
+      onOpenQuest?.(quest);
+      return;
+    }
+    onCompleteQuest?.(quest.id, null);
+  };
+
   return (
     <section style={{
-      background: "linear-gradient(180deg, rgba(8,12,24,0.96), rgba(4,6,14,0.98))",
+      background: `linear-gradient(180deg, ${theme.primary}10 0%, rgba(8,12,24,0.96) 32%, rgba(4,6,14,0.98) 100%)`,
       border: `1px solid ${streakRisk ? "#f59e0b44" : "rgba(148,163,184,0.14)"}`,
-      borderRadius: 14,
-      padding: 16,
-      boxShadow: "0 12px 30px rgba(0,0,0,0.24)",
+      borderTop: `1px solid ${theme.primary}45`,
+      borderRadius: 16,
+      padding: 15,
+      boxShadow: `0 16px 36px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)`,
+      overflow: "hidden",
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 10, letterSpacing: 1.4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>HEUTE</div>
-          <h2 style={{ margin: "3px 0 0", fontSize: 22, lineHeight: 1.05, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900 }}>Einsatzplan</h2>
+          <h2 style={{ margin: "3px 0 0", fontSize: 24, lineHeight: 1.04, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900 }}>Naechste Quest</h2>
           <div style={{ marginTop: 5, color: "#94a3b8", fontSize: 12 }}>
             {overdueCount > 0 ? `${overdueCount} überfällig` : "Keine Altlasten"} / {dueNowCount} Schritte offen
           </div>
         </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 24, color: "#f8fafc", fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>{progressPct}%</div>
-          <div style={{ color: "#64748b", fontSize: 10, fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>erledigt</div>
+        <div style={{
+          width: 58,
+          height: 58,
+          borderRadius: 16,
+          display: "grid",
+          placeItems: "center",
+          background: `conic-gradient(${progressPct >= 100 ? "#22c55e" : theme.primary} ${progressPct * 3.6}deg, rgba(255,255,255,0.08) 0deg)`,
+          flexShrink: 0,
+          boxShadow: `0 0 24px ${theme.primary}18`,
+        }}>
+          <div style={{ width: 46, height: 46, borderRadius: 13, background: "rgba(5,7,15,0.96)", display: "grid", placeItems: "center", textAlign: "center" }}>
+            <div>
+              <div style={{ fontSize: 16, color: "#f8fafc", fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>{progressPct}%</div>
+              <div style={{ color: "#64748b", fontSize: 8, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>DONE</div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 14 }}>
         <div style={{ width: `${progressPct}%`, height: "100%", borderRadius: 999, background: progressPct >= 100 ? "#22c55e" : theme.primary, transition: "width 0.7s ease" }} />
       </div>
+
+      {primaryQuest ? (
+        <div
+          onClick={() => onOpenQuest?.(primaryQuest)}
+          style={{
+            borderRadius: 14,
+            padding: 13,
+            background: `linear-gradient(135deg, ${primaryMeta.accent}14, rgba(255,255,255,0.026))`,
+            border: `1px solid ${primaryMeta.accent}32`,
+            cursor: onOpenQuest ? "pointer" : "default",
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: "46px minmax(0, 1fr)", gap: 12, alignItems: "start" }}>
+            <div style={{
+              width: 46,
+              height: 46,
+              borderRadius: 13,
+              display: "grid",
+              placeItems: "center",
+              background: `${primaryMeta.accent}14`,
+              border: `1px solid ${primaryMeta.accent}38`,
+              boxShadow: `inset 0 0 18px ${primaryMeta.accent}10`,
+              overflow: "hidden",
+            }}>
+              {primaryMeta.cat?.iconSrc ? (
+                <img src={primaryMeta.cat.iconSrc} alt="" style={{ width: 31, height: 31, objectFit: "contain", filter: "brightness(1.15)" }} />
+              ) : (
+                <span style={{ color: primaryMeta.accent, fontWeight: 900 }}>{primaryMeta.cat?.stat || "Q"}</span>
+              )}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 7, flexWrap: "wrap" }}>
+                <span style={{ color: primaryMeta.accent, background: `${primaryMeta.accent}12`, border: `1px solid ${primaryMeta.accent}28`, padding: "2px 7px", borderRadius: 7, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>
+                  {dueLabel(primaryQuest).toUpperCase()}
+                </span>
+                <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", padding: "2px 7px", borderRadius: 7, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+                  {primaryMeta.diff?.label || "Normal"}
+                </span>
+                <span style={{ color: "#a78bfa", background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.18)", padding: "2px 7px", borderRadius: 7, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+                  +{primaryMeta.xp} XP
+                </span>
+              </div>
+              <div style={{ color: "#f8fafc", fontSize: 18, fontWeight: 900, lineHeight: 1.16, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {primaryQuest.title}
+              </div>
+              <div style={{ color: "#64748b", fontSize: 11, marginTop: 6, lineHeight: 1.35, fontFamily: "'Outfit',sans-serif" }}>
+                {primaryQuest.context ? `${primaryQuest.context} / ` : ""}{primaryQuest.energy || "medium"} / +{primaryMeta.gold} Gold
+                {primaryMeta.subQuests.length > 0 ? ` / ${primaryMeta.completedSubs}/${primaryMeta.subQuests.length} Etappen` : ""}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", gap: 7, marginTop: 12 }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleQuestAction(primaryQuest); }}
+              style={{
+                minHeight: 38,
+                borderRadius: 10,
+                background: primaryMeta.blocked ? "rgba(255,255,255,0.045)" : `linear-gradient(135deg, ${primaryMeta.accent}, ${theme.accent || primaryMeta.accent})`,
+                color: primaryMeta.blocked ? primaryMeta.accent : "#fff",
+                border: `1px solid ${primaryMeta.blocked ? primaryMeta.accent + "38" : "rgba(255,255,255,0.18)"}`,
+                fontSize: 11,
+                fontWeight: 900,
+                fontFamily: "'JetBrains Mono',monospace",
+                letterSpacing: 1,
+                cursor: "pointer",
+                boxShadow: primaryMeta.blocked ? "none" : `0 10px 24px ${primaryMeta.accent}22`,
+              }}
+            >
+              {primaryActionLabel}
+            </button>
+            {onOpenQuest && (
+              <button onClick={(e) => { e.stopPropagation(); onOpenQuest(primaryQuest); }} style={{ minHeight: 38, padding: "0 11px", borderRadius: 10, background: "rgba(255,255,255,0.035)", color: "#cbd5e1", border: "1px solid rgba(255,255,255,0.08)", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>
+                DETAILS
+              </button>
+            )}
+            {can?.("focus_mode") && (
+              <button onClick={(e) => { e.stopPropagation(); setShowFocusMode?.(true); }} style={{ minHeight: 38, padding: "0 11px", borderRadius: 10, background: `${theme.primary}12`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}2e`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>
+                FOKUS
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: 15, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 12 }}>
+          <div style={{ color: "#f8fafc", fontSize: 17, fontWeight: 900, fontFamily: "'Outfit',sans-serif" }}>Alles frei.</div>
+          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5, lineHeight: 1.45 }}>Lege eine kleine Quest an, damit der naechste Schritt sofort sichtbar ist.</div>
+          <div style={{ display: "grid", gridTemplateColumns: setShowTaskScan && can?.("ai_task_scan") ? "1fr 1fr" : "1fr", gap: 8, marginTop: 12 }}>
+            <button onClick={() => handleQuestAction(null)} style={{ minHeight: 38, borderRadius: 10, background: `${theme.primary}18`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}34`, fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>NEUE QUEST</button>
+            {setShowTaskScan && can?.("ai_task_scan") && (
+              <button onClick={() => setShowTaskScan(true)} style={{ minHeight: 38, borderRadius: 10, background: "rgba(255,255,255,0.035)", color: "#cbd5e1", border: "1px solid rgba(255,255,255,0.08)", fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>SCAN</button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
         <div style={{ color: "#64748b", fontSize: 10, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.2 }}>NÄCHSTE SCHRITTE</div>
@@ -190,11 +420,11 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
       </div>
 
       <div style={{ display: "grid", gap: 7 }}>
-        {focusQuests.length ? focusQuests.map((q, i) => {
+        {focusQuests.length > 1 ? focusQuests.slice(1).map((q, i) => {
           const urgent = q.dueDate && q.dueDate < today;
           const accent = urgent ? "#ef4444" : q.priority === "high" ? "#f59e0b" : theme.primary;
           return (
-            <div key={q.id} style={{
+            <div key={q.id} onClick={() => onOpenQuest?.(q)} style={{
               display: "grid",
               gridTemplateColumns: "26px minmax(0, 1fr) auto",
               alignItems: "center",
@@ -203,8 +433,9 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
               borderRadius: 10,
               background: urgent ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.025)",
               border: `1px solid ${urgent ? "#ef44442f" : "rgba(255,255,255,0.07)"}`,
+              cursor: onOpenQuest ? "pointer" : "default",
             }}>
-              <span style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", background: `${accent}16`, color: accent, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{i + 1}</span>
+              <span style={{ width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", background: `${accent}16`, color: accent, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{i + 2}</span>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.title}</div>
                 <div style={{ color: "#64748b", fontSize: 10, marginTop: 3, fontFamily: "'JetBrains Mono',monospace" }}>
@@ -218,7 +449,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
           );
         }) : (
           <div style={{ padding: 14, borderRadius: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", color: "#94a3b8", fontSize: 12 }}>
-            Keine offenen Fokus-Aufgaben.
+            Keine weiteren Schritte.
           </div>
         )}
       </div>

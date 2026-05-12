@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import NativeStatsDashboard from "./NativeStatsDashboard";
 import ScreenTimeDashboard from "./ScreenTimeDashboard.jsx";
 import { Capacitor } from "@capacitor/core";
+import QuestIntensityControl from "./QuestIntensityControl.jsx";
 
 // ─── NAV TAB REGISTRY ─────────────────────────────────────────
 // All possible bottom-navigation tabs the user can choose from.
@@ -1252,7 +1253,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
            SECTION 4B: AUFGABEN-AUTOMATION
          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <SettingsSection title="Aufgaben-Automation" icon="AUTO" color="#22d3ee" open={openSection === "automation"} onToggle={() => toggleSection("automation")} theme={theme}>
-        <SettingRow label="Automatische System-Quests" desc="Alle 3 Stunden neue System-Aufgaben vorschlagen" value={getSetting("autoSystemTasks", false)} onChange={() => toggleSetting("autoSystemTasks", false)} theme={theme} />
+        <QuestIntensityControl state={state} persist={persist} theme={theme} />
       </SettingsSection>
 
       {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

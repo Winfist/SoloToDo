@@ -18,13 +18,13 @@ export const DASHBOARD_WIDGETS = [
 ];
 
 export const DEFAULT_DASHBOARD_LAYOUT = [
-  "today_command",
   "hunter_status",
+  "today_command",
+  "quests",
   "streak_display",
   "daily_progress",
   "health_summary",
   "screen_time_summary",
-  "quests",
   "gem_booster",
   "habits",
   "micro_habits",
@@ -47,6 +47,34 @@ const LEGACY_CLEANUP_LAYOUT = [
   "next_unlock",
 ];
 
+const LEGACY_DEFAULT_LAYOUT = [
+  "today_command",
+  "hunter_status",
+  "streak_display",
+  "daily_progress",
+  "health_summary",
+  "screen_time_summary",
+  "quests",
+  "gem_booster",
+  "habits",
+  "micro_habits",
+  "next_unlock",
+];
+
+const LEGACY_QUEST_FIRST_LAYOUT = [
+  "today_command",
+  "streak_display",
+  "daily_progress",
+  "health_summary",
+  "screen_time_summary",
+  "quests",
+  "hunter_status",
+  "gem_booster",
+  "habits",
+  "micro_habits",
+  "next_unlock",
+];
+
 function sameOrder(a = [], b = []) {
   return a.length === b.length && a.every((key, index) => key === b[index]);
 }
@@ -54,7 +82,13 @@ function sameOrder(a = [], b = []) {
 export function mergeConfig(saved, can) {
   const allKeys = DASHBOARD_WIDGETS.map(w => w.key);
   const savedLayout = saved?.layout || null;
-  let layout = (sameOrder(savedLayout, LEGACY_CLEANUP_LAYOUT) ? DEFAULT_DASHBOARD_LAYOUT : (savedLayout || DEFAULT_DASHBOARD_LAYOUT))
+  let layout = (
+    sameOrder(savedLayout, LEGACY_CLEANUP_LAYOUT)
+    || sameOrder(savedLayout, LEGACY_DEFAULT_LAYOUT)
+    || sameOrder(savedLayout, LEGACY_QUEST_FIRST_LAYOUT)
+      ? DEFAULT_DASHBOARD_LAYOUT
+      : (savedLayout || DEFAULT_DASHBOARD_LAYOUT)
+  )
     .filter(k => allKeys.includes(k));
   let hidden = saved?.hidden ?? [...DEFAULT_HIDDEN_WIDGETS];
   const collapsed = saved?.collapsed ?? {};
@@ -67,14 +101,26 @@ export function mergeConfig(saved, can) {
     }
   }
 
+  const hunterIdx = layout.indexOf("hunter_status");
+  const todayIdx = layout.indexOf("today_command");
+  if (hunterIdx !== -1 && todayIdx !== -1 && hunterIdx > todayIdx) {
+    layout.splice(hunterIdx, 1);
+    layout.splice(layout.indexOf("today_command"), 0, "hunter_status");
+  }
+  const questIdx = layout.indexOf("quests");
+  const orderedTodayIdx = layout.indexOf("today_command");
+  if (questIdx !== -1 && orderedTodayIdx !== -1 && questIdx < orderedTodayIdx) {
+    layout.splice(questIdx, 1);
+    layout.splice(layout.indexOf("today_command") + 1, 0, "quests");
+  }
+
   // Carousel widgets must always be in layout (they render in the horizontal strip).
   // If the user's saved config predates these widgets, they'd end up in "hidden" and never show.
   const carouselKeys = DASHBOARD_WIDGETS.filter(w => w.carousel).map(w => w.key);
   for (const key of carouselKeys) {
     if (!layout.includes(key)) {
-      // Insert after today_command so they're grouped at the top
-      const todayIdx = layout.indexOf('today_command');
-      layout.splice(todayIdx + 1, 0, key);
+      const anchorIdx = layout.indexOf('quests');
+      layout.splice(anchorIdx + 1, 0, key);
       hidden = hidden.filter(k => k !== key);
     }
   }

@@ -18,6 +18,7 @@ import NativeStatsDashboard from "../NativeStatsDashboard.jsx";
 import { ScreenTimeSummaryWidget } from "./ScreenTimeSummaryWidget.jsx";
 import ScreenTimeDashboard from "../ScreenTimeDashboard.jsx";
 import { ScreenTimeVerifyModal } from "../ScreenTimeVerifyModal.jsx";
+import QuestIntensityControl from "../QuestIntensityControl.jsx";
 
 // ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
 const EDIT_MODE_CSS = `
@@ -102,7 +103,7 @@ export default function DashboardView({
   const [activeScreenTimeQuest, setActiveScreenTimeQuest] = useState(null);
 
   const handleInterceptComplete = useCallback((questId, rect) => {
-    const allQuests = filteredQuests || [];
+    const allQuests = [...(filteredQuests || []), ...(state?.quests || [])];
     const q = allQuests.find(qu => qu.id === questId);
     if (q && q.isScreenTime) {
       setActiveScreenTimeQuest(q);
@@ -110,13 +111,14 @@ export default function DashboardView({
       return;
     }
     completeQuest(questId, rect);
-  }, [filteredQuests, completeQuest]);
+  }, [filteredQuests, state?.quests, completeQuest]);
 
   // ── Quest sub-state (unchanged from original) ──
   const [originFilter, setOriginFilter] = useState("all");
   const [collapsedSections, setCollapsedSections] = useState({});
   const [quickAddMode, setQuickAddMode] = useState(false);
   const [quickAddTitle, setQuickAddTitle] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const toggleSection = (key) => setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -361,6 +363,38 @@ export default function DashboardView({
   const sortedVisibleQuests = [...visibleQuests].sort(sortByFocus);
   const systemQuests = visibleQuests.filter(q => q.isSystem).sort(sortByFocus);
   const userQuests = visibleQuests.filter(q => !q.isSystem).sort(sortByFocus);
+  const completedTodayCount = (state.completedQuests || []).filter(q => q.completedAt === todayKey).length;
+  const overdueVisibleCount = visibleQuests.filter(q => q.dueDate && q.dueDate < todayKey).length;
+  const dueTodayVisibleCount = visibleQuests.filter(q => q.type === "daily" || q.dueDate === todayKey).length;
+  const quickVisibleCount = visibleQuests.filter(q => q.energy === "quick").length;
+  const questTypeFilterOptions = [
+    { key: "all", label: "Alle", color: theme.accent || theme.primary },
+    { key: "daily", label: "Daily", color: "#22d3ee" },
+    { key: "side", label: "Side", color: "#a78bfa" },
+    ...(can('weekly_quests') ? [{ key: "weekly", label: "Woche", color: "#8b5cf6" }] : []),
+    ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
+    ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: `Hidden ${hiddenQuestCount}`, color: "#6366f1", icon: QUEST_ICONS.hidden }] : []),
+  ];
+  const questOriginFilterOptions = [
+    { key: "all", label: "Alle Quellen" },
+    { key: "system", label: "System" },
+    { key: "custom", label: "Eigene" },
+  ];
+  const activeQuestFilterCount = (questFilter !== "all" ? 1 : 0) + (originFilter !== "all" ? 1 : 0);
+  const hasActiveQuestFilters = activeQuestFilterCount > 0;
+  const questTypeLabel = questTypeFilterOptions.find(f => f.key === questFilter)?.label || "Alle";
+  const questOriginLabel = questOriginFilterOptions.find(f => f.key === originFilter)?.label || "Alle Quellen";
+  const questFilterSummary = hasActiveQuestFilters
+    ? [questFilter !== "all" ? questTypeLabel : null, originFilter !== "all" ? questOriginLabel : null].filter(Boolean).join(" / ")
+    : "Alle offenen Quests";
+  const overdueQuestList = sortedVisibleQuests.filter(q => q.dueDate && q.dueDate < todayKey);
+  const todayQuestList = sortedVisibleQuests.filter(q => !(q.dueDate && q.dueDate < todayKey) && (q.type === "daily" || q.dueDate === todayKey));
+  const laterQuestList = sortedVisibleQuests.filter(q => !(q.dueDate && q.dueDate < todayKey) && !(q.type === "daily" || q.dueDate === todayKey));
+  const questBoardSections = [
+    { key: "overdue", title: "Ueberfaellig", color: "#ef4444", quests: overdueQuestList },
+    { key: "today", title: "Heute", color: theme.primary, quests: todayQuestList },
+    { key: "later", title: "Spaeter", color: "#64748b", quests: laterQuestList },
+  ].filter(section => section.quests.length > 0);
   const showGrouped = false && originFilter === "all" && (systemQuests.length > 0 && userQuests.length > 0);
 
   const SectionHeader = ({ title, icon, color, count, sectionKey }) => (
@@ -396,6 +430,8 @@ export default function DashboardView({
               can={can}
               setShowFocusMode={setShowFocusMode}
               snoozeReminder={snoozeReminder}
+              setShowTaskScan={setShowTaskScan}
+              setShowCreate={setShowCreate}
             />
           ),
           isEmpty: false
@@ -531,7 +567,14 @@ export default function DashboardView({
         return {
           isEmpty: false,
           content: (
-            <>
+            <div style={{
+              background: "linear-gradient(180deg, rgba(8,12,24,0.94), rgba(4,6,14,0.98))",
+              border: "1px solid rgba(148,163,184,0.13)",
+              borderTop: `1px solid ${theme.primary}38`,
+              borderRadius: 16,
+              padding: 14,
+              boxShadow: "0 14px 32px rgba(0,0,0,0.26)",
+            }}>
               {/* ── EMERGENCY QUEST ── */}
               {can('emergency_quests') && state.emergencyQuest && (
                 <EmergencyQuestCard quest={state.emergencyQuest} done={state.emergencyDone} failed={state.emergencyFailed} onComplete={completeEmergencyQuest} theme={theme} />
@@ -543,78 +586,157 @@ export default function DashboardView({
                 alignItems: "flex-end",
                 justifyContent: "space-between",
                 gap: 12,
-                margin: "2px 0 10px",
+                margin: "2px 0 12px",
               }}>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 10, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.4 }}>AUFTRAEGE</div>
-                  <div style={{ fontSize: 18, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900, lineHeight: 1.1 }}>Quest Board</div>
+                  <div style={{ fontSize: 24, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900, lineHeight: 1.05 }}>Quest Board</div>
+                  <div style={{ marginTop: 5, color: "#94a3b8", fontSize: 12, lineHeight: 1.35 }}>
+                    Alle offenen Quests an einem Ort. Erledigen, filtern, neu anlegen.
+                  </div>
                 </div>
-                <div style={{ color: "#94a3b8", fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>
-                  {visibleQuests.length} offen
+                <div style={{ minWidth: 66, textAlign: "center", padding: "8px 10px", borderRadius: 12, background: `${theme.primary}10`, border: `1px solid ${theme.primary}28`, color: theme.accent || theme.primary, fontFamily: "'JetBrains Mono',monospace" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{visibleQuests.length}</div>
+                  <div style={{ fontSize: 8, fontWeight: 900, marginTop: 3 }}>OFFEN</div>
                 </div>
               </div>
 
-              <div style={{ marginBottom: 12, padding: 8, borderRadius: 12, background: "rgba(8,12,24,0.78)", border: "1px solid rgba(148,163,184,0.12)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {can('quest_filters') && <div style={{ display: "flex", gap: 4, overflowX: "auto", flex: 1, scrollbarWidth: "none" }}>
-                    {[
-                      { key: "all", label: "Alle", color: theme.accent },
-                      { key: "daily", label: "Daily", color: "#22d3ee" },
-                      { key: "side", label: "Side", color: "#a78bfa" },
-                      ...(can('weekly_quests') ? [{ key: "weekly", label: "Woche", color: "#8b5cf6" }] : []),
-                      ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
-                      ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: `Hidden ${hiddenQuestCount}`, color: "#6366f1", icon: QUEST_ICONS.hidden }] : []),
-                    ].map(f => (
-                      <button key={f.key} onClick={() => setQuestFilter(f.key)} style={{
-                        padding: "6px 9px", borderRadius: 8, fontSize: 10, fontWeight: 800, flexShrink: 0,
-                        background: questFilter === f.key ? f.color + "1a" : "transparent",
-                        color: questFilter === f.key ? f.color : "#475569",
-                        border: `1px solid ${questFilter === f.key ? f.color + "44" : "rgba(255,255,255,0.05)"}`,
-                        transition: "all 0.2s", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5,
-                      }}>
-                        {f.icon ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><img src={f.icon} alt="" style={{ width: 10, height: 10, objectFit: "contain" }} />{f.label}</span> : f.label}
-                      </button>
-                    ))}
-                  </div>}
-                  <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                    {can('ai_task_scan') && setShowTaskScan && (
-                      <button onClick={() => setShowTaskScan(true)} style={{ height: 34, padding: "0 10px", borderRadius: 9, background: "rgba(34,211,238,0.08)", color: theme.primary, border: `1px solid ${theme.primary}2c`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>SCAN</button>
-                    )}
-                    {createQuest && (
-                      <button onClick={() => quickAddMode ? setQuickAddMode(false) : setQuickAddMode(true)} style={{ width: 32, height: 32, borderRadius: 10, background: quickAddMode ? theme.primary + "22" : "rgba(255,255,255,0.04)", color: quickAddMode ? theme.primary : "#64748b", border: `1px solid ${quickAddMode ? theme.primary + "55" : "rgba(255,255,255,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 700, transition: "all 0.2s" }}>+</button>
-                    )}
-                    <button onClick={() => setShowCreate(true)} style={{ padding: "0 12px", height: 32, borderRadius: 10, fontSize: 10, fontWeight: 900, background: `${theme.primary}18`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}34`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s" }}>NEU</button>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 7, marginBottom: 12 }}>
+                {[
+                  { label: "Heute", value: dueTodayVisibleCount, color: theme.primary },
+                  { label: "Erledigt", value: completedTodayCount, color: "#22c55e" },
+                  { label: "Quick", value: quickVisibleCount, color: "#f59e0b" },
+                  { label: "Ueber", value: overdueVisibleCount, color: overdueVisibleCount > 0 ? "#ef4444" : "#64748b" },
+                ].map(item => (
+                  <div key={item.label} style={{
+                    minWidth: 0,
+                    padding: "8px 7px",
+                    borderRadius: 10,
+                    background: "rgba(255,255,255,0.024)",
+                    border: `1px solid ${item.color}22`,
+                  }}>
+                    <div style={{ color: item.color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</div>
+                    <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 900, fontFamily: "'Outfit',sans-serif", marginTop: 3 }}>{item.value}</div>
                   </div>
+                ))}
+              </div>
+
+              <div style={{ marginBottom: 12, padding: 11, borderRadius: 14, background: "rgba(2,6,23,0.52)", border: "1px solid rgba(148,163,184,0.12)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 10, alignItems: "center", marginBottom: can('quest_filters') ? 10 : 0 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>BOARD-STEUERUNG</div>
+                    <div style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{questFilterSummary}</div>
+                  </div>
+                  {can('quest_filters') && (
+                    <button
+                      onClick={() => setFiltersOpen(open => !open)}
+                      aria-expanded={filtersOpen || hasActiveQuestFilters}
+                      style={{
+                        minHeight: 32,
+                        padding: "0 10px",
+                        borderRadius: 999,
+                        background: hasActiveQuestFilters ? `${theme.primary}16` : "rgba(255,255,255,0.035)",
+                        color: hasActiveQuestFilters ? (theme.accent || theme.primary) : "#94a3b8",
+                        border: `1px solid ${hasActiveQuestFilters ? theme.primary + "36" : "rgba(255,255,255,0.08)"}`,
+                        fontSize: 9,
+                        fontWeight: 900,
+                        fontFamily: "'JetBrains Mono',monospace",
+                        cursor: "pointer",
+                      }}
+                    >
+                      FILTER{hasActiveQuestFilters ? ` ${activeQuestFilterCount}` : ""}
+                    </button>
+                  )}
                 </div>
-                {can('quest_filters') && (
-                  <div style={{ display: "flex", gap: 5, marginTop: 7 }}>
-                    {[
-                      { key: "all", label: "Alle Quellen" },
-                      { key: "system", label: "System" },
-                      { key: "custom", label: "Eigene" },
-                    ].map(f => (
-                      <button
-                        key={f.key}
-                        onClick={() => setOriginFilter(f.key)}
-                        style={{
-                          flex: 1,
-                          padding: "6px 4px",
-                          borderRadius: 8,
-                          background: originFilter === f.key ? "rgba(255,255,255,0.06)" : "transparent",
-                          border: `1px solid ${originFilter === f.key ? "rgba(148,163,184,0.2)" : "rgba(255,255,255,0.05)"}`,
-                          color: originFilter === f.key ? "#cbd5e1" : "#475569",
-                          fontSize: 9,
-                          fontWeight: 800,
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 6 }}>
+                  <button onClick={() => setShowCreate(true)} style={{ minHeight: 36, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}24, ${theme.primary}10)`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}36`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>NEUE QUEST</button>
+                  {createQuest && (
+                    <button onClick={() => quickAddMode ? setQuickAddMode(false) : setQuickAddMode(true)} style={{ minHeight: 36, borderRadius: 10, background: quickAddMode ? `${theme.primary}18` : "rgba(255,255,255,0.032)", color: quickAddMode ? theme.primary : "#94a3b8", border: `1px solid ${quickAddMode ? theme.primary + "40" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>QUICK +</button>
+                  )}
+                  {can('ai_task_scan') && setShowTaskScan && (
+                    <button onClick={() => setShowTaskScan(true)} style={{ minHeight: 36, borderRadius: 10, background: "rgba(34,211,238,0.07)", color: theme.primary, border: `1px solid ${theme.primary}28`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>SCAN</button>
+                  )}
+                </div>
+
+                {can('quest_filters') && (filtersOpen || hasActiveQuestFilters) && (
+                  <div style={{ marginTop: 11, paddingTop: 10, borderTop: "1px solid rgba(148,163,184,0.1)", display: "grid", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <div style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>ANZEIGE EINGRENZEN</div>
+                      {hasActiveQuestFilters && (
+                        <button
+                          onClick={() => { setQuestFilter("all"); setOriginFilter("all"); }}
+                          style={{
+                            padding: "5px 8px",
+                            borderRadius: 8,
+                            background: "rgba(255,255,255,0.025)",
+                            border: "1px solid rgba(255,255,255,0.07)",
+                            color: "#94a3b8",
+                            fontSize: 8,
+                            fontWeight: 900,
+                            fontFamily: "'JetBrains Mono',monospace",
+                            cursor: "pointer",
+                          }}
+                        >
+                          ZURUECK
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))", gap: 6 }}>
+                      {questTypeFilterOptions.map(f => (
+                        <button key={f.key} onClick={() => setQuestFilter(f.key)} style={{
+                          minHeight: 32,
+                          padding: "0 8px",
+                          borderRadius: 999,
+                          fontSize: 10,
+                          fontWeight: 900,
+                          background: questFilter === f.key ? f.color + "18" : "rgba(255,255,255,0.02)",
+                          color: questFilter === f.key ? f.color : "#64748b",
+                          border: `1px solid ${questFilter === f.key ? f.color + "50" : "rgba(255,255,255,0.06)"}`,
+                          transition: "all 0.2s",
                           fontFamily: "'JetBrains Mono',monospace",
                           cursor: "pointer",
-                        }}
-                      >{f.label}</button>
-                    ))}
+                        }}>
+                          {f.icon ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><img src={f.icon} alt="" style={{ width: 10, height: 10, objectFit: "contain" }} />{f.label}</span> : f.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                      {questOriginFilterOptions.map(f => (
+                        <button
+                          key={f.key}
+                          onClick={() => setOriginFilter(f.key)}
+                          style={{
+                            minHeight: 31,
+                            padding: "0 6px",
+                            borderRadius: 999,
+                            background: originFilter === f.key ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.018)",
+                            border: `1px solid ${originFilter === f.key ? "rgba(148,163,184,0.25)" : "rgba(255,255,255,0.06)"}`,
+                            color: originFilter === f.key ? "#cbd5e1" : "#64748b",
+                            fontSize: 9,
+                            fontWeight: 900,
+                            fontFamily: "'JetBrains Mono',monospace",
+                            cursor: "pointer",
+                          }}
+                        >{f.label}</button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
-
+              <div style={{ marginBottom: 12, padding: 11, borderRadius: 14, background: "rgba(15,23,42,0.34)", border: "1px dashed rgba(148,163,184,0.18)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: "#94a3b8", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>SYSTEM-EINSTELLUNG</div>
+                    <div style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4 }}>Regelt automatische Systemrufe.</div>
+                  </div>
+                  <span style={{ padding: "5px 8px", borderRadius: 999, background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.13)", color: "#94a3b8", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>KEINE QUEST</span>
+                </div>
+                <QuestIntensityControl state={state} persist={persist} theme={theme} compact surface="embedded" />
+              </div>
 
               {/* ── QUICK ADD INPUT ── */}
               {quickAddMode && (
@@ -652,7 +774,33 @@ export default function DashboardView({
                   <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
                 </div>
               ) : (
-                <div style={{ marginBottom: 24 }}>
+                <div style={{ marginBottom: 24, display: "grid", gap: 12 }}>
+                  {questBoardSections.map(section => (
+                    <section key={section.key}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 7 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: 999, background: section.color, boxShadow: `0 0 12px ${section.color}55`, flexShrink: 0 }} />
+                          <span style={{ color: section.color, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>{section.title}</span>
+                        </div>
+                        <span style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{section.quests.length}</span>
+                      </div>
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {section.quests.map((q) => (
+                          <QuestCard
+                            key={q.id}
+                            quest={q}
+                            index={sortedVisibleQuests.findIndex(item => item.id === q.id)}
+                            theme={theme}
+                            onComplete={handleInterceptComplete}
+                            onEdit={startEditingQuest}
+                            onDelete={deleteQuest}
+                            onCompleteSubQuest={completeSubQuest}
+                            onOpenDetail={onOpenDetail}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  ))}
                   {showGrouped ? (
                     <>
                       {systemQuests.length > 0 && (
@@ -673,13 +821,13 @@ export default function DashboardView({
                       )}
                     </>
                   ) : (
-                    sortedVisibleQuests.map((q, i) => (
+                    null && sortedVisibleQuests.map((q, i) => (
                       <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
                     ))
                   )}
                 </div>
               )}
-            </>
+            </div>
           )
         };
 
@@ -1011,7 +1159,7 @@ export default function DashboardView({
 
               {/* Actual widget content */}
               {content}
-              {!editMode && def.key === "today_command" && renderSummaryCarousel()}
+              {!editMode && def.key === "quests" && renderSummaryCarousel()}
             </div>
           );
         })}

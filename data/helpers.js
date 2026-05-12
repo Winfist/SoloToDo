@@ -123,7 +123,7 @@ export function generateDailySystemQuests(count = 3, state = null) {
   const selected = [];
   const generatedIds = new Set();
 
-  if (needsDeficiencyFocus && lowestStat) {
+  if (needsDeficiencyFocus && lowestStat && selected.length < count) {
     const penaltyPool = validPool.filter(q => q.category === lowestStat);
     if (penaltyPool.length > 0) {
       const penaltyQ = penaltyPool[Math.floor(Math.random() * penaltyPool.length)];
@@ -140,26 +140,28 @@ export function generateDailySystemQuests(count = 3, state = null) {
     }
   }
 
-  // --- Inject Screen Time OCR Quest ---
-  const limitMinutes = state?.screenTimePreferences?.dailyLimitMinutes || 120;
-  const hours = Math.floor(limitMinutes / 60);
-  const minutes = limitMinutes % 60;
-  const timeString = minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  // --- Inject Screen Time OCR Quest only when the feature is configured ---
+  if (state?.screenTimePreferences?.enabled && selected.length < count) {
+    const limitMinutes = state?.screenTimePreferences?.dailyLimitMinutes || 120;
+    const hours = Math.floor(limitMinutes / 60);
+    const minutes = limitMinutes % 60;
+    const timeString = minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 
-  generatedIds.add("screen_time_quest");
-  selected.push({
-    id: `sys_screentime_${genId()}`,
-    title: `Weniger als ${timeString} Bildschirmzeit heute`,
-    desc: "Beweisfoto (Einstellungen -> Bildschirmzeit) hochladen und KI den Fokus verifizieren lassen.",
-    category: "int",
-    difficulty: "hard", // Making it a bit harder to encourage focus!
-    type: "daily",
-    isSystem: true,
-    isScreenTime: true, // Special flag for our Modal intercept
-    xpMult: 2.0,
-    goldMult: 2.5,
-    createdAt: getToday()
-  });
+    generatedIds.add("screen_time_quest");
+    selected.push({
+      id: `sys_screentime_${genId()}`,
+      title: `Weniger als ${timeString} Bildschirmzeit heute`,
+      desc: "Beweisfoto (Einstellungen -> Bildschirmzeit) hochladen und KI den Fokus verifizieren lassen.",
+      category: "int",
+      difficulty: "hard", // Making it a bit harder to encourage focus!
+      type: "daily",
+      isSystem: true,
+      isScreenTime: true, // Special flag for our Modal intercept
+      xpMult: 2.0,
+      goldMult: 2.5,
+      createdAt: getToday()
+    });
+  }
 
   const shuffled = validPool.filter(q => !generatedIds.has(q.id)).sort(() => Math.random() - 0.5);
   for (const q of shuffled) {

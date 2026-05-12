@@ -25,6 +25,7 @@ import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
 import LifeDomainsOnboarding from "./components/LifeDomainsOnboarding.jsx";
 import { HUNTER_CODEX } from "./data/hunterCodex.js";
+import { getDailySystemQuestCount } from "./data/questIntensity.js";
 const InnerSanctum = React.lazy(() => import("./components/InnerSanctum.jsx"));
 const ShadowRegressionCinematic = React.lazy(() => import("./components/ShadowRegressionCinematic.jsx"));
 const SoulLinkView = React.lazy(() => import("./components/SoulLinkView.jsx"));
@@ -441,7 +442,7 @@ function App({ initialHunterName, onLogout }) {
     // Small delay so static quests render first, then swap silently
     const timer = setTimeout(async () => {
       const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
-      const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
+      const aiQuests = await generateDailySystemQuestsAsync(getDailySystemQuestCount(state), state, geminiAI.generateQuests);
       if (!aiQuests?.length) return;
       const isAI = aiQuests.some(q => q.aiGenerated);
       if (!isAI) return; // No AI result — keep static quests

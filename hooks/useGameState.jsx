@@ -21,6 +21,7 @@ import { buildQuestRewardFlow, buildEmergencyRewardFlow, buildDungeonRewardFlow,
 import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextMonday } from '../data/seasons.js';
 import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER_UNLOCK_MESSAGES } from '../data/featureUnlocks.js';
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
+import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
@@ -268,8 +269,11 @@ export function useGameState(initialHunterName, onLogout) {
             // BUG FIX: Keep redemption quests alive if shadow regression is still active
             const regressionActive = s.shadowRegression?.active;
             s.quests = (s.quests || []).filter(q => !q.isSystem && !q.isSeasonal && !(q.isRedemption && !regressionActive));
-            const newSysQuests = generateDailySystemQuests(3, s);
+            const newSysQuests = generateDailySystemQuests(getDailySystemQuestCount(s), s);
             s.quests = [...s.quests, ...newSysQuests];
+            if (s.settings?.autoSystemTasks === true) {
+              s.lastSystemTaskTime = Date.now();
+            }
             s.emergencyQuest = null;
             s.emergencyDone = false;
             s.emergencyFailed = false;
@@ -402,11 +406,18 @@ export function useGameState(initialHunterName, onLogout) {
     const currentState = stateRef.current;
     if (!currentState || loading) return;
     if (currentState.settings?.autoSystemTasks !== true) return;
-    const TASK_INTERVAL = 3 * 3600 * 1000; // 3 hours
+    const TASK_INTERVAL = getQuestIntensityIntervalMs(currentState);
+    const intensity = getQuestIntensityPreset(currentState);
     const now = Date.now();
     const lastTime = currentState.lastSystemTaskTime || 0;
 
     if (now - lastTime >= TASK_INTERVAL) {
+      const activeAutoTasks = (currentState.quests || []).filter(q =>
+        !q.completed
+        && (q.autoAssigned || (q.isSystem && q.type === "side" && !q.isCharismaQuest))
+      ).length;
+      if (activeAutoTasks >= getQuestIntensityActiveCap(currentState)) return;
+
       // Find tasks in QUEST_POOL not currently in state.quests and not in completedQuests
       const availablePool = QUEST_POOL.filter(q =>
         !currentState.quests.some(sq => sq.title === q.title) &&
@@ -443,15 +454,18 @@ export function useGameState(initialHunterName, onLogout) {
           id: genId(), title: randTask.title, difficulty: randTask.difficulty || "normal",
           category: randTask.category || "str", desc: randTask.desc || "",
           type: "side", createdAt: getToday(),
-          xpMult: 1, goldMult: 1, isSystem: true
+          createdAtMs: now,
+          xpMult: 1, goldMult: 1, isSystem: true, autoAssigned: true,
+          intensityKey: intensity.key
         };
 
         // Only show full modal after boot phase (first 10s) to avoid modal spam on startup
         if (Date.now() - bootTimestampRef.current > 10000) {
           triggerSystemMessage("NEUE AUFGABE", [
-            "Das System hat Ihnen eine neue Zufalls-Aufgabe zugewiesen:",
+            `${intensity.label}: Das System hat dir eine neue Aufgabe zugewiesen.`,
             `"${randTask.title}"`,
-            "Schließen Sie diese zeitnah ab, Hunter."
+            `Frequenz: ${intensity.intervalHours >= 24 ? "1x pro Tag" : `alle ${intensity.intervalHours} Stunden`}.`,
+            "Schliess sie zeitnah ab, Hunter."
           ]);
         }
 
@@ -460,7 +474,7 @@ export function useGameState(initialHunterName, onLogout) {
           lastSystemTaskTime: now,
           quests: [...currentState.quests, newQuest]
         });
-        notify("Neue Aufgabe aus dem Pool erhalten!", "info");
+        notify(`Systemruf: ${intensity.label} hat eine Quest vergeben.`, "info");
       } else {
         // If pool exhausted, just update time or do nothing
         persist({ ...currentState, lastSystemTaskTime: now });
@@ -468,13 +482,13 @@ export function useGameState(initialHunterName, onLogout) {
     }
   }, [persist, triggerSystemMessage, notify, loading]);
 
-  // --- 3 HOURS TASK ASSIGNMENT ---
+  // --- QUEST INTENSITY TASK ASSIGNMENT ---
   useEffect(() => {
     if (loading) return;
     // Delay initial check to avoid firing during boot sequence
     const initialDelay = setTimeout(assignRandomTask, 5000);
-    // Then every hour check if it's time for a new task
-    const intervalId = setInterval(assignRandomTask, 3600000);
+    // Then check regularly if the selected intensity is ready for a new task.
+    const intervalId = setInterval(assignRandomTask, 15 * 60 * 1000);
     return () => { clearTimeout(initialDelay); clearInterval(intervalId); };
   }, [loading, assignRandomTask]);
 
@@ -1503,7 +1517,7 @@ export function useGameState(initialHunterName, onLogout) {
       ...DEFAULT_STATE,
       hunterName: name || "Hunter",
       lastActiveDate: getToday(),
-      quests: generateDailySystemQuests(3, DEFAULT_STATE),
+      quests: generateDailySystemQuests(getDailySystemQuestCount(DEFAULT_STATE), DEFAULT_STATE),
       dungeons: generateDungeons("E"),
       lastDungeonRefresh: getToday(),
       achievements: { unlocked: [], notified: [] },
