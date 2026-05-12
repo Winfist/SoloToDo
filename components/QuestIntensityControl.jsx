@@ -20,14 +20,221 @@ function getNextSystemCall(state, preset, enabled) {
   return formatQuestIntensityCooldown(remaining);
 }
 
-export default function QuestIntensityControl({ state, persist, theme, compact = false, surface = "card" }) {
+// ── Premium Locked Overlay ──────────────────────────────────────
+// A gorgeous upsell overlay shown over the intensity control for free users.
+// Designed to make the user *feel* what they're missing.
+function PremiumLockedOverlay({ theme, onOpenPremium }) {
+  const accentColor = theme?.primary || "#7c3aed";
+  const glowColor = theme?.accent || accentColor;
+
+  return (
+    <div style={{
+      position: "absolute",
+      inset: 0,
+      zIndex: 10,
+      borderRadius: "inherit",
+      overflow: "hidden",
+      cursor: "pointer",
+    }} onClick={() => onOpenPremium?.("quest_intensity")}>
+      {/* Backdrop blur + dark overlay */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: "rgba(3,5,15,0.72)",
+        backdropFilter: "blur(8px) saturate(0.5)",
+        WebkitBackdropFilter: "blur(8px) saturate(0.5)",
+      }} />
+
+      {/* Animated scan line */}
+      <div style={{
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        width: 80,
+        background: `linear-gradient(90deg, transparent, ${accentColor}28, transparent)`,
+        animation: "intensityScanLine 4s ease-in-out infinite",
+        pointerEvents: "none",
+      }} />
+
+      {/* Glow orb top-right */}
+      <div style={{
+        position: "absolute",
+        top: -20,
+        right: -20,
+        width: 100,
+        height: 100,
+        borderRadius: "50%",
+        background: `radial-gradient(circle, ${accentColor}22, transparent 70%)`,
+        animation: "intensityGlowPulse 3s ease-in-out infinite",
+        pointerEvents: "none",
+      }} />
+
+      {/* Content */}
+      <div style={{
+        position: "relative",
+        zIndex: 2,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: "18px 16px",
+        textAlign: "center",
+        gap: 10,
+      }}>
+        {/* Lock icon ring */}
+        <div style={{
+          width: 52,
+          height: 52,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${accentColor}1a, ${accentColor}08)`,
+          border: `1.5px solid ${accentColor}44`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: `0 0 32px ${accentColor}22, inset 0 0 20px ${accentColor}10`,
+          animation: "intensityLockBreath 2.5s ease-in-out infinite",
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={glowColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 8px ${accentColor}88)` }}>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+
+        {/* Eyebrow */}
+        <div style={{
+          fontSize: 8,
+          letterSpacing: 3,
+          color: "#fbbf24",
+          fontFamily: "'JetBrains Mono',monospace",
+          fontWeight: 900,
+          textTransform: "uppercase",
+        }}>
+          Hunter Pro Feature
+        </div>
+
+        {/* Title */}
+        <div style={{
+          fontSize: 15,
+          fontWeight: 900,
+          color: "#f8fafc",
+          fontFamily: "'Cinzel',serif",
+          letterSpacing: 0.5,
+          lineHeight: 1.2,
+          textShadow: `0 0 20px ${accentColor}44`,
+        }}>
+          Intensitaet anpassen
+        </div>
+
+        {/* Description */}
+        <div style={{
+          fontSize: 11,
+          color: "#94a3b8",
+          lineHeight: 1.45,
+          maxWidth: 260,
+        }}>
+          Steuere, wie oft dein System dich fordert.
+          Von <span style={{ color: "#cbd5e1", fontWeight: 700 }}>Baby Gate</span> bis <span style={{ color: "#ef4444", fontWeight: 700 }}>Monarch Call</span>.
+        </div>
+
+        {/* CTA Button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpenPremium?.("quest_intensity"); }}
+          style={{
+            marginTop: 4,
+            padding: "10px 22px",
+            borderRadius: 12,
+            border: `1px solid ${accentColor}55`,
+            background: `linear-gradient(135deg, ${accentColor}28, rgba(168,85,247,0.14))`,
+            color: "#fff",
+            fontSize: 10,
+            fontWeight: 900,
+            fontFamily: "'JetBrains Mono',monospace",
+            letterSpacing: 2,
+            cursor: "pointer",
+            boxShadow: `0 8px 24px ${accentColor}22, inset 0 1px 0 rgba(255,255,255,0.12)`,
+            transition: "all 0.25s ease",
+            position: "relative",
+            overflow: "hidden",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = "translateY(-1px)";
+            e.currentTarget.style.boxShadow = `0 12px 32px ${accentColor}33, inset 0 1px 0 rgba(255,255,255,0.18)`;
+            e.currentTarget.style.borderColor = accentColor + "88";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = "none";
+            e.currentTarget.style.boxShadow = `0 8px 24px ${accentColor}22, inset 0 1px 0 rgba(255,255,255,0.12)`;
+            e.currentTarget.style.borderColor = accentColor + "55";
+          }}
+        >
+          {/* Button shine */}
+          <div style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: 50,
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)",
+            animation: "intensityScanLine 3.5s ease-in-out infinite",
+            pointerEvents: "none",
+          }} />
+          <span style={{ position: "relative" }}>PRO FREISCHALTEN</span>
+        </button>
+
+        {/* Micro-previews of locked presets */}
+        <div style={{
+          display: "flex",
+          gap: 5,
+          marginTop: 4,
+        }}>
+          {QUEST_INTENSITY_PRESETS.map(p => (
+            <div key={p.key} style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: p.color,
+              opacity: 0.5,
+              boxShadow: `0 0 6px ${p.color}66`,
+              transition: "opacity 0.3s",
+            }} />
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes intensityScanLine {
+          0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+          30% { opacity: 0.9; }
+          100% { transform: translateX(800%) skewX(-18deg); opacity: 0; }
+        }
+        @keyframes intensityGlowPulse {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 0.9; transform: scale(1.12); }
+        }
+        @keyframes intensityLockBreath {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 32px ${accentColor}22, inset 0 0 20px ${accentColor}10; }
+          50% { transform: scale(1.06); box-shadow: 0 0 40px ${accentColor}33, inset 0 0 24px ${accentColor}18; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+export default function QuestIntensityControl({ state, persist, theme, compact = false, surface = "card", premiumStatus, onOpenPremium }) {
   const selected = getQuestIntensityPreset(state);
   const enabled = state.settings?.autoSystemTasks === true;
   const activeAutoCount = useMemo(() => (state.quests || []).filter(isAutoQuest).length, [state.quests]);
   const nextCall = getNextSystemCall(state, selected, enabled);
   const embedded = surface === "embedded";
 
+  // Premium gate: free users see a locked overlay
+  const isLocked = premiumStatus && !premiumStatus.active;
+
   const saveSettings = (patch) => {
+    if (isLocked) return; // Block changes for free users
     persist({
       ...state,
       settings: {
@@ -38,10 +245,12 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
   };
 
   const selectPreset = (preset) => {
+    if (isLocked) return;
     saveSettings({ questIntensity: preset.key, autoSystemTasks: true });
   };
 
   const toggleEnabled = () => {
+    if (isLocked) return;
     saveSettings({ autoSystemTasks: !enabled });
   };
 
@@ -59,6 +268,9 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
       border: embedded ? "none" : `1px solid ${enabled ? selected.color + "44" : "rgba(148,163,184,0.12)"}`,
       boxShadow: embedded ? "none" : enabled ? `0 0 24px ${selected.color}18, inset 0 1px 0 rgba(255,255,255,0.06)` : "inset 0 1px 0 rgba(255,255,255,0.04)",
     }}>
+      {/* Premium locked overlay */}
+      {isLocked && <PremiumLockedOverlay theme={theme} onOpenPremium={onOpenPremium} />}
+
       {!embedded && (
         <div style={{
           position: "absolute",
@@ -144,9 +356,10 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
               fontWeight: 900,
               fontFamily: "'JetBrains Mono',monospace",
               letterSpacing: 0,
-              cursor: "pointer",
+              cursor: isLocked ? "default" : "pointer",
               transition: "all 0.2s",
               flexShrink: 0,
+              opacity: isLocked ? 0.4 : 1,
             }}
           >
             {enabled ? "AKTIV" : "AUS"}
@@ -201,12 +414,13 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
                   border: `${embedded ? 1 : 1.5}px solid ${active ? preset.color + (embedded ? "62" : "88") : "rgba(255,255,255,0.07)"}`,
                   background: active ? `${preset.color}${embedded ? "12" : "18"}` : "rgba(255,255,255,0.022)",
                   color: active ? "#fff" : "#94a3b8",
-                  cursor: "pointer",
+                  cursor: isLocked ? "default" : "pointer",
                   textAlign: compact ? "center" : "left",
                   transition: "transform 0.2s ease, border-color 0.2s ease, background 0.2s ease",
                   boxShadow: active && !embedded ? `0 0 18px ${preset.color}22` : "none",
                 }}
                 onMouseEnter={event => {
+                  if (isLocked) return;
                   event.currentTarget.style.transform = "translateY(-1px)";
                   event.currentTarget.style.borderColor = preset.color + "66";
                 }}

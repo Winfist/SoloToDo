@@ -4,8 +4,21 @@ import {
   Settings, RefreshCw, Trash2, Edit3, Heart,
   Coins, Star, Activity, AlertTriangle, Save, X,
   BookOpen, Briefcase, CheckSquare, Mail, Hexagon,
-  Swords, Crosshair, Sparkles, Target
+  Swords, Crosshair, Sparkles, Target, Crown, Lock, Unlock
 } from 'lucide-react';
+
+// ── Premium helpers (mirror data/premium.js logic) ──
+const DAY_MS = 24 * 60 * 60 * 1000;
+function getUserPremiumStatus(premium) {
+  if (!premium) return { active: false, tier: 'free', source: 'none', daysRemaining: 0, activeUntilLabel: null };
+  const activeUntilMs = Date.parse(premium.activeUntil || '');
+  const active = premium.tier === 'hunter_pro' && Number.isFinite(activeUntilMs) && activeUntilMs > Date.now();
+  const daysRemaining = active ? Math.max(1, Math.ceil((activeUntilMs - Date.now()) / DAY_MS)) : 0;
+  const activeUntilLabel = Number.isFinite(activeUntilMs)
+    ? new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(activeUntilMs))
+    : null;
+  return { active, tier: active ? 'hunter_pro' : 'free', source: premium.source || 'none', daysRemaining, activeUntilLabel };
+}
 import QuestOverview from './QuestOverview';
 import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -225,13 +238,22 @@ function UserList({ users, searchQuery, setSearchQuery, onUserSelect, onRefresh 
           return (
             <div key={u.id} className="glass-panel user-card" onClick={() => onUserSelect(u)}>
               <div className="user-card-header">
-                <div className="avatar-circle">
+                <div className="avatar-circle" style={getUserPremiumStatus(u.premium).active ? { borderColor: '#f59e0b', boxShadow: '0 0 12px rgba(245,158,11,0.35)' } : {}}>
                   {(u.displayName || u.hunterName || u.name || u.email || u.id).charAt(0).toUpperCase()}
                 </div>
                 <div className="user-info">
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     {u.displayName || u.hunterName || u.name || 'Account nicht synchronisiert'}
                     <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '12px', background: 'var(--accent)', color: 'white' }}>Lvl {u.level || 1}</span>
+                    {getUserPremiumStatus(u.premium).active ? (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(168,85,247,0.2))', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.4)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700, letterSpacing: '0.5px' }}>
+                        <Crown size={11} /> PRO
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(100,116,139,0.15)', color: '#94a3b8', border: '1px solid rgba(100,116,139,0.25)', fontWeight: 600 }}>
+                        FREE
+                      </span>
+                    )}
                   </h3>
                   <p className="text-muted" style={{ fontSize: '0.85rem' }}>{u.email || u.id.slice(0, 10) + '...'}</p>
                 </div>
@@ -418,15 +440,26 @@ function UserDetail({ user, onBack, onUpdate }) {
     }
   };
 
+  const pStatus = getUserPremiumStatus(user.premium);
+
   return (
     <div className="animate-fade-in">
       <div className="detail-header">
         <button onClick={onBack} className="btn-icon"><ArrowLeft size={20} /></button>
         <div>
-          <h2 style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             {user.displayName || user.hunterName || user.name || 'Account nicht synchronisiert'}
             <span className="badge-level" style={{ fontSize: '0.9rem', padding: '2px 8px', borderRadius: '12px', background: 'var(--accent)', color: 'white' }}>Level {user.level || 1}</span>
             {user.title && <span style={{ fontSize: '0.85rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(255, 215, 0, 0.2)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.4)' }}>{user.title}</span>}
+            {pStatus.active ? (
+              <span style={{ fontSize: '0.8rem', padding: '3px 10px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(245,158,11,0.22), rgba(168,85,247,0.18))', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.45)', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700 }}>
+                <Crown size={13} /> HUNTER PRO
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.8rem', padding: '3px 10px', borderRadius: '12px', background: 'rgba(100,116,139,0.15)', color: '#94a3b8', border: '1px solid rgba(100,116,139,0.25)', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600 }}>
+                <Lock size={13} /> FREE USER
+              </span>
+            )}
           </h2>
           <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><User size={14} /> ID: <span style={{ userSelect: 'all', color: '#fff' }}>{user.id}</span></span>
@@ -688,6 +721,112 @@ function UserDetail({ user, onBack, onUpdate }) {
                   Emergency Quest Auslösen
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* ── PREMIUM MANAGEMENT ── */}
+          <div className="glass-panel" style={{ border: '1px solid rgba(245,158,11,0.25)', background: 'linear-gradient(135deg, rgba(245,158,11,0.06), rgba(168,85,247,0.04), transparent)' }}>
+            <h3 className="section-title"><Crown className="text-warning" style={{ color: '#f59e0b' }} /> Premium Verwaltung</h3>
+            
+            {/* Status display */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ background: 'rgba(0,0,0,0.4)', padding: '12px 14px', borderRadius: '10px', border: `1px solid ${pStatus.active ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.05)'}` }}>
+                <div style={{ fontSize: '0.75rem', color: '#a0a0b0', textTransform: 'uppercase', marginBottom: '6px' }}>Status</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: pStatus.active ? '#22c55e' : '#ef4444', boxShadow: pStatus.active ? '0 0 8px #22c55e' : '0 0 8px #ef4444' }} />
+                  <span style={{ color: pStatus.active ? '#4ade80' : '#fca5a5', fontSize: '0.95rem', fontWeight: 700 }}>{pStatus.active ? 'PREMIUM' : 'FREE'}</span>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.4)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ fontSize: '0.75rem', color: '#a0a0b0', textTransform: 'uppercase', marginBottom: '6px' }}>Quelle</div>
+                <span style={{ color: '#e2e8f0', fontSize: '0.95rem', fontWeight: 600 }}>{pStatus.source === 'beta_code' ? 'Beta Code' : pStatus.source === 'admin_grant' ? 'Admin' : pStatus.source === 'none' ? '—' : pStatus.source}</span>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.4)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ fontSize: '0.75rem', color: '#a0a0b0', textTransform: 'uppercase', marginBottom: '6px' }}>{pStatus.active ? 'Verbleibend' : 'Aktiv bis'}</div>
+                <span style={{ color: pStatus.active ? '#fbbf24' : '#64748b', fontSize: '0.95rem', fontWeight: 700 }}>
+                  {pStatus.active ? `${pStatus.daysRemaining} Tage` : '—'}
+                </span>
+                {pStatus.activeUntilLabel && (
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{pStatus.activeUntilLabel}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Redeemed beta codes */}
+            {user.premium?.betaCodesRedeemed && user.premium.betaCodesRedeemed.length > 0 && (
+              <div style={{ marginBottom: '16px', padding: '10px 12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ fontSize: '0.75rem', color: '#a0a0b0', textTransform: 'uppercase', marginBottom: '8px' }}>Eingelöste Beta-Codes</div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {user.premium.betaCodesRedeemed.map(code => (
+                    <span key={code} style={{ padding: '3px 8px', borderRadius: '6px', background: 'rgba(168,85,247,0.15)', color: '#c4b5fd', fontSize: '0.8rem', border: '1px solid rgba(168,85,247,0.3)', fontFamily: 'monospace' }}>{code}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {/* Grant Premium */}
+              <button
+                onClick={async () => {
+                  const days = prompt('Wie viele Tage Premium gewähren?', '30');
+                  if (!days || isNaN(Number(days))) return;
+                  try {
+                    const userRef = doc(db, 'users', user.id);
+                    const currentPremium = user.premium || {};
+                    const currentActiveUntilMs = Date.parse(currentPremium.activeUntil || '');
+                    const now = Date.now();
+                    const extensionBase = (Number.isFinite(currentActiveUntilMs) && currentActiveUntilMs > now) ? currentActiveUntilMs : now;
+                    const newActiveUntil = new Date(extensionBase + Number(days) * DAY_MS).toISOString();
+                    await updateDoc(userRef, {
+                      'premium.tier': 'hunter_pro',
+                      'premium.planId': 'hunter_pro_monthly',
+                      'premium.status': 'active',
+                      'premium.source': 'admin_grant',
+                      'premium.startedAt': currentPremium.startedAt || new Date(now).toISOString(),
+                      'premium.lastActivatedAt': new Date(now).toISOString(),
+                      'premium.activeUntil': newActiveUntil,
+                    });
+                    alert(`Premium für ${days} Tage gewährt! Aktiv bis ${new Intl.DateTimeFormat('de-DE').format(new Date(newActiveUntil))}`);
+                    onUpdate();
+                    onBack();
+                  } catch (e) {
+                    alert('Fehler: ' + e.message);
+                  }
+                }}
+                className="btn-primary"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'linear-gradient(135deg, #f59e0b, #a855f7)', border: '1px solid rgba(245,158,11,0.5)', color: '#fff', fontWeight: 700 }}
+              >
+                <Crown size={16} /> Premium gewähren
+              </button>
+
+              {/* Revoke Premium */}
+              <button
+                onClick={async () => {
+                  if (!pStatus.active) return alert('User hat kein aktives Premium.');
+                  if (!confirm(`Premium von ${user.displayName || user.hunterName || user.id} wirklich entziehen?`)) return;
+                  try {
+                    const userRef = doc(db, 'users', user.id);
+                    await updateDoc(userRef, {
+                      'premium.tier': 'free',
+                      'premium.status': 'revoked',
+                      'premium.source': 'admin_revoke',
+                      'premium.activeUntil': new Date(0).toISOString(),
+                      'premium.revokedAt': new Date().toISOString(),
+                      'premium.revokedBy': 'admin',
+                    });
+                    alert('Premium wurde entzogen.');
+                    onUpdate();
+                    onBack();
+                  } catch (e) {
+                    alert('Fehler: ' + e.message);
+                  }
+                }}
+                className="btn-danger"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: pStatus.active ? 1 : 0.4, cursor: pStatus.active ? 'pointer' : 'not-allowed' }}
+              >
+                <Lock size={16} /> Premium entziehen
+              </button>
             </div>
           </div>
 

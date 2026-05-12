@@ -797,7 +797,7 @@ export default function DashboardView({
                   </div>
                   <span style={{ padding: "5px 8px", borderRadius: 999, background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.13)", color: "#94a3b8", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>KEINE QUEST</span>
                 </div>
-                <QuestIntensityControl state={state} persist={persist} theme={theme} compact surface="embedded" />
+                <QuestIntensityControl state={state} persist={persist} theme={theme} compact surface="embedded" premiumStatus={premiumStatus} onOpenPremium={openPremiumModal} />
               </div>
 
               {/* ── QUICK ADD INPUT ── */}
