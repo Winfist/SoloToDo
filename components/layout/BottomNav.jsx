@@ -1,5 +1,5 @@
 import React from "react";
-
+import { getPremiumFeatureForRoute } from "../../data/premium.js";
 const SYSTEM_SUB_VIEWS = ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"];
 const TRAINING_SUB_VIEWS = ["goals", "calendar"];
 const TAB_FEATURE_MAP = {
@@ -21,6 +21,7 @@ export default function BottomNav({
   penaltyActive,
   theme,         // legacy JS theme object (still used for colors during migration)
   hidden,        // hide nav (e.g. isCreatingEntry)
+  premiumStatus, // used for pro indicator
 }) {
   const configKeys = navConfig?.tabs || defaultKeys;
 
@@ -72,6 +73,8 @@ export default function BottomNav({
         {tabs.map((tab) => {
           const active = isActive(tab.key);
           const iconSize = tab.isGate ? 36 : 26;
+          const premiumFeature = getPremiumFeatureForRoute(tab.key);
+          const isProLocked = !!premiumFeature && !premiumStatus?.active;
 
           return (
             <button
@@ -147,6 +150,25 @@ export default function BottomNav({
                       : "brightness(0.5) saturate(0.35)",
                   }}
                 />
+                {isProLocked && (
+                  <div style={{
+                    position: "absolute",
+                    top: -6,
+                    right: -14,
+                    background: "rgba(251,191,36,0.15)",
+                    border: "1px solid rgba(251,191,36,0.4)",
+                    borderRadius: 6,
+                    padding: "2px 4px",
+                    backdropFilter: "blur(4px)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.4), 0 0 12px rgba(251,191,36,0.15)",
+                    zIndex: 3
+                  }}>
+                    <span style={{ fontSize: 7, fontWeight: 900, color: "#fde68a", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>PRO</span>
+                  </div>
+                )}
                 {tab.badge > 0 && (
                   <span
                     aria-label={`${tab.badge} ausstehend`}

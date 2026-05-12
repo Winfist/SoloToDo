@@ -1674,6 +1674,7 @@ function App({ initialHunterName, onLogout }) {
           penaltyActive={penaltyActive}
           theme={theme}
           hidden={isCreatingEntry}
+          premiumStatus={premiumStatus}
         />
 
         {/* TRAINING HUB — unified view for habits/goals/calendar */}
@@ -1754,9 +1755,9 @@ function App({ initialHunterName, onLogout }) {
                   title: "HUNTER INTEL", iconSrc: NAV_ICONS.analytics, icon: "📋", color: theme.accent,
                   items: [
                     { key: "stats", iconSrc: STAT_ICONS.str, icon: "📋", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
-                    ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📋", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", icon: "📋", label: "Analytics", locked: true, unlockLevel: 8 }]),
+                    ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📋", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", iconSrc: NAV_ICONS.analytics, icon: "📋", label: "Analytics", locked: true, unlockLevel: 8 }]),
                     ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: "Achievements", locked: true, unlockLevel: 8 }]),
-                    ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "⚔️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", icon: "⚔️", label: "Events", locked: true, unlockLevel: 21 }]),
+                    ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "⚔️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", iconSrc: NAV_ICONS.events, icon: "⚔️", label: "Events", locked: true, unlockLevel: 21 }]),
                   ]
                 }, {
                   title: "ARSENAL", iconSrc: NAV_ICONS.shop, icon: "📋", color: "#f59e0b",
@@ -1764,14 +1765,14 @@ function App({ initialHunterName, onLogout }) {
                     ...(can('shadow_army') ? [{ key: "shadows", iconSrc: SHADOW_ICONS.soldier, icon: "👤", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", iconSrc: SHADOW_ICONS.soldier, icon: "👤", label: "Shadow Army", locked: true, unlockLevel: 15 }]),
                     ...(can('equipment') ? [{ key: "equipment", iconSrc: ITEM_ICONS.blade, icon: "📋", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", iconSrc: ITEM_ICONS.blade, icon: "📋", label: "Equipment", locked: true, unlockLevel: 11 }]),
                     ...(can('jobs') ? [{ key: "jobs", iconSrc: NAV_ICONS.jobs, icon: "📋", label: "Jobs", desc: "Hunter-Klassen" }] : [{ key: "jobs_locked", iconSrc: NAV_ICONS.jobs, icon: "📋", label: "Jobs", locked: true, unlockLevel: 21 }]),
-                    ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, icon: "📋", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` }] : [{ key: "shop_locked", icon: "📋", label: "Shop", locked: true, unlockLevel: 11 }]),
+                    ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, icon: "📋", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` }] : [{ key: "shop_locked", iconSrc: NAV_ICONS.shop, icon: "📋", label: "Shop", locked: true, unlockLevel: 11 }]),
 
                   ]
                 }, {
                   title: "SOCIAL & SPECIAL", iconSrc: NAV_ICONS.guild, icon: "📋", color: "#a855f7",
                   items: [
                     ...(can('sanctum') ? [{ key: "sanctum", icon: "🧘‍♂️", label: "Inner Sanctum", desc: "Meditation & Willenskraft", isOverlay: false }] : [{ key: "sanctum_locked", icon: "🧘‍♂️", label: "Inner Sanctum", locked: true, unlockLevel: 11 }]),
-                    ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", icon: "⏰", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
+                    ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", iconSrc: NAV_ICONS.timer, icon: "⏰", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
                     ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "📋", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "📋", label: "Soul Link", locked: true, unlockLevel: 30 }]),
                     ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", iconSrc: CHA_ICONS.conversation, icon: "📋", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", iconSrc: CHA_ICONS.conversation, icon: "📋", label: "Charisma Dungeons", locked: true, unlockLevel: 30 }]),
                   ]
@@ -1864,16 +1865,21 @@ function App({ initialHunterName, onLogout }) {
                             </>
                           )}
                           <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: premiumLocked ? "linear-gradient(135deg, rgba(251,191,36,0.14), rgba(168,85,247,0.13))" : item.locked ? "rgba(30,34,48,0.4)" : `${section.color}12`, border: `1px solid ${premiumLocked ? "rgba(251,191,36,0.28)" : item.locked ? "rgba(100,116,139,0.1)" : section.color + "22"}`, position: "relative", flexShrink: 0, transition: "all 0.2s", boxShadow: premiumLocked ? "0 0 18px rgba(251,191,36,0.12)" : "none" }}>
-                            {premiumLocked ? (
-                              <span style={{ fontSize: 9, color: "#fde68a", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>PRO</span>
-                            ) : item.locked ? (
-                              <span style={{ fontSize: 16 }}>🔒</span>
-                            ) : item.iconSrc ? (
-                              <img src={item.iconSrc} alt={item.label} style={{ width: 24, height: 24, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 6px ${section.color}55)` }} />
-                            ) : (
-                              <span style={{ fontSize: 18 }}>{item.icon}</span>
-                            )}
-                            {!item.locked && item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -5, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
+                            {item.iconSrc ? (
+  <img src={item.iconSrc} alt={item.label} style={{ width: 24, height: 24, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 6px ${section.color}55)`, opacity: (premiumLocked || item.locked) ? 0.35 : 1 }} />
+) : (
+  <span style={{ fontSize: 18, opacity: (premiumLocked || item.locked) ? 0.35 : 1 }}>{item.icon}</span>
+)}
+{(premiumLocked || item.locked) && (
+  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5 }}>
+    {premiumLocked ? (
+      <span style={{ fontSize: 9, color: "#fde68a", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textShadow: "0 0 8px rgba(0,0,0,0.8)" }}>PRO</span>
+    ) : (
+      <span style={{ fontSize: 16, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.8))" }}>🔒</span>
+    )}
+  </div>
+)}
+{!item.locked && item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -5, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13, fontWeight: 700, color: premiumLocked ? "#fde68a" : item.locked ? "#475569" : "#e2e8f0", fontFamily: "'Cinzel',serif", paddingRight: premiumLocked ? 42 : 0 }}>{item.label}</div>
