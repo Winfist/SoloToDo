@@ -7,8 +7,7 @@ import NativeStatsDashboard from "./NativeStatsDashboard";
 import ScreenTimeDashboard from "./ScreenTimeDashboard.jsx";
 import { Capacitor } from "@capacitor/core";
 import QuestIntensityControl from "./QuestIntensityControl.jsx";
-import PremiumAccessModal from "./PremiumAccessModal.jsx";
-import { getPremiumStatus, PREMIUM_PRODUCT } from "../data/premium.js";
+import { getPremiumFeatureForRoute, getPremiumStatus, isPremiumWidgetModule, PREMIUM_PRODUCT } from "../data/premium.js";
 
 // ─── NAV TAB REGISTRY ─────────────────────────────────────────
 // All possible bottom-navigation tabs the user can choose from.
@@ -669,7 +668,7 @@ function TransitionSwitcher({ state, persist, theme, onOpenShop, onPreviewPageTr
 }
 
 // ─── NAVBAR CUSTOMIZER (Drag & Drop + Tap) ────────────────────
-function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
+function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme, premiumStatus, onOpenPremium }) {
   // Local state so drag reordering is snappy (persist only on commit)
   const [localKeys, setLocalKeys] = useState(navKeys);
   useEffect(() => setLocalKeys(navKeys), [navKeys]);
@@ -807,6 +806,7 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
         {activeTabs.map((tab, i) => {
           const isDragged = dragInfo?.index === i;
           const dynamicStyle = dragInfo ? getItemStyle(i) : {};
+          const premiumLocked = !!getPremiumFeatureForRoute(tab.key) && !premiumStatus?.active;
           return (
             <div
               key={tab.key}
@@ -814,8 +814,9 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
               style={{
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "10px 12px", marginBottom: 6, borderRadius: 14,
-                background: isDragged ? `${theme.primary}18` : "rgba(255,255,255,0.03)",
-                border: `1px solid ${isDragged ? theme.primary + "55" : "rgba(255,255,255,0.06)"}`,
+                background: premiumLocked ? "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(168,85,247,0.07), rgba(255,255,255,0.025))" : isDragged ? `${theme.primary}18` : "rgba(255,255,255,0.03)",
+                border: `1px solid ${premiumLocked ? "rgba(251,191,36,0.22)" : isDragged ? theme.primary + "55" : "rgba(255,255,255,0.06)"}`,
+                boxShadow: premiumLocked ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 20px ${theme.primary}10` : "none",
                 userSelect: "none", WebkitUserSelect: "none",
                 ...dynamicStyle,
               }}
@@ -845,8 +846,15 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
 
               {/* Label */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</div>
-                <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{tab.desc}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: premiumLocked ? "#fde68a" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</div>
+                  {premiumLocked && (
+                    <span style={{ padding: "2px 6px", borderRadius: 999, background: "rgba(251,191,36,0.10)", border: "1px solid rgba(251,191,36,0.22)", color: "#fde68a", fontSize: 7, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
+                      PRO
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 9, color: premiumLocked ? "#a78bfa" : "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{premiumLocked ? "In Free sichtbar, Zugriff per Hunter Pro" : tab.desc}</div>
               </div>
 
               {/* Move up/down */}
@@ -888,34 +896,46 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {availableTabs.map(tab => {
               const locked = tab.requires && !can(tab.requires);
+              const premiumLocked = !!getPremiumFeatureForRoute(tab.key) && !premiumStatus?.active;
               const full = localKeys.length >= MAX_NAV_TABS;
-              const disabled = locked || full;
+              const disabled = locked || premiumLocked || full;
               return (
                 <button
                   key={tab.key}
-                  onClick={disabled ? undefined : () => addTab(tab.key)}
+                  onClick={premiumLocked ? () => onOpenPremium?.(getPremiumFeatureForRoute(tab.key)) : disabled ? undefined : () => addTab(tab.key)}
                   style={{
-                    padding: "10px 12px", borderRadius: 12, border: `1px solid ${disabled ? "rgba(255,255,255,0.04)" : theme.primary + "22"}`,
-                    background: disabled ? "rgba(10,10,22,0.4)" : "rgba(255,255,255,0.02)",
+                    position: "relative",
+                    overflow: "hidden",
+                    padding: "10px 12px", borderRadius: 12, border: `1px solid ${premiumLocked ? "rgba(251,191,36,0.24)" : disabled ? "rgba(255,255,255,0.04)" : theme.primary + "22"}`,
+                    background: premiumLocked ? "linear-gradient(135deg, rgba(251,191,36,0.09), rgba(168,85,247,0.08), rgba(255,255,255,0.025))" : disabled ? "rgba(10,10,22,0.4)" : "rgba(255,255,255,0.02)",
                     display: "flex", alignItems: "center", gap: 8, textAlign: "left",
-                    cursor: disabled ? "default" : "pointer",
-                    opacity: disabled ? 0.4 : 1, filter: locked ? "grayscale(0.7)" : "none",
+                    cursor: premiumLocked ? "pointer" : disabled ? "default" : "pointer",
+                    opacity: locked || full ? 0.4 : 1, filter: locked ? "grayscale(0.7)" : "none",
                     transition: "all 0.2s",
+                    boxShadow: premiumLocked ? `inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 20px ${theme.primary}10` : "none",
                   }}
-                  onMouseEnter={e => { if (!disabled) { e.currentTarget.style.borderColor = theme.primary + "55"; e.currentTarget.style.background = `${theme.primary}0a`; } }}
-                  onMouseLeave={e => { if (!disabled) { e.currentTarget.style.borderColor = theme.primary + "22"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; } }}
+                  onMouseEnter={e => { if (premiumLocked) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = "rgba(251,191,36,0.42)"; } else if (!disabled) { e.currentTarget.style.borderColor = theme.primary + "55"; e.currentTarget.style.background = `${theme.primary}0a`; } }}
+                  onMouseLeave={e => { if (premiumLocked) { e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "rgba(251,191,36,0.24)"; } else if (!disabled) { e.currentTarget.style.borderColor = theme.primary + "22"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; } }}
                 >
-                  {locked ? (
+                  {premiumLocked && (
+                    <span style={{ position: "absolute", top: 6, right: 7, padding: "2px 6px", borderRadius: 999, background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.24)", color: "#fde68a", fontSize: 7, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
+                      PRO
+                    </span>
+                  )}
+                  {premiumLocked ? (
+                    <span style={{ fontSize: 9, color: "#fde68a", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>PRO</span>
+                  ) : locked ? (
                     <span style={{ fontSize: 14 }}>🔒</span>
                   ) : (
                     <img src={tab.iconSrc} alt={tab.label} style={{ width: 18, height: 18, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 3px ${theme.primary}44)` }} />
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: locked ? "#475569" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</div>
-                    <div style={{ fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
-                      {locked ? `Level ${tab.requires === "training_tab" ? 5 : tab.requires === "story" || tab.requires === "dungeons" ? 11 : "?"}` : tab.desc}
+                    <div style={{ fontSize: 11, fontWeight: 700, color: premiumLocked ? "#fde68a" : locked ? "#475569" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</div>
+                    <div style={{ fontSize: 8, color: premiumLocked ? "#a78bfa" : "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
+                      {premiumLocked ? "Noch nicht verfuegbar im Free-Modus" : locked ? `Level ${tab.requires === "training_tab" ? 5 : tab.requires === "story" || tab.requires === "dungeons" ? 11 : "?"}` : tab.desc}
                     </div>
                   </div>
+                  {premiumLocked && <span style={{ fontSize: 8, color: "#fde68a", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>OPEN</span>}
                   {!disabled && <span style={{ fontSize: 14, color: theme.primary, fontWeight: 700 }}>+</span>}
                 </button>
               );
@@ -969,11 +989,10 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
 // ═════════════════════════════════════════════════════════════════
 //  MAIN SETTINGS VIEW
 // ═════════════════════════════════════════════════════════════════
-export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI, activatePremiumCode, notify }) {
+export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onOpenPremium, premiumStatus: premiumStatusProp, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI, activatePremiumCode, notify }) {
   // ── Section states ──
   const [openSection, setOpenSection] = useState(null);
   const toggleSection = (key) => setOpenSection(prev => prev === key ? null : key);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // ── Theme creator cache (existing) ──
   const [primaryCache, setPrimaryCache] = useState(state.customThemeData?.primary || "#3b82f6");
@@ -1004,6 +1023,10 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
   };
 
   const saveCustomTheme = () => {
+    if (!premiumStatus?.active) {
+      onOpenPremium?.("custom_theme");
+      return;
+    }
     persist({
       ...state,
       selectedTheme: "custom",
@@ -1033,7 +1056,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
   const userEmail = auth.currentUser?.email || "—";
   const fontSize = state.settings?.fontSize || "normal";
-  const premiumStatus = getPremiumStatus(state.premium);
+  const premiumStatus = premiumStatusProp || getPremiumStatus(state.premium);
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease", paddingBottom: 60 }}>
@@ -1067,20 +1090,27 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           overflow: "hidden",
           borderRadius: 16,
           padding: 16,
-          background: "linear-gradient(135deg, rgba(168,85,247,0.16), rgba(34,211,238,0.06))",
-          border: `1px solid ${theme.primary}33`,
+          background: `linear-gradient(135deg, rgba(255,255,255,0.07), ${theme.primary}18 46%, rgba(251,191,36,0.08))`,
+          border: "1px solid rgba(251,191,36,0.22)",
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 30px ${theme.primary}16`,
           marginBottom: 12,
         }}>
           <div style={{
             position: "absolute",
             inset: 0,
-            background: `radial-gradient(circle at 80% 0%, ${theme.primary}22, transparent 38%)`,
+            background: `radial-gradient(circle at 80% 0%, ${theme.primary}28, transparent 38%), linear-gradient(110deg, transparent, rgba(255,255,255,0.08), transparent)`,
             pointerEvents: "none",
           }} />
+          <div style={{ position: "absolute", left: 14, right: 14, top: 0, height: 2, background: "linear-gradient(90deg, transparent, rgba(251,191,36,0.75), rgba(255,255,255,0.42), transparent)" }} />
           <div style={{ position: "relative", display: "flex", justifyContent: "space-between", gap: 14, alignItems: "center" }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 9, letterSpacing: 2.5, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>
-                {PREMIUM_PRODUCT.badge}
+              <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap", marginBottom: 7 }}>
+                <span style={{ fontSize: 8, letterSpacing: 2.2, color: "#fde68a", fontFamily: "'JetBrains Mono',monospace", fontWeight: 900 }}>
+                  PREMIUM ACCESS
+                </span>
+                <span style={{ padding: "3px 7px", borderRadius: 999, background: premiumStatus.active ? "rgba(34,197,94,0.12)" : "rgba(168,85,247,0.13)", border: `1px solid ${premiumStatus.active ? "rgba(34,197,94,0.28)" : "rgba(168,85,247,0.28)"}`, color: premiumStatus.active ? "#86efac" : theme.accent, fontSize: 7, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
+                  {premiumStatus.active ? "UNLOCKED" : PREMIUM_PRODUCT.badge}
+                </span>
               </div>
               <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginBottom: 4 }}>
                 {premiumStatus.active ? "Hunter Pro aktiv" : "Hunter Pro freischalten"}
@@ -1088,59 +1118,51 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
               <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5 }}>
                 {premiumStatus.active
                   ? `Dein Beta-Zugang laeuft noch ${premiumStatus.daysRemaining} Tage.`
-                  : "Preise, Vorteile und Beta-Code-Eingabe in einem Popup."}
+                  : "Premium-Popup mit Store-Preisen, Vorteilen und Beta-Code-Aktivierung."}
               </div>
             </div>
             <button
-              onClick={() => setShowPremiumModal(true)}
+              onClick={() => onOpenPremium?.("premium_store")}
               style={{
                 flexShrink: 0,
                 minWidth: 112,
                 minHeight: 42,
                 borderRadius: 12,
-                background: `linear-gradient(135deg, ${theme.primary}44, rgba(168,85,247,0.22))`,
-                border: `1px solid ${theme.primary}66`,
+                background: `linear-gradient(135deg, ${theme.primary}66, rgba(168,85,247,0.36), rgba(251,191,36,0.28))`,
+                border: "1px solid rgba(251,191,36,0.32)",
                 color: "#fff",
                 fontSize: 10,
                 fontWeight: 900,
                 fontFamily: "'JetBrains Mono',monospace",
                 letterSpacing: 1,
                 cursor: "pointer",
-                boxShadow: `0 8px 24px ${theme.primary}24`,
+                boxShadow: `0 10px 28px ${theme.primary}28, inset 0 1px 0 rgba(255,255,255,0.16)`,
               }}
             >
-              {premiumStatus.active ? "STATUS" : "ANSEHEN"}
+              {premiumStatus.active ? "STATUS" : "PRO"}
             </button>
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
-          {["KI Plus", "Analytics", "Cosmetics"].map(label => (
+          {["AI Forge", "Hunter Intel", "Cinematic VFX"].map(label => (
             <div key={label} style={{
               padding: "10px 11px",
               borderRadius: 12,
-              background: "rgba(255,255,255,0.025)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              color: "#cbd5e1",
-              fontSize: 10,
-              fontWeight: 800,
+              background: "linear-gradient(135deg, rgba(255,255,255,0.035), rgba(168,85,247,0.06))",
+              border: "1px solid rgba(255,255,255,0.075)",
+              color: label === "Hunter Intel" ? "#fde68a" : "#cbd5e1",
+              fontSize: 9,
+              fontWeight: 900,
               fontFamily: "'JetBrains Mono',monospace",
               textAlign: "center",
+              letterSpacing: 1,
             }}>
               {label.toUpperCase()}
             </div>
           ))}
         </div>
       </SettingsSection>
-
-      <PremiumAccessModal
-        open={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-        state={state}
-        theme={theme}
-        activatePremiumCode={activatePremiumCode}
-        notify={notify}
-      />
 
       <SettingsSection title="Erscheinungsbild" icon="🎨" color="#a78bfa" open={openSection === "look"} onToggle={() => toggleSection("look")} theme={theme} badge="THEME · DISPLAY">
 
@@ -1204,12 +1226,12 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           </div>
           <button onClick={saveCustomTheme} style={{
             width: "100%", marginTop: 14, padding: 12, borderRadius: 10,
-            background: `linear-gradient(135deg, ${primaryCache}, ${accentCache})`,
+            background: premiumStatus.active ? `linear-gradient(135deg, ${primaryCache}, ${accentCache})` : "linear-gradient(135deg, rgba(168,85,247,0.22), rgba(34,211,238,0.08))",
             border: "none", color: "#fff", fontWeight: 800, fontFamily: "'Cinzel',serif", fontSize: 11,
             cursor: "pointer", letterSpacing: 2, boxShadow: `0 4px 16px ${primaryCache}44`,
             display: "flex", justifyContent: "center", alignItems: "center", gap: 6,
           }}>
-            <img src={SHOP_ICONS.theme} alt="theme" style={{ width: 14, height: 14, objectFit: "contain" }} /> THEME AKTIVIEREN
+            <img src={SHOP_ICONS.theme} alt="theme" style={{ width: 14, height: 14, objectFit: "contain" }} /> {premiumStatus.active ? "THEME AKTIVIEREN" : "PRO THEME FREISCHALTEN"}
           </button>
         </div>
       </SettingsSection>
@@ -1243,8 +1265,8 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
         <div style={{ fontSize: 9, letterSpacing: 3, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>PHASE 3 EFFECTS</div>
 
-        <SettingRow label="Magnetischer Cursor" desc="Gradient-Glow folgt der Maus (nur Desktop)" value={getSetting("magneticCursor", true)} onChange={() => toggleSetting("magneticCursor", true)} color="#6366f1" theme={theme} />
-        <SettingRow label="Screen Shake" desc="Bildschirm-Erschütterung bei Boss/Hard Quests" value={getSetting("screenShake", true)} onChange={() => toggleSetting("screenShake", true)} color="#ef4444" theme={theme} />
+        <SettingRow label="Magnetischer Cursor" desc={premiumStatus.active ? "Gradient-Glow folgt der Maus (nur Desktop)" : "Hunter Pro Effekt"} value={premiumStatus.active && getSetting("magneticCursor", true)} onChange={() => premiumStatus.active ? toggleSetting("magneticCursor", true) : onOpenPremium?.("premium_effects")} color="#6366f1" theme={theme} />
+        <SettingRow label="Screen Shake" desc={premiumStatus.active ? "Bildschirm-Erschütterung bei Boss/Hard Quests" : "Hunter Pro Effekt"} value={premiumStatus.active && getSetting("screenShake", true)} onChange={() => premiumStatus.active ? toggleSetting("screenShake", true) : onOpenPremium?.("premium_effects")} color="#ef4444" theme={theme} />
 
         {/* v3.0 Phase 4 — Ambient & Transitions */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
@@ -1257,7 +1279,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
         <div style={{ fontSize: 9, letterSpacing: 3, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>PHASE 5 EFFECTS</div>
 
-        <SettingRow label="HUD Overlay" desc="Corner-Brackets, Uhr, FPS, Rank-Info" value={getSetting("hudOverlay", true)} onChange={() => toggleSetting("hudOverlay", true)} color="#22d3ee" theme={theme} />
+        <SettingRow label="HUD Overlay" desc={premiumStatus.active ? "Corner-Brackets, Uhr, FPS, Rank-Info" : "Hunter Pro HUD"} value={premiumStatus.active && getSetting("hudOverlay", true)} onChange={() => premiumStatus.active ? toggleSetting("hudOverlay", true) : onOpenPremium?.("premium_effects")} color="#22d3ee" theme={theme} />
       </SettingsSection>
 
 
@@ -1274,6 +1296,8 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           allTabs={ALL_NAV_TABS}
           can={can}
           theme={theme}
+          premiumStatus={premiumStatus}
+          onOpenPremium={onOpenPremium}
         />
       </SettingsSection>
 
@@ -1376,13 +1400,13 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
           {/* AI Toggles */}
           {can?.('ai_verification') ? (
-            <SettingRow label="Quest-Verifikation" desc="Foto-Beweis für +20% XP & Gold" value={state.ai?.verificationEnabled ?? true} onChange={() => toggleAI("verificationEnabled")} color="#22c55e" theme={theme} />
+            <SettingRow label="Quest-Verifikation" desc={premiumStatus.active ? "Foto-Beweis für +20% XP & Gold" : "Hunter Pro: Foto-Beweis & Integritaets-Feedback"} value={premiumStatus.active && (state.ai?.verificationEnabled ?? true)} onChange={() => premiumStatus.active ? toggleAI("verificationEnabled") : onOpenPremium?.("ai_verification")} color="#22c55e" theme={theme} />
           ) : (
             <SettingRow label="Quest-Verifikation" desc="Foto-Beweis für Quest-Abschluss" disabled lockLevel={11} theme={theme} />
           )}
 
           {can?.('ai_coach') ? (
-            <SettingRow label="KI-Systemnachrichten" desc="Dynamische Coach-Interventionen" value={state.ai?.dynamicMessagesEnabled ?? true} onChange={() => toggleAI("dynamicMessagesEnabled")} color="#22c55e" theme={theme} />
+            <SettingRow label="KI-Systemnachrichten" desc={premiumStatus.active ? "Dynamische Coach-Interventionen" : "Hunter Pro: intelligentere System-Impulse"} value={premiumStatus.active && (state.ai?.dynamicMessagesEnabled ?? true)} onChange={() => premiumStatus.active ? toggleAI("dynamicMessagesEnabled") : onOpenPremium?.("ai_coach")} color="#22c55e" theme={theme} />
           ) : (
             <SettingRow label="KI-Systemnachrichten" desc="Coach-Interventionen" disabled lockLevel={8} theme={theme} />
           )}
@@ -1396,7 +1420,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           */}
 
           {can?.('ai_dynamic_quests') ? (
-            <SettingRow label="Dynamische Quests" desc="KI generiert tägliche System-Quests" value={state.ai?.dynamicQuestsEnabled ?? true} onChange={() => toggleAI("dynamicQuestsEnabled")} color="#22c55e" theme={theme} />
+            <SettingRow label="Dynamische Quests" desc={premiumStatus.active ? "KI generiert tägliche System-Quests" : "Hunter Pro: personalisierte Daily Quests"} value={premiumStatus.active && (state.ai?.dynamicQuestsEnabled ?? true)} onChange={() => premiumStatus.active ? toggleAI("dynamicQuestsEnabled") : onOpenPremium?.("ai_dynamic_quests")} color="#22c55e" theme={theme} />
           ) : (
             <SettingRow label="Dynamische Quests" desc="KI-basierte Quest-Generierung" disabled lockLevel={15} theme={theme} />
           )}
@@ -1534,16 +1558,20 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             const wc = state.widgetConfig || {};
             const activeModules = wc.modules || ['streak_xp', 'quests', 'habits', 'micro_habits', 'hunter_card'];
             const isActive = activeModules.includes(mod.key);
+            const lockedByPremium = isPremiumWidgetModule(mod.key) && !premiumStatus?.active;
             return (
-              <div key={mod.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+              <div key={mod.key} onClick={() => lockedByPremium && onOpenPremium?.("widgets")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: lockedByPremium ? "11px 10px" : "10px 0", margin: lockedByPremium ? "6px 0" : 0, borderRadius: lockedByPremium ? 13 : 0, background: lockedByPremium ? "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(168,85,247,0.07), rgba(255,255,255,0.018))" : "transparent", border: lockedByPremium ? "1px solid rgba(251,191,36,0.18)" : "none", borderBottom: lockedByPremium ? "1px solid rgba(251,191,36,0.18)" : "1px solid rgba(255,255,255,0.03)", cursor: lockedByPremium ? "pointer" : "default", boxShadow: lockedByPremium ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 20px ${theme.primary}10` : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: `${mod.color}15`, border: `1px solid ${mod.color}25`, fontSize: 14 }}>{mod.icon}</div>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: lockedByPremium ? "rgba(168,85,247,0.12)" : `${mod.color}15`, border: `1px solid ${lockedByPremium ? "rgba(168,85,247,0.28)" : mod.color + "25"}`, fontSize: 14 }}>{lockedByPremium ? "PRO" : mod.icon}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? "#e2e8f0" : "#475569" }}>{mod.label}</div>
-                    <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{mod.desc}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: lockedByPremium ? "#fde68a" : isActive ? "#e2e8f0" : "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mod.label}</div>
+                      {lockedByPremium && <span style={{ padding: "2px 6px", borderRadius: 999, background: "rgba(251,191,36,0.10)", border: "1px solid rgba(251,191,36,0.22)", color: "#fde68a", fontSize: 7, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>PRO</span>}
+                    </div>
+                    <div style={{ fontSize: 9, color: lockedByPremium ? "#a78bfa" : "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{lockedByPremium ? "Noch nicht verfuegbar im Free-Modus" : mod.desc}</div>
                   </div>
                 </div>
-                <Toggle value={isActive} onChange={() => { const modules = isActive ? activeModules.filter(k => k !== mod.key) : [...activeModules, mod.key]; const widgetConfig = { ...(state.widgetConfig || {}), modules }; persist({ ...state, widgetConfig }); }} color={mod.color} />
+                <Toggle value={!lockedByPremium && isActive} onChange={() => { if (lockedByPremium) { onOpenPremium?.("widgets"); return; } const modules = isActive ? activeModules.filter(k => k !== mod.key) : [...activeModules, mod.key]; const widgetConfig = { ...(state.widgetConfig || {}), modules }; persist({ ...state, widgetConfig }); }} color={mod.color} />
               </div>
             );
           })}

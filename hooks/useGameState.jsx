@@ -22,7 +22,7 @@ import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextM
 import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER_UNLOCK_MESSAGES } from '../data/featureUnlocks.js';
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
-import { getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
@@ -895,12 +895,11 @@ export function useGameState(initialHunterName, onLogout) {
 
   const createQuestsFromInputs = useCallback((inputs = [], options = {}) => {
     if (!state || !Array.isArray(inputs) || inputs.length === 0) return [];
-    const createdCount = state.dailyUserQuestsCreated || 0;
-    const extraSlots = state.extraDailySlots || 0;
-    const maxAllowed = 4 + extraSlots;
-    const slotsLeft = Math.max(0, maxAllowed - createdCount);
+    const questLimit = getDailyQuestCreationStatus(state);
+    const createdCount = questLimit.createdCount;
+    const slotsLeft = questLimit.premiumActive ? inputs.length : questLimit.remaining;
     if (slotsLeft <= 0) {
-      notify("Quest-Limit erreicht! Kaufe weitere Slots im Shop.", "warning");
+      notify("Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.", "warning");
       return [];
     }
 
@@ -1018,11 +1017,10 @@ export function useGameState(initialHunterName, onLogout) {
       return;
     }
 
-    const createdCount = state.dailyUserQuestsCreated || 0;
-    const extraSlots = state.extraDailySlots || 0;
-    const maxAllowed = 4 + extraSlots;
-    if (createdCount >= maxAllowed) {
-      notify("Quest-Limit erreicht! Kaufe weitere Slots im Shop.", "warning");
+    const questLimit = getDailyQuestCreationStatus(state);
+    const createdCount = questLimit.createdCount;
+    if (!questLimit.canCreate) {
+      notify("Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.", "warning");
       return;
     }
 
@@ -1153,9 +1151,14 @@ export function useGameState(initialHunterName, onLogout) {
 
   const addChainedQuest = useCallback((title, category, difficulty) => {
     if (!title.trim()) return;
+    const questLimit = getDailyQuestCreationStatus(state);
+    if (!questLimit.canCreate) {
+      notify("Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.", "warning");
+      return;
+    }
     const totalSteps = 3;
     const firstQuest = generateChainedQuest(title, category, difficulty, 1, totalSteps);
-    persist({ ...state, quests: [...state.quests, firstQuest] });
+    persist({ ...state, quests: [...state.quests, firstQuest], dailyUserQuestsCreated: questLimit.createdCount + 1 });
     notify(`─ Quest-Kette gestartet! ${totalSteps} Schritte · Multiplikator steigt mit jedem Erfolg.`, "info");
   }, [state, persist, notify]);
 
@@ -1192,11 +1195,10 @@ export function useGameState(initialHunterName, onLogout) {
   // ─── QUEST POOL MANAGEMENT ────────────────────────────────────
   const createQuestFromTemplate = useCallback((template) => {
     if (!state) return;
-    const createdCount = state.dailyUserQuestsCreated || 0;
-    const extraSlots = state.extraDailySlots || 0;
-    const maxAllowed = 4 + extraSlots;
-    if (createdCount >= maxAllowed) {
-      notify("Quest-Limit erreicht!", "warning");
+    const questLimit = getDailyQuestCreationStatus(state);
+    const createdCount = questLimit.createdCount;
+    if (!questLimit.canCreate) {
+      notify("Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.", "warning");
       return;
     }
 
@@ -1779,6 +1781,7 @@ export function useGameState(initialHunterName, onLogout) {
   }, [state, persist, notify, triggerSystemMessage]);
 
   const premiumStatus = useMemo(() => getPremiumStatus(state?.premium), [state?.premium]);
+  const questCreationStatus = useMemo(() => getDailyQuestCreationStatus(state), [state?.premium, state?.dailyUserQuestsCreated]);
 
   // Buy a gem shop item
   const buyGemItem = useCallback((item) => {
@@ -2004,6 +2007,7 @@ export function useGameState(initialHunterName, onLogout) {
     claimDailyGemBonus,
     activatePremiumCode,
     premiumStatus,
+    questCreationStatus,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     // Screen Time gamification

@@ -77,6 +77,8 @@ import { QuestVerifyModal } from './components/QuestVerifyModal.jsx';
 import { TaskScanModal } from './components/TaskScanModal.jsx';
 import { AIChatWidget } from './components/AIChatWidget.jsx';
 import QuestDetailModal from './components/QuestDetailModal.jsx';
+import PremiumAccessModal from './components/PremiumAccessModal.jsx';
+import { getDailyQuestCreationStatus, getPremiumFeatureForRoute } from './data/premium.js';
 function hoursUntilMidnight() {
   const now = new Date();
   const midnight = new Date(now);
@@ -262,6 +264,8 @@ function App({ initialHunterName, onLogout }) {
     buyGemItem,
     claimDailyGemBonus,
     activatePremiumCode,
+    premiumStatus,
+    questCreationStatus,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     // Rating system
@@ -364,6 +368,8 @@ function App({ initialHunterName, onLogout }) {
   const [showSeasonView, setShowSeasonView] = React.useState(false);
   const [showCharismaView, setShowCharismaView] = React.useState(false);
   const [showAdModal, setShowAdModal] = React.useState(false);
+  const [showPremiumModal, setShowPremiumModal] = React.useState(false);
+  const [premiumModalFeature, setPremiumModalFeature] = React.useState("premium_store");
   const [detailQuest, setDetailQuest] = React.useState(null);
   const modifier = useMemo(() => getDailyModifier(), []);
   const [showFocusMode, setShowFocusMode] = React.useState(false);
@@ -410,6 +416,49 @@ function App({ initialHunterName, onLogout }) {
     });
   }, [isPageTransitioning]);
 
+  const openPremiumModal = useCallback((feature = "premium_store") => {
+    setPremiumModalFeature(feature);
+    setShowPremiumModal(true);
+  }, []);
+
+  const requirePremium = useCallback((feature, onAllowed) => {
+    if (premiumStatus?.active) {
+      onAllowed?.();
+      return true;
+    }
+    openPremiumModal(feature);
+    return false;
+  }, [openPremiumModal, premiumStatus?.active]);
+
+  const currentQuestCreationStatus = useMemo(
+    () => questCreationStatus || getDailyQuestCreationStatus(state),
+    [questCreationStatus, state?.premium, state?.dailyUserQuestsCreated]
+  );
+
+  const requireQuestSlot = useCallback((onAllowed) => {
+    if (currentQuestCreationStatus.canCreate) {
+      onAllowed?.();
+      return true;
+    }
+    openPremiumModal("unlimited_quests");
+    return false;
+  }, [currentQuestCreationStatus.canCreate, openPremiumModal]);
+
+  const openQuestCreate = useCallback(() => {
+    requireQuestSlot(() => setShowCreate(true));
+  }, [requireQuestSlot, setShowCreate]);
+
+  const requestShowCreate = useCallback((next = true) => {
+    if (next) openQuestCreate();
+    else setShowCreate(false);
+  }, [openQuestCreate, setShowCreate]);
+
+  const navigateToWithAccess = useCallback((key) => {
+    const premiumFeature = getPremiumFeatureForRoute(key);
+    if (premiumFeature && !requirePremium(premiumFeature)) return;
+    navigateTo(key);
+  }, [navigateTo, requirePremium]);
+
   // ─ Progressive Feature Unlock System ─
   const { can, nextLevel } = useFeatureUnlocks(state?.level || 1);
 
@@ -420,12 +469,12 @@ function App({ initialHunterName, onLogout }) {
 
   // Intercept completeQuest to offer photo verification if unlocked
   const handleCompleteQuest = useCallback((questId) => {
-    if (can('ai_verification') && state?.ai?.verificationEnabled && state?.ai?.enabled) {
+    if (premiumStatus?.active && can('ai_verification') && state?.ai?.verificationEnabled && state?.ai?.enabled) {
       const quest = state.quests?.find(q => q.id === questId);
       if (quest) { setVerifyingQuest(quest); return; }
     }
     completeQuest(questId);
-  }, [can, state, completeQuest]);
+  }, [can, state, completeQuest, premiumStatus?.active]);
 
   // ─ AI: Replace static system quests with AI-generated ones after daily reset ─
   // Uses localStorage so the guard survives page reloads — prevents one call per reload
@@ -438,7 +487,7 @@ function App({ initialHunterName, onLogout }) {
     if (lastActiveDateRef.current === today || alreadyGenToday) return;
     lastActiveDateRef.current = today;
     localStorage.setItem(storageKey, today);
-    if (!can('ai_dynamic_quests') || !state.ai?.enabled || !state.ai?.dynamicMessagesEnabled || geminiAI.isRateLimited()) return;
+    if (!premiumStatus?.active || !can('ai_dynamic_quests') || !state.ai?.enabled || !state.ai?.dynamicMessagesEnabled || geminiAI.isRateLimited()) return;
 
     // Small delay so static quests render first, then swap silently
     const timer = setTimeout(async () => {
@@ -456,7 +505,7 @@ function App({ initialHunterName, onLogout }) {
       });
     }, 1500);
     return () => clearTimeout(timer);
-  }, [state?.lastActiveDate, loading]);
+  }, [state?.lastActiveDate, loading, premiumStatus?.active]);
 
   // ─ View Guard: Reset to dashboard if current view is locked ─
   React.useEffect(() => {
@@ -474,6 +523,14 @@ function App({ initialHunterName, onLogout }) {
   }, [view, can]);
 
   React.useEffect(() => {
+    const premiumFeature = getPremiumFeatureForRoute(view);
+    if (premiumFeature && !premiumStatus?.active) {
+      openPremiumModal(premiumFeature);
+      setView("dashboard");
+    }
+  }, [view, premiumStatus?.active, openPremiumModal, setView]);
+
+  React.useEffect(() => {
     localStorage.setItem("sl_dashboard_stats_hidden", JSON.stringify(showDashboardStats));
   }, [showDashboardStats]);
 
@@ -485,7 +542,7 @@ function App({ initialHunterName, onLogout }) {
     if (!state || loading) return;
     const checkCoach = async () => {
       let messages = runCoachChecks(state, prevStateRef.current);
-      if (messages.length > 0 && can('ai_coach') && state?.ai?.dynamicMessagesEnabled && state?.ai?.enabled && !geminiAI.isRateLimited()) {
+      if (messages.length > 0 && premiumStatus?.active && can('ai_coach') && state?.ai?.dynamicMessagesEnabled && state?.ai?.enabled && !geminiAI.isRateLimited()) {
         messages = await enrichCoachMessagesAsync(messages, state, geminiAI.generateSystemMsg);
       }
       if (messages.length > 0) {
@@ -498,7 +555,7 @@ function App({ initialHunterName, onLogout }) {
     const initial = setTimeout(checkCoach, 120000);
     const interval = setInterval(checkCoach, 1800000);
     return () => { clearTimeout(initial); clearInterval(interval); };
-  }, [state?.streak, state?.lastActiveDate, (state?.habits || []).length, loading]);
+  }, [state?.streak, state?.lastActiveDate, (state?.habits || []).length, loading, premiumStatus?.active]);
 
   // Tutorial gate: show tutorial for new users who haven't completed it
   if (!loading && state) {
@@ -626,7 +683,7 @@ function App({ initialHunterName, onLogout }) {
 
 
   return (
-    <ScreenShake disabled={state.settings?.screenShake === false}>
+    <ScreenShake disabled={!premiumStatus?.active || state.settings?.screenShake === false}>
       <div className={[
         state.settings?.rarityBorders === false ? 'vfx-no-borders' : '',
         state.settings?.scrollReveal === false ? 'vfx-no-reveal' : '',
@@ -650,8 +707,8 @@ function App({ initialHunterName, onLogout }) {
         <CompletionFX disabled={state.settings?.completionFx === false} />
         <LetterboxOverlay disabled={state.settings?.letterboxMode === false} />
         <XPParticleTrail disabled={state.settings?.xpParticleTrail === false} />
-        <MagneticCursor disabled={state.settings?.magneticCursor === false} color={theme.primary} />
-        <HUDOverlay rank={rank.name} level={state.level} streak={state.streak || 0} xpPercent={xpPercent} theme={theme} disabled={state.settings?.hudOverlay === false} />
+        <MagneticCursor disabled={!premiumStatus?.active || state.settings?.magneticCursor === false} color={theme.primary} />
+        <HUDOverlay rank={rank.name} level={state.level} streak={state.streak || 0} xpPercent={xpPercent} theme={theme} disabled={!premiumStatus?.active || state.settings?.hudOverlay === false} />
         <MusicPlayer play={isMusicPlaying} />
         {penaltyActive && <div style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", border: "2px solid #ef444422", animation: "penaltyPulse 2s infinite" }} />}
         {/* ── Independent reward UI — silenced while a RewardFlow is active ── */}
@@ -820,7 +877,7 @@ function App({ initialHunterName, onLogout }) {
           )}
 
           {/* DAWN/DUSK PROTOCOL */}
-          {(showDawnDusk || state?.dawnDusk?.currentRun) && (
+          {premiumStatus?.active && (showDawnDusk || state?.dawnDusk?.currentRun) && (
             <DawnDuskProtocol
               state={state} theme={theme}
               startDawnDuskRun={startDawnDuskRun}
@@ -855,7 +912,7 @@ function App({ initialHunterName, onLogout }) {
           )}
 
           {/* SOUL LINK VIEW */}
-          {showSoulLink && (
+          {premiumStatus?.active && showSoulLink && (
             <SoulLinkView
               state={state} theme={theme}
               createSoulLinkCode={createSoulLinkCode}
@@ -867,12 +924,12 @@ function App({ initialHunterName, onLogout }) {
           )}
 
           {/* SEASON VIEW */}
-          {showSeasonView && (
+          {premiumStatus?.active && showSeasonView && (
             <SeasonView state={state} theme={theme} onClose={() => setShowSeasonView(false)} />
           )}
 
           {/* CHARISMA DUNGEONS VIEW */}
-          {showCharismaView && (
+          {premiumStatus?.active && showCharismaView && (
             <CharismaDungeonsView
               state={state} theme={theme}
               startCharismaChain={startCharismaChain}
@@ -1004,7 +1061,7 @@ function App({ initialHunterName, onLogout }) {
                 </div>
                 {/* Soul Link Pill */}
                 {can('soul_link') && state.soulLink?.linkCode && (
-                  <button className="stat-mini press-feedback" onClick={() => setShowSoulLink(true)} style={{
+                  <button className="stat-mini press-feedback" onClick={() => requirePremium("soul_link", () => setShowSoulLink(true))} style={{
                     display: "flex", alignItems: "center", gap: 4,
                     background: state.soulLink.bothActive ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
                     borderColor: state.soulLink.bothActive ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.1)",
@@ -1018,7 +1075,7 @@ function App({ initialHunterName, onLogout }) {
                 )}
                 {/* Season Indicator */}
                 {can('seasons') && state.seasons?.currentSeason && (
-                  <button className="stat-mini press-feedback" onClick={() => setShowSeasonView(true)} style={{
+                  <button className="stat-mini press-feedback" onClick={() => requirePremium("seasons", () => setShowSeasonView(true))} style={{
                     cursor: "pointer", fontSize: 12,
                     background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "#9ca3af"
                   }} title={SEASONS[state.seasons.currentSeason]?.name}>
@@ -1063,7 +1120,7 @@ function App({ initialHunterName, onLogout }) {
                   <GameIcon src={NAV_ICONS.timer} fallback="⚡" size={16} glow glowColor="rgba(168,85,247,0.5)" /> <span className="hide-on-mobile">FOCUS</span>
                 </button>}
                 {can('dawn_dusk') && <button
-                  onClick={() => setShowDawnDusk(true)}
+                  onClick={() => requirePremium("dawn_dusk", () => setShowDawnDusk(true))}
                   className="press-feedback"
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
@@ -1164,7 +1221,7 @@ function App({ initialHunterName, onLogout }) {
             if (!season) return null;
             return (
               <div
-                onClick={() => setShowSeasonView(true)}
+                onClick={() => requirePremium("seasons", () => setShowSeasonView(true))}
                 style={{
                   background: `linear-gradient(135deg, ${season.colors.bg || "#06060e"} 0%, rgba(6,6,14,0.9) 100%)`,
                   border: `1px solid ${season.colors.primary}30`,
@@ -1232,12 +1289,12 @@ function App({ initialHunterName, onLogout }) {
                 questFilter={questFilter} setQuestFilter={setQuestFilter}
                 completeQuest={handleCompleteQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
                 completeEmergencyQuest={completeEmergencyQuest} createQuest={createQuest}
-                setShowCreate={setShowCreate}
+                setShowCreate={requestShowCreate}
                 setShowTaskScan={setShowTaskScan}
                 setShowFocusMode={setShowFocusMode}
                 snoozeReminder={snoozeReminder}
                 onOpenDetail={setDetailQuest}
-                navigateTo={setView}
+                navigateTo={navigateToWithAccess}
                 nextLevel={nextLevel} getUnlocksAtLevel={getUnlocksAtLevel}
                 notify={notify} persist={persist}
                 setIsCreatingEntry={setIsCreatingEntry}
@@ -1247,6 +1304,10 @@ function App({ initialHunterName, onLogout }) {
                 updateScreenTimeData={updateScreenTimeData}
                 claimScreenTimeReward={claimScreenTimeReward}
                 geminiAI={geminiAI}
+                premiumStatus={premiumStatus}
+                requirePremium={requirePremium}
+                openPremiumModal={openPremiumModal}
+                requireQuestSlot={requireQuestSlot}
               />
             )}
 
@@ -1549,7 +1610,7 @@ function App({ initialHunterName, onLogout }) {
             {/* ◆ ◆ ◆  GOALS ◆ ◆ ◆  */}
             {
               view === "goals" && (
-                <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
+                <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} />
               )
             }
 
@@ -1581,6 +1642,8 @@ function App({ initialHunterName, onLogout }) {
                     if (gemCategory) window.__GEM_SHOP_START_CATEGORY = gemCategory;
                     navigateTo("shop");
                   }}
+                  onOpenPremium={openPremiumModal}
+                  premiumStatus={premiumStatus}
                   onPreviewPageTransition={previewPageTransition}
                   updateHealthData={updateHealthData}
                   claimHealthReward={claimHealthReward}
@@ -1604,7 +1667,7 @@ function App({ initialHunterName, onLogout }) {
           can={can}
           onNavigate={(key) => {
             setShowSeasonView(false); setShowSoulLink(false); setShowCharismaView(false); setShowDawnDusk(false);
-            navigateTo(key);
+            navigateToWithAccess(key);
           }}
           activeDungeons={activeDungeons}
           statPoints={state.statPoints}
@@ -1637,7 +1700,7 @@ function App({ initialHunterName, onLogout }) {
 
                 {/* Training modules combined */}
                 <div style={{ marginBottom: 32 }}>
-                  <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={() => setShowCreate(true)} />
+                  <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} />
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
@@ -1653,7 +1716,7 @@ function App({ initialHunterName, onLogout }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
                   <div style={{ height: 1, flex: 1, background: `linear-gradient(90deg,transparent,${theme.primary}55)` }} />
                   <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>HUNTER QUESTS</div>
-                  <button onClick={() => setShowCreate(true)} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 9, fontWeight: 700, background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.28)", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
+                  <button onClick={openQuestCreate} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 9, fontWeight: 700, background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.28)", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
                     onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.2)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
                   ><img src={SKILL_ICONS.attack} alt="Quest" style={{ width: 11, height: 11, objectFit: "contain", filter: "brightness(1.5)", verticalAlign: "middle", marginRight: 4 }} />QUEST</button>
@@ -1727,26 +1790,83 @@ function App({ initialHunterName, onLogout }) {
                     </div>
                     {/* Section items */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {section.items.map((item, ii) => (
+                      {section.items.map((item, ii) => {
+                        const premiumFeature = getPremiumFeatureForRoute(item.key);
+                        const premiumLocked = !!premiumFeature && !premiumStatus?.active;
+                        return (
                         <button key={item.key} onClick={() => {
                           if (item.locked) return;
-                          item.isOverlay ? item.action?.() : navigateTo(item.key);
+                          if (premiumLocked) {
+                            openPremiumModal(premiumFeature);
+                            return;
+                          }
+                          item.isOverlay ? item.action?.() : navigateToWithAccess(item.key);
                         }} style={{
+                          position: "relative",
+                          overflow: "hidden",
                           width: "100%", padding: "14px 16px", borderRadius: 14,
-                          background: item.locked ? "rgba(10,10,22,0.4)" : theme.card,
-                          border: `1px solid ${item.locked ? "rgba(100,116,139,0.08)" : section.color + "15"}`,
+                          background: premiumLocked ? "linear-gradient(135deg, rgba(251,191,36,0.09), rgba(168,85,247,0.08), rgba(255,255,255,0.025))" : item.locked ? "rgba(10,10,22,0.4)" : theme.card,
+                          border: `1px solid ${premiumLocked ? "rgba(251,191,36,0.24)" : item.locked ? "rgba(100,116,139,0.08)" : section.color + "15"}`,
                           display: "flex", alignItems: "center", gap: 12, textAlign: "left",
                           transition: "all 0.2s", cursor: item.locked ? "default" : "pointer",
                           backdropFilter: "blur(8px)",
                           opacity: item.locked ? 0.45 : 1,
                           filter: item.locked ? "grayscale(0.7)" : "none",
+                          boxShadow: premiumLocked ? `inset 0 1px 0 rgba(255,255,255,0.09), 0 10px 26px ${theme.primary}12` : "none",
                           animation: `cardEnter 0.3s ease ${(si * 0.08) + (ii * 0.04)}s both`
                         }}
-                          onMouseEnter={e => { if (!item.locked) { e.currentTarget.style.borderColor = section.color + "44"; e.currentTarget.style.transform = "translateX(4px)"; } }}
-                          onMouseLeave={e => { if (!item.locked) { e.currentTarget.style.borderColor = section.color + "15"; e.currentTarget.style.transform = "none"; } }}
+                          onMouseEnter={e => {
+                            if (premiumLocked) {
+                              e.currentTarget.style.borderColor = "rgba(251,191,36,0.45)";
+                              e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.13), 0 14px 32px ${theme.primary}18`;
+                              e.currentTarget.style.transform = "translateX(4px)";
+                            } else if (!item.locked) {
+                              e.currentTarget.style.borderColor = section.color + "44";
+                              e.currentTarget.style.transform = "translateX(4px)";
+                            }
+                          }}
+                          onMouseLeave={e => {
+                            if (premiumLocked) {
+                              e.currentTarget.style.borderColor = "rgba(251,191,36,0.24)";
+                              e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.09), 0 10px 26px ${theme.primary}12`;
+                              e.currentTarget.style.transform = "none";
+                            } else if (!item.locked) {
+                              e.currentTarget.style.borderColor = section.color + "15";
+                              e.currentTarget.style.transform = "none";
+                            }
+                          }}
                         >
-                          <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: item.locked ? "rgba(30,34,48,0.4)" : `${section.color}12`, border: `1px solid ${item.locked ? "rgba(100,116,139,0.1)" : section.color + "22"}`, position: "relative", flexShrink: 0, transition: "all 0.2s" }}>
-                            {item.locked ? (
+                          {premiumLocked && (
+                            <>
+                              <div style={{
+                                position: "absolute",
+                                inset: 0,
+                                background: "linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.08) 42%, transparent 56%)",
+                                transform: "translateX(-45%) skewX(-18deg)",
+                                pointerEvents: "none",
+                              }} />
+                              <span style={{
+                                position: "absolute",
+                                top: 8,
+                                right: 10,
+                                padding: "3px 7px",
+                                borderRadius: 999,
+                                background: "rgba(251,191,36,0.13)",
+                                border: "1px solid rgba(251,191,36,0.28)",
+                                color: "#fde68a",
+                                fontSize: 7,
+                                fontWeight: 900,
+                                fontFamily: "'JetBrains Mono',monospace",
+                                letterSpacing: 1.2,
+                              }}>
+                                PRO
+                              </span>
+                            </>
+                          )}
+                          <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: premiumLocked ? "linear-gradient(135deg, rgba(251,191,36,0.14), rgba(168,85,247,0.13))" : item.locked ? "rgba(30,34,48,0.4)" : `${section.color}12`, border: `1px solid ${premiumLocked ? "rgba(251,191,36,0.28)" : item.locked ? "rgba(100,116,139,0.1)" : section.color + "22"}`, position: "relative", flexShrink: 0, transition: "all 0.2s", boxShadow: premiumLocked ? "0 0 18px rgba(251,191,36,0.12)" : "none" }}>
+                            {premiumLocked ? (
+                              <span style={{ fontSize: 9, color: "#fde68a", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>PRO</span>
+                            ) : item.locked ? (
                               <span style={{ fontSize: 16 }}>🔒</span>
                             ) : item.iconSrc ? (
                               <img src={item.iconSrc} alt={item.label} style={{ width: 24, height: 24, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 6px ${section.color}55)` }} />
@@ -1756,14 +1876,15 @@ function App({ initialHunterName, onLogout }) {
                             {!item.locked && item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -5, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: item.locked ? "#475569" : "#e2e8f0", fontFamily: "'Cinzel',serif" }}>{item.label}</div>
-                            <div style={{ fontSize: 9, color: item.locked ? "#334155" : "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
-                              {item.locked ? `🔒 AB LEVEL ${item.unlockLevel}` : item.desc}
+                            <div style={{ fontSize: 13, fontWeight: 700, color: premiumLocked ? "#fde68a" : item.locked ? "#475569" : "#e2e8f0", fontFamily: "'Cinzel',serif", paddingRight: premiumLocked ? 42 : 0 }}>{item.label}</div>
+                            <div style={{ fontSize: 9, color: premiumLocked ? "#a78bfa" : item.locked ? "#334155" : "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
+                              {premiumLocked ? "Noch nicht verfuegbar im Free-Modus" : item.locked ? `🔒 AB LEVEL ${item.unlockLevel}` : item.desc}
                             </div>
                           </div>
-                          <div style={{ fontSize: 12, color: "#334155", opacity: 0.5 }}>{item.locked ? "" : "›"}</div>
+                          <div style={{ fontSize: premiumLocked ? 9 : 12, color: premiumLocked ? "#fde68a" : "#334155", opacity: premiumLocked ? 1 : 0.5, fontFamily: premiumLocked ? "'JetBrains Mono',monospace" : "inherit", fontWeight: premiumLocked ? 900 : 400 }}>{item.locked ? "" : premiumLocked ? "OPEN" : "›"}</div>
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -1939,7 +2060,7 @@ function App({ initialHunterName, onLogout }) {
                             const cat = CATEGORIES.find(c => c.key === t.category);
                             const diff = DIFFICULTIES.find(d => d.key === t.difficulty);
                             return (
-                              <button key={t.id} onClick={() => createQuestFromTemplate(t)}
+                              <button key={t.id} onClick={() => { if (requireQuestSlot()) createQuestFromTemplate(t); }}
                                 style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s", position: "relative" }}
                                 onMouseEnter={e => { e.currentTarget.style.borderColor = (cat?.color || theme.primary) + "44"; e.currentTarget.style.background = (cat?.color || theme.primary) + "08"; }}
                                 onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}>
@@ -2086,9 +2207,9 @@ function App({ initialHunterName, onLogout }) {
                           {/* PHOTO IMPORT PLACEHOLDER */}
                           {can('ai_task_scan') && (
                             <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
-                              <div onClick={() => { if (can('ai_task_scan')) { setShowTaskScan(true); setShowCreate(false); } }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${theme.primary}55`, background: `linear-gradient(90deg, ${theme.primary}11, transparent)`, opacity: can('ai_task_scan') ? 1 : 0.45, cursor: can('ai_task_scan') ? "pointer" : "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
+                              <div onClick={() => { if (can('ai_task_scan')) requirePremium("ai_task_scan", () => { setShowTaskScan(true); setShowCreate(false); }); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${premiumStatus?.active ? theme.primary + "55" : "rgba(168,85,247,0.55)"}`, background: premiumStatus?.active ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : "linear-gradient(90deg, rgba(168,85,247,0.18), rgba(34,211,238,0.05))", opacity: can('ai_task_scan') ? 1 : 0.45, cursor: can('ai_task_scan') ? "pointer" : "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
                                 <span style={{ fontSize: 14 }}>📸</span>
-                                <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: theme.primary, fontWeight: 700, letterSpacing: 1 }}>FOTO-SCAN</span>
+                                <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: premiumStatus?.active ? theme.primary : "#c084fc", fontWeight: 700, letterSpacing: 1 }}>{premiumStatus?.active ? "FOTO-SCAN" : "PRO SCAN"}</span>
                               </div>
                             </div>
 
@@ -2102,14 +2223,16 @@ function App({ initialHunterName, onLogout }) {
                                 <button
                                   disabled={geminiAI.isLoading}
                                   onClick={async () => {
-                                    const result = await geminiAI.generateQuestDesc(qTitle, qCat);
-                                    if (!result) return;
-                                    if (result.description) setQDescription(result.description.slice(0, 300));
-                                    if (result.subQuests?.length > 0) setQSubQuests(result.subQuests.slice(0, 5).map(s => ({ title: s })));
+                                    requirePremium("ai_quest_desc", async () => {
+                                      const result = await geminiAI.generateQuestDesc(qTitle, qCat);
+                                      if (!result) return;
+                                      if (result.description) setQDescription(result.description.slice(0, 300));
+                                      if (result.subQuests?.length > 0) setQSubQuests(result.subQuests.slice(0, 5).map(s => ({ title: s })));
+                                    });
                                   }}
                                   style={{ background: geminiAI.isLoading ? "rgba(0,200,255,0.04)" : `rgba(0,200,255,0.1)`, border: `1px solid ${geminiAI.isLoading ? "rgba(0,200,255,0.12)" : "rgba(0,200,255,0.4)"}`, borderRadius: 3, color: geminiAI.isLoading ? "#2a4455" : "#00c8ff", padding: "3px 9px", fontFamily: "'JetBrains Mono','Courier New',monospace", fontSize: 8, letterSpacing: 2, cursor: geminiAI.isLoading ? "default" : "pointer", textTransform: "uppercase", boxShadow: geminiAI.isLoading ? "none" : "0 0 8px rgba(0,200,255,0.2)", transition: "all 0.2s" }}
                                 >
-                                  {geminiAI.isLoading ? "· · ·" : "> KI.GEN"}
+                                  {geminiAI.isLoading ? "· · ·" : premiumStatus?.active ? "> KI.GEN" : "> PRO"}
                                 </button>
                               )}
                             </div>
@@ -2287,6 +2410,7 @@ function App({ initialHunterName, onLogout }) {
                 {!showTemplates && (
                   <div style={{ padding: "14px 24px 20px", flexShrink: 0, borderTop: `1px solid ${theme.primary}1a` }}>
                     <button onClick={() => {
+                      if (!editingQuestId && !requireQuestSlot()) return;
                       if (qType === "chained") addChainedQuest(qTitle, qCat, qDiff);
                       else createQuest();
                       setForgeTab("create");
@@ -2316,6 +2440,16 @@ function App({ initialHunterName, onLogout }) {
             />
           </React.Suspense>
         )}
+
+        <PremiumAccessModal
+          open={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+          state={state}
+          theme={theme}
+          activatePremiumCode={activatePremiumCode}
+          notify={notify}
+          contextFeature={premiumModalFeature}
+        />
 
         {/* DAWN / DUSK PROTOCOL — rendered above as overlay (line ~451), this duplicate is intentionally removed */}
 

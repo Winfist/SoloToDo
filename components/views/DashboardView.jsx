@@ -19,6 +19,7 @@ import { ScreenTimeSummaryWidget } from "./ScreenTimeSummaryWidget.jsx";
 import ScreenTimeDashboard from "../ScreenTimeDashboard.jsx";
 import { ScreenTimeVerifyModal } from "../ScreenTimeVerifyModal.jsx";
 import QuestIntensityControl from "../QuestIntensityControl.jsx";
+import { isPremiumDashboardWidget } from "../../data/premium.js";
 
 // ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
 const EDIT_MODE_CSS = `
@@ -94,7 +95,11 @@ export default function DashboardView({
   claimHealthReward,
   updateScreenTimeData,
   claimScreenTimeReward,
-  geminiAI
+  geminiAI,
+  premiumStatus,
+  requirePremium,
+  openPremiumModal,
+  requireQuestSlot
 }) {
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
 
@@ -418,6 +423,63 @@ export default function DashboardView({
   // Returns { content, isEmpty } where isEmpty=true means the widget has no visible content
   const renderWidget = (widgetKey) => {
     const isCollapsed = localCollapsed[widgetKey];
+    const premiumLocked = isPremiumDashboardWidget(widgetKey) && !premiumStatus?.active;
+    if (premiumLocked) {
+      const def = getWidgetDef(widgetKey);
+      return {
+        content: (
+          <button
+            onClick={() => openPremiumModal?.("advanced_widgets")}
+            style={{
+              width: "100%",
+              minHeight: 118,
+              padding: 16,
+              borderRadius: 16,
+              textAlign: "left",
+              background: `linear-gradient(135deg, rgba(255,255,255,0.05), ${theme.primary}12, rgba(251,191,36,0.06))`,
+              border: "1px solid rgba(251,191,36,0.18)",
+              color: "#e2e8f0",
+              cursor: "pointer",
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px ${theme.primary}12`,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(110deg, transparent, rgba(255,255,255,0.08), transparent)", pointerEvents: "none" }} />
+            <div style={{ position: "relative", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: "#fde68a", fontSize: 9, fontWeight: 900, letterSpacing: 2, fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>
+                  PRO MODUL
+                </div>
+                <div style={{ color: "#fff", fontSize: 16, fontWeight: 900, fontFamily: "'Cinzel',serif", marginBottom: 5 }}>
+                  {def?.label || "Premium Widget"}
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 11, lineHeight: 1.45 }}>
+                  Dieses Dashboard-Modul ist in Hunter Pro enthalten.
+                </div>
+              </div>
+              <div style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                display: "grid",
+                placeItems: "center",
+                background: "rgba(251,191,36,0.10)",
+                border: "1px solid rgba(251,191,36,0.22)",
+                color: "#fde68a",
+                fontSize: 11,
+                fontWeight: 900,
+                fontFamily: "'JetBrains Mono',monospace",
+                flexShrink: 0,
+              }}>
+                PRO
+              </div>
+            </div>
+          </button>
+        ),
+        isEmpty: false
+      };
+    }
 
     switch (widgetKey) {
       case "today_command":
@@ -652,10 +714,10 @@ export default function DashboardView({
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 6 }}>
                   <button onClick={() => setShowCreate(true)} style={{ minHeight: 36, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}24, ${theme.primary}10)`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}36`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>NEUE QUEST</button>
                   {createQuest && (
-                    <button onClick={() => quickAddMode ? setQuickAddMode(false) : setQuickAddMode(true)} style={{ minHeight: 36, borderRadius: 10, background: quickAddMode ? `${theme.primary}18` : "rgba(255,255,255,0.032)", color: quickAddMode ? theme.primary : "#94a3b8", border: `1px solid ${quickAddMode ? theme.primary + "40" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>QUICK +</button>
+                    <button onClick={() => quickAddMode ? setQuickAddMode(false) : (requireQuestSlot ? requireQuestSlot(() => setQuickAddMode(true)) : setQuickAddMode(true))} style={{ minHeight: 36, borderRadius: 10, background: quickAddMode ? `${theme.primary}18` : "rgba(255,255,255,0.032)", color: quickAddMode ? theme.primary : "#94a3b8", border: `1px solid ${quickAddMode ? theme.primary + "40" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>QUICK +</button>
                   )}
                   {can('ai_task_scan') && setShowTaskScan && (
-                    <button onClick={() => setShowTaskScan(true)} style={{ minHeight: 36, borderRadius: 10, background: "rgba(34,211,238,0.07)", color: theme.primary, border: `1px solid ${theme.primary}28`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>SCAN</button>
+                    <button onClick={() => requirePremium?.("ai_task_scan", () => setShowTaskScan(true))} style={{ minHeight: 36, borderRadius: 10, background: premiumStatus?.active ? "rgba(34,211,238,0.07)" : "linear-gradient(135deg, rgba(168,85,247,0.16), rgba(34,211,238,0.06))", color: premiumStatus?.active ? theme.primary : "#c084fc", border: `1px solid ${premiumStatus?.active ? theme.primary + "28" : "rgba(168,85,247,0.38)"}`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{premiumStatus?.active ? "SCAN" : "PRO SCAN"}</button>
                   )}
                 </div>
 
@@ -747,6 +809,7 @@ export default function DashboardView({
                     onChange={e => setQuickAddTitle(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === "Enter" && quickAddTitle.trim()) {
+                        if (requireQuestSlot && !requireQuestSlot()) return;
                         createQuest({ title: quickAddTitle.trim(), difficulty: "normal", category: "str", type: "side", priority: "medium", energy: "quick" });
                         setQuickAddTitle(""); setQuickAddMode(false);
                       }
@@ -1204,32 +1267,44 @@ export default function DashboardView({
               }}>VERFÜGBARE WIDGETS</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 {availableWidgets.map(widget => {
-                  const locked = widget.requires && !can(widget.requires);
+                  const premiumLocked = isPremiumDashboardWidget(widget.key) && !premiumStatus?.active;
+                  const featureLocked = widget.requires && !can(widget.requires);
+                  const locked = premiumLocked || featureLocked;
                   return (
                     <button
                       key={widget.key}
-                      onClick={locked ? undefined : () => addWidget(widget.key)}
+                      onClick={premiumLocked ? () => openPremiumModal?.("advanced_widgets") : locked ? undefined : () => addWidget(widget.key)}
                       style={{
+                        position: "relative",
+                        overflow: "hidden",
                         padding: "12px", borderRadius: 14,
-                        border: `1px solid ${locked ? "rgba(255,255,255,0.04)" : widget.color + "30"}`,
-                        background: locked ? "rgba(10,10,22,0.4)" : `${widget.color}08`,
+                        border: `1px solid ${premiumLocked ? "rgba(251,191,36,0.24)" : locked ? "rgba(255,255,255,0.04)" : widget.color + "30"}`,
+                        background: premiumLocked ? "linear-gradient(135deg, rgba(251,191,36,0.09), rgba(168,85,247,0.08), rgba(255,255,255,0.025))" : locked ? "rgba(10,10,22,0.4)" : `${widget.color}08`,
                         display: "flex", alignItems: "center", gap: 10, textAlign: "left",
-                        cursor: locked ? "default" : "pointer",
-                        opacity: locked ? 0.4 : 1,
+                        cursor: premiumLocked ? "pointer" : locked ? "default" : "pointer",
+                        opacity: featureLocked ? 0.4 : 1,
                         transition: "all 0.25s",
+                        boxShadow: premiumLocked ? `inset 0 1px 0 rgba(255,255,255,0.09), 0 8px 20px ${theme.primary}10` : "none",
                       }}
-                      onMouseEnter={e => { if (!locked) { e.currentTarget.style.borderColor = widget.color + "66"; e.currentTarget.style.background = `${widget.color}14`; e.currentTarget.style.transform = "translateY(-2px)"; } }}
-                      onMouseLeave={e => { if (!locked) { e.currentTarget.style.borderColor = widget.color + "30"; e.currentTarget.style.background = `${widget.color}08`; e.currentTarget.style.transform = "none"; } }}
+                      onMouseEnter={e => { if (premiumLocked) { e.currentTarget.style.borderColor = "rgba(251,191,36,0.42)"; e.currentTarget.style.transform = "translateY(-2px)"; } else if (!locked) { e.currentTarget.style.borderColor = widget.color + "66"; e.currentTarget.style.background = `${widget.color}14`; e.currentTarget.style.transform = "translateY(-2px)"; } }}
+                      onMouseLeave={e => { if (premiumLocked) { e.currentTarget.style.borderColor = "rgba(251,191,36,0.24)"; e.currentTarget.style.transform = "none"; } else if (!locked) { e.currentTarget.style.borderColor = widget.color + "30"; e.currentTarget.style.background = `${widget.color}08`; e.currentTarget.style.transform = "none"; } }}
                     >
-                      {locked ? (
+                      {premiumLocked && (
+                        <span style={{ position: "absolute", top: 6, right: 7, padding: "2px 6px", borderRadius: 999, background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.24)", color: "#fde68a", fontSize: 7, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
+                          PRO
+                        </span>
+                      )}
+                      {premiumLocked ? (
+                        <span style={{ fontSize: 9, color: "#fde68a", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>PRO</span>
+                      ) : locked ? (
                         <span style={{ fontSize: 16 }}>🔒</span>
                       ) : (
                         <span style={{ fontSize: 18 }}>{widget.icon}</span>
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: locked ? "#475569" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{widget.label}</div>
-                        <div style={{ fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
-                          {locked ? "Feature gesperrt" : widget.desc}
+                        <div style={{ fontSize: 11, fontWeight: 700, color: premiumLocked ? "#fde68a" : locked ? "#475569" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{widget.label}</div>
+                        <div style={{ fontSize: 8, color: premiumLocked ? "#a78bfa" : "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
+                          {premiumLocked ? "Noch nicht verfuegbar im Free-Modus" : locked ? "Feature gesperrt" : widget.desc}
                         </div>
                       </div>
                       {!locked && (
