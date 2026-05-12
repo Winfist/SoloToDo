@@ -261,6 +261,7 @@ function App({ initialHunterName, onLogout }) {
     watchRewardedAd,
     buyGemItem,
     claimDailyGemBonus,
+    activatePremiumCode,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     // Rating system
@@ -1586,6 +1587,8 @@ function App({ initialHunterName, onLogout }) {
                   updateScreenTimeData={updateScreenTimeData}
                   claimScreenTimeReward={claimScreenTimeReward}
                   geminiAI={geminiAI}
+                  activatePremiumCode={activatePremiumCode}
+                  notify={notify}
                 />
               )
             }

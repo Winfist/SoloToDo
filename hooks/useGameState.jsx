@@ -22,6 +22,7 @@ import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextM
 import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER_UNLOCK_MESSAGES } from '../data/featureUnlocks.js';
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
+import { getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
@@ -1756,6 +1757,29 @@ export function useGameState(initialHunterName, onLogout) {
     return gemReward;
   }, [state, persist, notify]);
 
+  const activatePremiumCode = useCallback((code) => {
+    if (!state) return { ok: false, message: "App-State ist noch nicht bereit." };
+
+    const result = redeemBetaPremiumCode(state.premium, code);
+    if (!result.ok) {
+      notify(result.message, "warning");
+      return result;
+    }
+
+    const next = { ...state, premium: result.premium };
+    persist(next);
+    notify(result.message, "success");
+    triggerSystemMessage("HUNTER PRO AKTIVIERT", [
+      "Premium-Status bestaetigt.",
+      `${result.code.label}: 30 Tage Hunter Pro freigeschaltet.`,
+      `Aktiv bis ${result.activeUntilLabel}.`,
+      "Beta-Billing bleibt deaktiviert, Store-Payment folgt vor Release."
+    ]);
+    return result;
+  }, [state, persist, notify, triggerSystemMessage]);
+
+  const premiumStatus = useMemo(() => getPremiumStatus(state?.premium), [state?.premium]);
+
   // Buy a gem shop item
   const buyGemItem = useCallback((item) => {
     if (!state) return;
@@ -1978,6 +2002,8 @@ export function useGameState(initialHunterName, onLogout) {
     watchRewardedAd,
     buyGemItem,
     claimDailyGemBonus,
+    activatePremiumCode,
+    premiumStatus,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     // Screen Time gamification

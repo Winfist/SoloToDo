@@ -3,6 +3,16 @@
 
 export const DEFAULT_STATE = {
   hunterName: "", level: 1, xp: 0, gold: 0, totalGoldEarned: 0,
+  premium: {
+    tier: "free",
+    planId: null,
+    status: "inactive",
+    source: null,
+    startedAt: null,
+    activeUntil: null,
+    lastActivatedAt: null,
+    betaCodesRedeemed: [],
+  },
   gems: 0, totalGemsEarned: 0,
   gemStreak: { current: 0, lastClaimDate: null },
   activeGemBoosters: [],

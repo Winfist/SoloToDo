@@ -7,6 +7,8 @@ import NativeStatsDashboard from "./NativeStatsDashboard";
 import ScreenTimeDashboard from "./ScreenTimeDashboard.jsx";
 import { Capacitor } from "@capacitor/core";
 import QuestIntensityControl from "./QuestIntensityControl.jsx";
+import PremiumAccessModal from "./PremiumAccessModal.jsx";
+import { getPremiumStatus, PREMIUM_PRODUCT } from "../data/premium.js";
 
 // ─── NAV TAB REGISTRY ─────────────────────────────────────────
 // All possible bottom-navigation tabs the user can choose from.
@@ -967,10 +969,11 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme }) {
 // ═════════════════════════════════════════════════════════════════
 //  MAIN SETTINGS VIEW
 // ═════════════════════════════════════════════════════════════════
-export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI }) {
+export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI, activatePremiumCode, notify }) {
   // ── Section states ──
   const [openSection, setOpenSection] = useState(null);
   const toggleSection = (key) => setOpenSection(prev => prev === key ? null : key);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // ── Theme creator cache (existing) ──
   const [primaryCache, setPrimaryCache] = useState(state.customThemeData?.primary || "#3b82f6");
@@ -1030,6 +1033,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
   const userEmail = auth.currentUser?.email || "—";
   const fontSize = state.settings?.fontSize || "normal";
+  const premiumStatus = getPremiumStatus(state.premium);
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease", paddingBottom: 60 }}>
@@ -1049,6 +1053,95 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 1: ERSCHEINUNGSBILD
          ════════════════════════════════════════════════════════════ */}
+      <SettingsSection
+        title="Premium & Beta"
+        icon="PRO"
+        color="#a855f7"
+        open={openSection === "premium"}
+        onToggle={() => toggleSection("premium")}
+        theme={theme}
+        badge={premiumStatus.active ? `AKTIV BIS ${premiumStatus.activeUntilLabel}` : "BETA CODE"}
+      >
+        <div style={{
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: 16,
+          padding: 16,
+          background: "linear-gradient(135deg, rgba(168,85,247,0.16), rgba(34,211,238,0.06))",
+          border: `1px solid ${theme.primary}33`,
+          marginBottom: 12,
+        }}>
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: `radial-gradient(circle at 80% 0%, ${theme.primary}22, transparent 38%)`,
+            pointerEvents: "none",
+          }} />
+          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", gap: 14, alignItems: "center" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 9, letterSpacing: 2.5, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>
+                {PREMIUM_PRODUCT.badge}
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginBottom: 4 }}>
+                {premiumStatus.active ? "Hunter Pro aktiv" : "Hunter Pro freischalten"}
+              </div>
+              <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5 }}>
+                {premiumStatus.active
+                  ? `Dein Beta-Zugang laeuft noch ${premiumStatus.daysRemaining} Tage.`
+                  : "Preise, Vorteile und Beta-Code-Eingabe in einem Popup."}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowPremiumModal(true)}
+              style={{
+                flexShrink: 0,
+                minWidth: 112,
+                minHeight: 42,
+                borderRadius: 12,
+                background: `linear-gradient(135deg, ${theme.primary}44, rgba(168,85,247,0.22))`,
+                border: `1px solid ${theme.primary}66`,
+                color: "#fff",
+                fontSize: 10,
+                fontWeight: 900,
+                fontFamily: "'JetBrains Mono',monospace",
+                letterSpacing: 1,
+                cursor: "pointer",
+                boxShadow: `0 8px 24px ${theme.primary}24`,
+              }}
+            >
+              {premiumStatus.active ? "STATUS" : "ANSEHEN"}
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
+          {["KI Plus", "Analytics", "Cosmetics"].map(label => (
+            <div key={label} style={{
+              padding: "10px 11px",
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.025)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              color: "#cbd5e1",
+              fontSize: 10,
+              fontWeight: 800,
+              fontFamily: "'JetBrains Mono',monospace",
+              textAlign: "center",
+            }}>
+              {label.toUpperCase()}
+            </div>
+          ))}
+        </div>
+      </SettingsSection>
+
+      <PremiumAccessModal
+        open={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        state={state}
+        theme={theme}
+        activatePremiumCode={activatePremiumCode}
+        notify={notify}
+      />
+
       <SettingsSection title="Erscheinungsbild" icon="🎨" color="#a78bfa" open={openSection === "look"} onToggle={() => toggleSection("look")} theme={theme} badge="THEME · DISPLAY">
 
         <ThemeSwitcher state={state} persist={persist} theme={theme} onOpenShop={onOpenShop} />

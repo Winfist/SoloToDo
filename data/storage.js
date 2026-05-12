@@ -15,6 +15,8 @@ export function migrateState(oldState) {
   const s = { ...DEFAULT_STATE, ...oldState };
   s.level = Math.max(1, s.level || 1);
   s.xp = s.xp || 0;
+  s.premium = { ...DEFAULT_STATE.premium, ...(oldState.premium || {}) };
+  s.premium.betaCodesRedeemed = oldState.premium?.betaCodesRedeemed || [];
 
   s.stats = { ...DEFAULT_STATE.stats, ...(oldState.stats || {}) };
   s.shadowArmy = { ...DEFAULT_STATE.shadowArmy, ...(oldState.shadowArmy || {}) };
