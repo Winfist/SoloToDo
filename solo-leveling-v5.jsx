@@ -10,7 +10,7 @@ import MicroHabits from "./components/MicroHabits.jsx";
 // Lazy-loaded views and heavy components (Phase 6 — code splitting)
 const StoryView = React.lazy(() => import("./StoryView.jsx"));
 const MultiplayerMode = React.lazy(() => import("./MultiplayerMode.jsx"));
-import TutorialProvider from "./components/tutorial/TutorialProvider.jsx";
+import TutorialProvider, { useTutorial } from "./components/tutorial/TutorialProvider.jsx";
 const AnalyticsDashboard = React.lazy(() => import("./components/AnalyticsDashboard.jsx"));
 import { runCoachChecks, enrichCoachMessagesAsync } from "./components/SystemCoach.jsx";
 import { NotificationBanner } from "./components/NotificationManager.jsx";
@@ -118,6 +118,12 @@ class ErrorBoundary extends React.Component {
     }
     return this.props.children;
   }
+}
+
+function DeferredSystemMessage({ message, onClose }) {
+  const tutorial = useTutorial();
+  if (tutorial?.isActive || !message) return null;
+  return <SystemCLI key={message.id || message.title} message={message} onClose={onClose} />;
 }
 
 function App({ initialHunterName, onLogout }) {
@@ -858,7 +864,7 @@ function App({ initialHunterName, onLogout }) {
             />
           )}
           {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && (
-            <SystemCLI key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />
+            <DeferredSystemMessage key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />
           )}
 
           {/* ── Non-flow cinematics (standalone arise from evolveShadow etc.) ── */}
@@ -866,7 +872,7 @@ function App({ initialHunterName, onLogout }) {
           {!rewardFlowActive && !levelUp && ariseTarget && <AriseCinematic shadow={ariseTarget} onClose={() => setAriseTarget(null)} />}
           {!rewardFlowActive && !levelUp && !ariseTarget && state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
           {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
-          {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && <SystemCLI key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
+          {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && <DeferredSystemMessage key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
 
           {/* ── Quest Rating Modal – appears after all reward animations finish ── */}
           {pendingRatingQuest && !rewardFlowActive && !showingModal && (
