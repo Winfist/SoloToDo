@@ -87,6 +87,23 @@ export const DEFAULT_STATE = {
   },
   lifeDomains: [],
   manifestations: [],
+  focus: {
+    totalMinutes: 0,
+    totalSessions: 0,
+    streak: 0,
+    bestStreak: 0,
+    lastSessionDate: null,
+    bestDayMinutes: 0,
+    longestSessionMinutes: 0,
+    daily: {},
+    modes: {
+      pomodoro: { totalMinutes: 0, sessions: 0 },
+      deepWork: { totalMinutes: 0, sessions: 0 },
+      sprint: { totalMinutes: 0, sessions: 0 },
+      sanctum: { totalMinutes: 0, sessions: 0 },
+    },
+    recentSessions: [],
+  },
   sanctum: {
     level: 1,
     willpower: 0,

@@ -55,6 +55,22 @@ export function migrateState(oldState) {
   };
   s.screenTimeSyncDate = oldState.screenTimeSyncDate || DEFAULT_STATE.screenTimeSyncDate;
   s.story = { ...DEFAULT_STATE.story, ...(oldState.story || {}) };
+  const focusModes = DEFAULT_STATE.focus.modes;
+  const oldFocus = oldState.focus || {};
+  s.focus = {
+    ...DEFAULT_STATE.focus,
+    ...oldFocus,
+    totalSessions: oldFocus.totalSessions || oldState.stats?.focusSessions || 0,
+    totalMinutes: oldFocus.totalMinutes || oldState.stats?.focusMinutes || 0,
+    daily: { ...(oldFocus.daily || {}) },
+    modes: Object.fromEntries(
+      Object.keys(focusModes).map(key => [
+        key,
+        { ...focusModes[key], ...(oldFocus.modes?.[key] || {}) }
+      ])
+    ),
+    recentSessions: Array.isArray(oldFocus.recentSessions) ? oldFocus.recentSessions.slice(0, 12) : [],
+  };
   s.shadowRegression = { ...DEFAULT_STATE.shadowRegression, ...(oldState.shadowRegression || {}) };
   s.soulLink = { ...DEFAULT_STATE.soulLink, ...(oldState.soulLink || {}) };
   s.seasons = { ...DEFAULT_STATE.seasons, ...(oldState.seasons || {}) };

@@ -831,7 +831,7 @@ function App({ initialHunterName, onLogout }) {
         </React.Suspense>
 
         {/* FOCUS MODE */}
-        {showFocusMode && <FocusMode state={state} persist={persist} notify={notify} onExit={() => setShowFocusMode(false)} theme={theme} />}
+        {showFocusMode && <FocusMode state={state} persist={persist} notify={notify} onExit={() => setShowFocusMode(false)} theme={theme} processAchievements={processAchievements} />}
 
         {/* AI: QUEST PHOTO VERIFICATION */}
         {verifyingQuest && (
