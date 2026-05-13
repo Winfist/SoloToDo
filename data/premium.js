@@ -247,6 +247,8 @@ export function normalizePremiumCode(value) {
 }
 
 export function isPremiumActive(premium, nowMs = Date.now()) {
+  // Explicitly revoked by admin → never active, regardless of cached tier/date
+  if (premium?.status === 'revoked') return false;
   const activeUntilMs = Date.parse(premium?.activeUntil || "");
   return premium?.tier === PREMIUM_PRODUCT.id && Number.isFinite(activeUntilMs) && activeUntilMs > nowMs;
 }

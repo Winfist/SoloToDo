@@ -11,6 +11,8 @@ import {
 const DAY_MS = 24 * 60 * 60 * 1000;
 function getUserPremiumStatus(premium) {
   if (!premium) return { active: false, tier: 'free', source: 'none', daysRemaining: 0, activeUntilLabel: null };
+  // Explicitly revoked by admin → never active
+  if (premium.status === 'revoked') return { active: false, tier: 'free', source: premium.source || 'admin_revoke', daysRemaining: 0, activeUntilLabel: null };
   const activeUntilMs = Date.parse(premium.activeUntil || '');
   const active = premium.tier === 'hunter_pro' && Number.isFinite(activeUntilMs) && activeUntilMs > Date.now();
   const daysRemaining = active ? Math.max(1, Math.ceil((activeUntilMs - Date.now()) / DAY_MS)) : 0;

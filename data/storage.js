@@ -272,6 +272,29 @@ function syncEventKey(event) {
 }
 
 function choosePremium(primaryPremium = {}, fallbackPremium = {}) {
+  // ── Admin revoke check ──
+  // If either copy was explicitly revoked, prefer the revoked version so that
+  // a stale local cache cannot re-activate premium that an admin took away.
+  const primaryRevoked = primaryPremium.status === 'revoked';
+  const fallbackRevoked = fallbackPremium.status === 'revoked';
+  if (primaryRevoked || fallbackRevoked) {
+    // If both are revoked, pick the one with the later revokedAt timestamp
+    if (primaryRevoked && fallbackRevoked) {
+      return parseTime(primaryPremium.revokedAt) >= parseTime(fallbackPremium.revokedAt)
+        ? primaryPremium : fallbackPremium;
+    }
+    // Only one is revoked – check timestamps to prevent an old cached revoke
+    // from overriding a newer admin grant.
+    const revokedCopy = primaryRevoked ? primaryPremium : fallbackPremium;
+    const otherCopy = primaryRevoked ? fallbackPremium : primaryPremium;
+    const revokedAtMs = parseTime(revokedCopy.revokedAt);
+    const otherActivatedAtMs = parseTime(otherCopy.lastActivatedAt);
+    // Revoke wins unless the other copy was activated *after* the revoke
+    if (!otherActivatedAtMs || revokedAtMs >= otherActivatedAtMs) {
+      return revokedCopy;
+    }
+  }
+
   const primaryUntil = parseTime(primaryPremium.activeUntil);
   const fallbackUntil = parseTime(fallbackPremium.activeUntil);
   const primaryActive = primaryPremium.tier === "hunter_pro" && primaryUntil > Date.now();
