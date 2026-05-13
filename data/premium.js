@@ -63,6 +63,12 @@ export const PREMIUM_FEATURES = {
     desc: "Dein System generiert persoenliche Tagesquests passend zu Fortschritt, Fokus und Verhalten.",
     bullets: ["Personalisierte Quests", "Daily Reset", "Mehr Abwechslung"],
   },
+  quest_intensity: {
+    eyebrow: "SYSTEMRUF CORE",
+    title: "Systemruf-Intensitaet ist Hunter Pro",
+    desc: "Steuere, wie oft dein System automatisch neue Forderungen ausloest und wie hart es dich pusht.",
+    bullets: ["Baby Gate bis Monarch Call", "Auto-Quest Rhythmus", "Aktive System-Caps"],
+  },
   ai_coach: {
     eyebrow: "SYSTEM COACH",
     title: "KI-Coach Plus ist Hunter Pro",
@@ -138,8 +144,8 @@ export const PREMIUM_FEATURES = {
   advanced_widgets: {
     eyebrow: "WIDGET CORE",
     title: "Advanced Widgets sind Hunter Pro",
-    desc: "Schalte Health, Fokus, Heatmaps und weitere Premium-Module im Dashboard frei.",
-    bullets: ["Health Widget", "Screen Time", "Progress Widgets"],
+    desc: "Schalte Biometrics, Bildschirmzeit, Vision Board und weitere Premium-Module im Dashboard frei.",
+    bullets: ["Biometrics", "Bildschirmzeit", "Vision Board"],
   },
   custom_theme: {
     eyebrow: "SYSTEM DESIGN",

@@ -140,6 +140,7 @@ export const HABIT_ICONS = {
 
 export const MICRO_ICONS = {
     water:     "/icons/micro_water.webp",
+    posture:   "/icons/habit_mindfulness.webp",
     stretch:   "/icons/micro_stretch.webp",
     gratitude: "/icons/micro_gratitude.webp",
     breathe:   "/icons/micro_breathe.webp",

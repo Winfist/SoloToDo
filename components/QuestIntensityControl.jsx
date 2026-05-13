@@ -23,9 +23,10 @@ function getNextSystemCall(state, preset, enabled) {
 // ── Premium Locked Overlay ──────────────────────────────────────
 // A gorgeous upsell overlay shown over the intensity control for free users.
 // Designed to make the user *feel* what they're missing.
-function PremiumLockedOverlay({ theme, onOpenPremium }) {
+function PremiumLockedOverlay({ theme, onOpenPremium, compact = false, embedded = false }) {
   const accentColor = theme?.primary || "#7c3aed";
   const glowColor = theme?.accent || accentColor;
+  const lockSize = compact ? 42 : 52;
 
   return (
     <div style={{
@@ -57,16 +58,15 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
         pointerEvents: "none",
       }} />
 
-      {/* Glow orb top-right */}
+      {/* Glow rail */}
       <div style={{
         position: "absolute",
-        top: -20,
-        right: -20,
-        width: 100,
-        height: 100,
-        borderRadius: "50%",
-        background: `radial-gradient(circle, ${accentColor}22, transparent 70%)`,
-        animation: "intensityGlowPulse 3s ease-in-out infinite",
+        top: -1,
+        right: 14,
+        width: 92,
+        height: 1,
+        background: `linear-gradient(90deg, transparent, ${accentColor}77, transparent)`,
+        boxShadow: `0 0 18px ${accentColor}44`,
         pointerEvents: "none",
       }} />
 
@@ -79,14 +79,14 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
         alignItems: "center",
         justifyContent: "center",
         height: "100%",
-        padding: "18px 16px",
+        padding: compact ? "14px 14px" : "18px 16px",
         textAlign: "center",
-        gap: 10,
+        gap: compact ? 7 : 10,
       }}>
         {/* Lock icon ring */}
         <div style={{
-          width: 52,
-          height: 52,
+          width: lockSize,
+          height: lockSize,
           borderRadius: "50%",
           background: `radial-gradient(circle, ${accentColor}1a, ${accentColor}08)`,
           border: `1.5px solid ${accentColor}44`,
@@ -96,7 +96,7 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
           boxShadow: `0 0 32px ${accentColor}22, inset 0 0 20px ${accentColor}10`,
           animation: "intensityLockBreath 2.5s ease-in-out infinite",
         }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={glowColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 8px ${accentColor}88)` }}>
+          <svg width={compact ? "18" : "22"} height={compact ? "18" : "22"} viewBox="0 0 24 24" fill="none" stroke={glowColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 8px ${accentColor}88)` }}>
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
@@ -104,7 +104,7 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
 
         {/* Eyebrow */}
         <div style={{
-          fontSize: 8,
+          fontSize: compact ? 7 : 8,
           letterSpacing: 3,
           color: "#fbbf24",
           fontFamily: "'JetBrains Mono',monospace",
@@ -116,7 +116,7 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
 
         {/* Title */}
         <div style={{
-          fontSize: 15,
+          fontSize: compact ? 14 : 15,
           fontWeight: 900,
           color: "#f8fafc",
           fontFamily: "'Cinzel',serif",
@@ -129,10 +129,10 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
 
         {/* Description */}
         <div style={{
-          fontSize: 11,
+          fontSize: compact ? 10 : 11,
           color: "#94a3b8",
           lineHeight: 1.45,
-          maxWidth: 260,
+          maxWidth: embedded ? 235 : 260,
         }}>
           Steuere, wie oft dein System dich fordert.
           Von <span style={{ color: "#cbd5e1", fontWeight: 700 }}>Baby Gate</span> bis <span style={{ color: "#ef4444", fontWeight: 700 }}>Monarch Call</span>.
@@ -142,13 +142,13 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
         <button
           onClick={(e) => { e.stopPropagation(); onOpenPremium?.("quest_intensity"); }}
           style={{
-            marginTop: 4,
-            padding: "10px 22px",
+            marginTop: compact ? 2 : 4,
+            padding: compact ? "8px 15px" : "10px 22px",
             borderRadius: 12,
             border: `1px solid ${accentColor}55`,
             background: `linear-gradient(135deg, ${accentColor}28, rgba(168,85,247,0.14))`,
             color: "#fff",
-            fontSize: 10,
+            fontSize: compact ? 9 : 10,
             fontWeight: 900,
             fontFamily: "'JetBrains Mono',monospace",
             letterSpacing: 2,
@@ -185,7 +185,7 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
 
         {/* Micro-previews of locked presets */}
         <div style={{
-          display: "flex",
+          display: embedded ? "none" : "flex",
           gap: 5,
           marginTop: 4,
         }}>
@@ -208,10 +208,6 @@ function PremiumLockedOverlay({ theme, onOpenPremium }) {
           0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
           30% { opacity: 0.9; }
           100% { transform: translateX(800%) skewX(-18deg); opacity: 0; }
-        }
-        @keyframes intensityGlowPulse {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 0.9; transform: scale(1.12); }
         }
         @keyframes intensityLockBreath {
           0%, 100% { transform: scale(1); box-shadow: 0 0 32px ${accentColor}22, inset 0 0 20px ${accentColor}10; }
@@ -262,6 +258,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
     <div style={{
       position: "relative",
       overflow: "hidden",
+      minHeight: isLocked && compact ? (embedded ? 184 : 198) : undefined,
       padding: embedded ? 0 : compact ? 10 : 14,
       borderRadius: embedded ? 0 : compact ? 12 : 16,
       background: embedded ? "transparent" : panelBg,
@@ -269,7 +266,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
       boxShadow: embedded ? "none" : enabled ? `0 0 24px ${selected.color}18, inset 0 1px 0 rgba(255,255,255,0.06)` : "inset 0 1px 0 rgba(255,255,255,0.04)",
     }}>
       {/* Premium locked overlay */}
-      {isLocked && <PremiumLockedOverlay theme={theme} onOpenPremium={onOpenPremium} />}
+      {isLocked && <PremiumLockedOverlay theme={theme} onOpenPremium={onOpenPremium} compact={compact} embedded={embedded} />}
 
       {!embedded && (
         <div style={{

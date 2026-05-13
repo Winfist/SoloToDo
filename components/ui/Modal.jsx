@@ -32,32 +32,51 @@ const DIALOG_STYLE = {
 
 export default function Modal({ open, onClose, children, maxWidth = "480px", style, "aria-label": ariaLabel }) {
   const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
     const prev = document.activeElement;
-    dialogRef.current?.focus();
+    const prevBodyOverflow = document.body.style.overflow;
+    const focusFrame = requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      const active = document.activeElement;
+      if (dialog && (!active || active === document.body || !dialog.contains(active))) {
+        dialog.focus({ preventScroll: true });
+      }
+    });
 
     const onKey = (e) => {
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape") onCloseRef.current?.();
       if (e.key === "Tab") trapFocus(e, dialogRef.current);
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
 
     return () => {
+      cancelAnimationFrame(focusFrame);
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-      prev?.focus();
+      document.body.style.overflow = prevBodyOverflow;
+      if (prev && document.contains(prev)) {
+        try {
+          prev.focus({ preventScroll: true });
+        } catch {
+          prev.focus?.();
+        }
+      }
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
   return createPortal(
     <div
       style={OVERLAY_STYLE}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCloseRef.current?.(); }}
       role="presentation"
     >
       <div

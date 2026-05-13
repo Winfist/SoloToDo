@@ -7,6 +7,10 @@ import AuthScreen from './AuthScreen.jsx'
 import { auth } from "./firebase"
 import { onAuthStateChanged } from "firebase/auth"
 
+function isTextEntryTarget(target) {
+  return !!target?.closest?.('input, textarea, select, [contenteditable="true"]');
+}
+
 // Apply saved theme to root element before first render (avoids flash)
 try {
   const _raw = localStorage.getItem("sl-todo-v5");
@@ -29,6 +33,7 @@ document.addEventListener('touchmove', function(e) {
 // Block double-tap zoom
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function(e) {
+  if (isTextEntryTarget(e.target)) return;
   const now = Date.now();
   if (now - lastTouchEnd <= 300) { e.preventDefault(); }
   lastTouchEnd = now;
@@ -47,6 +52,7 @@ document.addEventListener('keydown', function(e) {
 
 // Block context menu (long-press on mobile shows browser context menu)
 document.addEventListener('contextmenu', function(e) {
+  if (isTextEntryTarget(e.target)) return;
   e.preventDefault();
 });
 

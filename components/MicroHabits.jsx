@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { calculateLevelUp } from "../data/constants";
 import { MICRO_ICONS } from "../data/icons.js";
 import { getToday } from "../data/dateUtils.js";
@@ -9,17 +9,33 @@ import { getToday } from "../data/dateUtils.js";
  */
 
 const DEFAULT_MICRO_HABITS = [
-    { id: "water", icon: "💧", iconSrc: MICRO_ICONS.water, label: "Wasser", dailyTarget: 8, color: "#3b82f6" },
-    { id: "posture", icon: "🧘", iconSrc: null, label: "Haltung", dailyTarget: 5, color: "#22c55e" },
-    { id: "stretch", icon: "🤸", iconSrc: MICRO_ICONS.stretch, label: "Stretch", dailyTarget: 4, color: "#f59e0b" },
-    { id: "gratitude", icon: "🙏", iconSrc: MICRO_ICONS.gratitude, label: "Dankbar", dailyTarget: 3, color: "#a855f7" },
-    { id: "breathe", icon: "🌬️", iconSrc: MICRO_ICONS.breathe, label: "Atmen", dailyTarget: 3, color: "#06b6d4" },
+    { id: "water", iconSrc: MICRO_ICONS.water, label: "Wasser", dailyTarget: 8, color: "#3b82f6" },
+    { id: "posture", iconSrc: MICRO_ICONS.posture, label: "Haltung", dailyTarget: 5, color: "#22c55e" },
+    { id: "stretch", iconSrc: MICRO_ICONS.stretch, label: "Stretch", dailyTarget: 4, color: "#f59e0b" },
+    { id: "gratitude", iconSrc: MICRO_ICONS.gratitude, label: "Dankbar", dailyTarget: 3, color: "#a855f7" },
+    { id: "breathe", iconSrc: MICRO_ICONS.breathe, label: "Atmen", dailyTarget: 3, color: "#06b6d4" },
 ];
+
+const MICRO_HABIT_ICON_SOURCES = DEFAULT_MICRO_HABITS.reduce((acc, habit) => {
+    acc[habit.id] = habit.iconSrc;
+    return acc;
+}, {});
+
+function normalizeMicroHabit(habit) {
+    const normalized = {
+        ...habit,
+        iconSrc: MICRO_HABIT_ICON_SOURCES[habit.id] || habit.iconSrc || null,
+    };
+    delete normalized.icon;
+    return normalized;
+}
 
 export default function MicroHabits({ state, persist, notify, theme }) {
     const today = getToday();
-    const microHabits = (state?.microHabits?.habits || DEFAULT_MICRO_HABITS).map(h => 
-        h.id === "posture" ? { ...h, iconSrc: null, icon: "🧘" } : h
+    const primaryColor = theme?.primary || "#22d3ee";
+    const microHabits = useMemo(
+        () => (state?.microHabits?.habits || DEFAULT_MICRO_HABITS).map(normalizeMicroHabit),
+        [state?.microHabits?.habits]
     );
     const todayData = state?.microHabits?.daily?.[today] || {};
 
@@ -59,7 +75,7 @@ export default function MicroHabits({ state, persist, notify, theme }) {
     return (
         <div style={{
             background: theme?.card || "rgba(10,10,22,0.88)",
-            border: `1px solid ${allComplete ? "#22c55e22" : theme?.primary + "12" || "#22d3ee12"}`,
+            border: `1px solid ${allComplete ? "#22c55e22" : primaryColor + "12"}`,
             borderRadius: 16, padding: "14px 16px", marginBottom: 14,
             backdropFilter: "blur(8px)",
         }}>
@@ -91,11 +107,21 @@ export default function MicroHabits({ state, persist, notify, theme }) {
                                 transition: "all 0.2s",
                             }}
                         >
-                            {habit.iconSrc ? (
-                                <img src={habit.iconSrc} alt={habit.label} style={{ width: 22, height: 22, objectFit: "contain", filter: done ? `brightness(1.2) drop-shadow(0 0 5px ${habit.color}88)` : "brightness(0.75)" }} />
-                            ) : (
-                                <span style={{ fontSize: 18 }}>{habit.icon}</span>
-                            )}
+                            <span style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: 9,
+                                display: "grid",
+                                placeItems: "center",
+                                background: done ? habit.color + "12" : "rgba(255,255,255,0.025)",
+                                border: `1px solid ${done ? habit.color + "38" : "rgba(255,255,255,0.05)"}`,
+                            }}>
+                                {habit.iconSrc ? (
+                                    <img src={habit.iconSrc} alt={habit.label} style={{ width: 20, height: 20, objectFit: "contain", filter: done ? `brightness(1.2) drop-shadow(0 0 5px ${habit.color}88)` : "brightness(0.75)" }} />
+                                ) : (
+                                    <span style={{ color: habit.color, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{String(habit.label || "?").slice(0, 1).toUpperCase()}</span>
+                                )}
+                            </span>
                             <span style={{
                                 fontSize: 7, color: done ? habit.color : "#475569",
                                 fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5,

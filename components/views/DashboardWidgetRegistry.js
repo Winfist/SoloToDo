@@ -25,13 +25,14 @@ export const DEFAULT_DASHBOARD_LAYOUT = [
   "daily_progress",
   "health_summary",
   "screen_time_summary",
+  "vision_board",
   "gem_booster",
   "habits",
   "micro_habits",
   "next_unlock",
 ];
 
-export const DEFAULT_HIDDEN_WIDGETS = ["quick_access", "vision_board"];
+export const DEFAULT_HIDDEN_WIDGETS = ["quick_access"];
 
 const LEGACY_CLEANUP_LAYOUT = [
   "today_command",
@@ -134,7 +135,7 @@ export function mergeConfig(saved, can) {
   }
 
   layout = layout.filter(k => allKeys.includes(k));
-  hidden = hidden.filter(k => allKeys.includes(k));
+  hidden = hidden.filter(k => allKeys.includes(k) && !layout.includes(k));
 
   return { layout, hidden, collapsed };
 }

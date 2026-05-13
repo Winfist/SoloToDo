@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import { createPortal } from "react-dom";
 import { CATEGORIES, ACHIEVEMENTS } from "../../data/gameData.js";
 import { getUnlocksAtLevel } from "../../data/featureUnlocks.js";
-import { STAT_ICONS, GATE_ICONS, QUEST_ICONS } from "../../data/icons.js";
+import { STAT_ICONS, GATE_ICONS, QUEST_ICONS, HEALTH_ICONS, NAV_ICONS } from "../../data/icons.js";
 import { StatRadar, QuestCard, EmergencyQuestCard } from "../../data/constants";
 import HabitTracker from "../HabitTracker.jsx";
 import MicroHabits from "../MicroHabits.jsx";
@@ -56,7 +56,151 @@ const CAROUSEL_CSS = `
     max-width: none;
   }
 }
+@keyframes premiumModuleScan {
+  0% { transform: translateX(-130%) skewX(-18deg); opacity: 0; }
+  30% { opacity: .78; }
+  100% { transform: translateX(520%) skewX(-18deg); opacity: 0; }
+}
+@keyframes premiumModuleBreath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.055); }
+}
 `;
+
+const PREMIUM_WIDGET_LOCK_COPY = {
+  health_summary: {
+    eyebrow: "BIOMETRIC CORE",
+    title: "Biometrics freischalten",
+    desc: "Schritte, Schlaf und Health-Rewards werden als Live-Modul im Dashboard sichtbar.",
+    iconSrc: HEALTH_ICONS.steps,
+    feature: "advanced_widgets",
+  },
+  screen_time_summary: {
+    eyebrow: "FOCUS CORE",
+    title: "Bildschirmzeit freischalten",
+    desc: "Limits, Trends und Fokus-Quests landen direkt in deiner Kommandozentrale.",
+    iconSrc: NAV_ICONS.timer,
+    feature: "advanced_widgets",
+  },
+  vision_board: {
+    eyebrow: "VISION CORE",
+    title: "Vision Board freischalten",
+    desc: "Halte Ziele, Affirmationen und System-Identitaet dauerhaft vor Augen.",
+    iconSrc: STAT_ICONS.int,
+    feature: "advanced_widgets",
+  },
+};
+
+function PremiumDashboardLockCard({ widgetKey, def, theme, onOpenPremium, compact = false }) {
+  const copy = PREMIUM_WIDGET_LOCK_COPY[widgetKey] || {
+    eyebrow: "HUNTER PRO",
+    title: `${def?.label || "Modul"} freischalten`,
+    desc: "Dieses Dashboard-Modul ist in Hunter Pro enthalten.",
+    iconSrc: null,
+    feature: "advanced_widgets",
+  };
+  const accent = def?.color || theme?.primary || "#a855f7";
+  const glow = theme?.accent || accent;
+  const minHeight = compact ? 152 : 188;
+
+  const open = () => onOpenPremium?.(copy.feature || "advanced_widgets");
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={open}
+      onKeyDown={event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          open();
+        }
+      }}
+      style={{
+        width: "100%",
+        minHeight,
+        padding: compact ? 14 : 16,
+        borderRadius: compact ? 14 : 16,
+        textAlign: "left",
+        background: `linear-gradient(135deg, rgba(255,255,255,0.052), ${accent}12, rgba(251,191,36,0.065))`,
+        border: "1px solid rgba(251,191,36,0.22)",
+        color: "#e2e8f0",
+        cursor: "pointer",
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px ${accent}12`,
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        gap: compact ? 11 : 14,
+        outline: "none",
+      }}
+    >
+      <div style={{ position: "absolute", inset: 0, background: "rgba(3,5,15,0.48)", backdropFilter: "blur(2px) saturate(0.86)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 78, background: `linear-gradient(90deg, transparent, ${accent}28, transparent)`, animation: "premiumModuleScan 4.4s ease-in-out infinite", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: 0, left: 18, right: 18, height: 1, background: `linear-gradient(90deg, transparent, ${glow}77, rgba(251,191,36,0.55), transparent)`, boxShadow: `0 0 18px ${accent}44`, pointerEvents: "none" }} />
+
+      <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", gap: 13, alignItems: "flex-start" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: "#fbbf24", fontSize: 8, fontWeight: 900, letterSpacing: 2.4, fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>
+            {copy.eyebrow}
+          </div>
+          <div style={{ color: "#fff", fontSize: compact ? 15 : 17, fontWeight: 900, fontFamily: "'Cinzel',serif", marginBottom: 6, lineHeight: 1.15, textShadow: `0 0 20px ${accent}44` }}>
+            {copy.title}
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: compact ? 10 : 11, lineHeight: 1.45, maxWidth: 285 }}>
+            {copy.desc}
+          </div>
+        </div>
+        <div style={{
+          width: compact ? 42 : 48,
+          height: compact ? 42 : 48,
+          borderRadius: "50%",
+          display: "grid",
+          placeItems: "center",
+          background: `radial-gradient(circle, ${accent}1d, ${accent}08)`,
+          border: `1.5px solid ${accent}44`,
+          boxShadow: `0 0 30px ${accent}24, inset 0 0 18px ${accent}12`,
+          animation: "premiumModuleBreath 2.7s ease-in-out infinite",
+          flexShrink: 0,
+        }}>
+          {copy.iconSrc ? (
+            <img src={copy.iconSrc} alt="" style={{ width: compact ? 22 : 25, height: compact ? 22 : 25, objectFit: "contain", filter: `brightness(1.25) drop-shadow(0 0 8px ${accent}88)` }} />
+          ) : (
+            <span style={{ color: glow, fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>PRO</span>
+          )}
+        </div>
+      </div>
+
+      <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 5 }}>
+          {[accent, "#fbbf24", glow].map((color, index) => (
+            <span key={`${color}-${index}`} style={{ width: 7, height: 7, borderRadius: 999, background: color, opacity: 0.72, boxShadow: `0 0 8px ${color}66` }} />
+          ))}
+        </div>
+        <span style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: 32,
+          padding: "0 14px",
+          borderRadius: 11,
+          border: `1px solid ${accent}55`,
+          background: `linear-gradient(135deg, ${accent}28, rgba(168,85,247,0.14))`,
+          color: "#fff",
+          fontSize: 9,
+          fontWeight: 900,
+          fontFamily: "'JetBrains Mono',monospace",
+          letterSpacing: 1.4,
+          boxShadow: `0 8px 22px ${accent}20, inset 0 1px 0 rgba(255,255,255,0.12)`,
+          whiteSpace: "nowrap",
+        }}>
+          PRO FREISCHALTEN
+        </span>
+      </div>
+    </div>
+  );
+}
 
 // ─── ITEM HEIGHT for drag calculations ────────────────────────
 const getItemRects = (containerRef) => {
@@ -304,7 +448,8 @@ export default function DashboardView({
       .map(key => getWidgetDef(key))
       .filter(w => {
         if (!w) return false;
-        if (w.requires && !can(w.requires)) return false;
+        const premiumLocked = isPremiumDashboardWidget(w.key) && !premiumStatus?.active;
+        if (w.requires && !can(w.requires) && !premiumLocked) return false;
         return true;
       });
     if (editMode) return { carouselWidgets: [], regularWidgets: all };
@@ -312,7 +457,7 @@ export default function DashboardView({
       carouselWidgets: all.filter(w => w.carousel),
       regularWidgets: all.filter(w => !w.carousel),
     };
-  }, [localLayout, can, editMode]);
+  }, [localLayout, can, editMode, premiumStatus?.active]);
 
   // For edit mode & drag: all widgets flat
   const visibleWidgets = useMemo(() => {
@@ -428,54 +573,13 @@ export default function DashboardView({
       const def = getWidgetDef(widgetKey);
       return {
         content: (
-          <button
-            onClick={() => openPremiumModal?.("advanced_widgets")}
-            style={{
-              width: "100%",
-              minHeight: 118,
-              padding: 16,
-              borderRadius: 16,
-              textAlign: "left",
-              background: `linear-gradient(135deg, rgba(255,255,255,0.05), ${theme.primary}12, rgba(251,191,36,0.06))`,
-              border: "1px solid rgba(251,191,36,0.18)",
-              color: "#e2e8f0",
-              cursor: "pointer",
-              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px ${theme.primary}12`,
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(110deg, transparent, rgba(255,255,255,0.08), transparent)", pointerEvents: "none" }} />
-            <div style={{ position: "relative", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ color: "#fde68a", fontSize: 9, fontWeight: 900, letterSpacing: 2, fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>
-                  PRO MODUL
-                </div>
-                <div style={{ color: "#fff", fontSize: 16, fontWeight: 900, fontFamily: "'Cinzel',serif", marginBottom: 5 }}>
-                  {def?.label || "Premium Widget"}
-                </div>
-                <div style={{ color: "#94a3b8", fontSize: 11, lineHeight: 1.45 }}>
-                  Dieses Dashboard-Modul ist in Hunter Pro enthalten.
-                </div>
-              </div>
-              <div style={{
-                width: 38,
-                height: 38,
-                borderRadius: 12,
-                display: "grid",
-                placeItems: "center",
-                background: "rgba(251,191,36,0.10)",
-                border: "1px solid rgba(251,191,36,0.22)",
-                color: "#fde68a",
-                fontSize: 11,
-                fontWeight: 900,
-                fontFamily: "'JetBrains Mono',monospace",
-                flexShrink: 0,
-              }}>
-                PRO
-              </div>
-            </div>
-          </button>
+          <PremiumDashboardLockCard
+            widgetKey={widgetKey}
+            def={def}
+            theme={theme}
+            onOpenPremium={openPremiumModal}
+            compact={def?.carousel}
+          />
         ),
         isEmpty: false
       };
