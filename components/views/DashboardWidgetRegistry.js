@@ -76,8 +76,10 @@ const LEGACY_QUEST_FIRST_LAYOUT = [
   "next_unlock",
 ];
 
-function sameOrder(a = [], b = []) {
-  return a.length === b.length && a.every((key, index) => key === b[index]);
+function sameOrder(a, b) {
+  const arrA = a || [];
+  const arrB = b || [];
+  return arrA.length === arrB.length && arrA.every((key, index) => key === arrB[index]);
 }
 
 export function mergeConfig(saved, can) {
