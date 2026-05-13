@@ -483,7 +483,8 @@ function App({ initialHunterName, onLogout }) {
   useEffect(() => {
     if (!state || loading) return;
     const today = state.lastActiveDate;
-    const storageKey = 'sl_ai_quest_gen_date';
+    const aiQuestScope = encodeURIComponent(String(state.ownerUid || state.email || state.displayName || state.hunterName || "local"));
+    const storageKey = `sl_ai_quest_gen_date:${aiQuestScope}`;
     const alreadyGenToday = localStorage.getItem(storageKey) === today;
     if (lastActiveDateRef.current === today || alreadyGenToday) return;
     lastActiveDateRef.current = today;

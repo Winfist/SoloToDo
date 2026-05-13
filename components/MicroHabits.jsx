@@ -53,6 +53,7 @@ export default function MicroHabits({ state, persist, notify, theme }) {
             ...state.microHabits,
             habits: microHabits,
             daily: { ...(state.microHabits?.daily || {}), [today]: newDaily },
+            totalTaps: (state.microHabits?.totalTaps || 0) + 1,
         };
 
         // Check if daily bonus threshold reached

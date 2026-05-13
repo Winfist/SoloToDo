@@ -29,7 +29,7 @@ export {
   getRank, getXpForLevel, getRankIndex, genId, getToday,
   getDailyModifier, calcPowerLevel, getEquipBonuses,
   checkSkillUnlocks, getSkillBonuses, checkAchievements,
-  generateDungeons, generateDailySystemQuests, getJobBonuses,
+  generateDungeons, generateDailySystemQuests, generateStarterQuests, getJobBonuses,
   calculateLevelUp, recalculateLevelFromTotalXp, awardJobXp,
   checkJobUnlocked, checkAllJobsLevel5, formatCooldown,
   calculateJobQuestProgress, calcSuccessChance, getEquipDropForDungeon,

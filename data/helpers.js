@@ -102,6 +102,32 @@ export function generateDungeons(playerRankName) {
   return shuffled.slice(0, 3).map(d => ({ ...d, instanceId: genId(), cleared: false, expiresAt: expires }));
 }
 
+export const STARTER_QUEST_TEMPLATE_IDS = [
+  "qp_str_01",
+  "qp_int_01",
+  "qp_vit_01",
+  "qp_agi_01",
+];
+
+export function generateStarterQuests() {
+  const today = getToday();
+  return STARTER_QUEST_TEMPLATE_IDS
+    .map(templateId => QUEST_POOL.find(q => q.id === templateId))
+    .filter(Boolean)
+    .map((q, index) => ({
+      ...q,
+      id: `starter_${genId()}`,
+      type: "daily",
+      isSystem: true,
+      isStarter: true,
+      createdAt: today,
+      dueDate: today,
+      priority: index === 0 ? "high" : "medium",
+      energy: index === 0 ? "medium" : "low",
+      origin: "starter",
+    }));
+}
+
 export function generateDailySystemQuests(count = 3, state = null) {
   const level = state?.level || 1;
   const stats = state?.stats || { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };

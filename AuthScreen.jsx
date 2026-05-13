@@ -17,6 +17,7 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile,
+  signOut,
   signInWithPopup,
   signInWithCredential,
   GoogleAuthProvider,
@@ -25,8 +26,63 @@ import {
 
 // Detect native Capacitor environment (WKWebView on iOS)
 const IS_CAPACITOR = typeof window !== "undefined" && !!window.Capacitor;
+const AUTH_RETRY_DELAY_MS = 700;
+const RECENT_REGISTRATION_RECOVERY_MS = 5 * 60 * 1000;
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isNetworkAuthError(err) {
+  return err?.code === "auth/network-request-failed" || /network request failed/i.test(err?.message || "");
+}
+
+async function runAuthRequest(fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (isNetworkAuthError(err) && navigator.onLine !== false) {
+      await delay(AUTH_RETRY_DELAY_MS);
+      return await fn();
+    }
+    throw err;
+  }
+}
 
 // ─── AUTH CSS ─────────────────────────────────────────────────
+function isRecentlyCreatedUser(user) {
+  const createdAtMs = Date.parse(user?.metadata?.creationTime || "");
+  return Number.isFinite(createdAtMs) && Date.now() - createdAtMs < RECENT_REGISTRATION_RECOVERY_MS;
+}
+
+async function createUserWithNetworkRecovery(emailValue, passwordValue) {
+  try {
+    return await createUserWithEmailAndPassword(auth, emailValue, passwordValue);
+  } catch (err) {
+    if (!isNetworkAuthError(err) || navigator.onLine === false) throw err;
+
+    await delay(AUTH_RETRY_DELAY_MS);
+    if (auth.currentUser?.email && auth.currentUser.email.toLowerCase() === emailValue.toLowerCase()) {
+      return { user: auth.currentUser };
+    }
+
+    try {
+      return await createUserWithEmailAndPassword(auth, emailValue, passwordValue);
+    } catch (retryErr) {
+      if (retryErr?.code === "auth/email-already-in-use") {
+        try {
+          const recovered = await signInWithEmailAndPassword(auth, emailValue, passwordValue);
+          if (isRecentlyCreatedUser(recovered.user)) return recovered;
+          await signOut(auth);
+        } catch {
+          // Keep the original email-already-in-use result for normal existing accounts.
+        }
+      }
+      throw retryErr;
+    }
+  }
+}
+
 // Fonts are loaded globally in index.html. Keyframes here supplement styles/base.css during migration.
 const AUTH_CSS = `
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -374,15 +430,16 @@ export default function AuthScreen({ onAuthSuccess }) {
 
   const validate = () => {
     const newErrors = {};
-    if (!email) newErrors.email = "E-Mail erforderlich";
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Ungültige E-Mail";
+    if (!email.trim()) newErrors.email = "E-Mail erforderlich";
+    else if (!/\S+@\S+\.\S+/.test(email.trim())) newErrors.email = "Ungueltige E-Mail";
     if (mode !== "forgot") {
       if (!password) newErrors.password = "Passwort erforderlich";
       else if (password.length < 8) newErrors.password = "Mindestens 8 Zeichen";
     }
     if (mode === "register") {
-      if (!hunterName) newErrors.hunterName = "Hunter-Name erforderlich";
-      else if (hunterName.length < 3) newErrors.hunterName = "Mindestens 3 Zeichen";
+      const selectedName = hunterName.trim();
+      if (!selectedName) newErrors.hunterName = "Hunter-Name erforderlich";
+      else if (selectedName.length < 3) newErrors.hunterName = "Mindestens 3 Zeichen";
       if (password !== confirmPassword) newErrors.confirmPassword = "Passwörter stimmen nicht überein";
       if (!agreedToTerms) newErrors.terms = "Bitte akzeptiere die Bedingungen";
     }
@@ -396,21 +453,31 @@ export default function AuthScreen({ onAuthSuccess }) {
     setErrors({});
     try {
       if (mode === "login") {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await runAuthRequest(() => signInWithEmailAndPassword(auth, email.trim(), password));
         const name = userCredential.user.displayName || "Hunter";
         setHunterName(name);
         setShowSuccess(true);
       } else if (mode === "register") {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: hunterName });
+        const selectedName = hunterName.trim();
+        try { sessionStorage.setItem("sl-pending-hunter-name", selectedName); } catch { }
+        const userCredential = await createUserWithNetworkRecovery(email.trim(), password);
+        try {
+          await runAuthRequest(() => updateProfile(userCredential.user, { displayName: selectedName }));
+        } catch (profileErr) {
+          console.warn("Hunter-Name konnte im Firebase-Profil noch nicht gespeichert werden.", profileErr);
+        }
+        setHunterName(selectedName);
         setShowSuccess(true);
       } else if (mode === "forgot") {
-        await sendPasswordResetEmail(auth, email);
+        await runAuthRequest(() => sendPasswordResetEmail(auth, email.trim()));
         setErrors({ success: "Ein Link wurde an deine E-Mail gesendet" });
         setTimeout(() => switchMode("login"), 4000);
       }
     } catch (err) {
       console.error(err);
+      if (mode === "register") {
+        try { sessionStorage.removeItem("sl-pending-hunter-name"); } catch { }
+      }
       let msg = "Ein Fehler ist aufgetreten: " + (err.message || "");
       if (err.code === "auth/user-not-found") msg = "Benutzer nicht gefunden";
       else if (err.code === "auth/wrong-password") msg = "Falsches Passwort";
@@ -418,6 +485,9 @@ export default function AuthScreen({ onAuthSuccess }) {
       else if (err.code === "auth/weak-password") msg = "Passwort ist zu schwach";
       else if (err.code === "auth/invalid-credential") msg = "Ungültige Anmeldedaten";
       else if (err.code === "auth/operation-not-allowed") msg = "Anmeldemethode in Firebase nicht aktiviert.";
+      if (isNetworkAuthError(err)) msg = navigator.onLine === false
+        ? "Du bist offline. Bitte Verbindung pruefen und erneut versuchen."
+        : "Firebase ist gerade nicht erreichbar. Bitte kurz warten und erneut versuchen.";
       setErrors({ server: msg });
     } finally {
       setLoading(false);

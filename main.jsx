@@ -7,25 +7,86 @@ import { auth } from "./firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import SystemLoadingScreen from "./components/ui/SystemLoadingScreen.jsx"
 
+const PENDING_HUNTER_NAME_KEY = "sl-pending-hunter-name";
+
 function isTextEntryTarget(target) {
   return !!target?.closest?.('input, textarea, select, [contenteditable="true"]');
 }
 
+function consumePendingHunterName() {
+  try {
+    const value = sessionStorage.getItem(PENDING_HUNTER_NAME_KEY);
+    if (value) sessionStorage.removeItem(PENDING_HUNTER_NAME_KEY);
+    return value || "";
+  } catch {
+    return "";
+  }
+}
+
+function getLocalStateTimestamp(state) {
+  return Math.max(
+    Number(state?.lastModifiedAtMs || 0),
+    Number(state?.lastInteractionTimeMs || 0),
+    Number(state?.updatedAtMs || 0),
+    Number(state?.savedAtMs || 0)
+  );
+}
+
+function getLocalProfileIdentity(key, state) {
+  const scopedMatch = key.match(/^(sl-todo-v5|sl-todo-v4):(.+)$/);
+  return state?.ownerUid || state?.email || scopedMatch?.[2] || "";
+}
+
+function getLocalGameStateCandidates() {
+  try {
+    const keys = Object.keys(localStorage)
+      .filter(key => /^(sl-todo-v5|sl-todo-v4)(:|$)/.test(key))
+      .filter(key => !key.includes("pending-cloud-sync"));
+    return keys
+      .map(key => {
+        try {
+          const raw = localStorage.getItem(key);
+          return raw ? { key, state: JSON.parse(raw) } : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => getLocalStateTimestamp(b.state) - getLocalStateTimestamp(a.state));
+  } catch {
+    return [];
+  }
+}
+
 function readLocalGameProfile() {
   try {
-    const raw = localStorage.getItem("sl-todo-v5") || localStorage.getItem("sl-todo-v4");
-    if (!raw) return { hasState: false, hunterName: "" };
-    const state = JSON.parse(raw);
-    const completed = Math.max(Number(state.totalQuestsCompleted || 0), state.completedQuests?.length || 0);
-    const statsTotal = Object.values(state.stats || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
-    const hasState = Boolean(
-      state.hunterName
-      || (state.level || 1) > 1
-      || completed > 0
-      || statsTotal > 0
-      || state.shadowArmy?.shadows?.length
+    const candidates = getLocalGameStateCandidates();
+    const identities = new Set(
+      candidates
+        .map(({ key, state }) => getLocalProfileIdentity(key, state))
+        .filter(Boolean)
     );
-    return { hasState, hunterName: state.hunterName || "" };
+    if (identities.size > 1) {
+      console.warn('[SoloToDo] Offline profile fallback skipped: multiple local profiles found.');
+      return { hasState: false, hunterName: "" };
+    }
+
+    for (const { state } of candidates) {
+      if (!state) continue;
+      if (!state.ownerUid && !state.email && candidates.length > 1) continue;
+
+      const completed = Math.max(Number(state.totalQuestsCompleted || 0), state.completedQuests?.length || 0);
+      const statsTotal = Object.values(state.stats || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+      const hasState = Boolean(
+        state.hunterName
+        || (state.level || 1) > 1
+        || completed > 0
+        || statsTotal > 0
+        || state.shadowArmy?.shadows?.length
+      );
+      if (hasState) return { hasState, hunterName: state.hunterName || "" };
+    }
+    return { hasState: false, hunterName: "" };
   } catch {
     return { hasState: false, hunterName: "" };
   }
@@ -33,8 +94,8 @@ function readLocalGameProfile() {
 
 // Apply saved theme to root element before first render (avoids flash)
 try {
-  const _raw = localStorage.getItem("sl-todo-v5");
-  const _savedTheme = _raw ? (JSON.parse(_raw).selectedTheme || "default") : "default";
+  const _raw = getLocalGameStateCandidates()[0]?.state;
+  const _savedTheme = _raw ? (_raw.selectedTheme || "default") : "default";
   document.documentElement.dataset.theme = _savedTheme;
 } catch {
   document.documentElement.dataset.theme = "default";
@@ -162,7 +223,7 @@ function Root() {
       if (user) {
         console.log('[SoloToDo] Auth restored:', user.email);
         explicitLogoutRef.current = false;
-        setHunterName(user.displayName || '');
+        setHunterName(consumePendingHunterName() || user.displayName || '');
         setIsAuthenticated(true);
       } else {
         const localProfile = readLocalGameProfile();
@@ -181,7 +242,7 @@ function Root() {
     const timeout = setTimeout(() => {
       if (!authEventReceived) {
         const localProfile = readLocalGameProfile();
-        if (!explicitLogoutRef.current && localProfile.hasState) {
+        if (!explicitLogoutRef.current && navigator.onLine === false && localProfile.hasState) {
           console.warn('[SoloToDo] Auth timeout - opening local profile');
           setHunterName(localProfile.hunterName);
           setIsAuthenticated(true);

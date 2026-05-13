@@ -10,7 +10,7 @@ import {
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
-  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses, checkAllJobsLevel5,
+  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, generateStarterQuests, getJobBonuses, checkAllJobsLevel5,
   saveState, loadState, migrateState, cacheStateLocally, resolveStateConflict, calculateLevelUp, awardJobXp,
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests
 } from '../data/constants';
@@ -23,6 +23,85 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
+
+function cloneDefaultState() {
+  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+
+function normalizeHunterName(name) {
+  const value = String(name || "").trim();
+  return value || "Hunter";
+}
+
+function createFreshHunterState(name) {
+  const today = getToday();
+  const startState = cloneDefaultState();
+  return {
+    ...startState,
+    hunterName: normalizeHunterName(name),
+    premium: cloneDefaultState().premium,
+    tutorialCompleted: false,
+    completedTutorials: [],
+    lifeDomains: [],
+    lastActiveDate: today,
+    quests: generateStarterQuests(),
+    completedQuests: [],
+    dailyUserQuestsCreated: 0,
+    extraDailySlots: 0,
+    dailyUserXP: 0,
+    dungeons: [],
+    lastDungeonRefresh: null,
+    todayModifier: getDailyModifier(),
+    emergencyQuest: null,
+    emergencyDone: false,
+    emergencyFailed: false,
+    achievements: { unlocked: [], notified: [] },
+    skills: { unlocked: [] },
+    equipment: { slots: { weapon: null, armor: null, ring1: null, ring2: null }, inventory: [] },
+    penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },
+    hiddenQuests: { discovered: [], completed: [] },
+  };
+}
+
+function stampRuntimeState(state) {
+  const user = auth.currentUser;
+  if (!state || !user) return state;
+  return {
+    ...state,
+    ownerUid: user.uid,
+    email: user.email || state.email || null,
+    displayName: state.hunterName || user.displayName || state.displayName || "",
+  };
+}
+
+function getSessionScope(state) {
+  const value = state?.ownerUid || state?.email || state?.displayName || state?.hunterName || "local";
+  return encodeURIComponent(String(value));
+}
+
+function toProgressNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function createProgressSyncEvent(previous, next, now) {
+  if (!previous || !next) return null;
+  const xpDelta = Math.max(0, toProgressNumber(next.totalXpEarned) - toProgressNumber(previous.totalXpEarned));
+  const goldDelta = Math.max(0, toProgressNumber(next.totalGoldEarned) - toProgressNumber(previous.totalGoldEarned));
+  const gemDelta = Math.max(0, toProgressNumber(next.totalGemsEarned) - toProgressNumber(previous.totalGemsEarned));
+  const questDelta = Math.max(0, toProgressNumber(next.totalQuestsCompleted) - toProgressNumber(previous.totalQuestsCompleted));
+  if (!xpDelta && !goldDelta && !gemDelta && !questDelta) return null;
+  return {
+    id: `${now}_${genId()}`,
+    type: "progress_delta",
+    date: getToday(),
+    createdAtMs: now,
+    xpDelta,
+    goldDelta,
+    gemDelta,
+    questDelta,
+  };
+}
 
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
@@ -114,7 +193,16 @@ export function useGameState(initialHunterName, onLogout) {
   }, []);
   const persist = useCallback(s => {
     const now = Date.now();
-    const next = { ...s, lastInteractionTimeMs: now, lastModifiedAtMs: now };
+    const previous = stateRef.current;
+    let next = stampRuntimeState({ ...s, lastInteractionTimeMs: now, lastModifiedAtMs: now });
+    const progressEvent = createProgressSyncEvent(previous, next, now);
+    if (progressEvent) {
+      const events = Array.isArray(next.syncEvents) ? next.syncEvents : [];
+      next = {
+        ...next,
+        syncEvents: [...events, progressEvent].slice(-500),
+      };
+    }
     setState(next);
     stateRef.current = next;
     saveState(next);
@@ -159,16 +247,18 @@ export function useGameState(initialHunterName, onLogout) {
 
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (!docSnap.exists()) return;
-      const cloudData = migrateState(docSnap.data());
+      const cloudData = stampRuntimeState(migrateState(docSnap.data()));
       const current = stateRef.current;
       const resolved = resolveStateConflict(current, cloudData);
       if (!resolved.data || resolved.data === current) return;
 
-      if (resolved.source === "cloud") {
+      if (resolved.source === "cloud" || resolved.source === "merged") {
+        const next = stampRuntimeState(resolved.data);
         console.log("[SoloToDo] Cloud state accepted.", { reason: resolved.reason });
-        setState(resolved.data);
-        stateRef.current = resolved.data;
-        cacheStateLocally(resolved.data);
+        setState(next);
+        stateRef.current = next;
+        cacheStateLocally(next);
+        if (resolved.source === "merged") saveState(next);
         return;
       }
 
@@ -190,11 +280,11 @@ export function useGameState(initialHunterName, onLogout) {
       try {
         const loaded = await loadState();
         const resolved = resolveStateConflict(current, loaded.data);
-        const next = resolved.data || current;
+        const next = stampRuntimeState(resolved.data || current);
         setState(next);
         stateRef.current = next;
         await cacheStateLocally(next);
-        if (resolved.source === "local" || loaded.source !== "cloud") {
+        if (resolved.source === "local" || resolved.source === "merged" || loaded.source !== "cloud") {
           await saveState(next);
         }
       } catch (e) {
@@ -355,10 +445,18 @@ export function useGameState(initialHunterName, onLogout) {
               s.todayModifier = getDailyModifier();
             }
           }
+          if (s.statPoints === undefined) s.statPoints = 0;
+          const userCreatedAtMs = Date.parse(user?.metadata?.creationTime || "");
+          const userWasJustCreated = Number.isFinite(userCreatedAtMs) && Date.now() - userCreatedAtMs < 10 * 60 * 1000;
+          if (initialHunterName && (!s.hunterName || userWasJustCreated)) {
+            s.hunterName = initialHunterName;
+          }
+          const readyState = stampRuntimeState(s);
+          stateRef.current = readyState;
           // UNIFIED BOOT BRIEFING: Bundle ALL startup info into a single system
           // message instead of multiple separate modals. Shown quickly (300ms).
           setTimeout(() => {
-            const statusCheckKey = 'sl_status_check_' + today;
+            const statusCheckKey = `sl_status_check_${today}_${getSessionScope(readyState)}`;
             try {
               if (sessionStorage.getItem(statusCheckKey) === 'shown') return;
               sessionStorage.setItem(statusCheckKey, 'shown');
@@ -368,48 +466,40 @@ export function useGameState(initialHunterName, onLogout) {
             const statusLines = [
               `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`
             ];
-            const activeDailies = (s.quests || []).filter(q => q.type === "daily" && !q.completed);
+            const activeDailies = (readyState.quests || []).filter(q => q.type === "daily" && !q.completed);
             if (activeDailies.length > 0) statusLines.push(`Aktive Tages-Quests: ${activeDailies.length}`);
             // Emergency quest info (replaces the former separate modal)
-            if (s.emergencyQuest && !s.emergencyDone && !s.emergencyFailed) {
+            if (readyState.emergencyQuest && !readyState.emergencyDone && !readyState.emergencyFailed) {
               if (isNewEmergency) {
-                statusLines.push(`⚠ NOTFALL-MISSION: ${s.emergencyQuest.title}`);
+                statusLines.push(`⚠ NOTFALL-MISSION: ${readyState.emergencyQuest.title}`);
                 statusLines.push("Belohnungen verdoppelt. Versagen wird nicht toleriert.");
               } else {
                 statusLines.push("⚠️ NOTFALL-MISSION AKTIV");
               }
             }
-            if (s.penaltyZone?.active) statusLines.push("⚠️ PENALTY ZONE AKTIV: XP-Malus -20%");
-            if (s.shadowRegression?.active) statusLines.push("🔥 SHADOW REGRESSION: Redemption-Quests verfügbar");
-            if (s.streak >= 5) statusLines.push(`🔥 Serie: ${s.streak} Tage — Weiter so!`);
+            if (readyState.penaltyZone?.active) statusLines.push("⚠️ PENALTY ZONE AKTIV: XP-Malus -20%");
+            if (readyState.shadowRegression?.active) statusLines.push("🔥 SHADOW REGRESSION: Redemption-Quests verfügbar");
+            if (readyState.streak >= 5) statusLines.push(`🔥 Serie: ${readyState.streak} Tage — Weiter so!`);
 
             triggerSystemMessage("STATUS-CHECK", statusLines);
           }, 300);
-          if (s.statPoints === undefined) s.statPoints = 0;
-          if (!s.hunterName && initialHunterName) {
-            s.hunterName = initialHunterName;
-          }
-          setState(s);
-          if (!s.hunterName) setShowSetup(true);
+          setState(readyState);
+          if (!readyState.hunterName) setShowSetup(true);
 
           // Initial widget sync on app boot
           import('../services/widgetDataService.js').then(({ syncWidgetData }) => {
-            syncWidgetData(s);
+            syncWidgetData(readyState);
           }).catch(() => { });
 
           // If local won over cloud (or cloud was unavailable), repair cloud when possible.
           if (source !== "cloud" && user) {
-            saveState(s);
+            saveState(readyState);
           }
         } else {
-          const startState = { ...DEFAULT_STATE };
-          if (initialHunterName) {
-            startState.hunterName = initialHunterName;
-            setShowSetup(false);
-          } else {
-            setShowSetup(true);
-          }
+          const startState = stampRuntimeState(createFreshHunterState(initialHunterName));
+          setShowSetup(!initialHunterName);
           setState(startState);
+          stateRef.current = startState;
           setTimeout(() => saveState(startState), 500);
         }
       } catch (err) {
@@ -1533,30 +1623,9 @@ export function useGameState(initialHunterName, onLogout) {
 
 
   const finishSetup = name => {
-    const s = {
-      ...DEFAULT_STATE,
-      hunterName: name || "Hunter",
-      lastActiveDate: getToday(),
-      quests: generateDailySystemQuests(getDailySystemQuestCount(DEFAULT_STATE), DEFAULT_STATE),
-      dungeons: generateDungeons("E"),
-      lastDungeonRefresh: getToday(),
-      achievements: { unlocked: [], notified: [] },
-      skills: { unlocked: [] },
-      equipment: { slots: { weapon: null, armor: null, ring1: null, ring2: null }, inventory: [] },
-      penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },
-      todayModifier: getDailyModifier(),
-      emergencyQuest: generateEmergencyQuest(1),
-      emergencyDone: false,
-      emergencyFailed: false,
-      hiddenQuests: { discovered: [], completed: [] },
-      jobs: {
-        current: null,
-        levels: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
-        xp: { berserker: 0, archmage: 0, guardian: 0, assassin: 0, monarch: 0, necromancer: 0 },
-        activeAbilityCooldowns: {}
-      }
-    };
-    persist(s); setShowSetup(false);
+    const s = createFreshHunterState(name);
+    persist(s);
+    setShowSetup(false);
   };
 
   // ─ DAWN/DUSK PROTOCOL ─

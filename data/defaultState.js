@@ -26,6 +26,7 @@ export const DEFAULT_STATE = {
   shopPurchases: [], selectedTheme: "default", selectedTitle: "", selectedPageTransition: "domain_shift",
   shadowArmy: { shadows: [], capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 },
   totalXpEarned: 0, totalQuestsCompleted: 0,
+  syncEvents: [],
   dailyUserQuestsCreated: 0, extraDailySlots: 0, dailyUserXP: 0, integrityScore: 100,
   dungeons: [], lastDungeonRefresh: null, dungeonHistory: [],
   achievements: { unlocked: [], notified: [] },
@@ -46,6 +47,7 @@ export const DEFAULT_STATE = {
     healthHistoryRange: "7d"
   },
   healthDailyHistory: {},
+  healthRewardsClaimed: {},
   screenTimePreferences: {
     enabled: false,
     dailyLimitMinutes: 180,
@@ -176,7 +178,7 @@ export const DEFAULT_STATE = {
   },
   settings: {
     autoSystemTasks: false,
-    questIntensity: "hunter_patrol",
+    questIntensity: "baby_gate",
     pageTransitionSpeed: 1,
   },
   widgetConfig: {

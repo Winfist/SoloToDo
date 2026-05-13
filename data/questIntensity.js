@@ -1,4 +1,4 @@
-export const DEFAULT_QUEST_INTENSITY_KEY = "hunter_patrol";
+export const DEFAULT_QUEST_INTENSITY_KEY = "baby_gate";
 
 export const QUEST_INTENSITY_PRESETS = [
   {
