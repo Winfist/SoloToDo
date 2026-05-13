@@ -47,6 +47,7 @@ export default function BottomNav({
 
   return (
     <nav
+      data-tutorial="bottom-nav"
       aria-label="Hauptnavigation"
       style={{
         position: "fixed",
@@ -79,6 +80,7 @@ export default function BottomNav({
           return (
             <button
               key={tab.key}
+              data-tutorial={`nav-${tab.key}`}
               onClick={() => onNavigate(tab.key)}
               aria-label={tab.label}
               aria-current={active ? "page" : undefined}

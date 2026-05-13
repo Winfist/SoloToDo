@@ -9,3 +9,4 @@ export { default as Tabs } from "./Tabs.jsx";
 export { default as Input } from "./Input.jsx";
 export { default as Toast, ToastContainer } from "./Toast.jsx";
 export { default as Tooltip } from "./Tooltip.jsx";
+export { default as ScrollApproachHint } from "./ScrollApproachHint.jsx";

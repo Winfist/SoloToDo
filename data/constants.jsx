@@ -46,7 +46,15 @@ export {
   calculateProtocolXp, generateSeasonalQuests,
 } from "./protocolHelpers.js";
 
-export { loadState, saveState, migrateState } from "./storage.js";
+export {
+  loadState,
+  saveState,
+  migrateState,
+  cacheStateLocally,
+  resolveStateConflict,
+  getStateProgressScore,
+  getStateTimestamp,
+} from "./storage.js";
 
 export { CSS } from "./css.js";
 

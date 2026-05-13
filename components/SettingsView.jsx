@@ -989,7 +989,7 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme, premiumStatu
 // ═════════════════════════════════════════════════════════════════
 //  MAIN SETTINGS VIEW
 // ═════════════════════════════════════════════════════════════════
-export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onOpenPremium, premiumStatus: premiumStatusProp, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI, activatePremiumCode, notify }) {
+export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onOpenPremium, premiumStatus: premiumStatusProp, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI, activatePremiumCode, notify, onResetTutorial }) {
   // ── Section states ──
   const [openSection, setOpenSection] = useState(null);
   const toggleSection = (key) => setOpenSection(prev => prev === key ? null : key);
@@ -1824,6 +1824,67 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             <img src={NAV_ICONS.analytics} alt="export" style={{ width: 14, height: 14, objectFit: "contain" }} /> JSON EXPORTIEREN
           </button>
         </div>
+
+        {/* ── Tutorial Wiederholen ── */}
+        {onResetTutorial && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{
+              fontSize: 8, letterSpacing: 2.5, color: "#22d3ee",
+              fontFamily: "'JetBrains Mono',monospace", marginBottom: 8,
+              display: "flex", alignItems: "center", gap: 6,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22d3ee", boxShadow: "0 0 8px #22d3ee", display: "inline-block", animation: "pulse 2s ease-in-out infinite" }} />
+              SYSTEM GUIDANCE
+            </div>
+            <button
+              onClick={() => {
+                if (confirm("Tutorial neu starten? Du wechselst zurueck zum Dashboard und die interaktive Einfuehrung beginnt sofort.")) {
+                  onResetTutorial();
+                  notify?.("Tutorial wird neu gestartet.", "info");
+                }
+              }}
+              style={{
+                width: "100%", padding: "14px 18px", borderRadius: 14,
+                background: "linear-gradient(135deg, rgba(34,211,238,0.06), rgba(34,211,238,0.02))",
+                border: "1px solid rgba(34,211,238,0.2)",
+                borderLeft: "3px solid rgba(34,211,238,0.5)",
+                color: "#22d3ee", fontWeight: 800, fontSize: 11,
+                fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2,
+                cursor: "pointer", transition: "all 0.3s ease",
+                display: "flex", alignItems: "center", gap: 12,
+                textAlign: "left", position: "relative", overflow: "hidden",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,238,0.12), rgba(34,211,238,0.04))";
+                e.currentTarget.style.borderColor = "rgba(34,211,238,0.4)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(34,211,238,0.12)";
+                e.currentTarget.style.transform = "translateX(2px)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,238,0.06), rgba(34,211,238,0.02))";
+                e.currentTarget.style.borderColor = "rgba(34,211,238,0.2)";
+                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.transform = "none";
+              }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontFamily: "'JetBrains Mono',monospace", fontWeight: 900,
+              }}>SYS</div>
+              <div>
+                <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 800, fontFamily: "'Cinzel',serif", letterSpacing: 1, marginBottom: 3 }}>
+                  Tutorial wiederholen
+                </div>
+                <div style={{ fontSize: 9, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace", opacity: 0.7 }}>
+                  SYSTEM-EINFUEHRUNG NEU STARTEN
+                </div>
+              </div>
+              <div style={{ marginLeft: "auto", fontSize: 14, color: "rgba(34,211,238,0.5)" }}>&gt;</div>
+            </button>
+          </div>
+        )}
 
         {/* Clear Cache */}
         <button onClick={clearCache} style={{

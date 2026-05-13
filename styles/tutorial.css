@@ -1,0 +1,890 @@
+/* SoloToDo system tutorial overlay */
+
+.tutorial-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  pointer-events: auto;
+  transition: opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tutorial-backdrop--entering { opacity: 0; }
+.tutorial-backdrop--visible { opacity: 1; }
+.tutorial-backdrop--exiting { opacity: 0; transition-duration: 0.35s; }
+.tutorial-backdrop--pass-through { pointer-events: none; }
+
+.tutorial-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 9501;
+  pointer-events: none;
+}
+
+.tutorial-mask--solid {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(34, 211, 238, 0.08), transparent 42%),
+    radial-gradient(circle at 50% 58%, rgba(168, 85, 247, 0.08), transparent 48%),
+    rgba(1, 3, 12, 0.92);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.tutorial-typewriter-cursor {
+  display: inline-block;
+  height: 1em;
+  margin-left: 1px;
+  border-right: 2px solid rgba(34, 211, 238, 0.62);
+  animation: tutTypewriterCursor 0.8s step-end infinite;
+  vertical-align: -0.14em;
+}
+
+.tutorial-click-cage {
+  position: fixed;
+  z-index: 9508;
+  pointer-events: auto;
+  touch-action: none;
+  background: transparent;
+}
+
+.tutorial-click-cage--full { inset: 0; }
+
+.tutorial-system-hud {
+  position: fixed;
+  left: 50%;
+  z-index: 9530;
+  width: min(420px, calc(100vw - 138px));
+  min-height: 46px;
+  transform: translateX(-50%);
+  padding: 9px 14px 11px 42px;
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%, 0 14px);
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.14), rgba(168, 85, 247, 0.08) 44%, rgba(2, 6, 18, 0.88)),
+    rgba(3, 7, 19, 0.92);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.48),
+    0 0 28px rgba(34, 211, 238, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  animation: tutHudEnter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: hidden;
+}
+
+.tutorial-system-hud--top {
+  top: max(env(safe-area-inset-top, 0px), 12px);
+}
+
+.tutorial-system-hud--bottom {
+  bottom: calc(max(env(safe-area-inset-bottom, 0px), 0px) + 88px);
+}
+
+.tutorial-system-hud::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.16), transparent);
+  transform: translateX(-120%);
+  animation: tutHudScan 3s ease-in-out infinite;
+}
+
+.tutorial-system-hud__signal {
+  position: absolute;
+  left: 14px;
+  top: 13px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.72);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.55), inset 0 0 10px rgba(34, 211, 238, 0.2);
+}
+
+.tutorial-system-hud__signal::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 14px #22d3ee;
+}
+
+.tutorial-system-hud__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tutorial-system-hud__label {
+  color: #67e8f9;
+  font: 900 8px/1 "JetBrains Mono", monospace;
+  letter-spacing: 2px;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.55);
+}
+
+.tutorial-system-hud__protocol {
+  color: rgba(226, 232, 240, 0.72);
+  font: 800 8px/1 "JetBrains Mono", monospace;
+  letter-spacing: 1px;
+}
+
+.tutorial-system-hud__meta {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  display: flex;
+  gap: 3px;
+  color: rgba(251, 191, 36, 0.82);
+  font: 900 8px/1 "JetBrains Mono", monospace;
+  letter-spacing: 1px;
+}
+
+.tutorial-system-hud__bar {
+  position: absolute;
+  left: 42px;
+  right: 12px;
+  bottom: 7px;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.82);
+  border-radius: 99px;
+}
+
+.tutorial-system-hud__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #a855f7, #fbbf24);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.55);
+  transition: width 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tutorial-context-frame {
+  position: fixed;
+  z-index: 9504;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.06), transparent 34%, rgba(168, 85, 247, 0.05)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 0 44px rgba(34, 211, 238, 0.12),
+    inset 0 0 34px rgba(34, 211, 238, 0.045);
+  overflow: hidden;
+  animation: tutContextBreath 2.4s ease-in-out infinite;
+  transition: all 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tutorial-context-frame::before,
+.tutorial-context-frame::after {
+  content: "";
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+}
+
+.tutorial-context-frame::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid rgba(34, 211, 238, 0.8);
+  border-left: 2px solid rgba(34, 211, 238, 0.8);
+  border-radius: 18px 0 0 0;
+}
+
+.tutorial-context-frame::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 2px solid rgba(168, 85, 247, 0.76);
+  border-bottom: 2px solid rgba(168, 85, 247, 0.76);
+  border-radius: 0 0 18px 0;
+}
+
+.tutorial-context-frame--blocked {
+  animation: tutBlockedPulse 0.28s ease both, tutContextBreath 2.4s ease-in-out infinite;
+  border-color: rgba(251, 191, 36, 0.55);
+}
+
+.tutorial-context-frame__label {
+  position: absolute;
+  left: 14px;
+  top: 10px;
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: rgba(2, 6, 18, 0.72);
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  color: rgba(103, 232, 249, 0.82);
+  font: 900 8px/1 "JetBrains Mono", monospace;
+  letter-spacing: 1.7px;
+}
+
+.tutorial-context-frame__scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 90px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.12), transparent);
+  transform: translateX(-110%);
+  animation: tutContextSweep 3.2s ease-in-out infinite;
+}
+
+.tutorial-spotlight-ring {
+  position: fixed;
+  z-index: 9512;
+  border-radius: 14px;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 2px rgba(251, 191, 36, 0.9),
+    0 0 0 6px rgba(34, 211, 238, 0.2),
+    0 0 28px rgba(251, 191, 36, 0.34),
+    0 0 64px rgba(34, 211, 238, 0.18),
+    inset 0 0 18px rgba(251, 191, 36, 0.08);
+  animation: tutTargetPulse 1.7s ease-in-out infinite;
+  transition: all 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tutorial-spotlight-ring--strong {
+  box-shadow:
+    0 0 0 3px rgba(251, 191, 36, 1),
+    0 0 0 8px rgba(34, 211, 238, 0.24),
+    0 0 38px rgba(251, 191, 36, 0.48),
+    0 0 88px rgba(34, 211, 238, 0.24),
+    inset 0 0 22px rgba(251, 191, 36, 0.12);
+  animation: tutTargetPulseStrong 1.22s ease-in-out infinite;
+}
+
+.tutorial-spotlight-ring--blocked {
+  animation: tutBlockedPulse 0.28s ease both, tutTargetPulseStrong 1.22s ease-in-out infinite;
+}
+
+.tutorial-spotlight-ring::before,
+.tutorial-spotlight-ring::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.tutorial-spotlight-ring::before {
+  top: -3px;
+  left: -3px;
+  border-top: 2px solid #fbbf24;
+  border-left: 2px solid #fbbf24;
+}
+
+.tutorial-spotlight-ring::after {
+  right: -3px;
+  bottom: -3px;
+  border-right: 2px solid #67e8f9;
+  border-bottom: 2px solid #67e8f9;
+}
+
+.tutorial-tooltip {
+  position: fixed;
+  z-index: 9532;
+  width: calc(100vw - 36px);
+  max-width: 420px;
+  pointer-events: auto;
+  animation: tutTooltipEnter 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tutorial-tooltip__card {
+  position: relative;
+  overflow: hidden;
+  padding: 19px 20px 18px;
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  background:
+    linear-gradient(145deg, rgba(4, 9, 24, 0.97), rgba(7, 5, 22, 0.97) 54%, rgba(2, 6, 18, 0.98)),
+    rgba(2, 6, 18, 0.98);
+  border: 1px solid rgba(34, 211, 238, 0.26);
+  border-left: 3px solid rgba(34, 211, 238, 0.78);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.64),
+    0 0 38px rgba(34, 211, 238, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(28px) saturate(1.35);
+  -webkit-backdrop-filter: blur(28px) saturate(1.35);
+}
+
+.tutorial-tooltip__card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.05), transparent);
+  opacity: 0.32;
+  transform: translateY(-45%);
+  animation: tutScanLine 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tutorial-tooltip__card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.75), rgba(251, 191, 36, 0.45), transparent);
+  pointer-events: none;
+}
+
+.tutorial-tooltip__eyebrow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 11px;
+}
+
+.tutorial-tooltip__system-tag,
+.tutorial-tooltip__mode,
+.tutorial-tooltip__step-counter {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 1.7px;
+}
+
+.tutorial-tooltip__system-tag {
+  color: #67e8f9;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
+}
+
+.tutorial-tooltip__mode {
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: rgba(251, 191, 36, 0.86);
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.18);
+}
+
+.tutorial-tooltip__step-counter {
+  margin-left: auto;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.tutorial-tooltip__title {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 10px;
+  color: #f8fafc;
+  font-family: "Cinzel", serif;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.16;
+  letter-spacing: 1.8px;
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
+}
+
+.tutorial-tooltip__text {
+  position: relative;
+  z-index: 1;
+  min-height: 56px;
+  color: #b6c3d5;
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.62;
+}
+
+.tutorial-tooltip__actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  gap: 10px;
+  margin-top: 17px;
+}
+
+.tutorial-tooltip__continue-btn {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgba(34, 211, 238, 0.38);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(168, 85, 247, 0.08)),
+    rgba(255, 255, 255, 0.035);
+  color: #67e8f9;
+  font: 900 10px/1 "JetBrains Mono", monospace;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.36);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+}
+
+.tutorial-tooltip__continue-btn:hover {
+  border-color: rgba(34, 211, 238, 0.72);
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.24), rgba(168, 85, 247, 0.12)),
+    rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.16);
+  transform: translateY(-1px);
+}
+
+.tutorial-tooltip__continue-btn:active { transform: scale(0.98); }
+
+.tutorial-tooltip__action-hint {
+  width: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  background: rgba(251, 191, 36, 0.07);
+  color: rgba(253, 230, 138, 0.9);
+  font: 900 9px/1.25 "JetBrains Mono", monospace;
+  letter-spacing: 1.2px;
+  text-align: center;
+  animation: tutPulseText 1.8s ease-in-out infinite;
+}
+
+.tutorial-skip-btn {
+  position: fixed;
+  z-index: 9540;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 9px;
+  background: rgba(3, 7, 18, 0.78);
+  color: rgba(148, 163, 184, 0.78);
+  font: 900 8px/1 "JetBrains Mono", monospace;
+  letter-spacing: 1.7px;
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tutorial-skip-btn--top-left {
+  top: max(env(safe-area-inset-top, 0px), 12px);
+  left: 14px;
+}
+
+.tutorial-skip-btn--bottom-left {
+  left: 14px;
+  bottom: calc(max(env(safe-area-inset-bottom, 0px), 0px) + 88px);
+}
+
+.tutorial-skip-btn:hover {
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.38);
+  background: rgba(3, 7, 18, 0.92);
+}
+
+.tutorial-progress {
+  position: fixed;
+  right: 12px;
+  top: 50%;
+  z-index: 9540;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transform: translateY(-50%);
+  padding: 12px 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(34, 211, 238, 0.13);
+  background: rgba(3, 7, 18, 0.82);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+
+.tutorial-progress__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(100, 116, 139, 0.35);
+  transition: all 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tutorial-progress__dot--active {
+  width: 6px;
+  height: 22px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #22d3ee, #a855f7, #fbbf24);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
+}
+
+.tutorial-progress__dot--done {
+  background: rgba(34, 211, 238, 0.55);
+}
+
+.tutorial-cinematic {
+  position: fixed;
+  inset: 0;
+  z-index: 9532;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 44px 26px;
+  pointer-events: auto;
+  animation: tutCinematicEnter 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tutorial-cinematic__ambient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(34, 211, 238, 0.13), transparent 34%),
+    radial-gradient(circle at 50% 56%, rgba(168, 85, 247, 0.16), transparent 44%),
+    linear-gradient(180deg, rgba(1, 3, 12, 0.16), rgba(1, 3, 12, 0.9));
+  pointer-events: none;
+}
+
+.tutorial-cinematic__particle {
+  position: absolute;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.62);
+  animation-name: tutIconFloat;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+}
+
+.tutorial-cinematic__sigil {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+}
+
+.tutorial-cinematic__sigil-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.34);
+  box-shadow: 0 0 36px rgba(34, 211, 238, 0.16), inset 0 0 24px rgba(168, 85, 247, 0.12);
+}
+
+.tutorial-cinematic__sigil-ring--outer {
+  animation: tutSigilSpin 14s linear infinite;
+  border-top-color: rgba(251, 191, 36, 0.78);
+  border-right-color: rgba(168, 85, 247, 0.55);
+}
+
+.tutorial-cinematic__sigil-ring--inner {
+  inset: 18px;
+  animation: tutSigilSpin 9s linear infinite reverse;
+  border-bottom-color: rgba(103, 232, 249, 0.82);
+}
+
+.tutorial-cinematic__icon {
+  position: relative;
+  z-index: 1;
+  color: #f8fafc;
+  font: 900 20px/1 "JetBrains Mono", monospace;
+  letter-spacing: 1px;
+  text-shadow: 0 0 24px rgba(34, 211, 238, 0.65), 0 0 52px rgba(168, 85, 247, 0.32);
+}
+
+.tutorial-cinematic__eyebrow {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 11px;
+  color: #67e8f9;
+  font: 900 9px/1 "JetBrains Mono", monospace;
+  letter-spacing: 4px;
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.55);
+}
+
+.tutorial-cinematic__title {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 18px;
+  color: #fff;
+  font-family: "Cinzel", serif;
+  font-size: 23px;
+  font-weight: 900;
+  line-height: 1.16;
+  letter-spacing: 5px;
+  text-align: center;
+  text-shadow: 0 0 30px rgba(34, 211, 238, 0.28);
+  animation: tutTitleGlow 3s ease-in-out infinite;
+}
+
+.tutorial-cinematic__title--finale {
+  color: #d8b4fe;
+  font-size: 31px;
+  letter-spacing: 12px;
+  text-shadow: 0 0 46px rgba(168, 85, 247, 0.55), 0 0 90px rgba(34, 211, 238, 0.22);
+  animation: tutAriseGlow 2.1s ease-in-out infinite;
+}
+
+.tutorial-cinematic__text {
+  position: relative;
+  z-index: 1;
+  max-width: 390px;
+  margin-bottom: 30px;
+  color: #b6c3d5;
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.tutorial-cinematic__continue {
+  position: relative;
+  z-index: 1;
+  color: rgba(251, 191, 36, 0.8);
+  font: 900 9px/1 "JetBrains Mono", monospace;
+  letter-spacing: 3px;
+  cursor: pointer;
+  animation: tutPulseText 1.8s ease-in-out infinite;
+}
+
+.tutorial-cinematic__counter {
+  position: absolute;
+  top: max(env(safe-area-inset-top, 0px), 16px);
+  left: 18px;
+  z-index: 1;
+  color: rgba(148, 163, 184, 0.42);
+  font: 900 9px/1 "JetBrains Mono", monospace;
+  letter-spacing: 2px;
+}
+
+.tutorial-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 9550;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.tutorial-confetti__particle {
+  position: absolute;
+  border-radius: 1px;
+  animation: tutConfettiFall linear forwards;
+}
+
+.tutorial-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.tutorial-arrow--up {
+  top: -10px;
+  left: 34px;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 10px solid rgba(4, 9, 24, 0.97);
+  filter: drop-shadow(0 -2px 4px rgba(34, 211, 238, 0.22));
+}
+
+.tutorial-arrow--down {
+  bottom: -10px;
+  left: 34px;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid rgba(4, 9, 24, 0.97);
+  filter: drop-shadow(0 2px 4px rgba(34, 211, 238, 0.22));
+}
+
+.tutorial-arrow--left {
+  left: -10px;
+  top: 38px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 10px solid rgba(4, 9, 24, 0.97);
+  filter: drop-shadow(-2px 0 4px rgba(34, 211, 238, 0.22));
+}
+
+.tutorial-arrow--right {
+  right: -10px;
+  top: 38px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 10px solid rgba(4, 9, 24, 0.97);
+  filter: drop-shadow(2px 0 4px rgba(34, 211, 238, 0.22));
+}
+
+@keyframes tutHudEnter {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes tutHudScan {
+  0%, 35% { transform: translateX(-120%); }
+  65%, 100% { transform: translateX(120%); }
+}
+
+@keyframes tutContextBreath {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.035), 0 0 34px rgba(34,211,238,0.1), inset 0 0 28px rgba(34,211,238,0.04); }
+  50% { box-shadow: 0 0 0 1px rgba(34,211,238,0.16), 0 0 58px rgba(34,211,238,0.18), inset 0 0 36px rgba(168,85,247,0.06); }
+}
+
+@keyframes tutContextSweep {
+  0%, 25% { transform: translateX(-120%); }
+  70%, 100% { transform: translateX(120vw); }
+}
+
+@keyframes tutTargetPulse {
+  0%, 100% { transform: scale(1); opacity: 0.88; }
+  50% { transform: scale(1.012); opacity: 1; }
+}
+
+@keyframes tutTargetPulseStrong {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.026); opacity: 1; }
+}
+
+@keyframes tutBlockedPulse {
+  0%, 100% { transform: translateX(0) scale(1); }
+  25% { transform: translateX(-3px) scale(1.01); }
+  50% { transform: translateX(3px) scale(1.01); }
+  75% { transform: translateX(-2px) scale(1.01); }
+}
+
+@keyframes tutTooltipEnter {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes tutScanLine {
+  0% { transform: translateY(-48%); }
+  100% { transform: translateY(48%); }
+}
+
+@keyframes tutTypewriterCursor {
+  0%, 100% { border-color: rgba(34, 211, 238, 0.62); }
+  50% { border-color: transparent; }
+}
+
+@keyframes tutPulseText {
+  0%, 100% { opacity: 0.48; }
+  50% { opacity: 1; }
+}
+
+@keyframes tutCinematicEnter {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes tutIconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes tutSigilSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes tutTitleGlow {
+  0%, 100% { text-shadow: 0 0 24px rgba(34, 211, 238, 0.24); }
+  50% { text-shadow: 0 0 46px rgba(34, 211, 238, 0.42), 0 0 72px rgba(168, 85, 247, 0.18); }
+}
+
+@keyframes tutAriseGlow {
+  0%, 100% { letter-spacing: 12px; text-shadow: 0 0 36px rgba(168, 85, 247, 0.42); }
+  50% { letter-spacing: 16px; text-shadow: 0 0 66px rgba(168, 85, 247, 0.76), 0 0 110px rgba(34, 211, 238, 0.26); }
+}
+
+@keyframes tutConfettiFall {
+  0% { transform: translateY(-20vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+@media (max-width: 560px) {
+  .tutorial-system-hud {
+    left: 12px;
+    width: min(330px, calc(100vw - 24px));
+    transform: none;
+  }
+
+  .tutorial-system-hud--top {
+    top: max(env(safe-area-inset-top, 0px), 54px);
+  }
+
+  .tutorial-system-hud--bottom {
+    bottom: calc(max(env(safe-area-inset-bottom, 0px), 0px) + 86px);
+  }
+
+  .tutorial-system-hud__protocol {
+    display: none;
+  }
+
+  .tutorial-skip-btn {
+    min-height: 32px;
+    padding: 0 10px;
+  }
+
+  .tutorial-skip-btn--top-left {
+    left: 10px;
+  }
+
+  .tutorial-skip-btn--bottom-left {
+    left: 10px;
+    bottom: calc(max(env(safe-area-inset-bottom, 0px), 0px) + 82px);
+  }
+
+  .tutorial-progress {
+    right: 8px;
+    padding: 10px 7px;
+  }
+
+  .tutorial-tooltip__card {
+    padding: 17px 17px 16px;
+  }
+
+  .tutorial-tooltip__title {
+    font-size: 15px;
+    letter-spacing: 1.2px;
+  }
+
+  .tutorial-tooltip__text {
+    font-size: 12px;
+    min-height: 50px;
+  }
+
+  .tutorial-context-frame__label {
+    display: none;
+  }
+
+  .tutorial-cinematic__title {
+    font-size: 20px;
+    letter-spacing: 3px;
+  }
+
+  .tutorial-cinematic__title--finale {
+    font-size: 25px;
+    letter-spacing: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-system-hud,
+  .tutorial-system-hud::before,
+  .tutorial-context-frame,
+  .tutorial-context-frame__scan,
+  .tutorial-spotlight-ring,
+  .tutorial-tooltip,
+  .tutorial-tooltip__card::before,
+  .tutorial-cinematic,
+  .tutorial-cinematic__particle,
+  .tutorial-cinematic__sigil-ring,
+  .tutorial-cinematic__title,
+  .tutorial-cinematic__title--finale,
+  .tutorial-cinematic__continue,
+  .tutorial-tooltip__action-hint {
+    animation: none !important;
+  }
+}

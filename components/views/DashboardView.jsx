@@ -619,6 +619,7 @@ export default function DashboardView({
             <>
               {/* ── COMPACT HUNTER STATUS ── */}
               <button
+                data-tutorial="hunter-status"
                 onClick={() => setShowDashboardStats(!showDashboardStats)}
                 style={{
                   width: "100%", background: "rgba(8,12,24,0.82)", border: "1px solid rgba(148,163,184,0.12)",
@@ -675,7 +676,7 @@ export default function DashboardView({
 
               {/* Expanded stats (radar + attributes) */}
               {showDashboardStats && (
-                <>
+                <div data-tutorial="dashboard-stats-panel">
                   <ScrollReveal animation="scaleIn" duration={0.5}>
                     <TiltCard tiltIntensity={6} glareIntensity={0.1} holographic borderGlow={theme.primary}>
                       <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "20px 18px 16px", marginBottom: 12, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3)` }}>
@@ -689,7 +690,7 @@ export default function DashboardView({
                       </div>
                     </TiltCard>
                   </ScrollReveal>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6, marginBottom: 16 }}>
+                  <div data-tutorial="dashboard-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6, marginBottom: 16 }}>
                     {CATEGORIES.map((cat, i) => (
                       <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}20`, borderRadius: 12, padding: "8px 2px 6px", textAlign: "center", backdropFilter: "blur(8px)", transition: "border-color 0.3s" }}>
                         <div style={{ width: 32, height: 32, margin: "0 auto", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "50%", background: `radial-gradient(circle, ${cat.color}18 0%, transparent 100%)`, border: `1px solid ${cat.color}25`, overflow: "hidden" }}>
@@ -700,7 +701,7 @@ export default function DashboardView({
                       </div>
                     ))}
                   </div>
-                </>
+                </div>
               )}
             </>
           )
@@ -733,7 +734,7 @@ export default function DashboardView({
         return {
           isEmpty: false,
           content: (
-            <div style={{
+            <div data-tutorial="quest-board" style={{
               background: "linear-gradient(180deg, rgba(8,12,24,0.94), rgba(4,6,14,0.98))",
               border: "1px solid rgba(148,163,184,0.13)",
               borderTop: `1px solid ${theme.primary}38`,
@@ -743,7 +744,9 @@ export default function DashboardView({
             }}>
               {/* ── EMERGENCY QUEST ── */}
               {can('emergency_quests') && state.emergencyQuest && (
-                <EmergencyQuestCard quest={state.emergencyQuest} done={state.emergencyDone} failed={state.emergencyFailed} onComplete={completeEmergencyQuest} theme={theme} />
+                <div data-tutorial="emergency-quest">
+                  <EmergencyQuestCard quest={state.emergencyQuest} done={state.emergencyDone} failed={state.emergencyFailed} onComplete={completeEmergencyQuest} theme={theme} />
+                </div>
               )}
 
               {/* ── COMPACT QUEST BAR: Filters + Actions in one row ── */}
@@ -816,7 +819,7 @@ export default function DashboardView({
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 6 }}>
-                  <button onClick={() => setShowCreate(true)} style={{ minHeight: 36, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}24, ${theme.primary}10)`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}36`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>NEUE QUEST</button>
+                  <button data-tutorial="create-quest-btn" onClick={() => setShowCreate(true)} style={{ minHeight: 36, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}24, ${theme.primary}10)`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}36`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>NEUE QUEST</button>
                   {createQuest && (
                     <button onClick={() => quickAddMode ? setQuickAddMode(false) : (requireQuestSlot ? requireQuestSlot(() => setQuickAddMode(true)) : setQuickAddMode(true))} style={{ minHeight: 36, borderRadius: 10, background: quickAddMode ? `${theme.primary}18` : "rgba(255,255,255,0.032)", color: quickAddMode ? theme.primary : "#94a3b8", border: `1px solid ${quickAddMode ? theme.primary + "40" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>QUICK +</button>
                   )}
@@ -1045,7 +1048,11 @@ export default function DashboardView({
         if (isCollapsed) return { content: null, isEmpty: false };
         return {
           isEmpty: false,
-          content: <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
+          content: (
+            <div data-tutorial="habit-tracker">
+              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
+            </div>
+          )
         };
 
       case "micro_habits":

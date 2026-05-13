@@ -1,6 +1,7 @@
 // AuthScreen.jsx - Premium Solo Leveling Login/Register (Firebase Integrated)
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { SYSTEM_ICONS, SKILL_ICONS } from "./data/icons.js";
+import ScrollApproachHint from "./components/ui/ScrollApproachHint.jsx";
 
 const AuthTunnelScene = lazy(() => import("./3d/auth/AuthTunnelScene.jsx"));
 
@@ -329,6 +330,7 @@ export default function AuthScreen({ onAuthSuccess }) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const authScrollRef = useRef(null);
+  const autoApproachRef = useRef(null);
   // Imperative refs for progress-driven UI (no re-renders)
   const formContainerRef = useRef(null);
   const headerRef = useRef(null);
@@ -618,6 +620,7 @@ export default function AuthScreen({ onAuthSuccess }) {
           <AuthTunnelScene
             scrollContainerRef={authScrollRef}
             onProgress={handleProgress}
+            autoApproachRef={autoApproachRef}
           />
         </Suspense>
       ) : (
@@ -684,11 +687,14 @@ export default function AuthScreen({ onAuthSuccess }) {
 
       {/* ── Scroll hint ───────────────────────────────────────────── */}
       {HAS_WEBGL && (
-        <div ref={scrollHintRef} style={{ position: "fixed", bottom: isMobile ? 24 : 36, left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none", textAlign: "center", transition: "opacity 0.6s ease" }}>
-          <div style={{ animation: "float 2.2s ease-in-out infinite" }}>
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: isMobile ? 8 : 9, letterSpacing: isMobile ? 3 : 5, color: "#2d1f5e", marginBottom: 4 }}>{isMobile ? "SWIPE TO APPROACH" : "SCROLL TO APPROACH"}</p>
-            <p style={{ fontSize: isMobile ? 14 : 16, color: "#3d2a7a" }}>↓</p>
-          </div>
+        <div ref={scrollHintRef} style={{ position: "fixed", bottom: isMobile ? 38 : 46, left: "50%", transform: "translateX(-50%)", zIndex: 18, textAlign: "center", transition: "opacity 0.6s ease" }}>
+          <ScrollApproachHint
+            color="#a78bfa"
+            isMobile={isMobile}
+            label={isMobile ? "NACH UNTEN WISCHEN" : "NACH UNTEN SCROLLEN"}
+            subLabel="ZUM LOGIN-PORTAL"
+            onActivate={() => autoApproachRef.current?.()}
+          />
         </div>
       )}
 

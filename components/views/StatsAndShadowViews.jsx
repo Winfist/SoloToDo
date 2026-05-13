@@ -11,8 +11,8 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
   const unlockedSkills = checkSkillUnlocks(state?.stats || {});
   const achUnlocked = state?.achievements?.unlocked || [];
   return (
-    <div style={{ animation: "fadeIn 0.35s ease" }}>
-      <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "20px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", backdropFilter: "blur(12px)", position: "relative" }}>
+    <div data-tutorial="stats-view" style={{ animation: "fadeIn 0.35s ease" }}>
+      <div data-tutorial="stats-overview" style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "20px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", backdropFilter: "blur(12px)", position: "relative" }}>
         {state.statPoints > 0 && (
           <div style={{ position: "absolute", top: 12, right: 12, background: "#f59e0b22", border: "1px solid #f59e0b44", padding: "4px 10px", borderRadius: 20, fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, animation: "pulse 1.5s infinite" }}>
             {state.statPoints} PUNKTE VERFÜGBAR
@@ -28,12 +28,13 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
           ))}
         </div>
       </div>
-      {CATEGORIES.map((cat, i) => {
-        const val = (state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0);
-        const base = state.stats[cat.key] || 0;
-        const maxD = Math.max(val, 50);
-        return (
-          <div key={cat.key} style={{ background: `radial-gradient(120% 100% at 50% 0%, ${cat.color}15 0%, rgba(10,10,24,0.7) 100%)`, border: `1px solid ${cat.color}25`, borderRadius: 16, padding: "16px", marginBottom: 12, backdropFilter: "blur(12px)", boxShadow: `0 8px 32px ${cat.color}0a, inset 0 1px 0 rgba(255,255,255,0.05)`, animation: `cardEnter 0.4s ease ${i * 0.06}s both`, transition: "all 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.boxShadow = `0 12px 40px ${cat.color}15, inset 0 1px 0 rgba(255,255,255,0.1)`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "25"; e.currentTarget.style.boxShadow = `0 8px 32px ${cat.color}0a, inset 0 1px 0 rgba(255,255,255,0.05)`; }}>
+      <div data-tutorial="stats-attributes-list">
+        {CATEGORIES.map((cat, i) => {
+          const val = (state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0);
+          const base = state.stats[cat.key] || 0;
+          const maxD = Math.max(val, 50);
+          return (
+            <div key={cat.key} data-tutorial={i === 0 ? "stats-attributes" : undefined} style={{ background: `radial-gradient(120% 100% at 50% 0%, ${cat.color}15 0%, rgba(10,10,24,0.7) 100%)`, border: `1px solid ${cat.color}25`, borderRadius: 16, padding: "16px", marginBottom: 12, backdropFilter: "blur(12px)", boxShadow: `0 8px 32px ${cat.color}0a, inset 0 1px 0 rgba(255,255,255,0.05)`, animation: `cardEnter 0.4s ease ${i * 0.06}s both`, transition: "all 0.3s" }} onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color + "55"; e.currentTarget.style.boxShadow = `0 12px 40px ${cat.color}15, inset 0 1px 0 rgba(255,255,255,0.1)`; }} onMouseLeave={e => { e.currentTarget.style.borderColor = cat.color + "25"; e.currentTarget.style.boxShadow = `0 8px 32px ${cat.color}0a, inset 0 1px 0 rgba(255,255,255,0.05)`; }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: `radial-gradient(circle, ${cat.color}18, transparent)`, border: `1px solid ${cat.color}25`, overflow: "hidden", flexShrink: 0 }}>
@@ -57,9 +58,10 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
             <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden" }}>
               <div style={{ width: `${Math.min((val / maxD) * 100, 100)}%`, height: "100%", borderRadius: 3, background: `linear-gradient(90deg,${cat.color}aa,${cat.color})`, boxShadow: `0 0 8px ${cat.color}44`, animation: "statBarFill 1s ease-out" }} />
             </div>
-          </div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
       {unlockedSkills.length > 0 && (
         <div style={{ marginTop: 20 }}>
           <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>UNLOCKED SKILLS ({unlockedSkills.length})</div>

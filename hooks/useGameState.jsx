@@ -11,7 +11,7 @@ import {
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses, checkAllJobsLevel5,
-  saveState, loadState, migrateState, calculateLevelUp, awardJobXp,
+  saveState, loadState, migrateState, cacheStateLocally, resolveStateConflict, calculateLevelUp, awardJobXp,
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests
 } from '../data/constants';
 import { JOBS } from '../data/jobs.js';
@@ -113,7 +113,8 @@ export function useGameState(initialHunterName, onLogout) {
     });
   }, []);
   const persist = useCallback(s => {
-    const next = { ...s, lastInteractionTimeMs: Date.now() };
+    const now = Date.now();
+    const next = { ...s, lastInteractionTimeMs: now, lastModifiedAtMs: now };
     setState(next);
     stateRef.current = next;
     saveState(next);
@@ -157,37 +158,53 @@ export function useGameState(initialHunterName, onLogout) {
     const docRef = doc(db, "users", user.uid);
 
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const cloudData = migrateState(docSnap.data());
-        setState(prev => {
-          // First load (no local state) — use cloud data directly
-          if (!prev) return cloudData;
+      if (!docSnap.exists()) return;
+      const cloudData = migrateState(docSnap.data());
+      const current = stateRef.current;
+      const resolved = resolveStateConflict(current, cloudData);
+      if (!resolved.data || resolved.data === current) return;
 
-          // Both exist — compare timestamps, newer wins
-          const localTime = prev.lastInteractionTimeMs || 0;
-          const cloudTime = cloudData.lastInteractionTimeMs || 0;
-
-          // If cloud is significantly newer (> 5s gap), merge it in
-          // but preserve any local widget/dashboard config to avoid Bug #5
-          if (cloudTime > localTime + 5000) {
-            console.log('[SoloToDo] Cloud state is newer, merging...', { localTime, cloudTime });
-            return {
-              ...cloudData,
-              // Preserve local dashboard config if cloud doesn't have it
-              dashboardConfig: cloudData.dashboardConfig || prev.dashboardConfig,
-              healthDailyHistory: { ...(prev.healthDailyHistory || {}), ...(cloudData.healthDailyHistory || {}) },
-              screenTimeDailyHistory: { ...(prev.screenTimeDailyHistory || {}), ...(cloudData.screenTimeDailyHistory || {}) },
-            };
-          }
-
-          // Local is current — keep it
-          return prev;
-        });
+      if (resolved.source === "cloud") {
+        console.log("[SoloToDo] Cloud state accepted.", { reason: resolved.reason });
+        setState(resolved.data);
+        stateRef.current = resolved.data;
+        cacheStateLocally(resolved.data);
+        return;
       }
+
+      if (current && ["cloud-reset-protected", "cloud-low-progress-protected", "cloud-empty-protected", "local-newer"].includes(resolved.reason)) {
+        console.warn("[SoloToDo] Local state protected against cloud reset.", { reason: resolved.reason });
+        saveState(current);
+      }
+    }, (error) => {
+      console.warn("System: Cloud-Synchronisierung momentan nicht erreichbar.", error);
     });
 
     return () => unsubscribe();
-  }, [notify]);
+  }, []);
+
+  useEffect(() => {
+    const reconcileAfterReconnect = async () => {
+      const current = stateRef.current;
+      if (!current || !auth.currentUser) return;
+      try {
+        const loaded = await loadState();
+        const resolved = resolveStateConflict(current, loaded.data);
+        const next = resolved.data || current;
+        setState(next);
+        stateRef.current = next;
+        await cacheStateLocally(next);
+        if (resolved.source === "local" || loaded.source !== "cloud") {
+          await saveState(next);
+        }
+      } catch (e) {
+        console.warn("System: Reconnect-Sync fehlgeschlagen.", e);
+      }
+    };
+
+    window.addEventListener("online", reconcileAfterReconnect);
+    return () => window.removeEventListener("online", reconcileAfterReconnect);
+  }, []);
 
   // Soul Link real-time partner subscription
   useEffect(() => {
@@ -380,8 +397,8 @@ export function useGameState(initialHunterName, onLogout) {
             syncWidgetData(s);
           }).catch(() => { });
 
-          // If we loaded from local, save to cloud now that we have a user
-          if (source === "local" && user) {
+          // If local won over cloud (or cloud was unavailable), repair cloud when possible.
+          if (source !== "cloud" && user) {
             saveState(s);
           }
         } else {

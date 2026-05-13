@@ -82,6 +82,7 @@ export default function Sidebar({
           return (
             <button
               key={tab.key}
+              data-tutorial={`nav-${tab.key}`}
               onClick={() => onNavigate(tab.key)}
               aria-label={tab.label}
               aria-current={active ? "page" : undefined}

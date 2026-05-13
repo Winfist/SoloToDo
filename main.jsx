@@ -1,14 +1,34 @@
 // main.jsx – Auth + App Root (Firebase Integrated)
-import React, { useState, useEffect } from 'react'
-import { SYSTEM_ICONS } from "./data/icons.js";
+import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './solo-leveling-v5.jsx'
 import AuthScreen from './AuthScreen.jsx'
 import { auth } from "./firebase"
 import { onAuthStateChanged } from "firebase/auth"
+import SystemLoadingScreen from "./components/ui/SystemLoadingScreen.jsx"
 
 function isTextEntryTarget(target) {
   return !!target?.closest?.('input, textarea, select, [contenteditable="true"]');
+}
+
+function readLocalGameProfile() {
+  try {
+    const raw = localStorage.getItem("sl-todo-v5") || localStorage.getItem("sl-todo-v4");
+    if (!raw) return { hasState: false, hunterName: "" };
+    const state = JSON.parse(raw);
+    const completed = Math.max(Number(state.totalQuestsCompleted || 0), state.completedQuests?.length || 0);
+    const statsTotal = Object.values(state.stats || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    const hasState = Boolean(
+      state.hunterName
+      || (state.level || 1) > 1
+      || completed > 0
+      || statsTotal > 0
+      || state.shadowArmy?.shadows?.length
+    );
+    return { hasState, hunterName: state.hunterName || "" };
+  } catch {
+    return { hasState: false, hunterName: "" };
+  }
 }
 
 // Apply saved theme to root element before first render (avoids flash)
@@ -129,21 +149,29 @@ const AUTH_TIMEOUT_MS = 8000;
 function Root() {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
   const [hunterName, setHunterName] = useState("");
+  const explicitLogoutRef = useRef(false);
 
   useEffect(() => {
-    let settled = false;
+    let authEventReceived = false;
 
     // With skipNativeAuth:true, the JS SDK manages all auth state.
     // On sign-in, signInWithCredential stores the session in localStorage (browserLocalPersistence).
     // On app restart, onAuthStateChanged restores from localStorage automatically.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (settled) return;
-      settled = true;
+      authEventReceived = true;
       if (user) {
         console.log('[SoloToDo] Auth restored:', user.email);
+        explicitLogoutRef.current = false;
         setHunterName(user.displayName || '');
         setIsAuthenticated(true);
       } else {
+        const localProfile = readLocalGameProfile();
+        if (!explicitLogoutRef.current && navigator.onLine === false && localProfile.hasState) {
+          console.warn('[SoloToDo] Auth unavailable offline - opening local profile');
+          setHunterName(localProfile.hunterName);
+          setIsAuthenticated(true);
+          return;
+        }
         console.log('[SoloToDo] No authenticated user');
         setIsAuthenticated(false);
       }
@@ -151,9 +179,15 @@ function Root() {
 
     // Safety timeout: if onAuthStateChanged never fires, show login screen
     const timeout = setTimeout(() => {
-      if (!settled) {
+      if (!authEventReceived) {
+        const localProfile = readLocalGameProfile();
+        if (!explicitLogoutRef.current && localProfile.hasState) {
+          console.warn('[SoloToDo] Auth timeout - opening local profile');
+          setHunterName(localProfile.hunterName);
+          setIsAuthenticated(true);
+          return;
+        }
         console.warn('[SoloToDo] Auth timeout – forcing login screen');
-        settled = true;
         setIsAuthenticated(false);
       }
     }, AUTH_TIMEOUT_MS);
@@ -166,12 +200,14 @@ function Root() {
 
   const handleAuthSuccess = (user, name) => {
     // This is called after Login/Register in AuthScreen
+    explicitLogoutRef.current = false;
     setHunterName(name || user.displayName || "");
     setIsAuthenticated(true);
   };
 
   const handleLogout = async () => {
     try {
+      explicitLogoutRef.current = true;
       await auth.signOut();
       setIsAuthenticated(false);
       setHunterName("");
@@ -180,22 +216,14 @@ function Root() {
     }
   };
 
-  // Loading screen — BUG FIX #2: Ensure content is vertically centered
-  // with flexDirection column. Image uses display:block + margin:auto
-  // for reliable centering on all devices.
+  // Keep this screen lightweight: no artificial delay, just fills the auth wait.
   if (isAuthenticated === null) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--theme-bg, #06060e)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <style>{`@keyframes slPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.96); } }`}</style>
-        <img
-          src={SYSTEM_ICONS.logo}
-          alt="System lädt"
-          style={{ display: "block", width: 56, height: 56, objectFit: "contain", margin: "0 auto 16px", animation: "slPulse 1.5s ease-in-out infinite", filter: "drop-shadow(0 0 20px var(--theme-glow, #7c3aed88))" }}
-        />
-        <div style={{ fontSize: "var(--text-xs, 11px)", letterSpacing: 4, color: "var(--theme-primary, #7c3aed)", fontFamily: "var(--font-mono, monospace)", animation: "slPulse 1.5s ease-in-out infinite", textAlign: "center" }}>
-          LOADING SYSTEM...
-        </div>
-      </div>
+      <SystemLoadingScreen
+        title="SYSTEM WIRD GELADEN"
+        label="Login wird geprueft"
+        detail="Session und Hunter-Zugriff werden vorbereitet"
+      />
     );
   }
 

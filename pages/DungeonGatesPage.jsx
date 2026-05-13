@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, Suspense, lazy, useCallback } from "react"
 
 const DungeonCorridor = lazy(() => import("../3d/scenes/DungeonCorridor"));
 import { getDungeonGateImage } from "../data/constants.jsx";
+import ScrollApproachHint from "../components/ui/ScrollApproachHint.jsx";
 
 const RANK_COLORS = {
   E: "#6b7280", D: "#22d3ee", C: "#34d399",
@@ -445,6 +446,7 @@ export default function DungeonGatesPage({ dungeon, onEnterGate, onClose }) {
   const [rushing, setRushing] = useState(false);
   const lastMilestone = useRef(-1);
   const rankColor = RANK_COLORS[dungeon?.rank] ?? RANK_COLORS.E;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   // Initialize audio on first interaction
   const audioInitRef = useRef(false);
@@ -691,12 +693,15 @@ export default function DungeonGatesPage({ dungeon, onEnterGate, onClose }) {
         }}>
 
           {/* Scroll hint */}
-          <div style={{
-            fontSize: 9, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace",
-            letterSpacing: 4, opacity: rushing ? 0 : 1, transition: "opacity 0.5s"
-          }}>
-            ↕ SCROLL TO APPROACH
-          </div>
+          <ScrollApproachHint
+            color={rankColor}
+            isMobile={isMobile}
+            progress={scrollPct}
+            hidden={rushing || warping || scrollPct > 0.28}
+            label={scrollPct > 0.08 ? "WEITER NACH UNTEN" : "ZUM GATE VORDRINGEN"}
+            subLabel={isMobile ? "WISCHEN ZUM PORTAL" : "SCROLLEN ZUM PORTAL"}
+            onActivate={handleEnterButton}
+          />
 
           {/* Progress bar */}
           <div style={{

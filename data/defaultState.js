@@ -19,6 +19,7 @@ export const DEFAULT_STATE = {
   gemPurchases: [],
   adsWatchedToday: 0, lastAdWatchDate: null,
   tutorialCompleted: false,
+  completedTutorials: [],
   stats: { str: 0, int: 0, vit: 0, agi: 0, cha: 0 },
   statPoints: 0,
   quests: [], completedQuests: [], streak: 0, lastActiveDate: null, lastWelcomeDate: null,

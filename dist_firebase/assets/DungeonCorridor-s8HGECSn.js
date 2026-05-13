@@ -1,4 +1,4 @@
-import{r as d,j as e}from"./index-vFL9ZlUk.js";import{j as C,c as G,u as R,A as w,V as Y,S as ee,k as te,R as Z,F as se,B as re,a as _,s as K,e as X,D as J,l as ae,L as ne,m as oe,O as Q,p as ie,d as ce,g as O,f as le,h as he,P as ue,i as me,M as F}from"./index-D4GyEiXH.js";const pe=()=>parseInt(C.replace(/\D+/g,"")),de=pe();class fe extends te{constructor(){super({uniforms:{time:{value:0},fade:{value:1}},vertexShader:`
+import{r as d,j as e}from"./index-DNBFJk_A.js";import{j as C,c as G,u as R,A as w,V as Y,S as ee,k as te,R as Z,F as se,B as re,a as _,s as K,e as X,D as J,l as ae,L as ne,m as oe,O as Q,p as ie,d as ce,g as O,f as le,h as he,P as ue,i as me,M as F}from"./index-CeV7565k.js";const pe=()=>parseInt(C.replace(/\D+/g,"")),de=pe();class fe extends te{constructor(){super({uniforms:{time:{value:0},fade:{value:1}},vertexShader:`
       uniform float time;
       attribute float size;
       varying vec3 vColor;
