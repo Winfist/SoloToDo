@@ -2329,7 +2329,7 @@ function SystemCLI({ message, onClose }) {
   const ac = "#6366f1";
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(2, 2, 6, 0.88)", backdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.3s ease" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(2, 2, 6, 0.88)", backdropFilter: "blur(14px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.3s ease" }}>
       {/* Ambient noise */}
       <div style={{ position: "fixed", inset: 0, opacity: 0.025, backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", pointerEvents: "none" }} />
 
