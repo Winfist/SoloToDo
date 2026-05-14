@@ -241,6 +241,28 @@ function checkDueDateUpcoming(state) {
     };
 }
 
+// Kalender-Rune: warns 3 days ahead when artifact is equipped
+function checkKalenderRuneDeadlines(state) {
+    if (!state?.artifacts?.discovered?.includes('time_rune') && !state?.artifacts?.discovered?.includes('kalender_rune')) return null;
+    const quests = (state?.quests || []).filter(q => !q.completed && q.dueDate);
+    if (!quests.length) return null;
+    const hour = new Date().getHours();
+    if (hour < 8 || hour > 20) return null;
+    const in3Days = new Date();
+    in3Days.setDate(in3Days.getDate() + 3);
+    const in3Key = getLocalDateKey(in3Days);
+    const in2Days = new Date();
+    in2Days.setDate(in2Days.getDate() + 2);
+    const in2Key = getLocalDateKey(in2Days);
+    const soon = quests.filter(q => q.dueDate === in3Key || q.dueDate === in2Key);
+    if (!soon.length) return null;
+    return {
+        title: "⧗ Kalender-Rune: Deadline naht",
+        body: `\"${soon[0].title}\" fällt in ${soon[0].dueDate === in2Key ? 2 : 3} Tagen.`,
+        tag: `rune-deadline-${in3Key}`,
+    };
+}
+
 function checkWeeklyQuestExpiry(state) {
     const day = new Date().getDay();
     const hour = new Date().getHours();
@@ -377,6 +399,7 @@ export function runReminderChecks(state) {
 
     const checks = [
         checkCustomReminders,
+        checkKalenderRuneDeadlines,   // Artifact: 3-day deadline warning
         checkDueDateWarning,
         checkDueDateUpcoming,
         checkWeeklyQuestExpiry,

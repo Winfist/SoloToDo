@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { DIFFICULTIES, CATEGORIES, QUEST_TYPES_CONFIG } from "../data/gameData.js";
 import { getToday as getLocalToday, formatLocalDateTime } from "../data/dateUtils.js";
 import GlitchText from "./ui/GlitchText.jsx";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 
 const CornerBracket = ({ pos }) => {
   const styles = {
@@ -27,6 +28,7 @@ export default function QuestDetailModal({
   completedQuests = [], // Pass from parent for history
   gameState // NEW: for tactical hints
 }) {
+  const { t } = useI18n();
   const [notes, setNotes] = useState(quest.notes || "");
   const [activeTab, setActiveTab] = useState("details"); // details, history
 
@@ -145,7 +147,7 @@ export default function QuestDetailModal({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9, letterSpacing: 3, color: primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, marginBottom: 8 }}>
-              [ QUEST INTEL FILE ]
+              {t("modals.questDetail.header")}
             </div>
             {isBoss ? (
               <GlitchText variant="scan" duration={1200} color={primary} style={{ fontSize: 20, fontWeight: 900, fontFamily: "'Cinzel',serif", lineHeight: 1.2 }}>
@@ -167,8 +169,8 @@ export default function QuestDetailModal({
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 12, borderBottom: "1px solid rgba(255,255,255,0.1)", marginBottom: 16 }}>
-          <button onClick={() => setActiveTab("details")} style={{ padding: "8px 0", background: "transparent", border: "none", color: activeTab === "details" ? primary : "#64748b", borderBottom: `2px solid ${activeTab === "details" ? primary : "transparent"}`, fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>DETAILS</button>
-          <button onClick={() => setActiveTab("history")} style={{ padding: "8px 0", background: "transparent", border: "none", color: activeTab === "history" ? primary : "#64748b", borderBottom: `2px solid ${activeTab === "history" ? primary : "transparent"}`, fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>HISTORIE</button>
+          <button onClick={() => setActiveTab("details")} style={{ padding: "8px 0", background: "transparent", border: "none", color: activeTab === "details" ? primary : "#64748b", borderBottom: `2px solid ${activeTab === "details" ? primary : "transparent"}`, fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{t("modals.questDetail.details")}</button>
+          <button onClick={() => setActiveTab("history")} style={{ padding: "8px 0", background: "transparent", border: "none", color: activeTab === "history" ? primary : "#64748b", borderBottom: `2px solid ${activeTab === "history" ? primary : "transparent"}`, fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{t("modals.questDetail.history")}</button>
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", paddingRight: 4 }}>
@@ -199,7 +201,7 @@ export default function QuestDetailModal({
 
               {/* Rewards */}
               <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "12px 16px", border: "1px solid rgba(255,255,255,0.05)" }}>
-                <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>BELOHNUNGEN</div>
+                <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>{t("modals.questDetail.rewards")}</div>
                 <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                   <div style={{ fontSize: 16, color: "#a78bfa", fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", textShadow: "0 0 10px #a78bfa44" }}>+{xpGain} XP</div>
                   <div style={{ fontSize: 16, color: "#fbbf24", fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", textShadow: "0 0 10px #fbbf2444" }}>+{goldGain} G</div>
@@ -210,19 +212,19 @@ export default function QuestDetailModal({
               {/* BUG FIX #4: Penalty / Consequences section */}
               {(isSystemQuest || gameState?.penaltyZone?.active) && (
                 <div style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.06), transparent)", borderRadius: 12, padding: "12px 16px", border: "1px solid rgba(239,68,68,0.15)" }}>
-                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>KONSEQUENZEN</div>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>{t("modals.questDetail.consequences")}</div>
                   {gameState?.penaltyZone?.active && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: isSystemQuest ? 8 : 0, padding: "6px 10px", borderRadius: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
                       <span style={{ fontSize: 14 }}>⚠️</span>
                       <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace" }}>PENALTY ZONE AKTIV</div>
-                        <div style={{ fontSize: 10, color: "#f87171" }}>XP-Malus: -20% auf alle Quests</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace" }}>{t("modals.questDetail.penaltyActive")}</div>
+                        <div style={{ fontSize: 10, color: "#f87171" }}>{t("modals.questDetail.penaltyMalus")}</div>
                       </div>
                     </div>
                   )}
                   {isSystemQuest && !quest.completed && (
                     <div style={{ fontSize: 11, color: "#f87171", lineHeight: 1.4, fontFamily: "'Outfit',sans-serif" }}>
-                      Nichterfüllung von System-Quests kann die Penalty Zone aktivieren (−20% XP auf alle Quests).
+                      {t("modals.questDetail.systemPenalty")}
                     </div>
                   )}
                 </div>
@@ -231,7 +233,7 @@ export default function QuestDetailModal({
               {/* Description */}
               {(quest.description || quest.desc) && (
                 <div>
-                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>BESCHREIBUNG</div>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{t("modals.questDetail.description")}</div>
                   <div style={{ fontSize: 13, color: "#e2e8f0", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>
                     {quest.description || quest.desc}
                   </div>
@@ -242,7 +244,7 @@ export default function QuestDetailModal({
               {subQuests.length > 0 && (
                 <div>
                   <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
-                    <span>ETAPPEN</span>
+                    <span>{t("modals.questDetail.stages")}</span>
                     <span>{completedSubs}/{subQuests.length}</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -265,15 +267,15 @@ export default function QuestDetailModal({
               {/* Schedule */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px 12px", borderRadius: 8 }}>
-                  <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>DEADLINE</div>
+                  <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>{t("modals.questDetail.deadline")}</div>
                   <div style={{ fontSize: 12, color: isOverdue ? "#ef4444" : isDueToday ? "#f59e0b" : "#e2e8f0", fontFamily: "'JetBrains Mono',monospace" }}>
-                    {quest.dueDate ? (isOverdue ? "ÜBERFÄLLIG" : isDueToday ? "HEUTE" : quest.dueDate) : "Keine"}
+                    {quest.dueDate ? (isOverdue ? t("modals.questDetail.overdue") : isDueToday ? t("modals.questDetail.today") : quest.dueDate) : t("modals.questDetail.none")}
                   </div>
                 </div>
                 <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px 12px", borderRadius: 8 }}>
-                  <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>REMINDER</div>
+                  <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>{t("modals.questDetail.reminder")}</div>
                   <div style={{ fontSize: 12, color: "#e2e8f0", fontFamily: "'JetBrains Mono',monospace" }}>
-                    {quest.reminderAt ? formatLocalDateTime(quest.reminderAt) : "Keiner"}
+                    {quest.reminderAt ? formatLocalDateTime(quest.reminderAt) : t("modals.questDetail.none")}
                   </div>
                 </div>
               </div>
@@ -281,14 +283,14 @@ export default function QuestDetailModal({
               {/* Hunter Notes */}
               <div>
                 <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
-                  <span>HUNTER-NOTIZEN</span>
+                  <span>{t("modals.questDetail.notes")}</span>
                   <span style={{ color: notes.length > 450 ? "#ef4444" : "#64748b" }}>{notes.length}/500</span>
                 </div>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value.slice(0, 500))}
                   onBlur={handleSaveNotes}
-                  placeholder="Eigene Notizen, Taktiken oder Erfahrungen..."
+                  placeholder={t("modals.questDetail.notesPlaceholder")}
                   style={{
                     width: "100%", height: 80, padding: "10px 12px", borderRadius: 8,
                     background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)",
@@ -306,16 +308,16 @@ export default function QuestDetailModal({
               <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
                 <div style={{ flex: 1, background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: 8, textAlign: "center" }}>
                   <div style={{ fontSize: 24, color: "#fbbf24", fontWeight: 900 }}>{history.length}</div>
-                  <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>ABSCHLÜSSE</div>
+                  <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{t("modals.questDetail.completions")}</div>
                 </div>
                 <div style={{ flex: 1, background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: 8, textAlign: "center" }}>
                   <div style={{ fontSize: 24, color: "#fbbf24", fontWeight: 900 }}>{avgRating > 0 ? `${avgRating}★` : "-"}</div>
-                  <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>Ø RATING</div>
+                  <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{t("modals.questDetail.avgRating")}</div>
                 </div>
               </div>
 
               {history.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px 0", color: "#64748b", fontSize: 12 }}>Keine Historie gefunden.</div>
+                <div style={{ textAlign: "center", padding: "30px 0", color: "#64748b", fontSize: 12 }}>{t("modals.questDetail.noHistory")}</div>
               ) : (
                 history.map((cq, i) => (
                   <div key={i} style={{ background: "rgba(255,255,255,0.02)", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
@@ -337,21 +339,21 @@ export default function QuestDetailModal({
             onClick={() => { onClose(); if (onEdit) onEdit(quest); }}
             style={{ padding: "12px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "none", color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
           >
-            ✏️ BEARBEITEN
+            {t("modals.questDetail.edit")}
           </button>
           <button
             onClick={handleComplete}
             disabled={subQuests.length > 0 && !allSubsDone}
             style={{ padding: "12px", borderRadius: 8, background: (subQuests.length > 0 && !allSubsDone) ? "rgba(255,255,255,0.1)" : `linear-gradient(135deg, ${primary}33, ${primary}11)`, border: `1px solid ${(subQuests.length > 0 && !allSubsDone) ? "transparent" : primary}`, color: (subQuests.length > 0 && !allSubsDone) ? "#64748b" : primary, fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: (subQuests.length > 0 && !allSubsDone) ? "not-allowed" : "pointer", boxShadow: (subQuests.length > 0 && !allSubsDone) ? "none" : `0 0 16px ${primary}33` }}
           >
-            ✓ ABSCHLIESSEN
+            {t("modals.questDetail.complete")}
           </button>
           {onDelete && (
             <button
               onClick={() => { onClose(); onDelete(quest.id); }}
               style={{ gridColumn: "1 / -1", padding: "8px", borderRadius: 8, background: "transparent", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
             >
-              🗑️ QUEST LÖSCHEN
+              {t("modals.questDetail.delete")}
             </button>
           )}
         </div>

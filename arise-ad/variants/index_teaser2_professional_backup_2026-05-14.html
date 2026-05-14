@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080,height=1920" />
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Cinzel:wght@800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:1080px;height:1920px;overflow:hidden;background:#02030a;color:#f8fafc;font-family:'Inter',sans-serif}
+    .clip{position:absolute;inset:0;overflow:hidden}
+    .scene{position:absolute;inset:0;overflow:hidden;background:#02030a}
+    #s2,#s3,#s4,#s5{opacity:0}
+    .bg-img{position:absolute;inset:0;background:center/cover no-repeat;opacity:.22;filter:saturate(1.25) contrast(1.08)}
+    .veil{position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,rgba(45,212,191,.14),transparent 28%),radial-gradient(circle at 52% 62%,rgba(124,58,237,.24),transparent 34%),linear-gradient(180deg,rgba(2,3,10,.35),#02030a 78%)}
+    .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 5px,rgba(255,255,255,.018) 5px,rgba(255,255,255,.018) 6px);mix-blend-mode:screen;opacity:.55;pointer-events:none;z-index:60}
+    .noise{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.11) 1px,transparent 1px);background-size:17px 17px;opacity:.045;pointer-events:none;z-index:61}
+    .speed-lines{position:absolute;inset:0;opacity:0;pointer-events:none;mix-blend-mode:screen;background:repeating-linear-gradient(108deg,transparent 0 42px,rgba(94,234,212,.18) 43px,transparent 46px);filter:blur(.2px)}
+    .safe{position:absolute;left:78px;right:78px;top:128px;bottom:210px}
+    .eyebrow{font:800 18px 'JetBrains Mono',monospace;letter-spacing:5px;text-transform:uppercase;color:#5eead4}
+    .headline{font:900 70px 'Inter';line-height:1.02;letter-spacing:0;color:#fff;text-shadow:0 18px 70px rgba(0,0,0,.55)}
+    .headline strong{font-family:'Cinzel';font-weight:900;color:#facc15;text-shadow:0 0 34px rgba(250,204,21,.45)}
+    .caption{font:700 28px 'Inter';line-height:1.25;color:#cbd5e1}
+    .pill{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 18px;border-radius:999px;background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.22);font:800 14px 'JetBrains Mono';letter-spacing:1px;color:#e2e8f0;box-shadow:0 18px 44px rgba(0,0,0,.28)}
+    .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 18px #22c55e}
+    .phone{position:absolute;width:690px;height:1360px;border-radius:76px;background:linear-gradient(180deg,#151827,#050712);border:2px solid rgba(226,232,240,.22);box-shadow:0 80px 140px rgba(0,0,0,.62),inset 0 0 0 12px rgba(255,255,255,.035);overflow:hidden}
+    .phone:before{content:"";position:absolute;top:24px;left:50%;width:190px;height:36px;margin-left:-95px;border-radius:999px;background:#02030a;z-index:4}
+    .phone-screen{position:absolute;inset:28px;border-radius:54px;background:linear-gradient(180deg,#090c18,#050712 70%,#03040a);overflow:hidden}
+    .status{position:absolute;left:34px;right:34px;top:42px;display:flex;justify-content:space-between;color:#cbd5e1;font:800 16px 'JetBrains Mono';z-index:5}
+    .app-top{position:absolute;left:40px;right:40px;top:96px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+    .mini-logo{display:flex;align-items:center;gap:14px}
+    .mini-logo img{width:54px;height:54px;border-radius:16px;box-shadow:0 0 24px rgba(124,58,237,.5)}
+    .mini-logo span{font:900 26px 'Cinzel';letter-spacing:4px}
+    .level-badge{padding:8px 14px;border-radius:16px;background:rgba(124,58,237,.18);border:1px solid rgba(167,139,250,.35);font:800 14px 'JetBrains Mono';color:#c4b5fd}
+    .panel{position:absolute;left:28px;right:28px;background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.14);border-radius:28px;box-shadow:0 22px 46px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(14px)}
+    .card{position:relative;background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(8,11,22,.94));border:1px solid rgba(148,163,184,.13);border-radius:22px;box-shadow:0 20px 42px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+    .quest{display:flex;align-items:center;gap:18px;padding:18px 20px}
+    .qicon{width:58px;height:58px;border-radius:17px;background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.28);display:grid;place-items:center;flex:0 0 auto}
+    .qicon img{width:42px;height:42px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(34,211,238,.42))}
+    .qmain{flex:1;min-width:0}
+    .qname{font:800 25px 'Inter';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .qmeta{margin-top:5px;font:700 14px 'JetBrains Mono';letter-spacing:.5px;color:#cbd5e1}
+    .reward{text-align:right;font:900 20px 'JetBrains Mono';color:#22c55e}
+    .rank{margin-top:5px;font:900 11px 'JetBrains Mono';letter-spacing:1px;color:#fbbf24}
+    .check{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#22c55e;box-shadow:0 0 28px rgba(34,197,94,.45);opacity:0;transform:scale(.2)}
+    .check:before{content:"";width:18px;height:10px;border-left:5px solid #052e16;border-bottom:5px solid #052e16;transform:rotate(-45deg);margin-top:-5px}
+    .bar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+    .fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#22c55e,#5eead4);box-shadow:0 0 22px rgba(34,197,94,.45)}
+    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .stat-box{padding:18px 14px;border-radius:22px;background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.14);text-align:center}
+    .stat-val{font:900 36px 'Inter';line-height:1;color:#fff}
+    .stat-lbl{margin-top:8px;font:800 11px 'JetBrains Mono';letter-spacing:1.4px;color:#94a3b8}
+    .chaos-card{position:absolute;width:740px;padding:28px 30px;border-radius:28px;background:linear-gradient(135deg,rgba(127,29,29,.58),rgba(15,23,42,.86));border:1px solid rgba(248,113,113,.35);box-shadow:0 24px 80px rgba(0,0,0,.55),0 0 40px rgba(239,68,68,.12);display:flex;align-items:center;justify-content:space-between;gap:20px;backdrop-filter:blur(16px)}
+    .chaos-left{font:900 34px 'Inter';color:#fff}
+    .chaos-right{font:900 18px 'JetBrains Mono';letter-spacing:1px;color:#fff}
+    .bossbar{position:absolute;left:118px;right:118px;top:620px;padding:18px 20px;border-radius:24px;background:rgba(5,8,18,.72);border:1px solid rgba(248,113,113,.32);box-shadow:0 26px 70px rgba(0,0,0,.45);opacity:0}
+    .bossbar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font:900 14px 'JetBrains Mono';letter-spacing:2px;color:#fecaca}
+    .boss-track{height:12px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+    .boss-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#ef4444,#f59e0b);box-shadow:0 0 28px rgba(239,68,68,.55)}
+    .combo-card{position:absolute;right:88px;top:1225px;padding:18px 22px;border-radius:22px;background:rgba(5,8,18,.78);border:1px solid rgba(250,204,21,.34);font:900 18px 'JetBrains Mono';letter-spacing:1.4px;color:#fde68a;box-shadow:0 22px 64px rgba(0,0,0,.38),0 0 34px rgba(250,204,21,.16);opacity:0}
+    .system-box{position:absolute;left:86px;right:86px;top:660px;padding:34px;border-radius:34px;background:linear-gradient(135deg,rgba(6,182,212,.16),rgba(124,58,237,.15));border:1px solid rgba(94,234,212,.38);box-shadow:0 40px 100px rgba(6,182,212,.18),inset 0 1px 0 rgba(255,255,255,.08);opacity:0}
+    .system-title{font:900 24px 'JetBrains Mono';letter-spacing:3px;color:#5eead4}
+    .system-text{margin-top:14px;font:900 62px 'Inter';line-height:1.03;color:#fff}
+    .coach-bubble{position:absolute;left:54px;right:54px;top:210px;padding:24px;border-radius:26px;background:linear-gradient(135deg,rgba(34,211,238,.13),rgba(124,58,237,.12));border:1px solid rgba(94,234,212,.28)}
+    .coach-title{font:900 17px 'JetBrains Mono';letter-spacing:2px;color:#67e8f9}
+    .coach-text{margin-top:9px;font:800 27px 'Inter';line-height:1.18;color:#f8fafc}
+    .live-chip{position:absolute;right:54px;top:338px;padding:12px 16px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);font:900 13px 'JetBrains Mono';letter-spacing:1px;color:#86efac;box-shadow:0 0 28px rgba(34,197,94,.14)}
+    .app-nav{position:absolute;left:54px;right:54px;bottom:34px;height:82px;border-radius:26px;background:rgba(2,6,23,.74);border:1px solid rgba(148,163,184,.12);display:flex;align-items:center;justify-content:space-around;box-shadow:0 -18px 60px rgba(0,0,0,.28)}
+    .app-nav span{font:900 13px 'JetBrains Mono';letter-spacing:1px;color:#94a3b8}
+    .app-nav span.active{color:#5eead4;text-shadow:0 0 18px rgba(94,234,212,.65)}
+    .screen-title{font:900 40px 'Inter';line-height:1.05}
+    .screen-sub{margin-top:8px;font:700 16px 'JetBrains Mono';letter-spacing:1px;color:#94a3b8}
+    .timer-ring{position:absolute;width:300px;height:300px;border-radius:50%;background:conic-gradient(#a855f7 0 75%,rgba(255,255,255,.08) 75% 100%);display:grid;place-items:center;box-shadow:0 0 80px rgba(168,85,247,.22)}
+    .timer-ring:after{content:"";position:absolute;inset:16px;border-radius:50%;background:#070914;border:1px solid rgba(255,255,255,.08)}
+    .timer-text{position:relative;z-index:2;text-align:center}
+    .timer-time{font:900 56px 'JetBrains Mono';color:#fff}
+    .timer-label{font:900 13px 'JetBrains Mono';letter-spacing:2px;color:#fff}
+    .proof-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+    .proof-row:last-child{border-bottom:none}
+    .proof-name{font:800 19px 'Inter';white-space:nowrap}
+    .proof-meta{margin-top:4px;font:700 13px 'JetBrains Mono';letter-spacing:.8px;color:#94a3b8}
+    .proof-good{font:900 18px 'JetBrains Mono';color:#22c55e;flex:0 0 auto}
+    .shadow-stage{position:absolute;left:0;right:0;top:338px;height:780px;opacity:0}
+    .shadow-floor{position:absolute;left:155px;right:155px;bottom:70px;height:130px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(168,85,247,.45),rgba(34,211,238,.08) 42%,transparent 70%);filter:blur(8px);opacity:0}
+    .summon-ring{position:absolute;left:50%;bottom:112px;width:580px;height:170px;margin-left:-290px;border-radius:50%;border:3px solid rgba(167,139,250,.42);box-shadow:0 0 60px rgba(124,58,237,.55),inset 0 0 60px rgba(94,234,212,.2);opacity:0;transform:scale(.58)}
+    .summon-ring:before,.summon-ring:after{content:"";position:absolute;inset:18px;border-radius:50%;border:1px dashed rgba(94,234,212,.42)}
+    .summon-ring:after{inset:38px;border-color:rgba(250,204,21,.35);transform:rotate(18deg)}
+    .shadow-figure{position:absolute;bottom:95px;opacity:0;transform:translateY(80px) scale(.72);filter:drop-shadow(0 34px 40px rgba(0,0,0,.7))}
+    .shadow-figure img{height:100%;width:auto;display:block;object-fit:contain;filter:brightness(.98) saturate(1.22) contrast(1.06) drop-shadow(0 0 24px rgba(167,139,250,.82)) drop-shadow(0 0 64px rgba(34,211,238,.24))}
+    .shadow-figure:after{content:"";position:absolute;left:6%;right:6%;bottom:-18px;height:34%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(94,234,212,.18),rgba(167,139,250,.12) 38%,transparent 72%);filter:blur(18px);mix-blend-mode:screen;pointer-events:none}
+    #shadow-bellion{left:278px;height:520px;z-index:5}
+    #shadow-bellion img{filter:brightness(1.08) saturate(1.35) contrast(1.08) drop-shadow(0 0 30px rgba(250,204,21,.42)) drop-shadow(0 0 78px rgba(167,139,250,.56))}
+    #shadow-igris{left:72px;height:378px;z-index:3}
+    #shadow-beru{right:76px;height:365px;z-index:3}
+    #shadow-knight{left:218px;height:305px;z-index:2;opacity:0}
+    #shadow-mage{right:230px;height:312px;z-index:2;opacity:0}
+    .shadow-name{position:absolute;left:0;right:0;bottom:20px;text-align:center;font:900 20px 'JetBrains Mono';letter-spacing:2px;color:#e9d5ff;text-shadow:0 0 24px rgba(167,139,250,.9);opacity:0}
+    .boost-chip{position:absolute;z-index:8;padding:12px 18px;border-radius:999px;background:rgba(5,8,18,.82);border:1px solid rgba(94,234,212,.35);font:900 15px 'JetBrains Mono';letter-spacing:1px;color:#86efac;box-shadow:0 18px 46px rgba(0,0,0,.36),0 0 30px rgba(94,234,212,.18);opacity:0;transform:translateY(20px) scale(.9)}
+    #boost1{left:90px;top:518px}#boost2{left:406px;top:240px}#boost3{right:90px;top:518px}
+    .energy-line{position:absolute;height:3px;background:linear-gradient(90deg,transparent,#5eead4,#a78bfa,transparent);box-shadow:0 0 22px rgba(94,234,212,.7);opacity:0;transform-origin:center center}
+    #eline1{left:210px;top:560px;width:260px;transform:rotate(-18deg)}#eline2{left:600px;top:560px;width:260px;transform:rotate(18deg)}#eline3{left:392px;top:455px;width:295px}
+    .summon-spark{position:absolute;width:8px;height:8px;border-radius:50%;background:#c4b5fd;box-shadow:0 0 24px #a78bfa;opacity:0}
+    .boss-card{position:absolute;left:96px;right:96px;bottom:180px;padding:28px 32px;border-radius:32px;background:linear-gradient(135deg,rgba(127,29,29,.88),rgba(15,23,42,.92));border:1px solid rgba(248,113,113,.38);box-shadow:0 34px 100px rgba(127,29,29,.24);opacity:0}
+    .boss-top{display:flex;align-items:center;justify-content:space-between;font:900 15px 'JetBrains Mono';letter-spacing:2px;color:#fecaca}
+    .boss-name{margin-top:10px;font:900 34px 'Inter';color:#fff}
+    .boss-result{margin-top:18px;display:flex;align-items:center;justify-content:space-between;font:900 23px 'JetBrains Mono';color:#86efac}
+    .shadow-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 54%,rgba(255,255,255,.95),rgba(167,139,250,.4) 20%,transparent 58%);opacity:0;pointer-events:none}
+    .arise-burst{position:absolute;left:0;right:0;top:690px;text-align:center;font:900 132px 'Cinzel';letter-spacing:18px;color:#fff;text-shadow:0 0 44px rgba(255,255,255,.85),0 0 120px rgba(124,58,237,.95);opacity:0;pointer-events:none}
+    .rank-stamp{position:absolute;left:50%;top:1010px;width:560px;margin-left:-280px;padding:14px 0;border-radius:18px;border:2px solid rgba(250,204,21,.5);background:rgba(120,53,15,.18);text-align:center;font:900 30px 'JetBrains Mono';letter-spacing:3px;color:#fde68a;text-shadow:0 0 26px rgba(250,204,21,.55);box-shadow:0 0 50px rgba(250,204,21,.18);opacity:0;transform:rotate(-4deg) scale(.8)}
+    .cta-logo{position:absolute;left:50%;top:380px;width:176px;height:176px;margin-left:-88px;border-radius:44px;box-shadow:0 0 70px rgba(124,58,237,.55),0 44px 90px rgba(0,0,0,.4);opacity:0}
+    .cta-title{position:absolute;left:70px;right:70px;top:610px;text-align:center;font:900 98px 'Cinzel';letter-spacing:14px;opacity:0;text-shadow:0 0 70px rgba(124,58,237,.65)}
+    .cta-line{position:absolute;left:80px;right:80px;top:760px;text-align:center;font:900 54px 'Inter';line-height:1.08;opacity:0}
+    .cta-sub{position:absolute;left:100px;right:100px;top:940px;text-align:center;font:700 28px 'Inter';line-height:1.25;color:#cbd5e1;opacity:0}
+    .store-row{position:absolute;left:0;right:0;top:1130px;display:flex;justify-content:center;gap:24px;opacity:0}
+    .store{padding:20px 34px;border-radius:22px;background:rgba(15,23,42,.76);border:1px solid rgba(148,163,184,.22);font:900 22px 'Inter';box-shadow:0 24px 70px rgba(0,0,0,.36)}
+    .final-note{position:absolute;left:92px;right:92px;bottom:238px;text-align:center;font:900 18px 'JetBrains Mono';letter-spacing:2px;color:#5eead4;opacity:0}
+    .cta-ring{position:absolute;left:50%;top:438px;width:360px;height:360px;margin-left:-180px;border-radius:50%;border:2px solid rgba(167,139,250,.22);box-shadow:0 0 80px rgba(124,58,237,.28),inset 0 0 70px rgba(94,234,212,.1);opacity:0;transform:scale(.7)}
+    .spark{position:absolute;width:6px;height:6px;border-radius:50%;background:#5eead4;box-shadow:0 0 18px #5eead4;opacity:0}
+    .rage-veil{position:absolute;inset:0;background:radial-gradient(circle at 50% 18%,rgba(239,68,68,.28),transparent 31%),radial-gradient(circle at 50% 62%,rgba(124,58,237,.22),transparent 42%),linear-gradient(180deg,rgba(2,3,10,.08),#02030a 82%)}
+    .doom-phone{left:188px;top:404px;opacity:.82;transform:scale(.96)}
+    .feed-top{position:absolute;left:42px;right:42px;top:94px;display:flex;justify-content:space-between;font:900 15px 'JetBrains Mono';letter-spacing:1px;color:#fecaca;z-index:3}
+    .feed-card{position:absolute;left:42px;right:42px;height:350px;border-radius:34px;background:linear-gradient(145deg,rgba(15,23,42,.94),rgba(4,7,15,.98));border:1px solid rgba(148,163,184,.16);box-shadow:0 24px 70px rgba(0,0,0,.46);overflow:hidden}
+    .feed-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 24% 22%,rgba(248,113,113,.2),transparent 23%),radial-gradient(circle at 80% 64%,rgba(94,234,212,.13),transparent 31%)}
+    .feed-card:nth-child(2){top:166px}.feed-card:nth-child(3){top:546px}.feed-card:nth-child(4){top:926px}
+    .feed-label{position:absolute;left:28px;top:24px;padding:10px 14px;border-radius:999px;background:rgba(239,68,68,.14);border:1px solid rgba(248,113,113,.3);font:900 12px 'JetBrains Mono';letter-spacing:1px;color:#fecaca}
+    .feed-art{position:absolute;left:28px;right:86px;top:78px;height:160px;border-radius:24px;background:linear-gradient(135deg,rgba(30,41,59,.92),rgba(2,6,23,.7));border:1px solid rgba(148,163,184,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+    .feed-art:before{content:"";position:absolute;left:26px;top:32px;width:78px;height:78px;border-radius:24px;background:linear-gradient(135deg,rgba(239,68,68,.42),rgba(124,58,237,.24));box-shadow:0 0 34px rgba(239,68,68,.18)}
+    .feed-art:after{content:"";position:absolute;left:126px;right:30px;top:38px;height:16px;border-radius:999px;background:rgba(226,232,240,.16);box-shadow:0 38px 0 rgba(226,232,240,.1),0 76px 0 rgba(226,232,240,.06)}
+    .feed-copy{position:absolute;left:30px;right:112px;bottom:30px}
+    .feed-copy b{display:block;font:900 24px 'Inter';line-height:1.05;color:#f8fafc}
+    .feed-copy span{display:block;margin-top:8px;font:800 14px 'JetBrains Mono';letter-spacing:.7px;color:#cbd5e1}
+    .feed-side{position:absolute;right:28px;top:96px;width:38px;display:grid;gap:22px}
+    .feed-side i{display:block;width:38px;height:38px;border-radius:50%;background:rgba(226,232,240,.1);border:1px solid rgba(226,232,240,.12)}
+    .time-burn{position:absolute;left:54px;right:54px;bottom:110px;height:58px;border-radius:18px;background:rgba(127,29,29,.2);border:1px solid rgba(248,113,113,.34);display:grid;place-items:center;font:900 16px 'JetBrains Mono';letter-spacing:1.3px;color:#fecaca}
+    .rage-hook{position:absolute;left:70px;right:70px;top:126px;text-align:center;z-index:8}
+    .hook-small{display:inline-flex;padding:13px 20px;border-radius:999px;background:rgba(127,29,29,.68);border:1px solid rgba(248,113,113,.38);font:900 21px 'JetBrains Mono';letter-spacing:1.4px;color:#fecaca;box-shadow:0 0 44px rgba(239,68,68,.18)}
+    .hook-main{margin-top:28px;font:900 78px 'Inter';line-height:.98;color:#fff;text-shadow:0 18px 90px rgba(0,0,0,.72),0 0 42px rgba(239,68,68,.24)}
+    .hook-main strong{display:inline-block;margin-top:12px;font-family:'Cinzel';font-size:96px;letter-spacing:5px;color:#ef4444;text-shadow:0 0 42px rgba(239,68,68,.68),0 0 120px rgba(124,58,237,.36)}
+    .npc-stamp{position:absolute;left:50%;top:650px;width:510px;margin-left:-255px;padding:16px 0;border-radius:22px;border:3px solid rgba(239,68,68,.64);background:rgba(127,29,29,.22);text-align:center;font:900 62px 'JetBrains Mono';letter-spacing:7px;color:#fecaca;text-shadow:0 0 42px rgba(239,68,68,.78);box-shadow:0 0 80px rgba(239,68,68,.22);opacity:0;z-index:9;transform:rotate(-3deg) scale(.8)}
+    .rage-system{top:720px;background:linear-gradient(135deg,rgba(88,28,28,.92),rgba(15,23,42,.9));border-color:rgba(248,113,113,.42);box-shadow:0 40px 120px rgba(127,29,29,.28)}
+    .rage-system .system-title{color:#fecaca}
+    .rage-system .system-text{font-size:52px;line-height:1.02}
+    .warning-strip{position:absolute;left:74px;right:74px;bottom:72px;height:104px;border-radius:26px;background:linear-gradient(90deg,rgba(88,28,28,.92),rgba(2,6,23,.78));border:1px solid rgba(248,113,113,.34);display:flex;align-items:center;justify-content:center;font:900 22px 'JetBrains Mono';letter-spacing:1.8px;color:#fecaca;opacity:0;box-shadow:0 24px 80px rgba(0,0,0,.3)}
+    .penalty-card{position:absolute;left:54px;right:54px;top:492px;padding:24px 28px;border-radius:28px;background:linear-gradient(135deg,rgba(127,29,29,.86),rgba(15,23,42,.9));border:1px solid rgba(248,113,113,.42);box-shadow:0 28px 80px rgba(127,29,29,.22);opacity:0}
+    .penalty-kicker{font:900 16px 'JetBrains Mono';letter-spacing:2px;color:#fecaca}
+    .penalty-title{margin-top:8px;font:900 34px 'Inter';line-height:1.05;color:#fff}
+    .penalty-meta{margin-top:14px;display:flex;justify-content:space-between;font:900 18px 'JetBrains Mono';color:#fbbf24}
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="24" data-fps="30" data-width="1080" data-height="1920">
+    <div id="grain" class="clip" data-start="0" data-duration="24" data-track-index="20"><div class="scan"></div><div class="noise"></div></div>
+
+    <section id="s1" class="clip scene" data-start="0" data-duration="5.0" data-track-index="0">
+      <div class="bg-img" style="background-image:url('assets/bg_dungeon.png');opacity:.28;filter:saturate(1.4) contrast(1.18)"></div><div class="rage-veil"></div><div id="speed1" class="speed-lines"></div>
+      <div id="doom-phone" class="phone doom-phone">
+        <div class="phone-screen">
+          <div class="feed-top"><span>FOR YOU</span><span>00:30:00</span></div>
+          <div class="feed-card"><div class="feed-label">NOCH EIN CLIP</div><div class="feed-art"></div><div class="feed-copy"><b>Quest ignoriert</b><span>0 XP // 12 Min verloren</span></div><div class="feed-side"><i></i><i></i><i></i></div></div>
+          <div class="feed-card"><div class="feed-label">ZEIT VERBRANNT</div><div class="feed-art"></div><div class="feed-copy"><b>Deep Work fail</b><span>INT bleibt stehen</span></div><div class="feed-side"><i></i><i></i><i></i></div></div>
+          <div class="feed-card"><div class="feed-label">XP: 0</div><div class="feed-art"></div><div class="feed-copy"><b>Doomscroll-Boss</b><span>WILLPOWER sinkt</span></div><div class="feed-side"><i></i><i></i><i></i></div></div>
+          <div class="time-burn">30:00 VERBRANNT // KEINE QUEST CLEAR</div>
+        </div>
+      </div>
+      <div id="rage-hook" class="rage-hook">
+        <div id="hook-small" class="hook-small">Seit 30 Minuten am Scrollen?</div>
+        <div id="hook-main" class="hook-main">Du bist kein Player.<br><strong>NPC-Modus.</strong></div>
+      </div>
+      <div id="npc-stamp" class="npc-stamp">NPC</div>
+      <div id="bossbar1" class="bossbar"><div class="bossbar-top"><span>WILLPOWER HP</span><span>DOOMSCROLL BOSS</span></div><div class="boss-track"><div id="bossfill1" class="boss-fill"></div></div></div>
+      <div id="c1" class="chaos-card" style="left:130px;top:1030px;transform:rotate(-4deg)"><div class="chaos-left">30 Min verloren</div><div class="chaos-right">WILL -3</div></div>
+      <div id="c2" class="chaos-card" style="left:190px;top:1170px;transform:rotate(3deg)"><div class="chaos-left">Keine Quest clear</div><div class="chaos-right">E-RANG</div></div>
+      <div id="c3" class="chaos-card" style="left:110px;top:1310px;transform:rotate(-2deg)"><div class="chaos-left">Andere leveln</div><div class="chaos-right">DU SCROLLST</div></div>
+      <div id="combo1" class="combo-card">SYSTEM GREIFT EIN // JETZT</div>
+      <div id="sys" class="system-box rage-system">
+        <div class="system-title">SYSTEM WARNING // E-RANG VERHALTEN ERKANNT</div>
+        <div class="system-text">Andere sammeln XP. Du scrollst.</div>
+      </div>
+      <div id="warning-strip" class="warning-strip">SCROLL-FALLE GEBROCHEN // DAILY QUEST STARTET</div>
+      <div id="s1-s1" class="spark" style="left:180px;top:610px"></div><div id="s1-s2" class="spark" style="left:890px;top:700px"></div><div id="s1-s3" class="spark" style="left:760px;top:1260px"></div>
+    </section>
+
+    <section id="s2" class="clip scene" data-start="5.0" data-duration="5.5" data-track-index="1">
+      <div class="bg-img" style="background-image:url('assets/bg_portal.png')"></div><div class="veil"></div>
+      <div class="safe">
+        <div id="s2-copy" style="position:absolute;top:0;left:0;right:0;text-align:center">
+          <div class="eyebrow">ECHTES SYSTEM</div>
+          <div class="headline" style="font-size:58px;margin-top:18px">Ich habe Daily Quests real gemacht.</div>
+          <div class="caption" style="margin-top:18px">100 Pushups. 90 Min Fokus. Kein Scrollen.</div>
+        </div>
+      </div>
+      <div id="phone2" class="phone" style="left:195px;top:430px">
+        <div class="phone-screen">
+          <div class="status"><span>09:12</span><span>LVL 47</span></div>
+          <div class="app-top"><div class="mini-logo"><img src="assets/setup_logo.webp" /><span>ARISE</span></div><div class="level-badge">+1250 XP</div></div>
+          <div class="coach-bubble">
+            <div class="coach-title">KI-COACH</div>
+            <div class="coach-text">Quest startet jetzt. Beweise, dass du kein NPC bist.</div>
+          </div>
+          <div class="live-chip">STREAK 12 // LIVE</div>
+          <div id="q1" class="card quest" style="position:absolute;left:54px;right:54px;top:420px"><div class="qicon"><img src="assets/quest_daily.webp" /></div><div class="qmain"><div class="qname">100 Pushups</div><div class="qmeta">BODYWEIGHT // STR</div></div><div><div class="reward">+250</div><div class="rank">XP</div></div><div class="check"></div></div>
+          <div id="q2" class="card quest" style="position:absolute;left:54px;right:54px;top:552px"><div class="qicon"><img src="assets/quest_chain.webp" /></div><div class="qmain"><div class="qname">90 Min Deep Work</div><div class="qmeta">FOCUS // INT</div></div><div><div class="reward">+400</div><div class="rank">XP</div></div><div class="check"></div></div>
+          <div id="q3" class="card quest" style="position:absolute;left:54px;right:54px;top:684px"><div class="qicon"><img src="assets/quest_emergency.webp" /></div><div class="qmain"><div class="qname">Doomscroll stoppen</div><div class="qmeta">LIMIT // WILL</div></div><div><div class="reward">+600</div><div class="rank">BOSS</div></div><div class="check"></div></div>
+          <div class="panel" style="top:844px;padding:26px 28px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px"><div><div class="screen-title">Clear Rate</div><div class="screen-sub">3 / 5 Daily Quests</div></div><div style="font:900 42px 'Inter';color:#22c55e">60%</div></div>
+            <div class="bar"><div id="s2-fill" class="fill"></div></div>
+          </div>
+          <div class="app-nav"><span class="active">QUESTS</span><span>STATS</span><span>ARMY</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s3" class="clip scene" data-start="10.5" data-duration="5.0" data-track-index="2">
+      <div class="bg-img" style="background-image:url('assets/bg_dungeon.png');opacity:.22"></div><div class="veil"></div>
+      <div class="safe">
+        <div id="s3-copy" style="position:absolute;top:0;left:0;right:0;text-align:center">
+          <div class="eyebrow" style="color:#fbbf24">PROOF OR PENALTY</div>
+          <div class="headline" style="font-size:64px;margin-top:18px">Quest fail = Strafe.</div>
+        </div>
+      </div>
+      <div id="phone3" class="phone" style="left:195px;top:360px">
+        <div class="phone-screen">
+          <div class="status"><span>19:34</span><span>PENALTY MODE</span></div>
+          <div class="app-top"><div class="mini-logo"><img src="assets/story_arise.webp" /><span>ARISE</span></div><div class="level-badge">RANK A</div></div>
+          <div class="timer-ring" style="left:195px;top:190px"><div class="timer-text"><div class="timer-time">24:18</div><div class="timer-label">NO SCROLL</div></div></div>
+          <div id="penalty-card" class="penalty-card">
+            <div class="penalty-kicker">PENALTY BEI QUEST FAIL</div>
+            <div class="penalty-title">Das System zählt mit. Jede Ausrede kostet.</div>
+            <div class="penalty-meta"><span>WILL -3</span><span>STREAK RISIKO</span></div>
+          </div>
+          <div class="panel" data-layout-allow-overflow style="top:710px;padding:28px 32px">
+            <div class="proof-row"><div><div class="proof-name">100 Pushups</div><div class="proof-meta">STR Quest</div></div><div class="proof-good">100 / 100</div></div>
+            <div class="proof-row"><div><div class="proof-name">Deep Work Proof</div><div class="proof-meta">Focus Timer</div></div><div class="proof-good">90:00</div></div>
+            <div class="proof-row"><div><div class="proof-name">Scroll Limit</div><div class="proof-meta">Screen-Time Boss</div></div><div class="proof-good">1h 12m</div></div>
+          </div>
+          <div class="panel" style="top:960px;padding:24px 26px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div class="screen-title">Willpower 47</div><div class="screen-sub">STR + INT + WILL</div></div><div style="font:900 44px 'Cinzel';color:#facc15">47</div></div>
+            <div class="stat-grid">
+              <div class="stat-box"><div class="stat-val">53</div><div class="stat-lbl">STR</div></div>
+              <div class="stat-box"><div class="stat-val">69</div><div class="stat-lbl">INT</div></div>
+              <div class="stat-box"><div class="stat-val">44</div><div class="stat-lbl">WILL</div></div>
+            </div>
+          </div>
+          <div class="app-nav"><span>QUESTS</span><span class="active">STATS</span><span>ARMY</span></div>
+        </div>
+      </div>
+      <div id="level-flash" style="position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none"></div>
+      <div id="level-up" style="position:absolute;left:70px;right:70px;top:760px;text-align:center;opacity:0">
+        <div style="font:900 22px 'JetBrains Mono';letter-spacing:5px;color:#fbbf24">LEVEL UP</div>
+        <div style="font:900 96px 'Cinzel';color:#facc15;text-shadow:0 0 70px rgba(250,204,21,.55)">WILL +3</div>
+      </div>
+    </section>
+
+    <section id="s4" class="clip scene" data-start="15.5" data-duration="3.7" data-track-index="3">
+      <div class="bg-img" style="background-image:url('assets/bg_portal.png');opacity:.3"></div><div class="veil"></div>
+      <div class="safe">
+        <div id="s4-copy" style="text-align:center">
+          <div class="eyebrow" style="color:#c4b5fd">SHADOW ARMY</div>
+          <div class="headline" style="font-size:58px;margin-top:18px">Disziplin besiegt den Boss.</div>
+          <div class="caption" style="margin-top:18px">Doomscroll-Boss besiegt. Shadow Army freigeschaltet.</div>
+        </div>
+      </div>
+      <div id="shadow-stage" class="shadow-stage">
+        <div id="shadow-floor" class="shadow-floor"></div>
+        <div id="summon-ring" class="summon-ring"></div>
+        <div id="eline1" class="energy-line"></div><div id="eline2" class="energy-line"></div><div id="eline3" class="energy-line"></div>
+        <div id="shadow-knight" class="shadow-figure"><img src="assets/shadow_knight.webp" /></div>
+        <div id="shadow-mage" class="shadow-figure"><img src="assets/shadow_mage.webp" /></div>
+        <div id="shadow-igris" class="shadow-figure"><img src="assets/shadow_igris.webp" /></div>
+        <div id="shadow-beru" class="shadow-figure"><img src="assets/shadow_beru.webp" /></div>
+        <div id="shadow-bellion" class="shadow-figure"><img src="assets/shadow_bellion.webp" /></div>
+        <div id="boost1" class="boost-chip">WILL BUFF +3</div>
+        <div id="boost2" class="boost-chip">SHADOW ARMY</div>
+        <div id="boost3" class="boost-chip">NPC MODE OFF</div>
+        <div id="shadow-name" class="shadow-name">IGRIS // BELLION // BERU</div>
+        <div class="summon-spark" id="sp1" style="left:180px;top:520px"></div><div class="summon-spark" id="sp2" style="left:310px;top:440px"></div><div class="summon-spark" id="sp3" style="left:505px;top:330px"></div><div class="summon-spark" id="sp4" style="left:735px;top:455px"></div><div class="summon-spark" id="sp5" style="left:880px;top:545px"></div>
+      </div>
+      <div id="boss-card" class="boss-card">
+        <div class="boss-top"><span>BOSS CLEARED</span><span>S-RANK</span></div>
+        <div class="boss-name">Doomscroll-Boss besiegt</div>
+        <div class="boss-result"><span>WILL +3</span><span>+500 XP</span></div>
+      </div>
+      <div id="rank-stamp" class="rank-stamp">DISCIPLINE CLEAR</div>
+      <div id="arise-burst" class="arise-burst">ARISE</div>
+      <div id="shadow-flash" class="shadow-flash"></div>
+    </section>
+
+    <section id="s5" class="clip scene" data-start="19.2" data-duration="4.8" data-track-index="4">
+      <div class="bg-img" style="background-image:url('assets/bg_portal.png');opacity:.36;filter:saturate(1.45) contrast(1.12)"></div><div class="veil"></div>
+      <div id="cta-ring" class="cta-ring"></div>
+      <img id="cta-logo" class="cta-logo" src="assets/app_icon.png" />
+      <div id="cta-title" class="cta-title">ARISE</div>
+      <div id="cta-line" class="cta-line">Beweis, dass du kein NPC bist.</div>
+      <div id="cta-sub" class="cta-sub">Link in Bio.</div>
+      <div id="stores" class="store-row"><div class="store">App Store</div><div class="store">Google Play</div></div>
+      <div id="final-note" class="final-note">KOMMENTIER PLAYER, WENN DU HEUTE CLEARST</div>
+    </section>
+
+    <audio id="bgm" data-start="0" data-duration="24" data-track-index="5" data-volume="0.74" src="assets/solo_grind_ad_24s.mp3"></audio>
+  </div>
+  <script>
+    window.__timelines=window.__timelines||{};
+    const tl=gsap.timeline({paused:true});
+
+    tl.fromTo("#speed1",{opacity:0,x:-150},{opacity:.72,x:0,duration:.18,ease:"power3.out"},.02);
+    tl.to("#speed1",{opacity:.16,duration:.5,ease:"power2.out"},.34);
+    tl.fromTo("#doom-phone",{opacity:0,y:120,scale:.82,filter:"blur(8px)"},{opacity:.86,y:0,scale:.94,filter:"blur(0px)",duration:.34,ease:"power3.out"},.02);
+    tl.to("#doom-phone",{y:-330,duration:1.5,ease:"power2.inOut"},.18);
+    tl.fromTo("#hook-small",{opacity:0,y:-26,scale:.92},{opacity:1,y:0,scale:1,duration:.28,ease:"power3.out"},.08);
+    tl.fromTo("#hook-main",{opacity:0,y:34,filter:"blur(8px)"},{opacity:1,y:0,filter:"blur(0px)",duration:.42,ease:"power3.out"},.38);
+    tl.fromTo("#npc-stamp",{opacity:0,scale:.68,rotation:-10},{opacity:1,scale:1,rotation:-5,duration:.18,ease:"back.out(2)"},1.18);
+    tl.to("#s1",{x:-26,duration:.035,ease:"power2.out"},1.2);
+    tl.to("#s1",{x:24,duration:.04,ease:"power2.inOut"},1.24);
+    tl.to("#s1",{x:-10,duration:.04,ease:"power2.inOut"},1.29);
+    tl.to("#s1",{x:0,duration:.06,ease:"power2.out"},1.34);
+    tl.to(["#rage-hook","#npc-stamp"],{opacity:0,filter:"blur(4px)",duration:.24,ease:"power2.in"},1.88);
+    tl.fromTo("#bossbar1",{opacity:0,y:34,scale:.92},{opacity:1,y:0,scale:1,duration:.34,ease:"power3.out"},2.02);
+    tl.to("#bossfill1",{width:"88%",duration:.72,ease:"power2.out"},2.14);
+    tl.fromTo(["#c1","#c2","#c3"],{opacity:0,x:130,scale:.9},{opacity:1,x:0,scale:1,duration:.38,stagger:.13,ease:"back.out(1.25)"},2.48);
+    tl.fromTo("#combo1",{opacity:0,y:24,scale:.9},{opacity:1,y:0,scale:1,duration:.3,ease:"back.out(1.45)"},3.14);
+    tl.to(["#c1","#c2","#c3"],{x:-58,opacity:.34,filter:"blur(2px)",duration:.3,stagger:.04,ease:"power2.in"},3.46);
+    tl.fromTo("#sys",{opacity:0,scale:.86,y:44},{opacity:1,scale:1,y:0,duration:.42,ease:"back.out(1.3)"},3.55);
+    tl.fromTo(["#s1-s1","#s1-s2","#s1-s3"],{opacity:0,scale:.2},{opacity:1,scale:1.9,duration:.3,stagger:.07,ease:"power2.out"},3.62);
+    tl.to(["#s1-s1","#s1-s2","#s1-s3"],{opacity:0,y:-180,duration:.62,stagger:.04,ease:"power1.in"},3.94);
+    tl.fromTo("#warning-strip",{opacity:0,y:58},{opacity:1,y:0,duration:.28,ease:"power3.out"},4.12);
+    tl.to(["#bossbar1","#combo1"],{opacity:0,y:-18,duration:.22,ease:"power2.in"},4.26);
+    tl.to("#s1",{opacity:0,filter:"blur(7px)",duration:.25,ease:"power2.in"},4.72);
+
+    tl.to("#s2",{opacity:1,duration:.01},5.0);
+    tl.fromTo("#s2-copy",{opacity:0,y:30},{opacity:1,y:0,duration:.42,ease:"power3.out"},5.08);
+    tl.fromTo("#phone2",{opacity:0,y:120,scale:.9},{opacity:1,y:0,scale:1,duration:.58,ease:"back.out(1.15)"},5.48);
+    tl.fromTo(["#q1","#q2","#q3"],{opacity:0,x:82},{opacity:1,x:0,duration:.38,stagger:.24,ease:"power3.out"},6.12);
+    tl.to("#q1 .check",{opacity:1,scale:1,duration:.24,ease:"back.out(2)"},7.05);
+    tl.to("#q2 .check",{opacity:1,scale:1,duration:.24,ease:"back.out(2)"},7.58);
+    tl.to("#q3 .check",{opacity:1,scale:1,duration:.24,ease:"back.out(2)"},8.1);
+    tl.to("#s2-fill",{width:"60%",duration:.7,ease:"power2.inOut"},8.25);
+    tl.to("#phone2",{y:-24,scale:1.012,duration:1.8,ease:"sine.inOut"},8.18);
+    tl.to("#s2",{opacity:0,filter:"blur(5px)",duration:.32,ease:"power2.in"},10.18);
+    tl.set("#s2",{opacity:0},10.5);
+
+    tl.to("#s3",{opacity:1,duration:.01},10.5);
+    tl.fromTo("#s3-copy",{opacity:0,y:24},{opacity:1,y:0,duration:.42,ease:"power3.out"},10.58);
+    tl.fromTo("#phone3",{opacity:0,y:104,scale:.92},{opacity:1,y:0,scale:1,duration:.58,ease:"back.out(1.15)"},11.0);
+    tl.fromTo(".timer-ring",{rotation:-18,scale:.88},{rotation:0,scale:1,duration:.58,ease:"back.out(1.2)"},11.34);
+    tl.fromTo("#penalty-card",{opacity:0,x:-56,scale:.94},{opacity:1,x:0,scale:1,duration:.34,ease:"power3.out"},11.68);
+    tl.fromTo(".proof-row",{opacity:0,x:38},{opacity:1,x:0,duration:.3,stagger:.17,ease:"power2.out"},12.2);
+    tl.fromTo(".stat-box",{opacity:0,y:24},{opacity:1,y:0,duration:.32,stagger:.12,ease:"power2.out"},13.08);
+    tl.fromTo("#level-up",{opacity:0,scale:.78,y:30},{opacity:1,scale:1,y:0,duration:.36,ease:"back.out(1.3)"},14.1);
+    tl.to("#phone3",{opacity:.2,filter:"blur(4px)",duration:.22},14.14);
+    tl.to("#level-up",{opacity:0,scale:1.08,duration:.28,ease:"power2.in"},14.92);
+    tl.to("#s3",{opacity:0,filter:"blur(5px)",duration:.3,ease:"power2.in"},15.2);
+    tl.set("#s3",{opacity:0},15.5);
+
+    tl.to("#s4",{opacity:1,duration:.01},15.5);
+    tl.fromTo("#s4-copy",{opacity:0,y:24},{opacity:1,y:0,duration:.36,ease:"power3.out"},15.58);
+    tl.fromTo("#boss-card",{opacity:0,y:80,scale:.9},{opacity:1,y:0,scale:1,duration:.4,ease:"back.out(1.25)"},15.86);
+    tl.to("#shadow-stage",{opacity:1,duration:.01},16.0);
+    tl.fromTo("#shadow-floor",{opacity:0,scale:.5},{opacity:1,scale:1.08,duration:.45,ease:"power2.out"},16.0);
+    tl.fromTo("#summon-ring",{opacity:0,scale:.35,rotation:-24},{opacity:1,scale:1,rotation:0,duration:.48,ease:"back.out(1.15)"},16.04);
+    tl.to("#shadow-flash",{opacity:.9,duration:.05},16.28);
+    tl.fromTo("#arise-burst",{opacity:0,scale:.72,filter:"blur(8px)",letterSpacing:"34px"},{opacity:1,scale:1,filter:"blur(0px)",letterSpacing:"18px",duration:.12,ease:"power4.out"},16.26);
+    tl.to("#arise-burst",{opacity:0,scale:1.18,filter:"blur(4px)",duration:.22,ease:"power2.in"},16.42);
+    tl.to("#s4",{x:-18,duration:.035,ease:"power2.out"},16.28);
+    tl.to("#s4",{x:16,duration:.045,ease:"power2.inOut"},16.32);
+    tl.to("#s4",{x:-7,duration:.04,ease:"power2.inOut"},16.37);
+    tl.to("#s4",{x:0,duration:.06,ease:"power2.out"},16.42);
+    tl.to("#shadow-flash",{opacity:0,duration:.34,ease:"power2.out"},16.36);
+    tl.fromTo(["#shadow-knight","#shadow-mage","#shadow-igris","#shadow-beru","#shadow-bellion"],{opacity:0,y:92,scale:.62,filter:"blur(12px)"},{opacity:1,y:0,scale:1,filter:"blur(0px)",duration:.52,stagger:.08,ease:"back.out(1.35)"},16.36);
+    tl.fromTo(["#sp1","#sp2","#sp3","#sp4","#sp5"],{opacity:0,scale:.2,y:80},{opacity:1,scale:1.8,y:-90,duration:.44,stagger:.04,ease:"power2.out"},16.5);
+    tl.to(["#sp1","#sp2","#sp3","#sp4","#sp5"],{opacity:0,y:-210,duration:.38,stagger:.03,ease:"power1.in"},16.94);
+    tl.fromTo(["#eline1","#eline2","#eline3"],{opacity:0,scaleX:0},{opacity:.9,scaleX:1,duration:.28,stagger:.1,ease:"power2.out"},17.1);
+    tl.fromTo(["#boost1","#boost2","#boost3"],{opacity:0,y:24,scale:.84},{opacity:1,y:0,scale:1,duration:.28,stagger:.12,ease:"back.out(1.4)"},17.3);
+    tl.fromTo("#rank-stamp",{opacity:0,scale:.8,rotation:-8},{opacity:1,scale:1,rotation:-4,duration:.22,ease:"back.out(1.8)"},17.65);
+    tl.fromTo("#shadow-name",{opacity:0,letterSpacing:"8px"},{opacity:1,letterSpacing:"2px",duration:.3,ease:"power2.out"},17.9);
+    tl.to(["#shadow-bellion","#shadow-igris","#shadow-beru","#shadow-knight","#shadow-mage"],{y:-16,duration:.82,yoyo:true,repeat:1,ease:"sine.inOut"},17.72);
+    tl.to("#summon-ring",{rotation:20,scale:1.04,duration:1.45,ease:"sine.inOut"},17.52);
+    tl.to("#s4",{opacity:0,filter:"blur(5px)",duration:.3,ease:"power2.in"},18.9);
+    tl.set("#s4",{opacity:0},19.2);
+
+    tl.to("#s5",{opacity:1,duration:.01},19.2);
+    tl.fromTo("#cta-ring",{opacity:0,scale:.65,rotation:-18},{opacity:1,scale:1,rotation:0,duration:.58,ease:"back.out(1.25)"},19.24);
+    tl.fromTo("#cta-logo",{opacity:0,scale:.55,filter:"blur(8px)"},{opacity:1,scale:1,filter:"blur(0px)",duration:.5,ease:"back.out(1.45)"},19.3);
+    tl.to("#cta-ring",{rotation:20,scale:1.04,duration:3.8,ease:"sine.inOut"},19.9);
+    tl.fromTo("#cta-title",{opacity:0,y:26,letterSpacing:"26px"},{opacity:1,y:0,letterSpacing:"14px",duration:.42,ease:"power3.out"},19.85);
+    tl.fromTo("#cta-line",{opacity:0,y:24},{opacity:1,y:0,duration:.42,ease:"power3.out"},20.35);
+    tl.fromTo("#cta-sub",{opacity:0,y:20},{opacity:1,y:0,duration:.38,ease:"power2.out"},20.92);
+    tl.fromTo("#stores",{opacity:0,y:22},{opacity:1,y:0,duration:.38,ease:"power2.out"},21.35);
+    tl.fromTo("#final-note",{opacity:0,y:18},{opacity:1,y:0,duration:.34,ease:"power2.out"},21.82);
+
+    window.__timelines["main"]=tl;
+  </script>
+</body>
+</html>

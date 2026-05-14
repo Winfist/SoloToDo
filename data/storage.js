@@ -776,6 +776,7 @@ export function migrateState(oldState) {
   s.soulLink = { ...DEFAULT_STATE.soulLink, ...(oldState.soulLink || {}) };
   s.seasons = { ...DEFAULT_STATE.seasons, ...(oldState.seasons || {}) };
   s.dawnDusk = { ...DEFAULT_STATE.dawnDusk, ...(oldState.dawnDusk || {}) };
+  s.artifacts = { ...DEFAULT_STATE.artifacts, ...(oldState.artifacts || {}) };
   s.charismaDungeons = {
     ...DEFAULT_STATE.charismaDungeons,
     ...(oldState.charismaDungeons || {}),

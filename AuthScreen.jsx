@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { SYSTEM_ICONS, SKILL_ICONS } from "./data/icons.js";
 import ScrollApproachHint from "./components/ui/ScrollApproachHint.jsx";
+import { useI18n } from "./components/i18n/I18nProvider.jsx";
 
 const AuthTunnelScene = lazy(() => import("./3d/auth/AuthTunnelScene.jsx"));
 
@@ -339,6 +340,7 @@ function PasswordStrength({ password }) {
 
 // ─── SUCCESS ANIMATION ────────────────────────────────────────
 function SuccessAnimation({ hunterName, onComplete }) {
+  const { t } = useI18n();
   const [phase, setPhase] = useState(0);
   useEffect(() => {
     const timers = [
@@ -356,7 +358,7 @@ function SuccessAnimation({ hunterName, onComplete }) {
       {phase >= 1 && <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", border: "2px solid #7c3aed", animation: "portalOpen 1s cubic-bezier(0.34,1.56,0.64,1)", boxShadow: "0 0 60px #7c3aed44, inset 0 0 60px #7c3aed22" }} />}
       {phase >= 2 && <div style={{ position: "absolute", width: 4, background: "linear-gradient(to top, transparent, #7c3aed, #a78bfa, transparent)", animation: "lightBeam 1s ease-out forwards", filter: "blur(2px)" }} />}
       {phase >= 2 && <div style={{ animation: "successPulse 0.6s cubic-bezier(0.34,1.56,0.64,1)", marginBottom: 20, zIndex: 1 }}><img src={SYSTEM_ICONS.logo} alt="System" style={{ width: 96, height: 96, objectFit: "contain", filter: "drop-shadow(0 0 40px #7c3aed)" }} /></div>}
-      {phase >= 3 && <div style={{ fontSize: 11, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, animation: "fadeIn 0.6s ease" }}>SYSTEM ACTIVATED</div>}
+      {phase >= 3 && <div style={{ fontSize: 11, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, animation: "fadeIn 0.6s ease" }}>{t("auth.successActivated")}</div>}
       {phase >= 4 && <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 4, textShadow: "0 0 40px #7c3aed", marginBottom: 8, animation: "slideUp 0.6s ease" }}>{hunterName.toUpperCase()}</div>}
       {phase >= 4 && <div style={{ fontSize: 14, color: "#6b7280", fontFamily: "'Cinzel', serif", letterSpacing: 3, animation: "fadeIn 0.6s ease 0.2s both" }}>E-RANK HUNTER</div>}
       {phase >= 5 && (
@@ -375,6 +377,7 @@ function SuccessAnimation({ hunterName, onComplete }) {
 
 // ─── MAIN AUTH SCREEN ─────────────────────────────────────────
 export default function AuthScreen({ onAuthSuccess }) {
+  const { t } = useI18n();
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -430,18 +433,18 @@ export default function AuthScreen({ onAuthSuccess }) {
 
   const validate = () => {
     const newErrors = {};
-    if (!email.trim()) newErrors.email = "E-Mail erforderlich";
-    else if (!/\S+@\S+\.\S+/.test(email.trim())) newErrors.email = "Ungueltige E-Mail";
+    if (!email.trim()) newErrors.email = t("auth.validation.emailRequired");
+    else if (!/\S+@\S+\.\S+/.test(email.trim())) newErrors.email = t("auth.validation.emailInvalid");
     if (mode !== "forgot") {
-      if (!password) newErrors.password = "Passwort erforderlich";
-      else if (password.length < 8) newErrors.password = "Mindestens 8 Zeichen";
+      if (!password) newErrors.password = t("auth.validation.passwordRequired");
+      else if (password.length < 8) newErrors.password = t("auth.validation.passwordMin");
     }
     if (mode === "register") {
       const selectedName = hunterName.trim();
-      if (!selectedName) newErrors.hunterName = "Hunter-Name erforderlich";
-      else if (selectedName.length < 3) newErrors.hunterName = "Mindestens 3 Zeichen";
-      if (password !== confirmPassword) newErrors.confirmPassword = "Passwörter stimmen nicht überein";
-      if (!agreedToTerms) newErrors.terms = "Bitte akzeptiere die Bedingungen";
+      if (!selectedName) newErrors.hunterName = t("auth.validation.hunterRequired");
+      else if (selectedName.length < 3) newErrors.hunterName = t("auth.validation.hunterMin");
+      if (password !== confirmPassword) newErrors.confirmPassword = t("auth.validation.passwordsMismatch");
+      if (!agreedToTerms) newErrors.terms = t("auth.validation.termsRequired");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -464,13 +467,13 @@ export default function AuthScreen({ onAuthSuccess }) {
         try {
           await runAuthRequest(() => updateProfile(userCredential.user, { displayName: selectedName }));
         } catch (profileErr) {
-          console.warn("Hunter-Name konnte im Firebase-Profil noch nicht gespeichert werden.", profileErr);
+          console.warn(t("auth.messages.profileNameWarn"), profileErr);
         }
         setHunterName(selectedName);
         setShowSuccess(true);
       } else if (mode === "forgot") {
         await runAuthRequest(() => sendPasswordResetEmail(auth, email.trim()));
-        setErrors({ success: "Ein Link wurde an deine E-Mail gesendet" });
+        setErrors({ success: t("auth.messages.resetSent") });
         setTimeout(() => switchMode("login"), 4000);
       }
     } catch (err) {
@@ -478,16 +481,13 @@ export default function AuthScreen({ onAuthSuccess }) {
       if (mode === "register") {
         try { sessionStorage.removeItem("sl-pending-hunter-name"); } catch { }
       }
-      let msg = "Ein Fehler ist aufgetreten: " + (err.message || "");
-      if (err.code === "auth/user-not-found") msg = "Benutzer nicht gefunden";
-      else if (err.code === "auth/wrong-password") msg = "Falsches Passwort";
-      else if (err.code === "auth/email-already-in-use") msg = "E-Mail wird bereits verwendet";
-      else if (err.code === "auth/weak-password") msg = "Passwort ist zu schwach";
-      else if (err.code === "auth/invalid-credential") msg = "Ungültige Anmeldedaten";
-      else if (err.code === "auth/operation-not-allowed") msg = "Anmeldemethode in Firebase nicht aktiviert.";
+      let msg = t("auth.messages.genericError", { message: err.message || "" });
+      if (err.code === "auth/wrong-password") msg = t("auth.messages.wrongPassword");
+      else if (err.code === "auth/email-already-in-use") msg = t("auth.messages.emailInUse");
+      else if (err.code === "auth/weak-password") msg = t("auth.messages.weakPassword");
       if (isNetworkAuthError(err)) msg = navigator.onLine === false
-        ? "Du bist offline. Bitte Verbindung pruefen und erneut versuchen."
-        : "Firebase ist gerade nicht erreichbar. Bitte kurz warten und erneut versuchen.";
+        ? t("auth.messages.offline")
+        : t("auth.messages.firebaseUnavailable");
       setErrors({ server: msg });
     } finally {
       setLoading(false);
@@ -517,9 +517,9 @@ export default function AuthScreen({ onAuthSuccess }) {
       }
     } catch (err) {
       console.error(err);
-      let msg = "Google Login fehlgeschlagen: " + (err.message || "");
-      if (err.code === "auth/operation-not-allowed") msg = "Google Login ist in Firebase nicht aktiviert.";
-      else if (err.code === "auth/popup-closed-by-user" || err.message?.includes("canceled")) msg = "Login abgebrochen.";
+      let msg = t("auth.messages.googleFailed", { message: err.message || "" });
+      if (err.code === "auth/operation-not-allowed") msg = t("auth.messages.googleNotEnabled");
+      else if (err.code === "auth/popup-closed-by-user" || err.message?.includes("canceled")) msg = t("auth.messages.loginCanceled");
       setErrors({ server: msg });
     } finally {
       setLoading(false);
@@ -553,9 +553,9 @@ export default function AuthScreen({ onAuthSuccess }) {
       }
     } catch (err) {
       console.error(err);
-      let msg = "Apple Login fehlgeschlagen: " + (err.message || "");
-      if (err.code === "auth/operation-not-allowed") msg = "Apple Login ist in Firebase nicht aktiviert.";
-      else if (err.code === "auth/popup-closed-by-user" || err.message?.includes("canceled")) msg = "Login abgebrochen.";
+      let msg = t("auth.messages.appleFailed", { message: err.message || "" });
+      if (err.code === "auth/operation-not-allowed") msg = t("auth.messages.appleNotEnabled");
+      else if (err.code === "auth/popup-closed-by-user" || err.message?.includes("canceled")) msg = t("auth.messages.loginCanceled");
       setErrors({ server: msg });
     } finally {
       setLoading(false);
@@ -587,21 +587,21 @@ export default function AuthScreen({ onAuthSuccess }) {
                 border: mode === m ? "1px solid #7c3aed55" : "1px solid transparent",
                 cursor: "pointer", transition: "all 0.3s ease",
               }}
-            >{m === "login" ? "EINLOGGEN" : "REGISTRIEREN"}</button>
+            >{m === "login" ? t("auth.tabs.login") : t("auth.tabs.register")}</button>
           ))}
         </div>
       )}
 
-      {mode === "register" && <AuthInput type="text" placeholder="Hunter-Name" value={hunterName} onChange={(e) => setHunterName(e.target.value)} icon="⚔️" error={errors.hunterName} delay={0} />}
-      <AuthInput type="email" placeholder="E-Mail Adresse" value={email} onChange={(e) => setEmail(e.target.value)} icon="📧" error={errors.email} delay={mode === "register" ? 0.05 : 0} />
+      {mode === "register" && <AuthInput type="text" placeholder={t("auth.placeholders.hunterName")} value={hunterName} onChange={(e) => setHunterName(e.target.value)} icon="⚔️" error={errors.hunterName} delay={0} />}
+      <AuthInput type="email" placeholder={t("auth.placeholders.email")} value={email} onChange={(e) => setEmail(e.target.value)} icon="📧" error={errors.email} delay={mode === "register" ? 0.05 : 0} />
 
       {mode !== "forgot" && (
         <>
-          <AuthInput type="password" placeholder="Passwort" value={password} onChange={(e) => setPassword(e.target.value)} icon="🔐" error={errors.password} delay={mode === "register" ? 0.1 : 0.05} />
+          <AuthInput type="password" placeholder={t("auth.placeholders.password")} value={password} onChange={(e) => setPassword(e.target.value)} icon="🔐" error={errors.password} delay={mode === "register" ? 0.1 : 0.05} />
           {mode === "register" && <PasswordStrength password={password} />}
         </>
       )}
-      {mode === "register" && <AuthInput type="password" placeholder="Passwort bestätigen" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} icon="🔒" error={errors.confirmPassword} delay={0.15} />}
+      {mode === "register" && <AuthInput type="password" placeholder={t("auth.placeholders.confirmPassword")} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} icon="🔒" error={errors.confirmPassword} delay={0.15} />}
 
       {mode === "register" && (
         <div style={{ marginBottom: 20, animation: "slideUp 0.6s ease 0.2s both" }}>
@@ -613,7 +613,7 @@ export default function AuthScreen({ onAuthSuccess }) {
               {agreedToTerms && <span style={{ color: "#fff", fontSize: 12 }}>✓</span>}
             </div>
             <span style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
-              Ich akzeptiere die <span style={{ color: "#a78bfa", cursor: "pointer" }}>Hunter-Vereinbarung</span> und die <span style={{ color: "#a78bfa", cursor: "pointer" }}>System-Bedingungen</span>
+              {t("auth.termsPrefix")} <span style={{ color: "#a78bfa", cursor: "pointer" }}>{t("auth.hunterAgreement")}</span> {t("auth.termsConnector")} <span style={{ color: "#a78bfa", cursor: "pointer" }}>{t("auth.systemTerms")}</span>
             </span>
           </label>
           {errors.terms && <div style={{ marginTop: 6, fontSize: 11, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", paddingLeft: 32 }}>⚠ {errors.terms}</div>}
@@ -625,7 +625,7 @@ export default function AuthScreen({ onAuthSuccess }) {
           <button onClick={() => switchMode("forgot")} style={{ background: "transparent", border: "none", color: "#4a4070", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", transition: "color 0.3s" }}
             onMouseEnter={e => e.currentTarget.style.color = "#a78bfa"}
             onMouseLeave={e => e.currentTarget.style.color = "#4a4070"}
-          >Passwort vergessen?</button>
+          >{t("auth.forgotPassword")}</button>
         </div>
       )}
 
@@ -641,18 +641,18 @@ export default function AuthScreen({ onAuthSuccess }) {
       )}
 
       <AuthButton onClick={handleSubmit} loading={loading} delay={mode === "register" ? 0.25 : 0.15}>
-        {mode === "login" && "⚔️ EINLOGGEN"}
-        {mode === "register" && "✨ HUNTER WERDEN"}
-        {mode === "forgot" && "📧 LINK SENDEN"}
+        {mode === "login" && `⚔️ ${t("auth.submit.login").toUpperCase()}`}
+        {mode === "register" && `✨ ${t("auth.submit.register").toUpperCase()}`}
+        {mode === "forgot" && `📧 ${t("auth.submit.forgot").toUpperCase()}`}
       </AuthButton>
 
-      {mode === "forgot" && <AuthButton variant="secondary" onClick={() => switchMode("login")} delay={0.2}>← ZURÜCK ZUM LOGIN</AuthButton>}
+      {mode === "forgot" && <AuthButton variant="secondary" onClick={() => switchMode("login")} delay={0.2}>← {t("auth.backToLogin").toUpperCase()}</AuthButton>}
 
       {mode !== "forgot" && (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "24px 0" }}>
             <div style={{ flex: 1, height: 1, background: "#1a1035" }} />
-            <span style={{ fontSize: 10, color: "#2d2050", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2 }}>ODER</span>
+            <span style={{ fontSize: 10, color: "#2d2050", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2 }}>{t("auth.divider")}</span>
             <div style={{ flex: 1, height: 1, background: "#1a1035" }} />
           </div>
           <div style={{ display: "flex", gap: 12 }}>
@@ -664,8 +664,8 @@ export default function AuthScreen({ onAuthSuccess }) {
 
       <div style={{ textAlign: "center", marginTop: 20 }}>
         <p style={{ fontSize: 11, color: "#2d2a4a", fontFamily: "'JetBrains Mono', monospace" }}>
-          {mode === "login" && <>Noch kein Hunter?{" "}<span onClick={() => switchMode("register")} style={{ color: "#7c3aed", cursor: "pointer" }}>Jetzt registrieren</span></>}
-          {mode === "register" && <>Bereits ein Hunter?{" "}<span onClick={() => switchMode("login")} style={{ color: "#7c3aed", cursor: "pointer" }}>Einloggen</span></>}
+          {mode === "login" && <>{t("auth.switchToRegister")}{" "}<span onClick={() => switchMode("register")} style={{ color: "#7c3aed", cursor: "pointer" }}>{t("auth.registerNow")}</span></>}
+          {mode === "register" && <>{t("auth.switchToLogin")}{" "}<span onClick={() => switchMode("login")} style={{ color: "#7c3aed", cursor: "pointer" }}>{t("auth.loginNow")}</span></>}
         </p>
       </div>
     </div>
@@ -732,15 +732,15 @@ export default function AuthScreen({ onAuthSuccess }) {
       <div style={{ position: "fixed", bottom: isMobile ? 80 : 120, left: 0, right: 0, zIndex: 8, textAlign: "center", pointerEvents: "none" }}>
         {/* msg1: 12%–40% — gate detected */}
         <div ref={msg1Ref} style={{ ...SL_MSG, opacity: 0, color: "#a78bfa", textShadow: "0 0 18px #7c3aed" }}>
-          ⚠ SYSTEM · GATE DETECTED
+          ⚠ {t("auth.overlay.gateDetected")}
         </div>
         {/* msg2: 44%–70% — portal sequence */}
         <div ref={msg2Ref} style={{ ...SL_MSG, opacity: 0, color: "#7c3aed", letterSpacing: 4, textShadow: "0 0 12px #7c3aed66" }}>
-          PORTAL AUTHENTICATION SEQUENCE INITIATED
+          {t("auth.overlay.portalSequence")}
         </div>
         {/* msg3: 76%–87% — auth required (pulses) */}
         <div ref={msg3Ref} style={{ ...SL_MSG, opacity: 0, color: "#e2d9ff", letterSpacing: 6, animation: "pulse 1.2s ease-in-out infinite", textShadow: "0 0 28px #a78bfa" }}>
-          ⚔ HUNTER AUTHENTICATION REQUIRED
+          ⚔ {t("auth.overlay.authRequired")}
         </div>
       </div>
 
@@ -749,9 +749,9 @@ export default function AuthScreen({ onAuthSuccess }) {
         <div style={{ marginBottom: isMobile ? 6 : 10, animation: "float 3s ease-in-out infinite, glow 3s ease-in-out infinite" }}><img src={SYSTEM_ICONS.logo} alt="ARISE" style={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64, objectFit: "contain", filter: "drop-shadow(0 0 16px #7c3aed88)" }} /></div>
         <h1 style={{ fontSize: isMobile ? 26 : 36, fontWeight: 900, fontFamily: "'Cinzel', serif", color: "#fff", letterSpacing: isMobile ? 5 : 8, marginBottom: 6, animation: "textGlow 3s ease-in-out infinite, slideDown 0.8s ease" }}>ARISE</h1>
         <p style={{ fontSize: isMobile ? 9 : 11, fontFamily: "'JetBrains Mono', monospace", color: "#7c3aed", letterSpacing: isMobile ? 3 : 5, animation: "fadeIn 1s ease 0.3s both" }}>
-          {mode === "login" && "HUNTER SYSTEM ACCESS"}
-          {mode === "register" && "NEW HUNTER REGISTRATION"}
-          {mode === "forgot" && "PASSWORD RECOVERY"}
+          {mode === "login" && t("auth.overlay.login")}
+          {mode === "register" && t("auth.overlay.register")}
+          {mode === "forgot" && t("auth.overlay.forgot")}
         </p>
       </div>
 
@@ -761,8 +761,8 @@ export default function AuthScreen({ onAuthSuccess }) {
           <ScrollApproachHint
             color="#a78bfa"
             isMobile={isMobile}
-            label={isMobile ? "NACH UNTEN WISCHEN" : "NACH UNTEN SCROLLEN"}
-            subLabel="ZUM LOGIN-PORTAL"
+            label={isMobile ? t("auth.overlay.scrollMobile") : t("auth.overlay.scrollDesktop")}
+            subLabel={t("auth.overlay.scrollSub")}
             onActivate={() => autoApproachRef.current?.()}
           />
         </div>

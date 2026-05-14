@@ -5,7 +5,9 @@
 import { RANKS, DUNGEON_MODIFIERS, SKILLS, ACHIEVEMENTS, DUNGEON_TEMPLATES, EQUIPMENT_POOL, SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS } from "./gameData.js";
 import { JOBS } from "./jobs.js";
 import { QUEST_POOL } from "./questPool.js";
+import { getSystemQuestPoolForLocale, localizeQuestTemplate } from "./localizedQuestPool.js";
 import { getToday } from "./dateUtils.js";
+import { getStateLocale, resolveLocale, translate } from "./i18n.js";
 
 // ─── JOB XP CONFIG ────────────────────────────────────────────
 export const JOB_XP_SOURCES = {
@@ -109,11 +111,13 @@ export const STARTER_QUEST_TEMPLATE_IDS = [
   "qp_agi_01",
 ];
 
-export function generateStarterQuests() {
+export function generateStarterQuests(languageMode = "auto") {
   const today = getToday();
+  const locale = resolveLocale(languageMode);
   return STARTER_QUEST_TEMPLATE_IDS
     .map(templateId => QUEST_POOL.find(q => q.id === templateId))
     .filter(Boolean)
+    .map(q => localizeQuestTemplate(q, locale))
     .map((q, index) => ({
       ...q,
       id: `starter_${genId()}`,
@@ -131,9 +135,10 @@ export function generateStarterQuests() {
 export function generateDailySystemQuests(count = 3, state = null) {
   const level = state?.level || 1;
   const stats = state?.stats || { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
+  const locale = getStateLocale(state);
 
   // Pool nach Level filtern
-  const validPool = QUEST_POOL.filter(q => level >= (q.minLevel || 1));
+  const validPool = getSystemQuestPoolForLocale(locale).filter(q => level >= (q.minLevel || 1));
 
   // Finde stärkste Defizite
   let lowestStat = null;
@@ -160,7 +165,7 @@ export function generateDailySystemQuests(count = 3, state = null) {
         type: "daily",
         isSystem: true,
         xpMult: 1.5,
-        systemMessage: `[SYSTEM-STRAFE] Vernachlässigung des Stats '${lowestStat.toUpperCase()}' erkannt. Zwangstraining aktiviert.`,
+        systemMessage: translate(locale, "quests.deficiencyMessage", { stat: lowestStat.toUpperCase() }),
         createdAt: getToday()
       });
     }
@@ -176,8 +181,9 @@ export function generateDailySystemQuests(count = 3, state = null) {
     generatedIds.add("screen_time_quest");
     selected.push({
       id: `sys_screentime_${genId()}`,
-      title: `Weniger als ${timeString} Bildschirmzeit heute`,
-      desc: "Beweisfoto (Einstellungen -> Bildschirmzeit) hochladen und KI den Fokus verifizieren lassen.",
+      templateId: "screen_time_quest",
+      title: translate(locale, "quests.screenTimeTitle", { time: timeString }),
+      desc: translate(locale, "quests.screenTimeDesc"),
       category: "int",
       difficulty: "hard", // Making it a bit harder to encourage focus!
       type: "daily",
@@ -690,25 +696,30 @@ export function checkHiddenQuestTriggers(state) {
   return newlyDiscovered;
 }
 
-export function generateEmergencyQuest(playerLevel) {
+export function generateEmergencyQuest(playerLevel, stateOrLanguage = null) {
+  const locale = typeof stateOrLanguage === "string" ? resolveLocale(stateOrLanguage) : getStateLocale(stateOrLanguage);
   const templates = [
-    { title: "URGENT: Physical Degradation", category: "str", difficulty: "hard", desc: "Das System registriert kritischen Abfall der Muskelspannung. Sofortige kinetische Entladung erforderlich. Führe 20 Liegestütze oder 30 Kniebeugen aus." },
-    { title: "URGENT: Cognitive Overload", category: "int", difficulty: "hard", desc: "Neuronale Netzwerke überlastet. Initiiere sofortige Isolation. 15 Minuten absolute Stille ohne digitale Stimulanz." },
-    { title: "URGENT: Critical Dehydration", category: "vit", difficulty: "hard", desc: "Lebenserhaltende Systeme melden Flüssigkeitsmangel. Konsumiere unverzüglich 1 Liter H2O zur Systemstabilisierung." },
-    { title: "URGENT: Oxygen Depletion", category: "agi", difficulty: "hard", desc: "Umgebungsanalyse: Toxische / Stagnierende Luft registriert. Verlasse die aktuelle Zone sofort für mindestens 10 Minuten." },
-    { title: "URGENT: Isolation Warning", category: "cha", difficulty: "normal", desc: "Soziales Netzwerk droht zu fragmentieren. Baue sofort eine Kommunikationsbrücke zu einem vernachlässigten Kontakt auf." },
+    { key: "physical", category: "str", difficulty: "hard" },
+    { key: "cognitive", category: "int", difficulty: "hard" },
+    { key: "hydration", category: "vit", difficulty: "hard" },
+    { key: "oxygen", category: "agi", difficulty: "hard" },
+    { key: "social", category: "cha", difficulty: "normal" },
   ];
   const seed = parseInt(getToday().replace(/-/g, "")) % templates.length;
   const tmpl = templates[seed];
   const expires = new Date(); expires.setHours(23, 59, 59, 999);
   return {
     id: `emergency_${getToday()}`,
-    ...tmpl,
+    templateId: `emergency_${tmpl.key}`,
+    title: translate(locale, `quests.emergency.${tmpl.key}.title`),
+    desc: translate(locale, `quests.emergency.${tmpl.key}.desc`),
+    category: tmpl.category,
+    difficulty: tmpl.difficulty,
     type: "emergency",
     timeLimit: expires.toISOString(),
     xpMult: 2.5, goldMult: 2.5,
     createdAt: getToday(),
-    systemMessage: "NOTFALL-QUEST DETEKTIERT. Sofortiges Handeln erforderlich.",
+    systemMessage: translate(locale, "quests.emergencyMessage"),
   };
 }
 

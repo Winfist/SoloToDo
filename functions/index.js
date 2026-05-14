@@ -35,11 +35,16 @@ function requireAuth(request) {
   return request.auth.uid;
 }
 
+function normalizeLanguage(language) {
+  return language === "en" ? "en" : "de";
+}
+
 // ─── Feature A: Quest Photo Verification ─────────────────────────────────────
 
 exports.verifyQuestPhoto = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
   const { imageBase64, questTitle, questDesc, mimeType } = request.data;
+  const language = normalizeLanguage(request.data?.language);
 
   if (!imageBase64 || !questTitle) {
     throw new HttpsError("invalid-argument", "imageBase64 und questTitle sind erforderlich.");
@@ -47,10 +52,14 @@ exports.verifyQuestPhoto = onCall(CALL_OPTIONS, async (request) => {
 
   await checkAndIncrementRateLimit(uid);
 
-  const prompt = VERIFY_QUEST_PROMPT(questTitle, questDesc || "");
+  const prompt = VERIFY_QUEST_PROMPT(questTitle, questDesc || "", language);
   const raw = await callGeminiWithImage(prompt, imageBase64, mimeType || "image/jpeg");
 
-  const result = parseJSON(raw, { verified: false, reason: "Analyse fehlgeschlagen.", confidence: 0 });
+  const result = parseJSON(raw, {
+    verified: false,
+    reason: language === "en" ? "Analysis failed." : "Analyse fehlgeschlagen.",
+    confidence: 0
+  });
 
   return {
     verified: Boolean(result.verified),
@@ -64,6 +73,7 @@ exports.verifyQuestPhoto = onCall(CALL_OPTIONS, async (request) => {
 exports.scanTaskPhoto = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
   const { imageBase64, mimeType } = request.data;
+  const language = normalizeLanguage(request.data?.language);
 
   if (!imageBase64) {
     throw new HttpsError("invalid-argument", "imageBase64 ist erforderlich.");
@@ -71,7 +81,7 @@ exports.scanTaskPhoto = onCall(CALL_OPTIONS, async (request) => {
 
   await checkAndIncrementRateLimit(uid);
 
-  const raw = await callGeminiWithImage(EXTRACT_TASKS_PROMPT, imageBase64, mimeType || "image/jpeg");
+  const raw = await callGeminiWithImage(EXTRACT_TASKS_PROMPT(language), imageBase64, mimeType || "image/jpeg");
   const result = parseJSON(raw, { tasks: [] });
 
   const tasks = Array.isArray(result.tasks)
@@ -92,6 +102,7 @@ exports.scanTaskPhoto = onCall(CALL_OPTIONS, async (request) => {
 exports.extractScreenTime = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
   const { imageBase64, mimeType, images } = request.data;
+  const language = normalizeLanguage(request.data?.language);
 
   // Build images array — support both single & multi
   let imageArray = [];
@@ -113,9 +124,9 @@ exports.extractScreenTime = onCall(CALL_OPTIONS, async (request) => {
   // Use multi-image or single-image call
   let raw;
   if (imageArray.length === 1) {
-    raw = await callGeminiWithImage(EXTRACT_SCREEN_TIME_PROMPT, imageArray[0].base64, imageArray[0].mimeType);
+    raw = await callGeminiWithImage(EXTRACT_SCREEN_TIME_PROMPT(language), imageArray[0].base64, imageArray[0].mimeType);
   } else {
-    raw = await callGeminiWithImages(EXTRACT_SCREEN_TIME_PROMPT, imageArray);
+    raw = await callGeminiWithImages(EXTRACT_SCREEN_TIME_PROMPT(language), imageArray);
   }
 
   const result = parseJSON(raw, {
@@ -130,7 +141,7 @@ exports.extractScreenTime = onCall(CALL_OPTIONS, async (request) => {
     topApp: null,
     needsMore: false,
     hint: null,
-    reason: "Analyse fehlgeschlagen.",
+    reason: language === "en" ? "Analysis failed." : "Analyse fehlgeschlagen.",
   });
 
   const cleanBreakdown = (items) => Array.isArray(items)
@@ -166,13 +177,16 @@ exports.extractScreenTime = onCall(CALL_OPTIONS, async (request) => {
     topApp,
     needsMore,
     hint,
-    reason: String(result.reason || (valid ? "Bildschirmzeit erkannt." : "Kein valider Bildschirmzeit-Screenshot.")),
+    reason: String(result.reason || (valid
+      ? (language === "en" ? "Screen time detected." : "Bildschirmzeit erkannt.")
+      : (language === "en" ? "No valid screen time screenshot." : "Kein valider Bildschirmzeit-Screenshot."))),
   };
 });
 
 exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
   const { stats, level, weakestStat, recentQuests } = request.data;
+  const language = normalizeLanguage(request.data?.language);
 
   if (!stats || !level) {
     throw new HttpsError("invalid-argument", "stats und level sind erforderlich.");
@@ -180,7 +194,7 @@ exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
 
   await checkAndIncrementRateLimit(uid);
 
-  const prompt = GENERATE_QUESTS_PROMPT(stats, level, weakestStat, recentQuests);
+  const prompt = GENERATE_QUESTS_PROMPT(stats, level, weakestStat, recentQuests, language);
   const raw = await callGemini(prompt);
   const result = parseJSON(raw, { quests: [] });
 
@@ -206,6 +220,7 @@ exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
 exports.generateSystemMessage = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
   const { context, messageType, hunterName, stats, streak } = request.data;
+  const language = normalizeLanguage(request.data?.language);
 
   if (!context || !messageType) {
     throw new HttpsError("invalid-argument", "context und messageType sind erforderlich.");
@@ -213,12 +228,12 @@ exports.generateSystemMessage = onCall(CALL_OPTIONS, async (request) => {
 
   await checkAndIncrementRateLimit(uid);
 
-  const prompt = SYSTEM_MESSAGE_PROMPT(context, messageType, hunterName);
+  const prompt = SYSTEM_MESSAGE_PROMPT(context, messageType, hunterName, language);
   const raw = await callGemini(prompt);
-  const result = parseJSON(raw, { title: "SYSTEM-MELDUNG", lines: [context] });
+  const result = parseJSON(raw, { title: language === "en" ? "SYSTEM MESSAGE" : "SYSTEM-MELDUNG", lines: [context] });
 
   return {
-    title: String(result.title || "SYSTEM-MELDUNG"),
+    title: String(result.title || (language === "en" ? "SYSTEM MESSAGE" : "SYSTEM-MELDUNG")),
     lines: Array.isArray(result.lines) ? result.lines.map(String) : [String(result.lines || context)],
   };
 });
@@ -228,6 +243,7 @@ exports.generateSystemMessage = onCall(CALL_OPTIONS, async (request) => {
 exports.askCoach = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
   const { question, hunterName, stats, level, streak, openQuests } = request.data;
+  const language = normalizeLanguage(request.data?.language);
 
   if (!question) {
     throw new HttpsError("invalid-argument", "question ist erforderlich.");
@@ -235,7 +251,7 @@ exports.askCoach = onCall(CALL_OPTIONS, async (request) => {
 
   await checkAndIncrementRateLimit(uid);
 
-  const prompt = COACH_PROMPT(question, hunterName, stats || {}, level || 1, streak || 0, openQuests || []);
+  const prompt = COACH_PROMPT(question, hunterName, stats || {}, level || 1, streak || 0, openQuests || [], language);
   const response = await callGemini(prompt);
 
   return { response: response.trim() };
@@ -246,6 +262,7 @@ exports.askCoach = onCall(CALL_OPTIONS, async (request) => {
 exports.generateQuestDescription = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
   const { title, category } = request.data;
+  const language = normalizeLanguage(request.data?.language);
 
   if (!title) {
     throw new HttpsError("invalid-argument", "title ist erforderlich.");
@@ -253,7 +270,7 @@ exports.generateQuestDescription = onCall(CALL_OPTIONS, async (request) => {
 
   await checkAndIncrementRateLimit(uid);
 
-  const prompt = QUEST_DESC_PROMPT(title, category || "str");
+  const prompt = QUEST_DESC_PROMPT(title, category || "str", language);
   const raw = await callGemini(prompt);
   const result = parseJSON(raw, { description: "", subQuests: [], suggestedDifficulty: "normal" });
 

@@ -279,6 +279,15 @@ function App({ initialHunterName, onLogout }) {
     rateCompletedQuest,
     pendingRatingQuest,
     setPendingRatingQuest,
+    handleNotificationClick,
+    updateGoalProgress,
+    setGoalStepCompleted,
+    failHabitOrGoalDay,
+    updateChallenges,
+    activateSystemChallenge,
+    updateSystemChallengeProgress,
+    abandonSystemChallenge,
+    setDailyFocusQuest
   } = gameState;
   const [forgeTab, setForgeTab] = useState("create");
   // ── v3.0 Neural Boot Sequence state (must be before any early returns) ──
@@ -1381,7 +1390,7 @@ function App({ initialHunterName, onLogout }) {
                   filteredQuests={filteredQuests} hiddenQuestCount={hiddenQuestCount}
                   questFilter={questFilter} setQuestFilter={setQuestFilter}
                   completeQuest={handleCompleteQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
-                  completeEmergencyQuest={completeEmergencyQuest} createQuest={createQuest}
+                  completeEmergencyQuest={completeEmergencyQuest} createQuest={createQuest} setDailyFocusQuest={setDailyFocusQuest}
                   setShowCreate={requestShowCreate}
                   setShowTaskScan={setShowTaskScan}
                   setShowFocusMode={setShowFocusMode}

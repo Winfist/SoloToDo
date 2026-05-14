@@ -4,6 +4,7 @@
 // Called on every persist() so the widget always shows fresh data.
 
 import { Capacitor } from '@capacitor/core';
+import { getLocaleObject, getStateLocale, translate } from '../data/i18n.js';
 
 const APP_GROUP = 'group.com.solotodo.app';
 const WIDGET_DATA_KEY = 'widgetData';
@@ -74,18 +75,12 @@ function getRankForLevel(level) {
 }
 
 // ─── System Messages for Widget ───────────────────────────────
-const SYSTEM_MESSAGES = [
-  'Die Schatten gehorchen dir, Hunter. Zeig ihnen deinen Willen.',
-  'Jeder Tag ohne Quest ist ein verlorener Tag. ARISE!',
-  'Dein Streak ist dein Schwert — lass es nicht rosten.',
-  'Das System beobachtet dich. Enttäusche es nicht.',
-  'Selbst der schwächste Hunter kann zum Monarchen aufsteigen.',
-  'Konsistenz ist dein stärkster Skill.',
-  'Die Dunkelheit kann dich nicht besiegen, wenn du weitermachst.',
-  'Hunter, dein Potenzial ist unbegrenzt. Beweise es.',
-  'Jede Quest bringt dich dem Monarch-Rang näher.',
-  'Disziplin ist die Brücke zwischen Zielen und Erfolgen.',
-];
+function getSystemMessages(locale) {
+  const messages = getLocaleObject(locale)?.widgets?.messages;
+  return Array.isArray(messages) && messages.length > 0
+    ? messages
+    : [translate(locale, 'widgets.fallbackSystemMessage')];
+}
 
 // ─── Quest Filter Logic ───────────────────────────────────────
 function filterQuests(quests, filter) {
@@ -125,6 +120,8 @@ function sortQuests(quests, sortMode) {
 // ─── Build Widget Payload ─────────────────────────────────────
 function buildWidgetPayload(state) {
   const config = state.widgetConfig || DEFAULT_WIDGET_CONFIG;
+  const locale = getStateLocale(state);
+  const dateLocale = locale === 'de' ? 'de-DE' : 'en-US';
   const rank = getRankForLevel(state.level || 1);
   const today = new Date().toISOString().split('T')[0];
 
@@ -133,7 +130,7 @@ function buildWidgetPayload(state) {
   const sorted = sortQuests(filtered, config.questSort);
   const allQuests = sorted.map(q => ({
     id: q.id,
-    title: q.title || 'Quest',
+    title: q.title || translate(locale, 'quests.fallbackTitle'),
     category: q.category || 'agi',
     difficulty: q.difficulty || 'normal',
     type: q.type || 'side',
@@ -144,7 +141,7 @@ function buildWidgetPayload(state) {
 
   // Focus quest (highest priority open quest)
   const focusQuest = sorted[0] ? {
-    title: sorted[0].title,
+    title: sorted[0].title || translate(locale, 'quests.fallbackTitle'),
     category: sorted[0].category,
     difficulty: sorted[0].difficulty,
   } : null;
@@ -216,12 +213,13 @@ function buildWidgetPayload(state) {
       const cd = q.completedAt || q.date;
       return cd && cd.startsWith(dateStr);
     }).length;
-    weekHeatmap.push({ date: dateStr, day: d.toLocaleDateString('de-DE', { weekday: 'short' }), count });
+    weekHeatmap.push({ date: dateStr, day: d.toLocaleDateString(dateLocale, { weekday: 'short' }), count });
   }
 
   // System message
-  const msgIndex = Math.floor(Date.now() / 86400000) % SYSTEM_MESSAGES.length;
-  const systemMessage = SYSTEM_MESSAGES[msgIndex];
+  const systemMessages = getSystemMessages(locale);
+  const msgIndex = Math.floor(Date.now() / 86400000) % systemMessages.length;
+  const systemMessage = systemMessages[msgIndex];
 
   // Theme colors
   const THEMES_MAP = {
@@ -245,6 +243,7 @@ function buildWidgetPayload(state) {
   return {
     // Timestamp
     updatedAt: new Date().toISOString(),
+    locale,
 
     // Hunter Info
     hunterName: state.hunterName || 'Hunter',

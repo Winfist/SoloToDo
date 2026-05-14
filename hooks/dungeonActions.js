@@ -8,6 +8,7 @@ import {
   getRank, genId, getToday, calculateLevelUp, awardJobXp,
   calcShadowXpToNext, checkNamedShadowUnlocks, getJobBonuses
 } from '../data/helpers.js';
+import { rollArtifactDrop } from '../data/artifactHelpers.js';
 
 /**
  * Build the next state after a dungeon is finished.
@@ -71,6 +72,21 @@ export function buildFinishDungeonState(dungeon, result, state, processAchieveme
     shadowArmy: newShadowArmy
   };
 
+  // ── Gate Artifact Drop (only on victory) ──
+  let artifactDrop = null;
+  if (result.won) {
+    const discoveredIds = next.artifacts?.discovered || [];
+    artifactDrop = rollArtifactDrop(dungeon.rank, discoveredIds);
+    if (artifactDrop) {
+      next.artifacts = {
+        ...next.artifacts,
+        discovered: [...discoveredIds, artifactDrop.id],
+        totalFound: (next.artifacts?.totalFound || 0) + 1,
+      };
+      notifications.push({ msg: `⚡ ARTIFACT: ${artifactDrop.icon} ${artifactDrop.name} entdeckt!`, type: "named" });
+    }
+  }
+
   // Named shadow unlocks
   const newNameds = checkNamedShadowUnlocks(next);
   if (newNameds.length > 0) {
@@ -97,6 +113,7 @@ export function buildFinishDungeonState(dungeon, result, state, processAchieveme
     newLevel,
     oldRank,
     newNameds,
+    artifactDrop,
     notifications,
     result,
     dungeon,

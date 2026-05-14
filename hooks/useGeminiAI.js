@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
+import { getStateLocale, translate } from "../data/i18n.js";
 
 // Helper: Resize and convert to Base64 to prevent 413 Payload Too Large
 const compressFileToBase64 = (file) => {
@@ -63,13 +64,14 @@ function isRateLimitActive() {
 }
 
 export function useGeminiAI(state) {
+  const language = getStateLocale(state);
   const [isLoading, setIsLoading] = useState(false);
   // Initialize from localStorage so rate limit message persists across page reloads
   const [error, setError] = useState(() => {
     if (!isRateLimitActive()) return null;
     const minsLeft = Math.ceil((getRateLimitExpiry() - Date.now()) / 60000);
-    const label = minsLeft > 10 ? "Tageslimit erreicht. Zurücksetzen um Mitternacht UTC." : `Kurze Pause (~${minsLeft} Min.). Gemini braucht kurz Luft.`;
-    return `${label} (✕ zum sofortigen Zurücksetzen)`;
+    const label = minsLeft > 10 ? translate(language, "ai.rateDaily") : translate(language, "ai.ratePause", { minutes: minsLeft });
+    return `${label} ${translate(language, "ai.resetHint", { symbol: "x" })}`;
   });
   const [rateLimitError, setRateLimitError] = useState(() => isRateLimitActive());
   // Ref so callbacks always read the latest value (avoids stale closure in useCallback)
@@ -94,13 +96,13 @@ export function useGeminiAI(state) {
       const expiry = setRateLimitExpiry(lockMs);
       const minsLeft = Math.ceil((expiry - Date.now()) / 60000);
       const errorMsg = isDailyLimit
-        ? `Tageslimit erreicht. Zurücksetzen um Mitternacht UTC. (✕ zum sofortigen Zurücksetzen)`
-        : `Kurze Pause (~${minsLeft} Min.). Gemini braucht kurz Luft. (✕ zum sofortigen Zurücksetzen)`;
+        ? `${translate(language, "ai.rateDaily")} ${translate(language, "ai.resetHint", { symbol: "x" })}`
+        : `${translate(language, "ai.ratePause", { minutes: minsLeft })} ${translate(language, "ai.resetHint", { symbol: "x" })}`;
       setError(errorMsg);
     } else if (err?.message && err.message.includes("KI-Fehler")) {
       setError(err.message);
     } else {
-      setError(err?.message || "Unbekannter Fehler.");
+      setError(err?.message || translate(language, "ai.unknownError"));
     }
   }
 
@@ -113,7 +115,7 @@ export function useGeminiAI(state) {
     try {
       const { base64, mimeType } = await fileToBase64(imageFile);
       const fn = httpsCallable(functions, "verifyQuestPhoto");
-      const result = await fn({ imageBase64: base64, mimeType, questTitle, questDesc });
+      const result = await fn({ imageBase64: base64, mimeType, questTitle, questDesc, language });
       return result.data; // { verified, reason, confidence }
     } catch (err) {
       handleError(err);
@@ -121,7 +123,7 @@ export function useGeminiAI(state) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   // ─── Feature C: Scan task photo ───────────────────────────────────────────
 
@@ -132,7 +134,7 @@ export function useGeminiAI(state) {
     try {
       const { base64, mimeType } = await fileToBase64(imageFile);
       const fn = httpsCallable(functions, "scanTaskPhoto");
-      const result = await fn({ imageBase64: base64, mimeType });
+      const result = await fn({ imageBase64: base64, mimeType, language });
       return result.data; // { tasks: [{ title, category, difficulty }] }
     } catch (err) {
       handleError(err);
@@ -140,7 +142,7 @@ export function useGeminiAI(state) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   const extractScreenTime = useCallback(async (imageFileOrFiles) => {
     if (rateLimitErrorRef.current) return null;
@@ -155,7 +157,7 @@ export function useGeminiAI(state) {
         images.push({ base64, mimeType });
       }
       const fn = httpsCallable(functions, "extractScreenTime");
-      const result = await fn({ images });
+      const result = await fn({ images, language });
       return result.data;
     } catch (err) {
       handleError(err);
@@ -163,7 +165,7 @@ export function useGeminiAI(state) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   // ─── Feature B1: Generate dynamic daily quests ────────────────────────────
 
@@ -186,7 +188,7 @@ export function useGeminiAI(state) {
         : null;
 
       const fn = httpsCallable(functions, "generateDynamicQuests");
-      const result = await fn({ stats, level, weakestStat, recentQuests });
+      const result = await fn({ stats, level, weakestStat, recentQuests, language });
       return result.data; // { quests }
     } catch (err) {
       handleError(err);
@@ -194,7 +196,7 @@ export function useGeminiAI(state) {
     } finally {
       setIsLoading(false);
     }
-  }, [state]);
+  }, [state, language]);
 
   // ─── Feature B2: Generate system message ─────────────────────────────────
 
@@ -210,6 +212,7 @@ export function useGeminiAI(state) {
         hunterName: state.hunterName || "Hunter",
         stats: state.stats || {},
         streak: state.streak || 0,
+        language,
       });
       return result.data; // { title, lines }
     } catch (err) {
@@ -218,7 +221,7 @@ export function useGeminiAI(state) {
     } finally {
       setIsLoading(false);
     }
-  }, [state]);
+  }, [state, language]);
 
   // ─── Feature D: Ask coach ─────────────────────────────────────────────────
 
@@ -240,6 +243,7 @@ export function useGeminiAI(state) {
         level: state.level || 1,
         streak: state.streak || 0,
         openQuests,
+        language,
       });
       return result.data; // { response }
     } catch (err) {
@@ -248,7 +252,7 @@ export function useGeminiAI(state) {
     } finally {
       setIsLoading(false);
     }
-  }, [state]);
+  }, [state, language]);
 
   // ─── Feature E: Generate quest description ────────────────────────────────
 
@@ -258,7 +262,7 @@ export function useGeminiAI(state) {
     setError(null);
     try {
       const fn = httpsCallable(functions, "generateQuestDescription");
-      const result = await fn({ title, category });
+      const result = await fn({ title, category, language });
       return result.data; // { description, subQuests, suggestedDifficulty }
     } catch (err) {
       handleError(err);
@@ -266,7 +270,7 @@ export function useGeminiAI(state) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [language]);
 
   return {
     isLoading,

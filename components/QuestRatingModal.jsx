@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { CATEGORIES } from "../data/gameData.js";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 
 const diffOptions = [
   { key: "zu_leicht", label: "ZU LEICHT", icon: "▽", color: "#22c55e" },
@@ -30,6 +31,7 @@ const CornerBracket = ({ pos }) => {
 };
 
 export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
+  const { t } = useI18n();
   const [stars, setStars] = useState(0);
   const [hoverStar, setHoverStar] = useState(0);
   const [feltDifficulty, setFeltDifficulty] = useState(null);
@@ -40,6 +42,16 @@ export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
   const primary = theme?.primary || "#22d3ee";
   const cat = CATEGORIES.find(c => c.key === quest?.category) || CATEGORIES[0];
   const canSubmit = stars > 0;
+  const diffLabel = {
+    zu_leicht: t("modals.rating.diff.tooEasy"),
+    passend: t("modals.rating.diff.fitting"),
+    zu_schwer: t("modals.rating.diff.tooHard"),
+  };
+  const durationLabel = {
+    zu_kurz: t("modals.rating.durationOptions.tooShort"),
+    passend: t("modals.rating.durationOptions.fitting"),
+    zu_lang: t("modals.rating.durationOptions.tooLong"),
+  };
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -124,7 +136,7 @@ export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
             fontSize: 9, letterSpacing: 3, color: primary + "88",
             marginBottom: 6,
           }}>
-            [ SYSTEM EVALUATION PROTOCOL ]
+            {t("modals.rating.header")}
           </div>
           <div style={{
             fontFamily: "'Cinzel',serif", fontSize: 14, fontWeight: 900,
@@ -132,7 +144,7 @@ export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
             textShadow: `0 0 20px ${primary}66`,
             marginBottom: 10,
           }}>
-            QUEST ABGESCHLOSSEN
+            {t("modals.rating.title")}
           </div>
           <div style={{
             fontSize: 13, fontWeight: 600, color: "#e2e8f0",
@@ -142,7 +154,7 @@ export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
             borderRadius: 8, padding: "8px 12px",
             marginBottom: 2,
           }}>
-            {quest?.title || "Unbekannte Quest"}
+            {quest?.title || t("modals.rating.unknownQuest")}
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
             {cat.iconSrc
@@ -158,7 +170,7 @@ export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
         {divider}
 
         {/* Star rating */}
-        {sectionLabel("KAMPFBEWERTUNG")}
+        {sectionLabel(t("modals.rating.combatRating"))}
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 4 }}>
           {[1, 2, 3, 4, 5].map(i => {
             const active = i <= (hoverStar || stars);
@@ -188,43 +200,43 @@ export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
             color: ["", "#ef4444", "#f97316", "#f59e0b", "#22d3ee", "#22c55e"][stars],
             letterSpacing: 2, marginBottom: 2,
           }}>
-            {["", "VERNICHTEND", "SCHWACH", "AKZEPTABEL", "STARK", "LEGENDÄR"][stars]}
+            {t(`modals.rating.starLabels.${stars}`)}
           </div>
         )}
 
         {divider}
 
         {/* Difficulty */}
-        {sectionLabel("SCHWIERIGKEITS-ANALYSE")}
+        {sectionLabel(t("modals.rating.difficulty"))}
         <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
-          {diffOptions.map(o => toggleBtn(o.key, setFeltDifficulty, feltDifficulty, o.color, o.icon, o.label))}
+          {diffOptions.map(o => toggleBtn(o.key, setFeltDifficulty, feltDifficulty, o.color, o.icon, diffLabel[o.key] || o.label))}
         </div>
 
         {divider}
 
         {/* Duration */}
-        {sectionLabel("DAUER-ANALYSE")}
+        {sectionLabel(t("modals.rating.duration"))}
         <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
-          {durationOptions.map(o => toggleBtn(o.key, setDurationFeedback, durationFeedback, o.color, o.icon, o.label))}
+          {durationOptions.map(o => toggleBtn(o.key, setDurationFeedback, durationFeedback, o.color, o.icon, durationLabel[o.key] || o.label))}
         </div>
 
         {divider}
 
         {/* Category feedback */}
-        {sectionLabel(`KATEGORIE: ${cat.stat}`)}
+        {sectionLabel(t("modals.rating.category", { stat: cat.stat }))}
         <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
-          {toggleBtn("passt", setCategoryFeedback, categoryFeedback, "#22c55e", "✓", "PASST")}
-          {toggleBtn("falsch", setCategoryFeedback, categoryFeedback, "#ef4444", "✗", "FALSCHE KAT.")}
+          {toggleBtn("passt", setCategoryFeedback, categoryFeedback, "#22c55e", "OK", t("modals.rating.categoryOptions.fits"))}
+          {toggleBtn("falsch", setCategoryFeedback, categoryFeedback, "#ef4444", "X", t("modals.rating.categoryOptions.wrong"))}
         </div>
 
         {divider}
 
         {/* Notes */}
-        {sectionLabel("MISSIONSBERICHT (OPTIONAL)")}
+        {sectionLabel(t("modals.rating.notes"))}
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value.slice(0, 150))}
-          placeholder="Notizen zur Mission..."
+          placeholder={t("modals.rating.notesPlaceholder")}
           rows={2}
           style={{
             width: "100%", padding: "8px 10px", borderRadius: 8,
@@ -261,7 +273,7 @@ export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
             textShadow: canSubmit ? `0 0 12px ${primary}66` : "none",
           }}
         >
-          ▸ EVALUATION ABSCHICKEN ◂
+          {t("modals.rating.submit")}
         </button>
         <div style={{ textAlign: "center" }}>
           <button
@@ -277,7 +289,7 @@ export default function QuestRatingModal({ quest, theme, onSubmit, onSkip }) {
             onMouseEnter={e => e.target.style.color = "#64748b"}
             onMouseLeave={e => e.target.style.color = "#334155"}
           >
-            ── ÜBERSPRINGEN ──
+            {t("modals.rating.skip")}
           </button>
         </div>
       </div>

@@ -32,6 +32,9 @@ export const DEFAULT_STATE = {
   achievements: { unlocked: [], notified: [] },
   skills: { unlocked: [] },
   equipment: { slots: { weapon: null, armor: null, ring1: null, ring2: null }, inventory: [] },
+  artifacts: { discovered: [], totalFound: 0 },
+  dailyFocusQuestId: null,
+  dailyQuestCompletionCount: 0,
   penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },
   todayModifier: null,
   emergencyQuest: null,
@@ -177,6 +180,7 @@ export const DEFAULT_STATE = {
     scannedTasks: 0,
   },
   settings: {
+    language: "auto",
     autoSystemTasks: false,
     questIntensity: "baby_gate",
     pageTransitionSpeed: 1,

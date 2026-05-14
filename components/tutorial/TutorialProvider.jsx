@@ -8,7 +8,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { TUTORIAL_SEQUENCES, getTutorialForTier } from "../../data/tutorialSteps.js";
+import { getTutorialForTier, getTutorialSequences } from "../../data/tutorialSteps.js";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 import TutorialOverlay from "./TutorialOverlay.jsx";
 
 const TutorialContext = createContext(null);
@@ -18,11 +19,13 @@ export function useTutorial() {
 }
 
 const TutorialProvider = forwardRef(function TutorialProvider({ children, completedTutorials = [], onComplete, onSkip }, ref) {
+  const { locale } = useI18n();
   const [activeTutorialId, setActiveTutorialId] = useState(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const queueRef = useRef([]);
+  const tutorialSequences = useMemo(() => getTutorialSequences(locale), [locale]);
 
-  const activeSequence = activeTutorialId ? TUTORIAL_SEQUENCES[activeTutorialId] : null;
+  const activeSequence = activeTutorialId ? tutorialSequences[activeTutorialId] : null;
   const isActive = Boolean(activeSequence);
 
   const isCompleted = useCallback(
@@ -33,7 +36,7 @@ const TutorialProvider = forwardRef(function TutorialProvider({ children, comple
   const processQueue = useCallback(() => {
     const next = queueRef.current.shift();
     if (!next) return;
-    if (isCompleted(next) || !TUTORIAL_SEQUENCES[next]) {
+    if (isCompleted(next) || !tutorialSequences[next]) {
       window.setTimeout(processQueue, 150);
       return;
     }
@@ -41,10 +44,10 @@ const TutorialProvider = forwardRef(function TutorialProvider({ children, comple
       setActiveTutorialId(next);
       setCurrentStepIndex(0);
     }, 500);
-  }, [isCompleted]);
+  }, [isCompleted, tutorialSequences]);
 
   const startTutorial = useCallback((sequenceId, options = {}) => {
-    if (!TUTORIAL_SEQUENCES[sequenceId]) return;
+    if (!tutorialSequences[sequenceId]) return;
     if (!options.force && isCompleted(sequenceId)) return;
     if (activeTutorialId === sequenceId) return;
 
@@ -55,7 +58,7 @@ const TutorialProvider = forwardRef(function TutorialProvider({ children, comple
 
     setActiveTutorialId(sequenceId);
     setCurrentStepIndex(0);
-  }, [activeTutorialId, isCompleted]);
+  }, [activeTutorialId, isCompleted, tutorialSequences]);
 
   const finishTutorial = useCallback((handler) => {
     if (!activeTutorialId) return;

@@ -1,5 +1,6 @@
 import React from "react";
 import { GATE_ICONS, QUEST_ICONS, SHADOW_ICONS, STAT_ICONS, SYSTEM_ICONS } from "../../data/icons.js";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 
 export default function SystemLoadingScreen({
   title = "System wird geladen",
@@ -7,6 +8,7 @@ export default function SystemLoadingScreen({
   detail = "System wird vorbereitet",
   variant = "auth",
 }) {
+  const { t } = useI18n();
   const isDataLoad = variant === "data";
   const iconSet = isDataLoad
     ? [QUEST_ICONS.daily, STAT_ICONS.int, SHADOW_ICONS.igris]
@@ -39,8 +41,8 @@ export default function SystemLoadingScreen({
 
         <section className="system-loader__text">
           <div className="system-loader__brand">SOLO TODO // SYSTEM</div>
-          <h1>LAEDT...</h1>
-          <p>{isDataLoad ? "Quests, Stats und Schatten werden geladen" : detail}</p>
+          <h1>{title || t("common.loading")}</h1>
+          <p>{isDataLoad ? t("loading.dataDetail") : detail}</p>
         </section>
 
         <div className="system-loader__bar" aria-hidden="true">

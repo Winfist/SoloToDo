@@ -1,6 +1,7 @@
 // TaskScanModal.jsx — AI-powered task extraction from a photo of handwritten notes
 
 import { useState, useRef } from "react";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 
 const CATEGORIES = [
   { key: "str", label: "STR — Kraft" },
@@ -18,6 +19,7 @@ const PHASE = {
 };
 
 export function TaskScanModal({ geminiAI, onConfirm, onClose }) {
+  const { t } = useI18n();
   const [phase, setPhase] = useState(PHASE.UPLOAD);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -58,26 +60,26 @@ export function TaskScanModal({ geminiAI, onConfirm, onClose }) {
     <div style={styles.overlay}>
       <div style={styles.modal}>
         <div style={styles.header}>
-          <span style={styles.headerLabel}>HUNTER NOTE SCANNER</span>
+          <span style={styles.headerLabel}>{t("modals.taskScan.header")}</span>
           <button style={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         {/* UPLOAD */}
         {phase === PHASE.UPLOAD && (
           <div style={styles.body}>
-            <p style={styles.hint}>Fotografiere einen Aufgabenzettel. Das System extrahiert automatisch alle Quests.</p>
+            <p style={styles.hint}>{t("modals.taskScan.hint")}</p>
             {previewUrl && (
               <div style={styles.previewWrap}>
-                <img src={previewUrl} alt="Vorschau" style={styles.previewImg} />
+                <img src={previewUrl} alt={t("modals.taskScan.previewAlt")} style={styles.previewImg} />
               </div>
             )}
             <div style={styles.buttonRow}>
               <button style={styles.btnPrimary} onClick={() => fileInputRef.current?.click()}>
-                {previewUrl ? "ANDERES FOTO" : "FOTO WÄHLEN"}
+                {previewUrl ? t("modals.taskScan.otherPhoto") : t("modals.taskScan.choosePhoto")}
               </button>
               {previewUrl && (
                 <button style={styles.btnPrimary} onClick={handleScan}>
-                  SCAN STARTEN
+                  {t("modals.taskScan.startScan")}
                 </button>
               )}
             </div>
@@ -97,12 +99,12 @@ export function TaskScanModal({ geminiAI, onConfirm, onClose }) {
           <div style={styles.body}>
             {previewUrl && (
               <div style={{ ...styles.previewWrap, position: "relative" }}>
-                <img src={previewUrl} alt="Scan" style={{ ...styles.previewImg, opacity: 0.6 }} />
+                <img src={previewUrl} alt={t("modals.taskScan.scanAlt")} style={{ ...styles.previewImg, opacity: 0.6 }} />
                 <div style={styles.scanLine} />
               </div>
             )}
-            <p style={styles.scanningText}>SCANNING HUNTER'S NOTES...</p>
-            <p style={styles.scanningSubText}>SYSTEM ANALYSIERT AUFGABEN</p>
+            <p style={styles.scanningText}>{t("modals.taskScan.scanning")}</p>
+            <p style={styles.scanningSubText}>{t("modals.taskScan.scanningSub")}</p>
             <style>{`@keyframes scanMove { 0%{top:0} 100%{top:100%} }`}</style>
           </div>
         )}
@@ -111,7 +113,7 @@ export function TaskScanModal({ geminiAI, onConfirm, onClose }) {
         {phase === PHASE.RESULTS && (
           <div style={styles.body}>
             <p style={styles.resultsHeader}>
-              {tasks.filter(t => t.selected).length} von {tasks.length} Aufgaben ausgewählt
+              {t("modals.taskScan.selectedCount", { selected: tasks.filter(task => task.selected).length, total: tasks.length })}
             </p>
             <div style={styles.taskList}>
               {tasks.map(task => (
@@ -151,9 +153,9 @@ export function TaskScanModal({ geminiAI, onConfirm, onClose }) {
             </div>
             <div style={styles.buttonRow}>
               <button style={styles.btnPrimary} onClick={handleConfirm}>
-                QUESTS ERSTELLEN ({tasks.filter(t => t.selected).length})
+                {t("modals.taskScan.createQuests", { count: tasks.filter(task => task.selected).length })}
               </button>
-              <button style={styles.btnSecondary} onClick={onClose}>ABBRECHEN</button>
+              <button style={styles.btnSecondary} onClick={onClose}>{t("modals.taskScan.cancel")}</button>
             </div>
           </div>
         )}

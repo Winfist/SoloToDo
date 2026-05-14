@@ -3,6 +3,7 @@
 // Allows uploading a proof photo for a +20% XP / +10% Gold bonus.
 
 import { useState, useRef } from "react";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 
 const PHASE = {
   CHOICE: "choice",       // Ask: upload photo or skip?
@@ -12,6 +13,7 @@ const PHASE = {
 };
 
 export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
+  const { t } = useI18n();
   const [phase, setPhase] = useState(PHASE.CHOICE);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -43,14 +45,14 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
     onComplete(result?.verified === true);
   }
 
-  const scanningMessages = ["INITIALISIERE PROTOKOLL...", "BILD WIRD ANALYSIERT...", "QUEST-ABGLEICH LÄUFT..."];
+  const scanningMessages = t("modals.questVerify.scanning");
 
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
         {/* Header */}
         <div style={styles.header}>
-          <span style={styles.headerLabel}>QUEST VERIFICATION PROTOCOL</span>
+          <span style={styles.headerLabel}>{t("modals.questVerify.header")}</span>
           <span style={styles.questTitle}>{quest.title}</span>
         </div>
 
@@ -58,17 +60,17 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
         {phase === PHASE.CHOICE && (
           <div style={styles.body}>
             <p style={styles.prompt}>
-              Lade ein Beweisfoto hoch und erhalte einen Bonus.
+              {t("modals.questVerify.prompt")}
             </p>
             <div style={styles.bonusBadge}>
               <span>📸 +20% XP &nbsp;|&nbsp; +10% GOLD</span>
             </div>
             <div style={styles.buttonRow}>
               <button style={styles.btnPrimary} onClick={() => { setPhase(PHASE.UPLOAD); fileInputRef.current?.click(); }}>
-                FOTO HOCHLADEN
+                {t("modals.questVerify.uploadPhoto")}
               </button>
               <button style={styles.btnSecondary} onClick={onSkip}>
-                OHNE BEWEIS
+                {t("modals.questVerify.skipProof")}
               </button>
             </div>
           </div>
@@ -79,18 +81,18 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
           <div style={styles.body}>
             {previewUrl && (
               <div style={styles.photoFrame}>
-                <img src={previewUrl} alt="Beweis" style={styles.photo} />
+                <img src={previewUrl} alt={t("modals.questVerify.proofAlt")} style={styles.photo} />
                 <div style={styles.scanOverlay} />
               </div>
             )}
             <div style={styles.buttonRow}>
               <button style={styles.btnPrimary} onClick={handleScan} disabled={!selectedFile}>
-                SCAN STARTEN
+                {t("modals.questVerify.startScan")}
               </button>
               <button style={styles.btnSecondary} onClick={() => fileInputRef.current?.click()}>
-                ANDERES FOTO
+                {t("modals.questVerify.otherPhoto")}
               </button>
-              <button style={styles.btnGhost} onClick={onSkip}>ABBRECHEN</button>
+              <button style={styles.btnGhost} onClick={onSkip}>{t("modals.questVerify.cancel")}</button>
             </div>
           </div>
         )}
@@ -100,7 +102,7 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
           <div style={styles.body}>
             {previewUrl && (
               <div style={styles.photoFrame}>
-                <img src={previewUrl} alt="Scan" style={{ ...styles.photo, opacity: 0.7 }} />
+                <img src={previewUrl} alt={t("modals.questVerify.scanAlt")} style={{ ...styles.photo, opacity: 0.7 }} />
                 <div style={styles.scanLine} />
               </div>
             )}
@@ -131,7 +133,7 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
                   ? "0 0 24px 4px rgba(0, 255, 128, 0.5)"
                   : "0 0 24px 4px rgba(255, 60, 60, 0.5)"
               }}>
-                <img src={previewUrl} alt="Ergebnis" style={styles.photo} />
+                <img src={previewUrl} alt={t("modals.questVerify.resultAlt")} style={styles.photo} />
               </div>
             )}
             <div style={{
@@ -141,18 +143,18 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
             }}>
               <span style={{ fontSize: "1.5rem" }}>{result.verified ? "✅" : "❌"}</span>
               <span style={{ color: result.verified ? "#00ff88" : "#ff4444", fontWeight: "bold", marginLeft: 8 }}>
-                {result.verified ? "VERIFIZIERT" : "ABGELEHNT"}
+                {result.verified ? t("modals.questVerify.verified") : t("modals.questVerify.rejected")}
               </span>
             </div>
             <p style={styles.reason}>{result.reason}</p>
-            {result.verified && <p style={styles.bonusText}>Beweis-Bonus: +20% XP, +10% Gold</p>}
+            {result.verified && <p style={styles.bonusText}>{t("modals.questVerify.proofBonus")}</p>}
             <div style={styles.buttonRow}>
               <button style={styles.btnPrimary} onClick={handleAccept}>
-                {result.verified ? "QUEST ABSCHLIESSEN" : "TROTZDEM ABSCHLIESSEN"}
+                {result.verified ? t("modals.questVerify.completeQuest") : t("modals.questVerify.completeAnyway")}
               </button>
               {!result.verified && (
                 <button style={styles.btnSecondary} onClick={() => { setPhase(PHASE.UPLOAD); fileInputRef.current?.click(); }}>
-                  NEUES FOTO
+                  {t("modals.questVerify.newPhoto")}
                 </button>
               )}
             </div>

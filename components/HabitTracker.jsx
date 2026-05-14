@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { calculateLevelUp } from "../data/constants";
 import { HABIT_ICONS, QUEST_ICONS, NAV_ICONS, STAT_ICONS, BACKGROUNDS } from "../data/icons.js";
 import { getToday, getLocalDateKey, getYesterdayKey } from "../data/dateUtils.js";
+import { getPremiumStatus } from "../data/premium.js";
 
 // ═══════════════════════════════════════════════════════════════
 // HABIT TRACKER – Recurring Habits with per-Habit Streaks & Timer
@@ -555,7 +556,17 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
     const habits = state?.habits || [];
     const today = getToday();
 
-    const openCreate = () => { setShowCreate(true); onModalOpen?.(); };
+    // Routine-Stein artifact: +1 habit slot (base 5, premium 10)
+    const isPremium = getPremiumStatus(state?.premium).active;
+    const hasRoutineStone = state?.artifacts?.discovered?.includes('routine_stein');
+    const BASE_HABIT_SLOTS = isPremium ? 10 : 5;
+    const MAX_HABITS = BASE_HABIT_SLOTS + (hasRoutineStone ? 1 : 0);
+    const atHabitCap = habits.filter(h => h.active !== false).length >= MAX_HABITS;
+
+    const openCreate = () => {
+        if (atHabitCap) { notify(`Max. ${MAX_HABITS} Habits erreicht.${hasRoutineStone ? " (inkl. Routine-Stein +1)" : ""}`, "warning"); return; }
+        setShowCreate(true); onModalOpen?.();
+    };
     const closeCreate = () => { setShowCreate(false); onModalClose?.(); };
     const openEdit = (habit) => { setEditingHabit(habit); onModalOpen?.(); };
     const closeEdit = () => { setEditingHabit(null); onModalClose?.(); };
@@ -704,6 +715,16 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
                         <div>
                             <div style={{ fontSize: 9, letterSpacing: 3, color: theme?.primary || "#22d3ee", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>HABIT TRACKER</div>
                             <div style={{ fontSize: 14, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif" }}>{completedToday}/{totalToday} heute erledigt</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                                <span style={{ fontSize: 9, color: atHabitCap ? "#f59e0b" : "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>
+                                    {habits.filter(h => h.active !== false).length}/{MAX_HABITS} Slots
+                                </span>
+                                {hasRoutineStone && (
+                                    <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 5, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", color: "#22c55e", fontFamily: "'JetBrains Mono',monospace" }}>
+                                        R +1
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <div style={{
                             width: 54, height: 54, borderRadius: "50%",

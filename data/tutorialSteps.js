@@ -3,6 +3,8 @@
 // type: "info" highlights UI and advances via the tooltip button.
 // type: "action" requires the user to interact with the highlighted element.
 
+import { translate } from "./i18n.js";
+
 export const TUTORIAL_SEQUENCES = {
   onboarding: {
     id: "onboarding",
@@ -426,6 +428,31 @@ export const TUTORIAL_SEQUENCES = {
 
 export function getTutorialForTier(tier) {
   return `tier_${tier}`;
+}
+
+function localizedValue(locale, key, fallback) {
+  const value = translate(locale, key);
+  return value === key ? fallback : value;
+}
+
+function localizeStep(locale, step) {
+  return {
+    ...step,
+    title: localizedValue(locale, `tutorial.steps.${step.id}.title`, step.title),
+    text: localizedValue(locale, `tutorial.steps.${step.id}.text`, step.text),
+  };
+}
+
+export function getTutorialSequences(locale = "de") {
+  return Object.fromEntries(
+    Object.entries(TUTORIAL_SEQUENCES).map(([sequenceId, sequence]) => [
+      sequenceId,
+      {
+        ...sequence,
+        steps: sequence.steps.map(step => localizeStep(locale, step)),
+      },
+    ])
+  );
 }
 
 export function hasTutorialSequence(id) {

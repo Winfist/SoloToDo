@@ -1,3 +1,5 @@
+import { translate } from "../../data/i18n.js";
+
 // Single source of truth for all dashboard widgets.
 // The visual dashboard renders carousel widgets as a compact summary strip.
 
@@ -10,12 +12,26 @@ export const DASHBOARD_WIDGETS = [
   { key: "screen_time_summary", label: "Bildschirmzeit", icon: "FOC", color: "#f59e0b", desc: "Limit und Trend", requires: null, removable: true, carousel: true },
   { key: "quests", label: "Quest Board", icon: "QST", color: "#f59e0b", desc: "Aktive Quests", requires: null, removable: false },
   { key: "gem_booster", label: "Gem Boosters", icon: "GEM", color: "#a855f7", desc: "Aktive Booster", requires: "gem_shop", removable: true },
+  { key: "artifact_showcase", label: "Artifacts", icon: "ART", color: "#fbbf24", desc: "Entdeckte Relikte", requires: null, removable: true },
   { key: "habits", label: "Habit Tracker", icon: "HAB", color: "#22c55e", desc: "Gewohnheiten", requires: "habit_tracker", removable: true },
   { key: "micro_habits", label: "Micro-Habits", icon: "MIC", color: "#06b6d4", desc: "Kleine Aufgaben", requires: "micro_habits", removable: true },
   { key: "next_unlock", label: "System-Update", icon: "UPD", color: "#6366f1", desc: "Nächstes Unlock", requires: null, removable: true },
   { key: "quick_access", label: "Schnellzugriff", icon: "GO", color: "#6366f1", desc: "Shortcuts", requires: null, removable: true },
   { key: "vision_board", label: "Vision Board", icon: "VIS", color: "#a855f7", desc: "Affirmationen", requires: "vision_board", removable: true },
 ];
+
+export function localizeWidgetDef(widget, locale = "de") {
+  if (!widget) return null;
+  return {
+    ...widget,
+    label: translate(locale, `dashboard.widgets.${widget.key}.label`) || widget.label,
+    desc: translate(locale, `dashboard.widgets.${widget.key}.desc`) || widget.desc,
+  };
+}
+
+export function getDashboardWidgets(locale = "de") {
+  return DASHBOARD_WIDGETS.map(widget => localizeWidgetDef(widget, locale));
+}
 
 export const DEFAULT_DASHBOARD_LAYOUT = [
   "hunter_status",
@@ -27,6 +43,7 @@ export const DEFAULT_DASHBOARD_LAYOUT = [
   "screen_time_summary",
   "vision_board",
   "gem_booster",
+  "artifact_showcase",
   "habits",
   "micro_habits",
   "next_unlock",
@@ -142,6 +159,6 @@ export function mergeConfig(saved, can) {
   return { layout, hidden, collapsed };
 }
 
-export function getWidgetDef(key) {
-  return DASHBOARD_WIDGETS.find(w => w.key === key) || null;
+export function getWidgetDef(key, locale = "de") {
+  return localizeWidgetDef(DASHBOARD_WIDGETS.find(w => w.key === key) || null, locale);
 }

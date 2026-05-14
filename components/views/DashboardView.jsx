@@ -8,7 +8,7 @@ import HabitTracker from "../HabitTracker.jsx";
 import MicroHabits from "../MicroHabits.jsx";
 import GemBoosterBanner from "../GemBoosterBanner.jsx";
 import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_LAYOUT, DEFAULT_HIDDEN_WIDGETS, mergeConfig, getWidgetDef } from "./DashboardWidgetRegistry.js";
-import { StreakDisplayWidget, DailyProgressWidget, QuickAccessWidget, TodayCommandCenter } from "./DashboardWidgets.jsx";
+import { StreakDisplayWidget, DailyProgressWidget, QuickAccessWidget, TodayCommandCenter, ArtifactShowcaseWidget } from "./DashboardWidgets.jsx";
 import ScrollReveal from "../ui/ScrollReveal.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
 import { AnimatedNumber } from "../../hooks/useAnimatedCounter.jsx";
@@ -243,7 +243,8 @@ export default function DashboardView({
   premiumStatus,
   requirePremium,
   openPremiumModal,
-  requireQuestSlot
+  requireQuestSlot,
+  setDailyFocusQuest
 }) {
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
 
@@ -611,6 +612,13 @@ export default function DashboardView({
         return { content: <GemBoosterBanner activeBoosters={boosters} theme={theme} />, isEmpty: false };
       }
 
+      case "artifact_showcase": {
+        const artifacts = state.artifacts || {};
+        if (Object.keys(artifacts).length === 0) return { content: null, isEmpty: true };
+        if (isCollapsed) return { content: null, isEmpty: false };
+        return { content: <ArtifactShowcaseWidget state={state} theme={theme} />, isEmpty: false };
+      }
+
       case "hunter_status":
         if (isCollapsed) return { content: null, isEmpty: false };
         return {
@@ -966,6 +974,9 @@ export default function DashboardView({
                             onDelete={deleteQuest}
                             onCompleteSubQuest={completeSubQuest}
                             onOpenDetail={onOpenDetail}
+                            onSetFocus={setDailyFocusQuest}
+                            isDailyFocus={state.dailyFocusQuestId === q.id}
+                            hasAmulet={state.artifacts?.focusAmulet}
                           />
                         ))}
                       </div>
@@ -977,7 +988,7 @@ export default function DashboardView({
                         <>
                           <SectionHeader title="SYSTEM-AUFTRÄGE" icon="⚙" color="#06b6d4" count={systemQuests.length} sectionKey="system" />
                           {!collapsedSections.system && systemQuests.map((q, i) => (
-                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
+                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
                           ))}
                         </>
                       )}
@@ -985,14 +996,14 @@ export default function DashboardView({
                         <>
                           <SectionHeader title="DEINE QUESTS" icon="✦" color="#f59e0b" count={userQuests.length} sectionKey="user" />
                           {!collapsedSections.user && userQuests.map((q, i) => (
-                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
+                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
                           ))}
                         </>
                       )}
                     </>
                   ) : (
                     null && sortedVisibleQuests.map((q, i) => (
-                      <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
+                      <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
                     ))
                   )}
                 </div>

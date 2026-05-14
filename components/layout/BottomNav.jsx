@@ -1,5 +1,6 @@
 import React from "react";
 import { getPremiumFeatureForRoute } from "../../data/premium.js";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 const SYSTEM_SUB_VIEWS = ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"];
 const TRAINING_SUB_VIEWS = ["goals", "calendar"];
 const TAB_FEATURE_MAP = {
@@ -23,6 +24,7 @@ export default function BottomNav({
   hidden,        // hide nav (e.g. isCreatingEntry)
   premiumStatus, // used for pro indicator
 }) {
+  const { t } = useI18n();
   const configKeys = navConfig?.tabs || defaultKeys;
 
   const tabs = configKeys
@@ -48,7 +50,7 @@ export default function BottomNav({
   return (
     <nav
       data-tutorial="bottom-nav"
-      aria-label="Hauptnavigation"
+      aria-label={t("nav.aria")}
       style={{
         position: "fixed",
         bottom: 0,
@@ -173,7 +175,7 @@ export default function BottomNav({
                 )}
                 {tab.badge > 0 && (
                   <span
-                    aria-label={`${tab.badge} ausstehend`}
+                    aria-label={t("common.pending", { count: tab.badge })}
                     style={{
                       position: "absolute",
                       top: -6,

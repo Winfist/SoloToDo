@@ -284,7 +284,7 @@ export function buildEmergencyRewardFlow(result) {
 }
 
 // ─── BUILD: DUNGEON ───────────────────────────────────────────────────────────
-export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints, newLevel, oldLevel, xpGain, goldGain, newNameds, newAchievements) {
+export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints, newLevel, oldLevel, xpGain, goldGain, newNameds, newAchievements, artifactDrop = null) {
   const won = result === 'win' || result?.won !== false;
   const variant = !won ? 'defeat' : (dungeon.difficulty === 'boss' ? 'boss' : 'standard');
   const tone = !won ? 'red' : (variant === 'boss' ? 'gold' : 'cold');
@@ -306,6 +306,15 @@ export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints
       highlights.push({ kind: 'named_shadow', title: `${ns.name} — ${ns.title || ''}`, body: 'Benannter Schatten freigeschaltet', priority: 1 });
     });
   }
+  // Gate Artifact highlight
+  if (artifactDrop) {
+    highlights.push({
+      kind: 'artifact',
+      title: `${artifactDrop.icon} ${artifactDrop.name}`,
+      body: artifactDrop.desc,
+      priority: 0, // Highest priority — show first
+    });
+  }
   highlights.sort((a, b) => a.priority - b.priority);
 
   const animationQueue = [];
@@ -317,8 +326,25 @@ export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints
       animationQueue.push({ type: 'arise', payload: ns, skippable: true });
     });
   }
+  // Artifact discovery system message (after other animations)
+  if (artifactDrop && artifactDrop.systemMessage) {
+    animationQueue.push({
+      type: 'system_message',
+      payload: artifactDrop.systemMessage,
+      skippable: true,
+    });
+  }
 
   const sysPool = !won ? MSG.dungeon_defeat : (variant === 'boss' ? MSG.dungeon_boss : MSG.dungeon_win);
+
+  const rewards = won ? [
+    { kind: 'xp',   label: 'DUNGEON-XP',   value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
+    { kind: 'gold', label: 'DUNGEON-GOLD',  value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
+    ...(didLevelUp ? [{ kind: 'level', label: 'LEVEL UP', value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+    ...(artifactDrop ? [{ kind: 'artifact', label: 'ARTIFACT ENTDECKT', value: artifactDrop.name, accent: artifactDrop.color || '#f59e0b', icon: artifactDrop.icon || '⚡', special: true }] : []),
+  ] : [
+    { kind: 'defeat', label: 'NIEDERLAGE', value: 'Kein Reward', accent: '#ef4444', icon: '✗' },
+  ];
 
   return {
     id: genFlowId(),
@@ -330,13 +356,7 @@ export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints
       tone,
       systemLines: pickMsg(sysPool),
     },
-    rewards: won ? [
-      { kind: 'xp',   label: 'DUNGEON-XP',   value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-      { kind: 'gold', label: 'DUNGEON-GOLD',  value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
-      ...(didLevelUp ? [{ kind: 'level', label: 'LEVEL UP', value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
-    ] : [
-      { kind: 'defeat', label: 'NIEDERLAGE', value: 'Kein Reward', accent: '#ef4444', icon: '✗' },
-    ],
+    rewards,
     highlights,
     animationQueue,
     deferredUi: {

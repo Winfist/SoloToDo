@@ -8,11 +8,13 @@ import ScreenTimeDashboard from "./ScreenTimeDashboard.jsx";
 import { Capacitor } from "@capacitor/core";
 import QuestIntensityControl from "./QuestIntensityControl.jsx";
 import { getPremiumFeatureForRoute, getPremiumStatus, isPremiumWidgetModule, PREMIUM_PRODUCT } from "../data/premium.js";
+import { LANGUAGE_OPTIONS, getLocaleLabel, normalizeLanguageMode, translate, writeBootstrapLanguage } from "../data/i18n.js";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 
 // ─── NAV TAB REGISTRY ─────────────────────────────────────────
 // All possible bottom-navigation tabs the user can choose from.
 // Export for use in solo-leveling-v5.jsx bottom nav.
-export const ALL_NAV_TABS = [
+const NAV_TAB_BASE = [
   { key: "dashboard", iconSrc: "/icons/nav_dashboard.webp", label: "Heute", desc: "Tagesübersicht & Quests" },
   { key: "training", iconSrc: "/icons/nav_goals.webp", label: "Ziele", desc: "Ziele, Habits & Training", requires: "training_tab" },
   { key: "dungeon", iconSrc: "/icons/gate_normal.webp", label: "Gates", desc: "Dungeon Gates betreten", requires: "dungeons", isGate: true },
@@ -31,6 +33,13 @@ export const ALL_NAV_TABS = [
   { key: "settings", iconSrc: "/icons/nav_settings.webp", label: "Settings", desc: "Einstellungen & Export" },
   { key: "sanctum", iconSrc: "/icons/nav_timer.webp", label: "Sanctum", desc: "Meditation & Willenskraft", requires: "sanctum" },
 ];
+
+export const ALL_NAV_TABS = NAV_TAB_BASE;
+export const getAllNavTabs = (locale) => NAV_TAB_BASE.map((tab) => ({
+  ...tab,
+  label: translate(locale, `nav.tabs.${tab.key}.label`),
+  desc: translate(locale, `nav.tabs.${tab.key}.desc`),
+}));
 
 export const DEFAULT_NAV_KEYS = ["dashboard", "training", "dungeon", "story", "system"];
 
@@ -990,6 +999,7 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme, premiumStatu
 //  MAIN SETTINGS VIEW
 // ═════════════════════════════════════════════════════════════════
 export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onOpenPremium, premiumStatus: premiumStatusProp, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI, activatePremiumCode, notify, onResetTutorial }) {
+  const { t, locale } = useI18n();
   // ── Section states ──
   const [openSection, setOpenSection] = useState(null);
   const toggleSection = (key) => setOpenSection(prev => prev === key ? null : key);
@@ -1022,6 +1032,19 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
     persist({ ...state, ai: { ...(state.ai || {}), [field]: !(state.ai?.[field] ?? defaultVal) } });
   };
 
+  const saveLanguagePreference = (language) => {
+    const nextLanguage = normalizeLanguageMode(language);
+    writeBootstrapLanguage(nextLanguage);
+    persist({
+      ...state,
+      settings: {
+        ...(state.settings || {}),
+        language: nextLanguage,
+      },
+    });
+    notify?.(t("settings.languageSaved"), "success");
+  };
+
   const saveCustomTheme = () => {
     if (!premiumStatus?.active) {
       onOpenPremium?.("custom_theme");
@@ -1043,7 +1066,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
   };
 
   const clearCache = () => {
-    if (confirm("Lokalen Cache leeren? Deine Daten bleiben in der Cloud gespeichert.")) {
+    if (confirm(t("settings.data.clearCacheConfirm"))) {
       localStorage.clear();
       window.location.reload();
     }
@@ -1057,6 +1080,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
   const userEmail = auth.currentUser?.email || "—";
   const fontSize = state.settings?.fontSize || "normal";
   const premiumStatus = premiumStatusProp || getPremiumStatus(state.premium);
+  const languageMode = normalizeLanguageMode(state.settings?.language || "auto");
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease", paddingBottom: 60 }}>
@@ -1064,20 +1088,70 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ── HEADER ── */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 10, letterSpacing: 4, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>
-          SYSTEM PREFERENCES
+          {t("settings.kicker")}
         </div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 15px ${theme.glow}` }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <img src={NAV_ICONS.settings} alt="Settings" style={{ width: 22, height: 22, objectFit: "contain", filter: "drop-shadow(0 0 4px " + theme.glow + ")" }} /> Einstellungen
+            <img src={NAV_ICONS.settings} alt="Settings" style={{ width: 22, height: 22, objectFit: "contain", filter: "drop-shadow(0 0 4px " + theme.glow + ")" }} /> {t("settings.title")}
           </span>
         </div>
       </div>
+
+      <SettingsSection
+        title={t("settings.languageSection")}
+        icon="LANG"
+        color="#38bdf8"
+        open={openSection === "language"}
+        onToggle={() => toggleSection("language")}
+        theme={theme}
+        badge={t("settings.languageBadge")}
+      >
+        <div style={{ padding: "4px 0 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>
+            {t("settings.languageTitle")}
+          </div>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12, lineHeight: 1.5 }}>
+            {t("settings.languageDesc")}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+            {LANGUAGE_OPTIONS.map(option => {
+              const active = languageMode === option.key;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => saveLanguagePreference(option.key)}
+                  aria-pressed={active}
+                  style={{
+                    minHeight: 42,
+                    padding: "9px 8px",
+                    borderRadius: 10,
+                    background: active ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
+                    border: `1.5px solid ${active ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`,
+                    color: active ? theme.accent : "#94a3b8",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    fontFamily: "'JetBrains Mono',monospace",
+                    letterSpacing: 0.5,
+                    cursor: "pointer",
+                  }}
+                >
+                  {translate(locale, option.labelKey)}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 10, fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
+            {t("settings.resolvedLocale", { locale: getLocaleLabel(locale) })}
+          </div>
+        </div>
+      </SettingsSection>
 
       {/* ════════════════════════════════════════════════════════════
            SECTION 1: ERSCHEINUNGSBILD
          ════════════════════════════════════════════════════════════ */}
       <SettingsSection
-        title="Premium & Beta"
+        title={t("settings.sections.premium")}
         icon="PRO"
         color="#a855f7"
         open={openSection === "premium"}
@@ -1164,25 +1238,25 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Erscheinungsbild" icon="🎨" color="#a78bfa" open={openSection === "look"} onToggle={() => toggleSection("look")} theme={theme} badge="THEME · DISPLAY">
+      <SettingsSection title={t("settings.sections.appearance")} icon="🎨" color="#a78bfa" open={openSection === "look"} onToggle={() => toggleSection("look")} theme={theme} badge="THEME · DISPLAY">
 
         <ThemeSwitcher state={state} persist={persist} theme={theme} onOpenShop={onOpenShop} />
 
         <TransitionSwitcher state={state} persist={persist} theme={theme} onOpenShop={onOpenShop} onPreviewPageTransition={onPreviewPageTransition} />
 
         {/* Particles Toggle */}
-        <SettingRow label="Partikel-Effekte" desc="Schwebende Partikel im Hintergrund" value={getSetting("particles", true)} onChange={() => toggleSetting("particles", true)} theme={theme} />
+        <SettingRow label={t("settings.appearance.particles")} desc={t("settings.appearance.particlesDesc")} value={getSetting("particles", true)} onChange={() => toggleSetting("particles", true)} theme={theme} />
 
         {/* Reduce Motion */}
-        <SettingRow label="Animationen reduzieren" desc="Weniger Bewegung in der UI" value={getSetting("reduceMotion", false)} onChange={() => toggleSetting("reduceMotion", false)} theme={theme} />
+        <SettingRow label={t("settings.appearance.reduceMotion")} desc={t("settings.appearance.reduceMotionDesc")} value={getSetting("reduceMotion", false)} onChange={() => toggleSetting("reduceMotion", false)} theme={theme} />
 
         {/* XP Animations */}
-        <SettingRow label="XP-Animationen" desc="Fliegende XP/Gold-Anzeige bei Quest-Abschluss" value={getSetting("xpAnimations", true)} onChange={() => toggleSetting("xpAnimations", true)} theme={theme} />
+        <SettingRow label={t("settings.appearance.xpAnimations")} desc={t("settings.appearance.xpAnimationsDesc")} value={getSetting("xpAnimations", true)} onChange={() => toggleSetting("xpAnimations", true)} theme={theme} />
 
         {/* Font Size Slider */}
         <div style={{ padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Schriftgröße</div>
-          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>Globale Textgröße anpassen</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>{t("settings.appearance.fontSize")}</div>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>{t("settings.appearance.fontSizeDesc")}</div>
           <div style={{ display: "flex", gap: 6 }}>
             {FONT_SIZE_OPTIONS.map(opt => (
               <button
@@ -1231,7 +1305,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             cursor: "pointer", letterSpacing: 2, boxShadow: `0 4px 16px ${primaryCache}44`,
             display: "flex", justifyContent: "center", alignItems: "center", gap: 6,
           }}>
-            <img src={SHOP_ICONS.theme} alt="theme" style={{ width: 14, height: 14, objectFit: "contain" }} /> {premiumStatus.active ? "THEME AKTIVIEREN" : "PRO THEME FREISCHALTEN"}
+            <img src={SHOP_ICONS.theme} alt="theme" style={{ width: 14, height: 14, objectFit: "contain" }} /> {premiumStatus.active ? t("settings.appearance.activateTheme").toUpperCase() : t("settings.appearance.unlockProTheme").toUpperCase()}
           </button>
         </div>
       </SettingsSection>
@@ -1239,7 +1313,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 1b: VISUELLE EFFEKTE (v3.0)
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title="Visuelle Effekte" icon="✨" color="#22d3ee" open={openSection === "vfx"} onToggle={() => toggleSection("vfx")} theme={theme} badge="ARISE v3.0">
+      <SettingsSection title={t("settings.sections.vfx")} icon="✨" color="#22d3ee" open={openSection === "vfx"} onToggle={() => toggleSection("vfx")} theme={theme} badge="ARISE v3.0">
         <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, marginBottom: 14 }}>
           Premium-Effekte für ein immersives Erlebnis. Deaktiviere einzelne Effekte für bessere Performance auf älteren Geräten.
         </div>
@@ -1286,14 +1360,14 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 2: NAVIGATION ANPASSEN
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title="Navigation anpassen" icon="📱" color="#22d3ee" open={openSection === "nav"} onToggle={() => toggleSection("nav")} theme={theme} badge="DRAG & DROP">
+      <SettingsSection title={t("settings.sections.nav")} icon="📱" color="#22d3ee" open={openSection === "nav"} onToggle={() => toggleSection("nav")} theme={theme} badge="DRAG & DROP">
         <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, marginBottom: 14 }}>
           Wähle bis zu {MAX_NAV_TABS} Tabs für deine Bottom-Navigation. Halte ⠿ zum Ziehen oder nutze die Pfeile.
         </div>
         <NavbarCustomizer
           navKeys={state.navbarConfig?.tabs || DEFAULT_NAV_KEYS}
           onChange={handleNavChange}
-          allTabs={ALL_NAV_TABS}
+          allTabs={getAllNavTabs(locale)}
           can={can}
           theme={theme}
           premiumStatus={premiumStatus}
@@ -1305,7 +1379,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 3: BENACHRICHTIGUNGEN
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title="Benachrichtigungen" icon="🔔" color="#f59e0b" open={openSection === "notif"} onToggle={() => toggleSection("notif")} theme={theme}>
+      <SettingsSection title={t("settings.sections.notifications")} icon="🔔" color="#f59e0b" open={openSection === "notif"} onToggle={() => toggleSection("notif")} theme={theme}>
         <SettingRow label="System-Nachrichten" desc="CLI-Nachrichten beim App-Start" value={getSetting("systemMessages", true)} onChange={() => toggleSetting("systemMessages", true)} theme={theme} />
         <SettingRow label="Haptisches Feedback" desc="Vibration bei Quest-Abschluss" value={getSetting("haptics", true)} onChange={() => toggleSetting("haptics", true)} theme={theme} />
         <SettingRow label="Quest-Completion Cinematic" desc="Epische Belohnungs-Animation" value={getSetting("questCinematic", true)} onChange={() => toggleSetting("questCinematic", true)} theme={theme} />
@@ -1358,7 +1432,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 4: GAMEPLAY
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title="Gameplay" icon="⚔️" color="#ef4444" open={openSection === "game"} onToggle={() => toggleSection("game")} theme={theme}>
+      <SettingsSection title={t("settings.sections.gameplay")} icon="⚔️" color="#ef4444" open={openSection === "game"} onToggle={() => toggleSection("game")} theme={theme}>
         <SettingRow label="Quest-Wartezeit" desc="Zeige Timer bis Quest abschließbar ist" value={getSetting("questTimer", true)} onChange={() => toggleSetting("questTimer", true)} theme={theme} />
         <SettingRow label="Auto-Schwierigkeit" desc="Schwierigkeit automatisch erkennen (z.B. '10 Liegestütz' → Easy)" value={getSetting("autoDifficulty", true)} onChange={() => toggleSetting("autoDifficulty", true)} theme={theme} />
         <SettingRow label="Dashboard Stats" desc="Hunter Stats auf dem Dashboard standardmäßig anzeigen" value={getSetting("dashboardStatsOpen", true)} onChange={() => toggleSetting("dashboardStatsOpen", true)} theme={theme} />
@@ -1369,7 +1443,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 4B: AUFGABEN-AUTOMATION
          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-      <SettingsSection title="Aufgaben-Automation" icon="AUTO" color="#22d3ee" open={openSection === "automation"} onToggle={() => toggleSection("automation")} theme={theme}>
+      <SettingsSection title={t("settings.sections.automation")} icon="AUTO" color="#22d3ee" open={openSection === "automation"} onToggle={() => toggleSection("automation")} theme={theme}>
         <QuestIntensityControl state={state} persist={persist} theme={theme} premiumStatus={premiumStatus} onOpenPremium={onOpenPremium} />
       </SettingsSection>
 
@@ -1377,11 +1451,11 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
            SECTION 5: SYSTEM KI
          ════════════════════════════════════════════════════════════ */}
       {can?.('ai_quest_desc') && (
-        <SettingsSection title="System KI" icon="🤖" color="#22c55e" open={openSection === "ai"} onToggle={() => toggleSection("ai")} theme={theme}
+        <SettingsSection title={t("settings.sections.ai")} icon="🤖" color="#22c55e" open={openSection === "ai"} onToggle={() => toggleSection("ai")} theme={theme}
           badge={<span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: (state.ai?.enabled ?? true) ? "#22c55e" : "#ef4444", display: "inline-block", boxShadow: (state.ai?.enabled ?? true) ? "0 0 6px #22c55e" : "none" }} />{(state.ai?.enabled ?? true) ? "ONLINE" : "OFFLINE"}</span>}
         >
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 14, lineHeight: 1.5 }}>
-            KI-gestützte Features: Quest-Fotos, Aufgaben-Scanner, KI-Coach und dynamische Quests.
+            {t("settings.ai.description")}
           </div>
 
           {/* Daily usage */}
@@ -1439,7 +1513,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
               <Toggle value={state.ai?.enabled ?? true} onChange={() => toggleAI("enabled")} color="#22c55e" />
             </div>
             <div style={{ fontSize: 9, color: "#64748b", lineHeight: 1.6, background: "rgba(0,0,0,0.3)", padding: 12, borderRadius: 8, border: "1px dashed rgba(255,255,255,0.05)" }}>
-              <strong>DATENSCHUTZ & AGB:</strong> Durch die Aktivierung der KI-Features erklärst du dich damit einverstanden, dass questbezogene Texte und verifizierte Bilder an Google's Gemini API gesendet und verarbeitet werden. Wir speichern keine Bilder dauerhaft. Opt-Out ist jederzeit über diesen Schalter möglich, wodurch das gesamte KI-System deaktiviert wird.
+              {t("settings.ai.privacy")}
             </div>
           </div>
         </SettingsSection>
@@ -1449,13 +1523,13 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 5B: GESUNDHEIT & NATIVE DATEN
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title="Health & Sensoren" icon="❤️" color="#ef4444" open={openSection === "health"} onToggle={() => toggleSection("health")} theme={theme}>
+      <SettingsSection title={t("settings.sections.health")} icon="❤️" color="#ef4444" open={openSection === "health"} onToggle={() => toggleSection("health")} theme={theme}>
         <div style={{ padding: "0 0 16px 0" }}>
           <NativeStatsDashboard state={state} persist={persist} updateHealthData={updateHealthData} claimHealthReward={claimHealthReward} />
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Bildschirmzeit & Fokus" icon="FOCUS" color="#f59e0b" open={openSection === "screenTime"} onToggle={() => toggleSection("screenTime")} theme={theme}>
+      <SettingsSection title={t("settings.sections.screenTime")} icon="FOCUS" color="#f59e0b" open={openSection === "screenTime"} onToggle={() => toggleSection("screenTime")} theme={theme}>
         <div style={{ padding: "0 0 16px 0" }}>
           <ScreenTimeDashboard
             state={state}
@@ -1471,15 +1545,15 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION: WIDGET INTERFACE
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title="Widget Interface" icon="📡" color="#22d3ee" open={openSection === "widget"} onToggle={() => toggleSection("widget")} theme={theme} badge="iOS WIDGET">
+      <SettingsSection title={t("settings.sections.widget")} icon="📡" color="#22d3ee" open={openSection === "widget"} onToggle={() => toggleSection("widget")} theme={theme} badge="iOS WIDGET">
         <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, marginBottom: 14 }}>
-          Konfiguriere, welche Daten auf deinem iOS Home Screen und Lock Screen Widget angezeigt werden.
+          {t("settings.widget.description")}
         </div>
 
         {/* ── Quest Filter ── */}
         <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Quest-Filter</div>
-          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>Welche Quests im Widget anzeigen</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>{t("settings.widget.questFilter")}</div>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.questFilterDesc")}</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {[
               { key: "all", label: "Alle" },
@@ -1501,7 +1575,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         {/* ── Quest Sort ── */}
         <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Sortierung</div>
-          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>Quest-Reihenfolge im Widget</div>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.questOrder")}</div>
           <div style={{ display: "flex", gap: 6 }}>
             {[
               { key: "focus", label: "🎯 Fokus" },
@@ -1521,8 +1595,8 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
         {/* ── Max Quests ── */}
         <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Angezeigte Quests</div>
-          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>Maximale Anzahl im Widget</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>{t("settings.widget.maxQuests")}</div>
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.maxQuestsDesc")}</div>
           <div style={{ display: "flex", gap: 6 }}>
             {[1, 2, 3, 4, 5].map(n => {
               const wc = state.widgetConfig || {};
@@ -1580,8 +1654,8 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         {/* ── Additional Toggles ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
         <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>ERWEITERTE OPTIONEN</div>
-        <SettingRow label="Theme synchronisieren" desc="Widget nutzt dein App-Theme" value={(state.widgetConfig || {}).syncTheme !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, syncTheme: !(wc.syncTheme !== false) } }); }} color="#22d3ee" theme={theme} />
-        <SettingRow label="System-Nachrichten" desc="Motivations-Sprüche im Widget" value={(state.widgetConfig || {}).showSystemMessage !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, showSystemMessage: !(wc.showSystemMessage !== false) } }); }} color="#6366f1" theme={theme} />
+        <SettingRow label={t("settings.widget.syncTheme")} desc={t("settings.widget.syncThemeDesc")} value={(state.widgetConfig || {}).syncTheme !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, syncTheme: !(wc.syncTheme !== false) } }); }} color="#22d3ee" theme={theme} />
+        <SettingRow label={t("settings.widget.systemMessages")} desc={t("settings.widget.systemMessagesDesc")} value={(state.widgetConfig || {}).showSystemMessage !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, showSystemMessage: !(wc.showSystemMessage !== false) } }); }} color="#6366f1" theme={theme} />
 
         {/* ── Quest Rotation ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
@@ -1590,7 +1664,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           Bei vielen Quests rotiert das Widget automatisch alle paar Minuten durch verschiedene Quest-Gruppen, statt nur die Top-3 zu zeigen.
         </div>
 
-        <SettingRow label="Quest-Rotation" desc="Automatisch durch Quest-Batches rotieren" value={(state.widgetConfig || {}).rotationEnabled !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, rotationEnabled: !(wc.rotationEnabled !== false) } }); }} color="#f59e0b" theme={theme} />
+        <SettingRow label={t("settings.widget.rotation")} desc={t("settings.widget.rotationDesc")} value={(state.widgetConfig || {}).rotationEnabled !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, rotationEnabled: !(wc.rotationEnabled !== false) } }); }} color="#f59e0b" theme={theme} />
 
         {(state.widgetConfig || {}).rotationEnabled !== false && (
           <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
@@ -1739,12 +1813,12 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
               {(state.quests || []).filter(q => !q.completed).length === 0 && (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0" }}>
                   <span style={{ fontSize: 11, color: "#34d399" }}>✓</span>
-                  <span style={{ fontSize: 9, color: "#334155", fontStyle: "italic" }}>Keine offenen Quests</span>
+                  <span style={{ fontSize: 9, color: "#334155", fontStyle: "italic" }}>{t("settings.data.noOpenQuests")}</span>
                 </div>
               )}
               {(state.quests || []).filter(q => !q.completed).length > 3 && (
                 <div style={{ textAlign: "right", paddingTop: 2 }}>
-                  <span style={{ fontSize: 7, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: `${theme.primary}66`, letterSpacing: 0.5 }}>+{(state.quests || []).filter(q => !q.completed).length - 3} weitere</span>
+                  <span style={{ fontSize: 7, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: `${theme.primary}66`, letterSpacing: 0.5 }}>{t("settings.data.moreQuests", { count: (state.quests || []).filter(q => !q.completed).length - 3 })}</span>
                 </div>
               )}
             </div>
@@ -1785,7 +1859,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 6: DATEN & ACCOUNT
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title="Daten & Account" icon="💾" color="#6366f1" open={openSection === "data"} onToggle={() => toggleSection("data")} theme={theme}>
+      <SettingsSection title={t("settings.sections.data")} icon="💾" color="#6366f1" open={openSection === "data"} onToggle={() => toggleSection("data")} theme={theme}>
 
         {/* Account Info */}
         <div style={{ padding: "14px 16px", background: "rgba(0,0,0,0.3)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", marginBottom: 16 }}>
@@ -1821,7 +1895,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
             onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
           >
-            <img src={NAV_ICONS.analytics} alt="export" style={{ width: 14, height: 14, objectFit: "contain" }} /> JSON EXPORTIEREN
+            <img src={NAV_ICONS.analytics} alt="export" style={{ width: 14, height: 14, objectFit: "contain" }} /> {t("settings.data.exportJson").toUpperCase()}
           </button>
         </div>
 
@@ -1838,9 +1912,9 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             </div>
             <button
               onClick={() => {
-                if (confirm("Tutorial neu starten? Du wechselst zurueck zum Dashboard und die interaktive Einfuehrung beginnt sofort.")) {
+                if (confirm(t("settings.data.restartTutorialConfirm"))) {
                   onResetTutorial();
-                  notify?.("Tutorial wird neu gestartet.", "info");
+                  notify?.(t("settings.data.restartTutorialToast"), "info");
                 }
               }}
               style={{
@@ -1875,7 +1949,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
               }}>SYS</div>
               <div>
                 <div style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 800, fontFamily: "'Cinzel',serif", letterSpacing: 1, marginBottom: 3 }}>
-                  Tutorial wiederholen
+                  {t("settings.data.restartTutorial")}
                 </div>
                 <div style={{ fontSize: 9, color: "#22d3ee", fontFamily: "'JetBrains Mono',monospace", opacity: 0.7 }}>
                   SYSTEM-EINFUEHRUNG NEU STARTEN
@@ -1895,7 +1969,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         }}
           onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.12)"}
           onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.06)"}
-        >🗑 CACHE LEEREN</button>
+        >🗑 {t("settings.data.clearCache").toUpperCase()}</button>
 
         {/* Logout */}
         {onLogout && (
@@ -1907,7 +1981,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           }}
             onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.15)"}
             onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.08)"}
-          >SYSTEM VERLASSEN</button>
+          >{t("settings.data.logout").toUpperCase()}</button>
         )}
 
         {/* Version */}

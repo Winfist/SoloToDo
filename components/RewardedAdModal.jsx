@@ -1,6 +1,7 @@
-// RewardedAdModal.jsx – Simulated Rewarded Ad Screen (15s countdown)
 import React, { useState, useEffect, useRef } from 'react';
 import { GEM_ICONS } from '../data/icons.js';
+import { AdService } from '../services/adService.js';
+import { Capacitor } from '@capacitor/core';
 
 export default function RewardedAdModal({ onComplete, onClose, theme }) {
   const [phase, setPhase] = useState("loading"); // loading | watching | reward | done
@@ -10,42 +11,64 @@ export default function RewardedAdModal({ onComplete, onClose, theme }) {
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    // Loading phase (2s)
-    const loadTimer = setTimeout(() => {
-      setPhase("watching");
-      // Start countdown
-      intervalRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current);
-            const reward = 3 + Math.floor(Math.random() * 3); // 3-5
-            setGemReward(reward);
-            setPhase("reward");
-            // Generate celebration particles
-            const newParticles = Array.from({ length: 20 }, (_, i) => ({
-              id: i,
-              x: 50 + (Math.random() - 0.5) * 60,
-              y: 50 + (Math.random() - 0.5) * 60,
-              size: 4 + Math.random() * 8,
-              delay: Math.random() * 0.5,
-              duration: 1 + Math.random() * 1.5,
-            }));
-            setParticles(newParticles);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }, 1500);
-
+    async function loadAndShowAd() {
+      if (Capacitor.getPlatform() === 'web') {
+        // Loading phase (1.5s) for Web simulation
+        const loadTimer = setTimeout(() => {
+          setPhase("watching");
+          // Start countdown
+          intervalRef.current = setInterval(() => {
+            setCountdown(prev => {
+              if (prev <= 1) {
+                clearInterval(intervalRef.current);
+                const reward = 3 + Math.floor(Math.random() * 3); // 3-5
+                setGemReward(reward);
+                setPhase("reward");
+                generateParticles();
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        }, 1500);
+        return () => { clearTimeout(loadTimer); if (intervalRef.current) clearInterval(intervalRef.current); };
+      } else {
+        // Native AdMob Ad
+        try {
+          await AdService.showRewardedAd();
+          // Ad finished watching
+          const reward = 3 + Math.floor(Math.random() * 3); // 3-5
+          setGemReward(reward);
+          setPhase("reward");
+          generateParticles();
+        } catch (error) {
+          console.error("Failed to show AdMob video", error);
+          alert("Fehler beim Laden der Werbung.");
+          onClose();
+        }
+      }
+    }
+    
+    const cleanup = loadAndShowAd();
     return () => {
-      clearTimeout(loadTimer);
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (cleanup && typeof cleanup === 'function') cleanup();
     };
   }, []);
 
+  const generateParticles = () => {
+    const newParticles = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: 50 + (Math.random() - 0.5) * 60,
+      y: 50 + (Math.random() - 0.5) * 60,
+      size: 4 + Math.random() * 8,
+      delay: Math.random() * 0.5,
+      duration: 1 + Math.random() * 1.5,
+    }));
+    setParticles(newParticles);
+  };
+
   const handleCollect = () => {
-    const reward = onComplete();
+    onComplete();
     setPhase("done");
     setTimeout(() => onClose(), 600);
   };

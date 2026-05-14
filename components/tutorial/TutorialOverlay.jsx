@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/tutorial.css";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 
 const CONFETTI_COLORS = ["#22d3ee", "#a855f7", "#fbbf24", "#f43f5e", "#34d399", "#818cf8"];
 const SPOTLIGHT_PADDING = 12;
@@ -234,14 +235,15 @@ function TutorialClickCage({ targetRect, padding = SPOTLIGHT_PADDING, onBlockedC
 }
 
 function TutorialSystemHud({ sequence, stepIndex, totalSteps, placement = "top" }) {
+  const { t } = useI18n();
   const percent = totalSteps ? ((stepIndex + 1) / totalSteps) * 100 : 0;
-  const protocol = sequence?.id === "onboarding" ? "AWAKENING PROTOCOL" : "UNLOCK PROTOCOL";
+  const protocol = sequence?.id === "onboarding" ? t("tutorial.hud.awakeningProtocol") : t("tutorial.hud.unlockProtocol");
 
   return (
     <div className={`tutorial-system-hud tutorial-system-hud--${placement}`} aria-hidden="true">
       <div className="tutorial-system-hud__signal" />
       <div className="tutorial-system-hud__content">
-        <span className="tutorial-system-hud__label">SYSTEM GUIDANCE</span>
+        <span className="tutorial-system-hud__label">{t("tutorial.hud.systemGuidance")}</span>
         <span className="tutorial-system-hud__protocol">{protocol}</span>
       </div>
       <div className="tutorial-system-hud__meta">
@@ -277,6 +279,7 @@ function ContextFrame({ rect, blockedPulse }) {
 }
 
 function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
+  const { t } = useI18n();
   const [textDone, setTextDone] = useState(false);
   const particles = useMemo(() => {
     return Array.from({ length: 9 }, (_, id) => ({
@@ -329,7 +332,7 @@ function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
       </div>
       {textDone && (
         <div className="tutorial-cinematic__continue">
-          {step.isFinale ? "TIPPE UM ZU BEGINNEN" : "TIPPE UM FORTZUFAHREN"}
+          {step.isFinale ? t("tutorial.actions.finish") : t("tutorial.actions.continue")}
         </div>
       )}
       <div className="tutorial-cinematic__counter">
@@ -427,6 +430,7 @@ function getTooltipPosition(step, targetRect, tooltipSize) {
 }
 
 function TooltipStep({ step, stepIndex, totalSteps, targetRect, onContinue }) {
+  const { t } = useI18n();
   const [textDone, setTextDone] = useState(false);
   const tooltipRef = useRef(null);
   const [tooltipSize, setTooltipSize] = useState(null);
@@ -463,10 +467,10 @@ function TooltipStep({ step, stepIndex, totalSteps, targetRect, onContinue }) {
   const isActionStep = step.type === "action";
   const waitingForTarget = Boolean(step.target && !targetRect);
   const actionText = waitingForTarget
-    ? "ZIEL WIRD VORBEREITET"
+    ? t("tutorial.actions.targetPreparing")
     : step.action === "input"
-      ? "EINGABE IN DAS MARKIERTE FELD"
-      : "NUR DAS MARKIERTE ZIEL IST FREIGEGEBEN";
+      ? t("tutorial.actions.inputHint")
+      : t("tutorial.actions.actionLocked");
 
   return (
     <div ref={tooltipRef} className="tutorial-tooltip" style={{ top: tooltipPos.top, left: tooltipPos.left }} key={step.id}>
@@ -487,7 +491,7 @@ function TooltipStep({ step, stepIndex, totalSteps, targetRect, onContinue }) {
           ) : (
             textDone && (
               <button className="tutorial-tooltip__continue-btn" onClick={(event) => { event.stopPropagation(); onContinue(); }}>
-                WEITER
+                {t("tutorial.actions.next")}
               </button>
             )
           )}
@@ -505,6 +509,7 @@ export default function TutorialOverlay({
   onActionComplete,
   isActive,
 }) {
+  const { t } = useI18n();
   const [targetRect, setTargetRect] = useState(null);
   const [revealRect, setRevealRect] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -718,7 +723,7 @@ export default function TutorialOverlay({
       )}
 
       <button className={`tutorial-skip-btn tutorial-skip-btn--${chromeLayout.skipPlacement}`} onClick={(event) => { event.stopPropagation(); onSkip(); }}>
-        {"\u00dcBERSPRINGEN"}
+        {t("tutorial.actions.skip")}
       </button>
 
       <div className="tutorial-progress" aria-hidden="true">

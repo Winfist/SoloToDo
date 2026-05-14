@@ -6,6 +6,8 @@ import AuthScreen from './AuthScreen.jsx'
 import { auth } from "./firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import SystemLoadingScreen from "./components/ui/SystemLoadingScreen.jsx"
+import { I18nProvider, useI18n } from "./components/i18n/I18nProvider.jsx"
+import { LANGUAGE_CHANGE_EVENT, readBootstrapLanguage } from "./data/i18n.js"
 
 const PENDING_HUNTER_NAME_KEY = "sl-pending-hunter-name";
 
@@ -207,7 +209,8 @@ if (!window.storage) {
 // ── AUTH TIMEOUT: if Firebase auth never fires, fallback to login after 8s ──
 const AUTH_TIMEOUT_MS = 8000;
 
-function Root() {
+function RootContent() {
+  const { t } = useI18n();
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
   const [hunterName, setHunterName] = useState("");
   const explicitLogoutRef = useRef(false);
@@ -281,9 +284,9 @@ function Root() {
   if (isAuthenticated === null) {
     return (
       <SystemLoadingScreen
-        title="SYSTEM WIRD GELADEN"
-        label="Login wird geprueft"
-        detail="Session und Hunter-Zugriff werden vorbereitet"
+        title={t("loading.systemTitle")}
+        label={t("loading.systemLabel")}
+        detail={t("loading.systemDetail")}
       />
     );
   }
@@ -292,6 +295,28 @@ function Root() {
     <App initialHunterName={hunterName} onLogout={handleLogout} />
   ) : (
     <AuthScreen onAuthSuccess={handleAuthSuccess} />
+  );
+}
+
+function Root() {
+  const [languageMode, setLanguageMode] = useState(() => readBootstrapLanguage());
+
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      setLanguageMode(readBootstrapLanguage() || event.detail?.language || "auto");
+    };
+    window.addEventListener(LANGUAGE_CHANGE_EVENT, handleLanguageChange);
+    window.addEventListener("storage", handleLanguageChange);
+    return () => {
+      window.removeEventListener(LANGUAGE_CHANGE_EVENT, handleLanguageChange);
+      window.removeEventListener("storage", handleLanguageChange);
+    };
+  }, []);
+
+  return (
+    <I18nProvider language={languageMode}>
+      <RootContent />
+    </I18nProvider>
   );
 }
 

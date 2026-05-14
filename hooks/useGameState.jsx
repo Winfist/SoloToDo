@@ -1375,7 +1375,27 @@ export function useGameState(initialHunterName, onLogout) {
     });
   }, [state, persist]);
 
-  const finishDungeon = useCallback((dungeon, result) => {
+  // ── Fokus-Amulett: Set daily focus quest ──
+  const setDailyFocusQuest = useCallback((questId) => {
+    if (!state) return;
+    try {
+      const { hasFocusQuestAbility } = require('../data/artifactHelpers.js');
+      if (!hasFocusQuestAbility(state)) {
+        notify("Fokus-Amulett benötigt! Finde es in einem Dungeon.", "info");
+        return;
+      }
+    } catch (e) { return; }
+    // Toggle: if already focused, unfocus
+    const newFocus = state.dailyFocusQuestId === questId ? null : questId;
+    persist({ ...state, dailyFocusQuestId: newFocus });
+    if (newFocus) {
+      notify("⭐ Tagesfokus gesetzt! +50% XP bei Abschluss.", "success");
+    } else {
+      notify("Tagesfokus entfernt.", "info");
+    }
+  }, [state, persist, notify]);
+
+  const finishDungeon = useCallback(async (dungeon, result) => {
     const oldLevel = state.level;
     let next = calculateLevelUp(state, result.xp);
     const didLevelUp = next._didLevelUp;
@@ -1424,6 +1444,23 @@ export function useGameState(initialHunterName, onLogout) {
       shadowArmy: newShadowArmy
     };
 
+    // ── Gate Artifact Drop (only on victory) ──
+    let artifactDrop = null;
+    if (result.won) {
+      try {
+        const { rollArtifactDrop } = await import('../data/artifactHelpers.js');
+        const discoveredIds = next.artifacts?.discovered || [];
+        artifactDrop = rollArtifactDrop(dungeon.rank, discoveredIds);
+        if (artifactDrop) {
+          next.artifacts = {
+            ...next.artifacts,
+            discovered: [...discoveredIds, artifactDrop.id],
+            totalFound: (next.artifacts?.totalFound || 0) + 1,
+          };
+        }
+      } catch (e) { /* graceful fallback */ }
+    }
+
     const newNameds = checkNamedShadowUnlocks(next);
     if (newNameds.length > 0) {
       newNameds.forEach(ns => {
@@ -1447,10 +1484,11 @@ export function useGameState(initialHunterName, onLogout) {
 
     const passiveToasts = [];
     if (jobLevelUpNotif) passiveToasts.push({ msg: jobLevelUpNotif, type: 'levelup', delayMs: 0 });
+    if (artifactDrop) passiveToasts.push({ msg: `⚡ ARTIFACT: ${artifactDrop.icon} ${artifactDrop.name} entdeckt!`, type: 'named', delayMs: 300 });
 
     const flow = buildDungeonRewardFlow(
       dungeon, result, didLevelUp, earnedPoints, newLevel, oldLevel,
-      result.xp, totalGold, newNameds, newAchievements
+      result.xp, totalGold, newNameds, newAchievements, artifactDrop
     );
     // Inject jobLevelUp as a passive toast since it's not in builder
     if (passiveToasts.length) {
@@ -2062,6 +2100,7 @@ export function useGameState(initialHunterName, onLogout) {
     createQuestFromTemplate,
     removeFromPool,
     toggleFavoriteTemplate,
+    setDailyFocusQuest,
     finishDungeon,
     deployShadow,
     undeployShadow,

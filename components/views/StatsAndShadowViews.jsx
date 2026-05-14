@@ -1,5 +1,6 @@
 import React from "react";
 import { CATEGORIES, ACHIEVEMENTS, SHADOW_TIERS, NAMED_SHADOWS, SHADOW_CLASSES, FORMATION_SLOTS, SKILLS } from "../../data/gameData.js";
+import { ARTIFACT_POOL } from "../../data/artifactHelpers.js";
 import { STAT_ICONS, GATE_ICONS, STORY_ICONS, SHADOW_ICONS, SKILL_ICONS } from "../../data/icons.js";
 import { StatRadar, ShadowCard, FormationEditor, ShadowDetailModal } from "../../data/constants";
 import { checkSkillUnlocks } from "../../data/helpers.js";
@@ -10,6 +11,7 @@ import { checkSkillUnlocks } from "../../data/helpers.js";
 export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat }) {
   const unlockedSkills = checkSkillUnlocks(state?.stats || {});
   const achUnlocked = state?.achievements?.unlocked || [];
+  const discoveredArtifacts = state?.artifacts?.discovered || [];
   return (
     <div data-tutorial="stats-view" style={{ animation: "fadeIn 0.35s ease" }}>
       <div data-tutorial="stats-overview" style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "20px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", backdropFilter: "blur(12px)", position: "relative" }}>
@@ -75,6 +77,30 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
                       <div style={{ fontSize: 11, fontWeight: 700, color: cat.color, fontFamily: "'Cinzel',serif" }}>{sk.name}</div>
                       <div style={{ fontSize: 10, color: "#475569", marginTop: 2, lineHeight: 1.4 }}>{sk.desc}</div>
                     </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ GATE ARTIFACTS ═══ */}
+      {discoveredArtifacts.length > 0 && (
+        <div style={{ marginTop: 28, animation: "fadeIn 0.6s ease 0.15s both" }}>
+          <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>GATE ARTIFACTS ({discoveredArtifacts.length})</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
+            {discoveredArtifacts.map((artId, i) => {
+              const artDef = ARTIFACT_POOL.find(a => a.id === artId);
+              if (!artDef) return null;
+              return (
+                <div key={artId} style={{ background: theme.card, border: `1px solid ${artDef.color || "#f59e0b"}44`, borderRadius: 14, padding: "12px 16px", display: "flex", alignItems: "center", gap: 14, boxShadow: `0 0 15px ${artDef.color || "#f59e0b"}11`, animation: `cardEnter 0.4s ease ${i * 0.08}s both` }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: (artDef.color || "#f59e0b") + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: `1px solid ${artDef.color || "#f59e0b"}44` }}>
+                    {artDef.iconSrc ? <img src={artDef.iconSrc} alt={artDef.name} style={{ width: 24, height: 24, objectFit: "contain", filter: `drop-shadow(0 0 6px ${artDef.color || "#f59e0b"}88)` }} /> : artDef.icon || "⚡"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: artDef.color || "#f59e0b", fontFamily: "'Cinzel',serif", marginBottom: 2 }}>{artDef.name}</div>
+                    <div style={{ fontSize: 10, color: "#cbd5e1", lineHeight: 1.4 }}>{artDef.desc}</div>
                   </div>
                 </div>
               );

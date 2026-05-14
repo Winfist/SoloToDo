@@ -14,6 +14,7 @@ import {
 import { generateRedemptionQuests } from '../data/protocolHelpers.js';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
 import { isFeatureUnlocked } from '../data/featureUnlocks.js';
+import { hasFocusQuestAbility, getFocusQuestXpBonus, getMomentumBonus, getQuestTimerReduction } from '../data/artifactHelpers.js';
 
 /**
  * Compute XP gain for a quest based on bonuses.
@@ -62,6 +63,21 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   if (soulLinkActive) xpGain = Math.round(xpGain * 1.25);
   if (state.restBuff?.active) xpGain = Math.round(xpGain * 1.1);
   if (verificationBonus) xpGain = Math.round(xpGain * 1.2);
+
+  // ── Fokus-Amulett: +50% XP if this quest is the daily focus ──
+  if (hasFocusQuestAbility(state) && state.dailyFocusQuestId === questId) {
+    const focusBonus = getFocusQuestXpBonus(state);
+    xpGain = Math.round(xpGain * (1 + focusBonus));
+  }
+
+  // ── Momentum-Kristall: 3 quests in a row → 4th gets double XP ──
+  const momentum = getMomentumBonus(state);
+  if (momentum) {
+    const completionCount = (state.dailyQuestCompletionCount || 0);
+    if (completionCount > 0 && completionCount % momentum.questsNeeded === 0) {
+      xpGain = Math.round(xpGain * momentum.xpMult);
+    }
+  }
 
   let finalSysIntegrity = state.integrityScore !== undefined ? state.integrityScore : 100;
   const notifications = [];
@@ -289,6 +305,9 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     shadowRegression: newShadowRegression,
     soulLink: { ...(state.soulLink || {}) },
     charismaDungeons: newCharismaDungeons,
+    dailyQuestCompletionCount: (state.dailyQuestCompletionCount || 0) + 1,
+    // Clear daily focus after completion
+    ...(state.dailyFocusQuestId === questId ? { dailyFocusQuestId: null } : {}),
     ...(charismaTitle ? { selectedTitle: charismaTitle } : {}),
     seasons: {
       ...(state.seasons || {}),
