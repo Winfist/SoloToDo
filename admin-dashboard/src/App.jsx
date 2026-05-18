@@ -384,6 +384,7 @@ function UserDetail({ user, onBack, onUpdate }) {
 
       if (wipeQuests) {
         payload.tutorialCompleted = false;
+        payload.completedTutorials = [];
         payload.hunterName = ""; // Important to trigger SetupScreen
         payload.story = { completedChapters: [], completedArcs: [], totalStoryXp: 0 };
         payload.quests = [];
@@ -399,6 +400,36 @@ function UserDetail({ user, onBack, onUpdate }) {
         payload.lifeDomains = [];
         payload.manifestations = [];
         payload.sanctum = { level: 1, willpower: 0, totalMeditationMinutes: 0 };
+        
+        // --- Added for TRUE FULL RESET ---
+        payload.goals = [];
+        payload.habits = [];
+        payload.reminders = [];
+        payload.healthDailyHistory = {};
+        payload.healthRewardsClaimed = {};
+        payload.screenTimeDailyHistory = {};
+        payload.screenTimeRewardsClaimed = {};
+        payload.microHabits = { habits: null, daily: {} };
+        payload.focus = {
+          totalMinutes: 0, totalSessions: 0, streak: 0, bestStreak: 0, lastSessionDate: null,
+          bestDayMinutes: 0, longestSessionMinutes: 0, daily: {},
+          modes: {
+            pomodoro: { totalMinutes: 0, sessions: 0 }, deepWork: { totalMinutes: 0, sessions: 0 },
+            sprint: { totalMinutes: 0, sessions: 0 }, sanctum: { totalMinutes: 0, sessions: 0 },
+          }, recentSessions: []
+        };
+        payload.shadowRegression = { active: false, previousStreak: 0, redemptionQuests: [], questsCompleted: 0, completedAt: null, regressionHistory: [] };
+        payload.soulLink = { linkCode: null, partnerUid: null, partnerName: null, partnerStreak: 0, partnerLevel: 0, partnerQuestsToday: 0, partnerLastActive: null, bothActive: false, revivesLeft: 3, revivesReceived: 0, linkedAt: null };
+        payload.seasons = { currentSeason: null, currentWorldEvent: null, worldEventExpires: null, seasonalCompletions: [], seasonStartDate: null, earnedSeasonalTitles: [] };
+        payload.dawnDusk = { morningTasks: [], eveningTasks: [], currentRun: null, lastMorningRun: null, lastEveningRun: null, perfectRuns: 0, runHistory: [] };
+        payload.charismaDungeons = { unlockedChains: ["social_exposure"], activeChains: {}, completedChains: [], stepHistory: [] };
+        payload.customQuestPool = { templates: [], favorites: [], recentlyUsed: [], collections: [] };
+        payload.shopPurchases = [];
+        payload.artifacts = { discovered: [], totalFound: 0 };
+        payload.dailyFocusQuestId = null;
+        payload.dailyQuestCompletionCount = 0;
+        payload.todayModifier = null;
+        payload.weeklyQuestReset = null;
       }
 
       await updateDoc(userRef, payload);
@@ -436,8 +467,12 @@ function UserDetail({ user, onBack, onUpdate }) {
 
   const handleDelete = async () => {
     try {
-      await deleteDoc(doc(db, 'users', user.id));
-      alert('Spieler erfolgreich gelöscht!');
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('./firebase');
+      const deleteUser = httpsCallable(functions, 'adminDeleteUser');
+      await deleteUser({ targetUid: user.id });
+      
+      alert('Spieler erfolgreich komplett (inkl. Auth) gelöscht!');
       setShowDeleteModal(false);
       onUpdate();
       onBack();

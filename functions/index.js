@@ -342,3 +342,38 @@ exports.adminSendPushNotification = onCall(CALL_OPTIONS, async (request) => {
   }
 });
 
+// ─── Feature G: Admin Delete User ──────────────────────────────────────────────
+
+exports.adminDeleteUser = onCall(CALL_OPTIONS, async (request) => {
+  const callerUid = requireAuth(request);
+  const adminUid = "4FPoiwjIDneGrJqgYDZLPbPOJZu2"; // SoloToDo Admin UID
+
+  if (callerUid !== adminUid && !process.env.FUNCTIONS_EMULATOR) {
+    throw new HttpsError("permission-denied", "Nur der System Administrator kann User löschen.");
+  }
+
+  const { targetUid } = request.data;
+  
+  if (!targetUid) {
+    throw new HttpsError("invalid-argument", "targetUid ist erforderlich.");
+  }
+
+  try {
+    // 1. Delete from Firebase Auth
+    await admin.auth().deleteUser(targetUid).catch(err => {
+      // Ignore if user doesn't exist in Auth anymore, we still want to delete DB
+      if (err.code !== 'auth/user-not-found') {
+        throw err;
+      }
+    });
+
+    // 2. Delete from Firestore
+    await admin.firestore().collection("users").doc(targetUid).delete();
+
+    return { success: true };
+  } catch (error) {
+    console.error("Fehler beim Löschen des Users:", error);
+    throw new HttpsError("internal", "User konnte nicht vollständig gelöscht werden: " + error.message);
+  }
+});
+

@@ -1,4 +1,4 @@
-import{r as De,aB as Y1,j as Ki}from"./index-C77k6k4z.js";/**
+import{r as De,aC as Y1,j as Ki}from"./index-CzQn9VJb.js";/**
  * @license
  * Copyright 2010-2023 Three.js Authors
  * SPDX-License-Identifier: MIT
