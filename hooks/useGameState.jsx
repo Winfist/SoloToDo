@@ -23,6 +23,12 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
+import { getStateLocale, translate } from '../data/i18n.js';
+import { getCategoryLabel } from '../data/localizedGameData.js';
+
+function ltState(state, key, params = {}) {
+  return translate(getStateLocale(state), key, params);
+}
 
 function cloneDefaultState() {
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -339,7 +345,7 @@ export function useGameState(initialHunterName, onLogout) {
           // Rest-State Mechanics
           if (s.lastInteractionTimeMs && (Date.now() - s.lastInteractionTimeMs >= 8 * 3600 * 1000)) {
             s.restBuff = { active: true, date: today };
-            setTimeout(() => notify("Inner Sanctum Buff: +10% XP für heute (8h offline)", "success"), 2500);
+            setTimeout(() => notify(ltState(s, "systemCoach.restBuff"), "success"), 2500);
           }
           if (s.restBuff?.active && s.restBuff.date !== today) {
             s.restBuff = { active: false, date: null };
@@ -463,25 +469,26 @@ export function useGameState(initialHunterName, onLogout) {
             } catch { /* sessionStorage may not be available */ }
 
             // Gather ALL relevant status lines into one bundled briefing
+            const bootName = stateRef.current?.hunterName || s.hunterName || ltState(readyState, "common.unknown");
             const statusLines = [
-              `Willkommen zurück, Hunter ${stateRef.current?.hunterName || s.hunterName || "Unbekannt"}.`
+              ltState(readyState, "systemCoach.bootWelcome", { name: bootName })
             ];
             const activeDailies = (readyState.quests || []).filter(q => q.type === "daily" && !q.completed);
-            if (activeDailies.length > 0) statusLines.push(`Aktive Tages-Quests: ${activeDailies.length}`);
+            if (activeDailies.length > 0) statusLines.push(ltState(readyState, "systemCoach.activeDailyQuests", { count: activeDailies.length }));
             // Emergency quest info (replaces the former separate modal)
             if (readyState.emergencyQuest && !readyState.emergencyDone && !readyState.emergencyFailed) {
               if (isNewEmergency) {
-                statusLines.push(`⚠ NOTFALL-MISSION: ${readyState.emergencyQuest.title}`);
-                statusLines.push("Belohnungen verdoppelt. Versagen wird nicht toleriert.");
+                statusLines.push(ltState(readyState, "systemCoach.emergencyMission", { title: readyState.emergencyQuest.title }));
+                statusLines.push(ltState(readyState, "systemCoach.emergencyDoubleReward"));
               } else {
-                statusLines.push("⚠️ NOTFALL-MISSION AKTIV");
+                statusLines.push(ltState(readyState, "systemCoach.emergencyActive"));
               }
             }
-            if (readyState.penaltyZone?.active) statusLines.push("⚠️ PENALTY ZONE AKTIV: XP-Malus -20%");
-            if (readyState.shadowRegression?.active) statusLines.push("🔥 SHADOW REGRESSION: Redemption-Quests verfügbar");
-            if (readyState.streak >= 5) statusLines.push(`🔥 Serie: ${readyState.streak} Tage — Weiter so!`);
+            if (readyState.penaltyZone?.active) statusLines.push(ltState(readyState, "systemCoach.penaltyActive"));
+            if (readyState.shadowRegression?.active) statusLines.push(ltState(readyState, "systemCoach.shadowRegressionActive"));
+            if (readyState.streak >= 5) statusLines.push(ltState(readyState, "systemCoach.streakLine", { streak: readyState.streak }));
 
-            triggerSystemMessage("STATUS-CHECK", statusLines);
+            triggerSystemMessage(ltState(readyState, "systemCoach.statusCheckTitle"), statusLines);
           }, 300);
           setState(readyState);
           if (!readyState.hunterName) setShowSetup(true);
@@ -569,11 +576,11 @@ export function useGameState(initialHunterName, onLogout) {
 
         // Only show full modal after boot phase (first 10s) to avoid modal spam on startup
         if (Date.now() - bootTimestampRef.current > 10000) {
-          triggerSystemMessage("NEUE AUFGABE", [
-            `${intensity.label}: Das System hat dir eine neue Aufgabe zugewiesen.`,
+          triggerSystemMessage(ltState(currentState, "systemCoach.autoTaskTitle"), [
+            ltState(currentState, "systemCoach.autoTaskAssigned", { intensity: intensity.label }),
             `"${randTask.title}"`,
-            `Frequenz: ${intensity.intervalHours >= 24 ? "1x pro Tag" : `alle ${intensity.intervalHours} Stunden`}.`,
-            "Schliess sie zeitnah ab, Hunter."
+            ltState(currentState, "systemCoach.autoTaskFrequency", { frequency: intensity.intervalHours >= 24 ? ltState(currentState, "systemCoach.oncePerDay") : ltState(currentState, "systemCoach.everyHours", { hours: intensity.intervalHours }) }),
+            ltState(currentState, "systemCoach.autoTaskClose")
           ]);
         }
 
@@ -582,7 +589,7 @@ export function useGameState(initialHunterName, onLogout) {
           lastSystemTaskTime: now,
           quests: [...currentState.quests, newQuest]
         });
-        notify(`Systemruf: ${intensity.label} hat eine Quest vergeben.`, "info");
+        notify(ltState(currentState, "systemCoach.autoTaskNotify", { intensity: intensity.label }), "info");
       } else {
         // If pool exhausted, just update time or do nothing
         persist({ ...currentState, lastSystemTaskTime: now });
@@ -684,7 +691,7 @@ export function useGameState(initialHunterName, onLogout) {
       const requiredMs = waitHours * 3600 * 1000;
       if (elapsedMs < requiredMs) {
         const remainingHours = ((requiredMs - elapsedMs) / 3600000).toFixed(1);
-        notify(`Diese Quest muss noch reifen! Warte noch ${remainingHours}h.`, "warning");
+        notify(ltState(state, "quests.waitMaturing", { hours: remainingHours }), "warning");
         return;
       }
     }
@@ -704,7 +711,7 @@ export function useGameState(initialHunterName, onLogout) {
     if (!result) return;
 
     persist(result.nextState);
-    const flow = buildQuestRewardFlow(result, state.level, rect);
+    const flow = buildQuestRewardFlow(result, state.level, rect, getStateLocale(state));
     enqueueRewardFlow(flow);
     setPendingRatingQuest(quest);
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);
@@ -736,7 +743,7 @@ export function useGameState(initialHunterName, onLogout) {
     const current = stateRef.current;
     if (!current) return;
     const dateKey = options.dateKey || getToday();
-    const syncedAt = new Date().toLocaleString('de-DE');
+    const syncedAt = new Date().toLocaleString(getStateLocale(current) === "de" ? "de-DE" : "en-US");
     const nextHistory = { ...(current.healthDailyHistory || {}) };
     const upsertDay = (key, patch) => {
       if (!key) return;
@@ -792,7 +799,7 @@ export function useGameState(initialHunterName, onLogout) {
     let animationQueue = [];
     animationQueue.push({
       type: 'system_message',
-      payload: { title: "ERFOLG: " + title, lines: [`Verdiente Belohnung: +${xp} XP, +${gold} Gold`, subtitle] }
+      payload: { title: ltState(state, "rewards.successPrefix", { title }), lines: [ltState(state, "rewards.earned", { xp, gold }), subtitle] }
     });
 
     if (leveledState.level > state.level) {
@@ -800,13 +807,13 @@ export function useGameState(initialHunterName, onLogout) {
     }
 
     enqueueRewardFlow({
-      title: "GESUNDHEITS-ERFOLG",
+      title: ltState(state, "rewards.healthTitle"),
       subtitle: title,
       xpReceived: xp,
       goldReceived: gold,
       animationQueue,
       deferredUi: {
-        passiveToasts: [{ msg: `Belohnung abgeholt: ${title}`, type: 'success', delayMs: 400 }]
+        passiveToasts: [{ msg: ltState(state, "rewards.claimed", { title }), type: 'success', delayMs: 400 }]
       }
     });
   }, [state, persist, enqueueRewardFlow]);
@@ -887,9 +894,11 @@ export function useGameState(initialHunterName, onLogout) {
     });
   }, [persist]);
 
-  const claimScreenTimeReward = useCallback((dateKey, xp = 20, gold = 60, title = "Bildschirmzeit unter Limit", subtitle = "Fokus-Bonus") => {
+  const claimScreenTimeReward = useCallback((dateKey, xp = 20, gold = 60, title = null, subtitle = null) => {
     const current = stateRef.current;
     if (!current || !dateKey) return;
+    const rewardTitle = title || ltState(current, "screenTime.rewardTitle");
+    const rewardSubtitle = subtitle || ltState(current, "screenTime.rewardSubtitle");
     const rewardKey = `screen_time_${dateKey}`;
     if (current.screenTimeRewardsClaimed?.[rewardKey]) return;
     const day = current.screenTimeDailyHistory?.[dateKey];
@@ -907,7 +916,7 @@ export function useGameState(initialHunterName, onLogout) {
 
     const animationQueue = [{
       type: 'system_message',
-      payload: { title: "ERFOLG: " + title, lines: [`Verdiente Belohnung: +${xp} XP, +${gold} Gold`, subtitle] }
+      payload: { title: ltState(current, "rewards.successPrefix", { title: rewardTitle }), lines: [ltState(current, "rewards.earned", { xp, gold }), rewardSubtitle] }
     }];
 
     if (leveledState.level > current.level) {
@@ -915,13 +924,13 @@ export function useGameState(initialHunterName, onLogout) {
     }
 
     enqueueRewardFlow({
-      title: "FOKUS-ERFOLG",
-      subtitle: title,
+      title: ltState(current, "rewards.focusTitle"),
+      subtitle: rewardTitle,
       xpReceived: xp,
       goldReceived: gold,
       animationQueue,
       deferredUi: {
-        passiveToasts: [{ msg: `Belohnung abgeholt: ${title}`, type: 'success', delayMs: 400 }]
+        passiveToasts: [{ msg: ltState(current, "rewards.claimed", { title: rewardTitle }), type: 'success', delayMs: 400 }]
       }
     });
   }, [persist, enqueueRewardFlow]);
@@ -1006,7 +1015,7 @@ export function useGameState(initialHunterName, onLogout) {
     const createdCount = questLimit.createdCount;
     const slotsLeft = questLimit.premiumActive ? inputs.length : questLimit.remaining;
     if (slotsLeft <= 0) {
-      notify("Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.", "warning");
+      notify(ltState(state, "quests.freeLimit"), "warning");
       return [];
     }
 
@@ -1058,8 +1067,8 @@ export function useGameState(initialHunterName, onLogout) {
       ...(options.source === "scan" ? { ai: { ...(state.ai || {}), scannedTasks: ((state.ai?.scannedTasks || 0) + 1) } } : {}),
     };
     persist(nextState);
-    if (inputs.length > quests.length) notify(`${quests.length}/${inputs.length} Quests importiert. Tageslimit erreicht.`, "warning");
-    else notify(`${quests.length} Quest${quests.length > 1 ? "s" : ""} erstellt.`, "success");
+    if (inputs.length > quests.length) notify(ltState(state, "quests.importedLimit", { created: quests.length, total: inputs.length }), "warning");
+    else notify(ltState(state, "quests.createdCount", { count: quests.length, plural: quests.length > 1 ? "s" : "" }), "success");
     return quests;
   }, [state, persist, notify, getQuestInputData, attachQuestReminder]);
 
@@ -1127,7 +1136,7 @@ export function useGameState(initialHunterName, onLogout) {
     const questLimit = getDailyQuestCreationStatus(state);
     const createdCount = questLimit.createdCount;
     if (!questLimit.canCreate) {
-      notify("Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.", "warning");
+      notify(ltState(state, "quests.freeLimit"), "warning");
       return;
     }
 
@@ -1242,14 +1251,14 @@ export function useGameState(initialHunterName, onLogout) {
           : q
       ),
     });
-    notify(`Reminder um ${minutes} Minuten verschoben.`, "info");
+    notify(ltState(state, "quests.reminderSnoozed", { minutes }), "info");
   }, [state, persist, notify]);
 
   const completeEmergencyQuest = useCallback((eq) => {
     if (!state || state.emergencyDone) return;
     const result = buildCompleteEmergencyQuestState(eq, state, processAchievementsPure);
     persist(result.nextState);
-    const flow = buildEmergencyRewardFlow(result);
+    const flow = buildEmergencyRewardFlow(result, getStateLocale(state));
     enqueueRewardFlow(flow);
     try {
       if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
@@ -1260,13 +1269,13 @@ export function useGameState(initialHunterName, onLogout) {
     if (!title.trim()) return;
     const questLimit = getDailyQuestCreationStatus(state);
     if (!questLimit.canCreate) {
-      notify("Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.", "warning");
+      notify(ltState(state, "quests.freeLimit"), "warning");
       return;
     }
     const totalSteps = 3;
     const firstQuest = generateChainedQuest(title, category, difficulty, 1, totalSteps);
     persist({ ...state, quests: [...state.quests, firstQuest], dailyUserQuestsCreated: questLimit.createdCount + 1 });
-    notify(`─ Quest-Kette gestartet! ${totalSteps} Schritte · Multiplikator steigt mit jedem Erfolg.`, "info");
+    notify(ltState(state, "quests.chainStarted", { steps: totalSteps }), "info");
   }, [state, persist, notify]);
 
   // ─── SUB-QUEST COMPLETION ─────────────────────────────────────
@@ -1295,7 +1304,7 @@ export function useGameState(initialHunterName, onLogout) {
 
     setXpFloats(prev => [...prev, { id: genId(), amount: subQuestXp, ts: Date.now() }]);
     persist(nextState);
-    notify(`Etappe abgeschlossen: ${subQuest.title} (+${subQuestXp} XP)`, "success");
+    notify(ltState(state, "quests.subQuestCompleted", { title: subQuest.title, xp: subQuestXp }), "success");
     try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) { }
   }, [state, persist, notify]);
 
@@ -1305,7 +1314,7 @@ export function useGameState(initialHunterName, onLogout) {
     const questLimit = getDailyQuestCreationStatus(state);
     const createdCount = questLimit.createdCount;
     if (!questLimit.canCreate) {
-      notify("Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.", "warning");
+      notify(ltState(state, "quests.freeLimit"), "warning");
       return;
     }
 
@@ -1341,7 +1350,7 @@ export function useGameState(initialHunterName, onLogout) {
         recentlyUsed: [template.title, ...(pool.recentlyUsed || []).filter(t => t !== template.title)].slice(0, 10),
       },
     });
-    notify(`Quest aus Pool erstellt: ${template.title}`, "success");
+    notify(ltState(state, "quests.templateCreated", { title: template.title }), "success");
   }, [state, persist, notify]);
 
   const removeFromPool = useCallback((templateId) => {
@@ -1354,7 +1363,7 @@ export function useGameState(initialHunterName, onLogout) {
         templates: pool.templates.filter(t => t.id !== templateId),
       },
     });
-    notify("Template entfernt.", "info");
+    notify(ltState(state, "quests.templateRemoved"), "info");
   }, [state, persist, notify]);
 
   const toggleFavoriteTemplate = useCallback((templateId) => {
@@ -1381,7 +1390,7 @@ export function useGameState(initialHunterName, onLogout) {
     try {
       const { hasFocusQuestAbility } = require('../data/artifactHelpers.js');
       if (!hasFocusQuestAbility(state)) {
-        notify("Fokus-Amulett benötigt! Finde es in einem Dungeon.", "info");
+        notify(ltState(state, "quests.focusAmuletRequired"), "info");
         return;
       }
     } catch (e) { return; }
@@ -1389,9 +1398,9 @@ export function useGameState(initialHunterName, onLogout) {
     const newFocus = state.dailyFocusQuestId === questId ? null : questId;
     persist({ ...state, dailyFocusQuestId: newFocus });
     if (newFocus) {
-      notify("⭐ Tagesfokus gesetzt! +50% XP bei Abschluss.", "success");
+      notify(ltState(state, "quests.dailyFocusSet"), "success");
     } else {
-      notify("Tagesfokus entfernt.", "info");
+      notify(ltState(state, "quests.dailyFocusRemoved"), "info");
     }
   }, [state, persist, notify]);
 
@@ -1484,11 +1493,11 @@ export function useGameState(initialHunterName, onLogout) {
 
     const passiveToasts = [];
     if (jobLevelUpNotif) passiveToasts.push({ msg: jobLevelUpNotif, type: 'levelup', delayMs: 0 });
-    if (artifactDrop) passiveToasts.push({ msg: `⚡ ARTIFACT: ${artifactDrop.icon} ${artifactDrop.name} entdeckt!`, type: 'named', delayMs: 300 });
+    if (artifactDrop) passiveToasts.push({ msg: ltState(state, "notifications.artifactDiscovered", { icon: artifactDrop.icon, name: artifactDrop.name }), type: 'named', delayMs: 300 });
 
     const flow = buildDungeonRewardFlow(
       dungeon, result, didLevelUp, earnedPoints, newLevel, oldLevel,
-      result.xp, totalGold, newNameds, newAchievements, artifactDrop
+      result.xp, totalGold, newNameds, newAchievements, artifactDrop, getStateLocale(state)
     );
     // Inject jobLevelUp as a passive toast since it's not in builder
     if (passiveToasts.length) {
@@ -1500,16 +1509,16 @@ export function useGameState(initialHunterName, onLogout) {
   const deployShadow = useCallback((shadowId, slot) => {
     const slotData = FORMATION_SLOTS[slot];
     const currentInSlot = (state.shadowArmy?.shadows || []).filter(s => s.isDeployed && s.deploymentSlot === slot).length;
-    if (currentInSlot >= slotData.maxSlots) { notify(`${slotData.name} ist voll! (Max ${slotData.maxSlots})`, "info"); return; }
+    if (currentInSlot >= slotData.maxSlots) { notify(ltState(state, "notifications.shadowSlotFull", { slot: slotData.name, max: slotData.maxSlots }), "info"); return; }
     const newShadows = (state.shadowArmy.shadows || []).map(s => s.id === shadowId ? { ...s, isDeployed: true, deploymentSlot: slot } : s);
     persist({ ...state, shadowArmy: { ...state.shadowArmy, shadows: newShadows } });
-    notify(`Shadow in ${slotData.name} positioniert!`, "shadow");
+    notify(ltState(state, "notifications.shadowDeployed", { slot: slotData.name }), "shadow");
   }, [state, persist, notify]);
 
   const undeployShadow = useCallback((shadowId) => {
     const newShadows = (state.shadowArmy.shadows || []).map(s => s.id === shadowId ? { ...s, isDeployed: false, deploymentSlot: null } : s);
     persist({ ...state, shadowArmy: { ...state.shadowArmy, shadows: newShadows } });
-    notify("Shadow zurückgerufen.", "info");
+    notify(ltState(state, "notifications.shadowRecalled"), "info");
   }, [state, persist, notify]);
 
   const evolveShadow = useCallback((shadowId) => {
@@ -1527,7 +1536,7 @@ export function useGameState(initialHunterName, onLogout) {
     let next = { ...state, gold: state.gold - nextTier.evolutionCost, shadowArmy: { ...state.shadowArmy, shadows: newShadows } };
     next = processAchievements(next);
     persist(next);
-    notify(`${shadow.name} zu Tier ${shadow.tier + 1} (${nextTier.name}) entwickelt!`, "shadow");
+    notify(ltState(state, "notifications.shadowEvolved", { name: shadow.name, tier: shadow.tier + 1, tierName: nextTier.name }), "shadow");
     setSelectedShadow(null);
   }, [state, persist, processAchievements, notify]);
 
@@ -1552,11 +1561,11 @@ export function useGameState(initialHunterName, onLogout) {
           shadowRegression: null,
           penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 }
         };
-        setTimeout(() => triggerSystemMessage("SYSTEM RECOVERY", [
-          "Elixir of Recovery konsumiert.",
-          "Verlorene Vitalität vollständig wiederhergestellt.",
-          `Streak auf ${recoverStreak} gesetzt.`,
-          "Strafzonen-Status aufgehoben."
+        setTimeout(() => triggerSystemMessage(ltState(state, "shop.notifications.recoveryTitle"), [
+          ltState(state, "shop.notifications.recoveryConsumed"),
+          ltState(state, "shop.notifications.recoveryRestored"),
+          ltState(state, "shop.notifications.recoveryStreak", { streak: recoverStreak }),
+          ltState(state, "shop.notifications.recoveryCleared")
         ]), 600);
       }
     }
@@ -1570,10 +1579,10 @@ export function useGameState(initialHunterName, onLogout) {
     };
     next = processAchievements(next);
     persist(next);
-    notify(`${item.name} erworben!`, item.id === "potion_heal" ? "success" : "gold");
+    notify(ltState(state, "shop.notifications.purchased", { name: item.name }), item.id === "potion_heal" ? "success" : "gold");
   };
 
-  const equipItem = (item, slot) => { const newSlots = { ...state.equipment.slots, [slot]: item }; let next = { ...state, equipment: { ...state.equipment, slots: newSlots } }; next = processAchievements(next); persist(next); notify(`${item.name} ausgerüstet!`, "info"); };
+  const equipItem = (item, slot) => { const newSlots = { ...state.equipment.slots, [slot]: item }; let next = { ...state, equipment: { ...state.equipment, slots: newSlots } }; next = processAchievements(next); persist(next); notify(ltState(state, "shop.notifications.equipped", { name: item.name }), "info"); };
   const unequipItem = slot => persist({ ...state, equipment: { ...state.equipment, slots: { ...state.equipment.slots, [slot]: null } } });
 
   const switchJob = useCallback((jobKey) => {
@@ -1655,7 +1664,7 @@ export function useGameState(initialHunterName, onLogout) {
       }
     };
     persist(next);
-    notify(`${CATEGORIES.find(c => c.key === statKey)?.label} erhöht!`, "success");
+    notify(ltState(state, "stats.increased", { stat: getCategoryLabel(statKey, getStateLocale(state)) || statKey }), "success");
   }, [state, persist, notify]);
 
 
@@ -1670,7 +1679,7 @@ export function useGameState(initialHunterName, onLogout) {
   const startDawnDuskRun = useCallback((type) => {
     if (!state) return;
     const tasks = type === "dawn" ? (state.dawnDusk?.morningTasks || []) : (state.dawnDusk?.eveningTasks || []);
-    if (!tasks.length) { notify("Konfiguriere zuerst deine Routine-Aufgaben.", "warning"); return; }
+    if (!tasks.length) { notify(ltState(state, "quests.noRoutineTasks"), "warning"); return; }
     const timerSeconds = type === "dawn" ? 5400 : 3600;
     const run = {
       type,
@@ -1682,11 +1691,13 @@ export function useGameState(initialHunterName, onLogout) {
       isPerfectPossible: true
     };
     persist({ ...state, dawnDusk: { ...state.dawnDusk, currentRun: run } });
-    triggerSystemMessage(type === "dawn" ? "DAWN PROTOCOL AKTIVIERT" : "DUSK PROTOCOL AKTIVIERT", [
-      type === "dawn" ? "Die Morgendämmerung beginnt." : "Das Dunkel fällt herab.",
-      `${tasks.length} Etagen stehen vor dir.`,
-      `Timer: ${type === "dawn" ? "90" : "60"} Minuten.`,
-      "Vollständiger Abschluss = PERFECT RUN Belohnung."
+    triggerSystemMessage(
+      ltState(state, type === "dawn" ? "systemCoach.protocolDawnTitle" : "systemCoach.protocolDuskTitle"),
+      [
+      ltState(state, type === "dawn" ? "systemCoach.protocolDawnStart" : "systemCoach.protocolDuskStart"),
+      ltState(state, "systemCoach.protocolFloors", { count: tasks.length }),
+      ltState(state, "systemCoach.protocolTimer", { minutes: type === "dawn" ? "90" : "60" }),
+      ltState(state, "systemCoach.protocolPerfect")
     ]);
   }, [state, persist, notify, triggerSystemMessage]);
 
@@ -1718,9 +1729,9 @@ export function useGameState(initialHunterName, onLogout) {
       };
       persist(nextState);
       if (isPerfect) {
-        enqueueRewardFlow(buildProtocolRewardFlow(run, xpGain, true, elapsed));
+        enqueueRewardFlow(buildProtocolRewardFlow(run, xpGain, true, elapsed, getStateLocale(state)));
       } else {
-        notify(`✅ Protokoll abgeschlossen! +${xpGain} XP`, "success");
+        notify(ltState(state, "quests.protocolCompleted", { xp: xpGain }), "success");
       }
     } else {
       nextState.dawnDusk = {
@@ -1735,13 +1746,16 @@ export function useGameState(initialHunterName, onLogout) {
     if (!state) return;
     const key = type === "dawn" ? "morningTasks" : "eveningTasks";
     persist({ ...state, dawnDusk: { ...state.dawnDusk, [key]: tasks } });
-    notify(`${type === "dawn" ? "Morgen" : "Abend"}-Routine konfiguriert: ${tasks.length} Etagen.`, "success");
+    notify(ltState(state, "quests.routineConfigured", {
+      period: ltState(state, type === "dawn" ? "quests.routineMorning" : "quests.routineEvening"),
+      count: tasks.length,
+    }), "success");
   }, [state, persist, notify]);
 
   const abandonProtocolRun = useCallback(() => {
     if (!state?.dawnDusk?.currentRun) return;
     persist({ ...state, dawnDusk: { ...state.dawnDusk, currentRun: null } });
-    notify("Protokoll abgebrochen.", "warning");
+    notify(ltState(state, "quests.protocolAbandoned"), "warning");
   }, [state, persist, notify]);
 
   // ─ CHARISMA DUNGEONS ─
@@ -1750,13 +1764,13 @@ export function useGameState(initialHunterName, onLogout) {
     const chain = CHARISMA_CHAINS.find(c => c.id === chainId);
     if (!chain) return;
     const unlocked = state.charismaDungeons?.unlockedChains || ["social_exposure"];
-    if (!unlocked.includes(chainId)) { notify("Charisma-Dungeon noch nicht freigeschaltet.", "warning"); return; }
-    if (state.charismaDungeons?.activeChains?.[chainId]) { notify("Diese Kette ist bereits aktiv.", "info"); return; }
-    if (state.charismaDungeons?.completedChains?.includes(chainId)) { notify("Diese Kette wurde bereits abgeschlossen.", "info"); return; }
+    if (!unlocked.includes(chainId)) { notify(ltState(state, "questActions.charismaNotUnlocked"), "warning"); return; }
+    if (state.charismaDungeons?.activeChains?.[chainId]) { notify(ltState(state, "questActions.charismaAlreadyActive"), "info"); return; }
+    if (state.charismaDungeons?.completedChains?.includes(chainId)) { notify(ltState(state, "questActions.charismaAlreadyCompleted"), "info"); return; }
     const step = chain.steps[0];
     const quest = {
       id: genId(),
-      title: `[${chain.name}] Etage 1: ${step.title}`,
+      title: ltState(state, "questActions.charismaQuestTitle", { name: chain.name, floor: 1, title: step.title }),
       category: "cha",
       difficulty: step.difficulty,
       type: "side",
@@ -1776,7 +1790,7 @@ export function useGameState(initialHunterName, onLogout) {
         activeChains: { ...(state.charismaDungeons?.activeChains || {}), [chainId]: { currentStep: 1, startedAt: getToday() } }
       }
     });
-    notify(`⚡ ${chain.name} gestartet! Etage 1 von ${chain.steps.length}: ${step.title}`, "info");
+    notify(ltState(state, "questActions.charismaStarted", { name: chain.name, total: chain.steps.length, title: step.title }), "info");
   }, [state, persist, notify]);
 
   // ─ SOUL LINK (Firestore-backed) ─
@@ -1786,9 +1800,9 @@ export function useGameState(initialHunterName, onLogout) {
       const { createSoulLink } = await import('../multiplayer/soulLinkFirebase.js');
       const { linkCode } = await createSoulLink(state, auth.currentUser);
       persist({ ...state, soulLink: { ...(state.soulLink || {}), linkCode, linkedAt: getToday() } });
-      notify(`⚡ Soul Link erstellt! Dein Code: ${linkCode}`, "success");
+      notify(ltState(state, "questActions.soulLinkCreated", { code: linkCode }), "success");
       return linkCode;
-    } catch (e) { notify("Soul Link konnte nicht erstellt werden.", "warning"); }
+    } catch (e) { notify(ltState(state, "questActions.soulLinkCreateFailed"), "warning"); }
   }, [state, persist, notify]);
 
   const joinSoulLinkCode = useCallback(async (code) => {
@@ -1796,10 +1810,10 @@ export function useGameState(initialHunterName, onLogout) {
     try {
       const { joinSoulLink } = await import('../multiplayer/soulLinkFirebase.js');
       const result = await joinSoulLink(code.toUpperCase(), state, auth.currentUser);
-      if (!result) { notify("Code nicht gefunden oder bereits voll.", "warning"); return; }
+      if (!result) { notify(ltState(state, "questActions.soulLinkCodeUnavailable"), "warning"); return; }
       persist({ ...state, soulLink: { ...(state.soulLink || {}), ...result, linkCode: code.toUpperCase(), linkedAt: getToday() } });
-      notify(`⚡ Soul Link verbunden mit ${result.partnerName}!`, "success");
-    } catch (e) { notify("Verbindung fehlgeschlagen.", "warning"); }
+      notify(ltState(state, "questActions.soulLinkConnected", { name: result.partnerName }), "success");
+    } catch (e) { notify(ltState(state, "questActions.soulLinkConnectFailed"), "warning"); }
   }, [state, persist, notify]);
 
   const breakSoulLinkCode = useCallback(async () => {
@@ -1809,7 +1823,7 @@ export function useGameState(initialHunterName, onLogout) {
       await breakSoulLink(state.soulLink.linkCode, auth.currentUser?.uid);
     } catch (_) { }
     persist({ ...state, soulLink: { ...DEFAULT_STATE.soulLink } });
-    notify("Soul Link getrennt.", "info");
+    notify(ltState(state, "questActions.soulLinkBroken"), "info");
   }, [state, persist, notify]);
 
   const sendReviveToPartner = useCallback(async () => {
@@ -1818,8 +1832,8 @@ export function useGameState(initialHunterName, onLogout) {
       const { sendRevive } = await import('../multiplayer/soulLinkFirebase.js');
       await sendRevive(state.soulLink.linkCode, auth.currentUser.uid, state.soulLink.partnerUid);
       persist({ ...state, soulLink: { ...state.soulLink, revivesLeft: Math.max(0, (state.soulLink.revivesLeft || 0) - 1) } });
-      notify(`⚡ Streak-Revive an ${state.soulLink.partnerName} gesendet!`, "success");
-    } catch (_) { notify("Revive fehlgeschlagen.", "warning"); }
+      notify(ltState(state, "questActions.soulLinkReviveSent", { name: state.soulLink.partnerName }), "success");
+    } catch (_) { notify(ltState(state, "questActions.soulLinkReviveFailed"), "warning"); }
   }, [state, persist, notify]);
 
   const theme = useMemo(() => THEMES[state?.selectedTheme || "default"], [state?.selectedTheme]);
@@ -1838,7 +1852,7 @@ export function useGameState(initialHunterName, onLogout) {
     const today = getToday();
     const adsToday = state.lastAdWatchDate === today ? (state.adsWatchedToday || 0) : 0;
     if (adsToday >= 5) {
-      notify("Tägliches Werbe-Limit erreicht (5/5). Morgen wieder verfügbar!", "warning");
+      notify(ltState(state, "shop.notifications.adLimit"), "warning");
       return false;
     }
     const gemReward = 3 + Math.floor(Math.random() * 3); // 3-5 gems
@@ -1849,7 +1863,7 @@ export function useGameState(initialHunterName, onLogout) {
       adsWatchedToday: adsToday + 1,
       lastAdWatchDate: today,
     });
-    notify(`+${gemReward} ⚡ Gems erhalten!`, "named");
+    notify(ltState(state, "shop.notifications.gemsReceived", { count: gemReward }), "named");
     return gemReward;
   }, [state, persist, notify]);
 
@@ -1858,7 +1872,7 @@ export function useGameState(initialHunterName, onLogout) {
     if (!state) return false;
     const today = getToday();
     if (state.gemStreak?.lastClaimDate === today) {
-      notify("Daily Gem Bonus bereits beansprucht!", "info");
+      notify(ltState(state, "shop.notifications.dailyAlreadyClaimed"), "info");
       return false;
     }
     // Check if streak continues (yesterday or first time)
@@ -1876,15 +1890,15 @@ export function useGameState(initialHunterName, onLogout) {
       gemStreak: { current: newStreak, lastClaimDate: today },
     });
     if (isDay7) {
-      notify(`⚡ Tag-7-Bonus! +${gemReward} Gems (Streak: ${newStreak} Tage)`, "named");
+      notify(ltState(state, "shop.notifications.day7Bonus", { gems: gemReward, streak: newStreak }), "named");
     } else {
-      notify(`+${gemReward} ⚡ Daily Gem Bonus (Streak: ${newStreak})`, "success");
+      notify(ltState(state, "shop.notifications.dailyGemBonus", { gems: gemReward, streak: newStreak }), "success");
     }
     return gemReward;
   }, [state, persist, notify]);
 
   const activatePremiumCode = useCallback((code) => {
-    if (!state) return { ok: false, message: "App-State ist noch nicht bereit." };
+    if (!state) return { ok: false, message: ltState(state, "premium.messages.appNotReady") };
 
     const result = redeemBetaPremiumCode(state.premium, code);
     if (!result.ok) {
@@ -1895,11 +1909,11 @@ export function useGameState(initialHunterName, onLogout) {
     const next = { ...state, premium: result.premium };
     persist(next);
     notify(result.message, "success");
-    triggerSystemMessage("HUNTER PRO AKTIVIERT", [
-      "Premium-Status bestaetigt.",
-      `${result.code.label}: 30 Tage Hunter Pro freigeschaltet.`,
-      `Aktiv bis ${result.activeUntilLabel}.`,
-      "Beta-Billing bleibt deaktiviert, Store-Payment folgt vor Release."
+    triggerSystemMessage(ltState(state, "premium.messages.activatedTitle"), [
+      ltState(state, "premium.messages.statusConfirmed"),
+      ltState(state, "premium.messages.codeUnlocked", { label: result.code.label }),
+      ltState(state, "premium.messages.activeUntil", { date: result.activeUntilLabel }),
+      ltState(state, "premium.messages.billingDisabled")
     ]);
     return result;
   }, [state, persist, notify, triggerSystemMessage]);
@@ -1911,12 +1925,12 @@ export function useGameState(initialHunterName, onLogout) {
   const buyGemItem = useCallback((item) => {
     if (!state) return;
     if ((state.gems || 0) < item.cost) {
-      notify("Nicht genug Gems!", "warning");
+      notify(ltState(state, "shop.notifications.notEnoughGems"), "warning");
       return;
     }
     // Non-repeatable check
     if (!item.repeatable && (state.gemPurchases || []).includes(item.id)) {
-      notify("Bereits gekauft!", "info");
+      notify(ltState(state, "shop.notifications.alreadyBought"), "info");
       return;
     }
 
@@ -1930,11 +1944,11 @@ export function useGameState(initialHunterName, onLogout) {
         expiresAt: Date.now() + item.duration,
       };
       effects.activeGemBoosters = [...(state.activeGemBoosters || []).filter(b => b.expiresAt > Date.now()), newBooster];
-      triggerSystemMessage("BOOSTER AKTIVIERT", [
-        `${item.name} wurde eingesetzt!`,
+      triggerSystemMessage(ltState(state, "shop.notifications.boosterTitle"), [
+        ltState(state, "shop.notifications.boosterUsed", { name: item.name }),
         `${item.desc}`,
-        `Dauer: ${Math.round(item.duration / 3600000)} Stunden.`,
-        "Möge die Macht mit dir sein, Hunter."
+        ltState(state, "shop.notifications.durationHours", { hours: Math.round(item.duration / 3600000) }),
+        ltState(state, "shop.notifications.boosterBlessing")
       ]);
     } else if (item.type === "theme") {
       effects.selectedTheme = item.themeKey;
@@ -1942,10 +1956,10 @@ export function useGameState(initialHunterName, onLogout) {
       effects.selectedTitle = item.name;
     } else if (item.type === "transition") {
       effects.selectedPageTransition = item.transitionKey || "domain_shift";
-      triggerSystemMessage("GATE COSMETIC UNLOCKED", [
-        `${item.name} wurde in dein System geladen.`,
-        item.desc || "Neue Seitenwechsel-Animation aktiviert.",
-        "Navigationseffekte wurden aktualisiert."
+      triggerSystemMessage(ltState(state, "shop.notifications.transitionTitle"), [
+        ltState(state, "shop.notifications.transitionLoaded", { name: item.name }),
+        item.desc || ltState(state, "shop.notifications.transitionFallback"),
+        ltState(state, "shop.notifications.transitionUpdated")
       ]);
     } else if (item.type === "consumable") {
       // Handle specific consumables
@@ -1954,15 +1968,15 @@ export function useGameState(initialHunterName, onLogout) {
       } else if (item.id === "gem_dungeon_refresh") {
         effects.dungeons = generateDungeons(getRank(state.level || 1).name);
         effects.lastDungeonRefresh = getToday();
-        notify("Neue Dungeons generiert!", "success");
+      notify(ltState(state, "shop.notifications.dungeonsRefreshed"), "success");
       } else if (item.id === "gem_stat_reset") {
         const totalStatPoints = Object.values(state.stats || {}).reduce((a, b) => a + b, 0);
         effects.stats = { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
         effects.statPoints = (state.statPoints || 0) + totalStatPoints;
-        triggerSystemMessage("STAT RESET", [
-          "Alle Stat-Punkte wurden zurückgesetzt.",
-          `${totalStatPoints + (state.statPoints || 0)} Punkte stehen zur Verfügung.`,
-          "Verteile sie weise, Hunter."
+        triggerSystemMessage(ltState(state, "shop.notifications.statResetTitle"), [
+          ltState(state, "shop.notifications.statResetDone"),
+          ltState(state, "shop.notifications.statResetAvailable", { points: totalStatPoints + (state.statPoints || 0) }),
+          ltState(state, "shop.notifications.statResetHint")
         ]);
       }
     } else if (item.type === "cosmetic") {
@@ -1980,7 +1994,7 @@ export function useGameState(initialHunterName, onLogout) {
     next = processAchievements(next);
     persist(next);
     if (item.type !== "consumable" || !item.id.startsWith("gem_stat_reset")) {
-      notify(`${item.name} erworben! ⚡`, item.type === "booster" ? "success" : "named");
+      notify(ltState(state, "shop.notifications.purchased", { name: item.name }), item.type === "booster" ? "success" : "named");
     }
   }, [state, persist, processAchievements, notify, triggerSystemMessage]);
 

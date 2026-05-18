@@ -4,12 +4,16 @@ import { ARTIFACT_POOL } from "../../data/artifactHelpers.js";
 import { STAT_ICONS, GATE_ICONS, STORY_ICONS, SHADOW_ICONS, SKILL_ICONS } from "../../data/icons.js";
 import { StatRadar, ShadowCard, FormationEditor, ShadowDetailModal } from "../../data/constants";
 import { checkSkillUnlocks } from "../../data/helpers.js";
+import { useI18n } from "../i18n/I18nProvider.jsx";
+import { getLocalizedCatalog } from "../../data/localizedGameData.js";
 
 /**
  * StatsView – rendered when view === "stats".
  */
 export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat }) {
-  const unlockedSkills = checkSkillUnlocks(state?.stats || {});
+  const { t, locale } = useI18n();
+  const { categories, achievements, skills } = React.useMemo(() => getLocalizedCatalog(locale), [locale]);
+  const unlockedSkills = skills.filter(sk => (state?.stats?.[sk.stat] || 0) >= sk.threshold);
   const achUnlocked = state?.achievements?.unlocked || [];
   const discoveredArtifacts = state?.artifacts?.discovered || [];
   return (
@@ -17,12 +21,12 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
       <div data-tutorial="stats-overview" style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "20px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", backdropFilter: "blur(12px)", position: "relative" }}>
         {state.statPoints > 0 && (
           <div style={{ position: "absolute", top: 12, right: 12, background: "#f59e0b22", border: "1px solid #f59e0b44", padding: "4px 10px", borderRadius: 20, fontSize: 10, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, animation: "pulse 1.5s infinite" }}>
-            {state.statPoints} PUNKTE VERFÜGBAR
+            {t("stats.pointsAvailable", { count: state.statPoints })}
           </div>
         )}
         <StatRadar stats={state.stats} theme={theme} size={200} />
         <div style={{ display: "flex", gap: 0, flexWrap: "wrap", justifyContent: "center", marginTop: 4, width: "100%", background: "rgba(0,0,0,0.2)", borderRadius: 12, overflow: "hidden" }}>
-          {[{ label: "TOTAL XP", value: (state.totalXpEarned || 0).toLocaleString(), color: theme.accent }, { label: "QUESTS", value: state.totalQuestsCompleted || 0, color: theme.accent }, { label: "STREAK", value: `${state.streak}d`, color: "#f59e0b" }, { label: "PWR LVL", value: powerLevel, color: "#e879f9" }, { label: "CLEARED", value: (state.dungeonHistory || []).filter(d => d.won).length, color: "#22d3ee" }].map((s, i) => (
+          {[{ label: t("stats.totalXp"), value: (state.totalXpEarned || 0).toLocaleString(), color: theme.accent }, { label: t("stats.quests"), value: state.totalQuestsCompleted || 0, color: theme.accent }, { label: t("stats.streak"), value: `${state.streak}d`, color: "#f59e0b" }, { label: t("stats.powerLevel"), value: powerLevel, color: "#e879f9" }, { label: t("stats.cleared"), value: (state.dungeonHistory || []).filter(d => d.won).length, color: "#22d3ee" }].map((s, i) => (
             <div key={i} style={{ textAlign: "center", padding: "10px 10px", flex: "1 0 33%", background: `radial-gradient(135deg, ${s.color}08 0%, transparent 100%)`, border: `1px solid ${s.color}15`, boxShadow: `inset 0 0 10px ${s.color}05` }}>
               <div style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, letterSpacing: 1.5 }}>{s.label}</div>
               <div style={{ fontSize: 16, fontWeight: 900, color: s.color, fontFamily: "'Cinzel',serif", textShadow: `0 0 12px ${s.color}66` }}>{s.value}</div>
@@ -31,7 +35,7 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
         </div>
       </div>
       <div data-tutorial="stats-attributes-list">
-        {CATEGORIES.map((cat, i) => {
+        {categories.map((cat, i) => {
           const val = (state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0);
           const base = state.stats[cat.key] || 0;
           const maxD = Math.max(val, 50);
@@ -66,10 +70,10 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
       </div>
       {unlockedSkills.length > 0 && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>UNLOCKED SKILLS ({unlockedSkills.length})</div>
+          <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>{t("stats.unlockedSkills", { count: unlockedSkills.length })}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {unlockedSkills.map((sk, i) => {
-              const cat = CATEGORIES.find(c => c.key === sk.stat); return (
+              const cat = categories.find(c => c.key === sk.stat) || CATEGORIES.find(c => c.key === sk.stat); return (
                 <div key={sk.id} style={{ background: theme.card, border: `1px solid ${cat.color}22`, borderRadius: 12, padding: "12px", animation: `scaleIn 0.4s ease ${i * 0.07}s both` }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                     <span style={{ fontSize: 20 }}>{sk.icon}</span>
@@ -88,7 +92,7 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
       {/* ═══ GATE ARTIFACTS ═══ */}
       {discoveredArtifacts.length > 0 && (
         <div style={{ marginTop: 28, animation: "fadeIn 0.6s ease 0.15s both" }}>
-          <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>GATE ARTIFACTS ({discoveredArtifacts.length})</div>
+          <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 12 }}>{t("stats.artifacts", { count: discoveredArtifacts.length })}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
             {discoveredArtifacts.map((artId, i) => {
               const artDef = ARTIFACT_POOL.find(a => a.id === artId);
@@ -113,15 +117,15 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
       <div style={{ marginTop: 28, animation: "fadeIn 0.6s ease 0.2s both" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
           <div>
-            <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>HALL OF RECORDS</div>
-            <div style={{ fontSize: 13, color: "#e2e8f0", fontFamily: "'Cinzel',serif", fontWeight: 700 }}>Achievements</div>
+            <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>{t("stats.hall")}</div>
+            <div style={{ fontSize: 13, color: "#e2e8f0", fontFamily: "'Cinzel',serif", fontWeight: 700 }}>{t("stats.achievements")}</div>
           </div>
           <div style={{ fontSize: 9, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", padding: "4px 8px", background: theme.primary + "15", borderRadius: 8, border: `1px solid ${theme.primary}33` }}>
-            {achUnlocked.length} / {ACHIEVEMENTS.length} UNLOCKED
+            {achUnlocked.length} / {achievements.length} {t("stats.unlocked")}
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-          {ACHIEVEMENTS.map((ach) => {
+          {achievements.map((ach) => {
             const isUnlocked = achUnlocked.includes(ach.id);
             return (
               <div key={ach.id} style={{ background: isUnlocked ? theme.card : "rgba(10,10,20,0.4)", border: `1px solid ${isUnlocked ? theme.primary + "44" : "#1e2940"}`, borderRadius: 14, padding: "12px 16px", opacity: isUnlocked ? 1 : 0.45, display: "flex", alignItems: "center", gap: 14, boxShadow: isUnlocked ? `0 0 15px ${theme.primary}11` : "none", transition: "all 0.3s" }}>
@@ -156,6 +160,8 @@ export function ShadowArmyView({
   setSelectedShadow,
   deployShadow, undeployShadow,
 }) {
+  const { t, locale } = useI18n();
+  const { shadowClasses, shadowTiers, namedShadows: localizedNamedShadows } = React.useMemo(() => getLocalizedCatalog(locale), [locale]);
   return (
     <div style={{ animation: "fadeIn 0.35s ease" }}>
       {/* Monarch's Banner */}
@@ -167,27 +173,27 @@ export function ShadowArmyView({
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                 <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,transparent,#7c3aed66)" }} />
-                <div style={{ fontSize: 7, letterSpacing: 5, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>SHADOW MONARCHIE</div>
+                <div style={{ fontSize: 7, letterSpacing: 5, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{t("shadows.eyebrow")}</div>
                 <div style={{ width: 24, height: 1, background: "linear-gradient(90deg,#7c3aed66,transparent)" }} />
               </div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: "#e2e8f0", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 30px #7c3aed55, 0 2px 4px rgba(0,0,0,0.8)" }}>Schattenarmee</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: "#e2e8f0", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 30px #7c3aed55, 0 2px 4px rgba(0,0,0,0.8)" }}>{t("shadows.title")}</div>
               {namedShadows.length > 0 && (
                 <div style={{ fontSize: 9, color: "#f59e0b", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ animation: "namedGlow 2s ease-in-out infinite", filter: "drop-shadow(0 0 4px #f59e0b88)", fontSize: 10 }}>★</span>
-                  {namedShadows.length} Named Shadow{namedShadows.length > 1 ? "s" : ""}
+                  {t("shadows.namedCount", { count: namedShadows.length, plural: namedShadows.length > 1 ? "s" : "" })}
                 </div>
               )}
             </div>
             <div style={{ textAlign: "center", padding: "10px 16px", background: "rgba(124,58,237,0.08)", border: "1px solid #7c3aed33", borderRadius: 14 }}>
               <div style={{ fontSize: 36, fontWeight: 900, color: "#a78bfa", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: "0 0 20px #7c3aed88" }}>{totalShadows}</div>
-              <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 2 }}>/{shadowArmy.capacity} KAPAZITÄT</div>
+              <div style={{ fontSize: 7, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 2 }}>{t("shadows.capacity", { capacity: shadowArmy.capacity })}</div>
             </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
             {[
-              { label: "Stationiert", value: shadowArmy.shadows.filter(s => s.isDeployed).length, color: "#22c55e", iconSrc: SHADOW_ICONS.soldier },
-              { label: "Dungeon-Boost", value: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", iconSrc: SKILL_ICONS.attack },
-              { label: "XP-Boost", value: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", iconSrc: STAT_ICONS.int }
+              { label: t("shadows.deployed"), value: shadowArmy.shadows.filter(s => s.isDeployed).length, color: "#22c55e", iconSrc: SHADOW_ICONS.soldier },
+              { label: t("shadows.dungeonBoost"), value: `+${formationBonus.dungeonBonus}%`, color: "#ef4444", iconSrc: SKILL_ICONS.attack },
+              { label: t("shadows.xpBoost"), value: `+${Math.round(formationBonus.xpBonus * 100)}%`, color: "#a78bfa", iconSrc: STAT_ICONS.int }
             ].map(({ label, value, color, iconSrc }) => (
               <div key={label} style={{ padding: "10px 6px", background: `radial-gradient(circle at 50% 0%,${color}14,${color}04)`, borderRadius: 12, border: `1px solid ${color}25`, textAlign: "center" }}>
                 <div style={{ fontSize: 13, marginBottom: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -204,7 +210,7 @@ export function ShadowArmyView({
             </div>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            {[{ key: "army", label: "Armee", iconSrc: SHADOW_ICONS.soldier }, { key: "formation", label: "Formation", iconSrc: SKILL_ICONS.attack }, { key: "named", label: "Named" }].map(sv => (
+            {[{ key: "army", label: t("shadows.tabs.army"), iconSrc: SHADOW_ICONS.soldier }, { key: "formation", label: t("shadows.tabs.formation"), iconSrc: SKILL_ICONS.attack }, { key: "named", label: t("shadows.tabs.named") }].map(sv => (
               <button key={sv.key} onClick={() => setShadowSubView(sv.key)} style={{ flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: shadowSubView === sv.key ? "linear-gradient(135deg,#7c3aed22,#a78bfa08)" : "transparent", color: shadowSubView === sv.key ? "#a78bfa" : "#334155", border: `1px solid ${shadowSubView === sv.key ? "#7c3aed55" : "#1a1e30"}`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "all 0.2s", boxShadow: shadowSubView === sv.key ? "0 0 14px #7c3aed20" : "none", cursor: "pointer" }}>
                 {sv.iconSrc ? <img src={sv.iconSrc} alt={sv.label} style={{ width: 13, height: 13, objectFit: "contain", filter: shadowSubView === sv.key ? "drop-shadow(0 0 4px #a78bfa88)" : "brightness(0.5)" }} /> : <span style={{ fontSize: 11 }}>★</span>}
                 <span>{sv.label.toUpperCase()}</span>
@@ -220,8 +226,8 @@ export function ShadowArmyView({
           <div style={{ textAlign: "center", padding: "52px 24px", background: "linear-gradient(160deg,rgba(4,3,12,0.98),rgba(12,6,24,0.95))", borderRadius: 18, border: "1px dashed #7c3aed28", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 180, height: 180, background: "radial-gradient(circle,#7c3aed08,transparent 70%)", pointerEvents: "none" }} />
             <div style={{ marginBottom: 16, opacity: 0.2, animation: "float 3s ease-in-out infinite" }}><img src={SHADOW_ICONS.soldier} alt="Shadow" style={{ width: 56, height: 56, objectFit: "contain", filter: "drop-shadow(0 0 20px #7c3aed) brightness(0.5) invert(1)" }} /></div>
-            <div style={{ fontSize: 14, color: "#334155", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>Keine Schatten erweckt</div>
-            <div style={{ fontSize: 11, color: "#1e293b", lineHeight: 1.7 }}>Schließe <span style={{ color: "#7c3aed88" }}>Boss-Quests</span> ab,<br />um Schatten zu beschwören</div>
+            <div style={{ fontSize: 14, color: "#334155", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>{t("shadows.emptyTitle")}</div>
+            <div style={{ fontSize: 11, color: "#1e293b", lineHeight: 1.7 }}>{t("shadows.emptyDesc")}</div>
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -238,11 +244,11 @@ export function ShadowArmyView({
       {/* NAMED sub-view */}
       {shadowSubView === "named" && (
         <div>
-          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 14 }}>NAMED SHADOWS – FREISCHALTBAR</div>
-          {Object.values(NAMED_SHADOWS).map((ns, i) => {
+          <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 14 }}>{t("shadows.namedUnlockable")}</div>
+          {Object.values(localizedNamedShadows).map((ns, i) => {
             const isOwned = shadowArmy.shadows.some(s => s.namedId === ns.id || s.id === ns.id);
-            const cls = SHADOW_CLASSES[ns.class] || SHADOW_CLASSES.soldier;
-            const tierData = SHADOW_TIERS[ns.tier] || SHADOW_TIERS[4];
+            const cls = shadowClasses[ns.class] || shadowClasses.soldier;
+            const tierData = shadowTiers[ns.tier] || shadowTiers[4];
             return (
               <div key={ns.id} style={{ background: isOwned ? "rgba(8,8,20,0.9)" : theme.card, border: `1px solid ${isOwned ? ns.glowColor + "44" : "#1e2940"}`, borderRadius: 16, padding: "16px", marginBottom: 10, opacity: isOwned ? 1 : 0.65, animation: `cardEnter 0.4s ease ${i * 0.08}s both`, boxShadow: isOwned ? `0 0 16px ${ns.glowColor}18` : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
@@ -253,16 +259,16 @@ export function ShadowArmyView({
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 800, color: isOwned ? ns.glowColor : "#475569", fontFamily: "'Cinzel',serif" }}>{isOwned ? ns.name : "???"}</div>
-                    <div style={{ fontSize: 10, color: isOwned ? ns.glowColor + "99" : "#334155", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginTop: 2 }}>{isOwned ? ns.title : "Unbekannt"}</div>
+                    <div style={{ fontSize: 10, color: isOwned ? ns.glowColor + "99" : "#334155", fontFamily: "'Cinzel',serif", letterSpacing: 1, marginTop: 2 }}>{isOwned ? ns.title : t("shadows.unknown")}</div>
                     <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
                       <span style={{ fontSize: 9, color: cls.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: cls.color + "15", display: "inline-flex", alignItems: "center", gap: 3 }}>{cls.iconSrc ? <img src={cls.iconSrc} alt={cls.name} style={{ width: 10, height: 10, objectFit: "contain" }} /> : cls.icon} {ns.class.toUpperCase()}</span>
                       <span style={{ fontSize: 9, color: tierData.color, fontFamily: "'JetBrains Mono',monospace", padding: "1px 5px", borderRadius: 4, background: tierData.color + "15" }}>TIER {ns.tier}</span>
                     </div>
                   </div>
-                  {isOwned && <div style={{ fontSize: 9, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", borderRadius: 6, background: "#22c55e12", border: "1px solid #22c55e33" }}>OWNED</div>}
+                  {isOwned && <div style={{ fontSize: 9, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", padding: "3px 8px", borderRadius: 6, background: "#22c55e12", border: "1px solid #22c55e33" }}>{t("shadows.owned")}</div>}
                 </div>
                 <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-                  <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>FREISCHALTBEDINGUNG</div>
+                  <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>{t("shadows.unlockCondition")}</div>
                   <div style={{ fontSize: 11, color: isOwned ? "#22c55e" : "#94a3b8", display: "flex", alignItems: "center", gap: 6 }}>
                     {isOwned ? <span>✓</span> : <span style={{ opacity: 0.5 }}>○</span>}
                     {ns.unlockCondition.desc}
@@ -270,7 +276,7 @@ export function ShadowArmyView({
                 </div>
                 {isOwned && ns.uniqueAbility && (
                   <div style={{ background: `${ns.glowColor}0a`, border: `1px solid ${ns.glowColor}22`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
-                    <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>UNIQUE ABILITY</div>
+                    <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 4 }}>{t("shadows.uniqueAbility")}</div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                       <span style={{ fontSize: 18 }}>{ns.uniqueAbility.icon}</span>
                       <div>

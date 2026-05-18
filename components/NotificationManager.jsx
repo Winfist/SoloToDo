@@ -3,10 +3,15 @@ import { NAV_ICONS } from "../data/icons.js";
 import { getToday, getLocalDateKey, formatLocalDateTime } from "../data/dateUtils.js";
 import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";
+import { getStateLocale, translate } from "../data/i18n.js";
 
 import { Capacitor } from '@capacitor/core';
 
 const IS_CAPACITOR = Capacitor.isNativePlatform();
+
+function nt(state, key, params = {}) {
+    return translate(getStateLocale(state), key, params);
+}
 
 // ── Request Permission ───────────────────────────────────────
 export async function requestNotificationPermission() {
@@ -93,17 +98,17 @@ function checkDailyActivity(state) {
     // Different messages based on time of day
     let msg;
     if (hour < 13) {
-        msg = "Der Tag hat gerade erst begonnen. Starte mit einer Easy-Quest!";
+        msg = nt(state, "notifications.dailyMorning");
     } else if (hour < 17) {
-        msg = "Noch keine Quest heute erledigt. Dein Streak wartet!";
+        msg = nt(state, "notifications.dailyAfternoon");
     } else {
-        msg = "Der Tag neigt sich dem Ende — erledige mindestens eine Quest!";
+        msg = nt(state, "notifications.dailyEvening");
     }
 
     // Use hour-bucket tag so it can fire at 11, 14, and 17
     const bucket = hour < 13 ? "morning" : hour < 17 ? "afternoon" : "evening";
     return {
-        title: "SYSTEM: Keine Aktivität heute",
+        title: nt(state, "notifications.dailyActivityTitle"),
         body: msg,
         tag: `daily-activity-${bucket}`,
     };
@@ -120,8 +125,8 @@ function checkStreakProtection(state) {
     if (questsToday > 0 || habitsToday > 0) return null;
     const hoursLeft = 24 - hour;
     return {
-        title: "SYSTEM WARNUNG: STREAK IN GEFAHR",
-        body: `Du hast heute noch nichts erreicht. Dein ${streak}-Tage Streak endet in ${hoursLeft}h!`,
+        title: nt(state, "notifications.streakDangerTitle"),
+        body: nt(state, "notifications.streakDangerBody", { streak, hours: hoursLeft }),
         tag: `streak-protection-${hour < 18 ? "early" : "late"}`,
     };
 }
@@ -132,8 +137,8 @@ function checkLateNightEnergy(state) {
     const quests = (state?.quests || []).filter(q => !q.completed && q.energy === "deep");
     if (quests.length === 0) return null;
     return {
-        title: "SYSTEM WARNUNG: ZEIT/ENERGIE",
-        body: `Es ist spät. Hast du noch genug Ausdauer für "${quests[0].title}"?`,
+        title: nt(state, "notifications.lateNightTitle"),
+        body: nt(state, "notifications.lateNightBody", { title: quests[0].title }),
         tag: "late-night-energy",
     };
 }
@@ -144,8 +149,8 @@ function checkEmergencyQuest(state) {
     const hoursLeft = (expires.getTime() - Date.now()) / (1000 * 60 * 60);
     if (hoursLeft > 4 || hoursLeft < 0) return null; // Expanded: warn 4h before (was 2h)
     return {
-        title: "NOTFALL-QUEST läuft ab!",
-        body: `"${state.emergencyQuest.title}" endet in ${Math.round(hoursLeft * 60)} Min!`,
+        title: nt(state, "notifications.emergencyExpiringTitle"),
+        body: nt(state, "notifications.emergencyExpiringBody", { title: state.emergencyQuest.title, minutes: Math.round(hoursLeft * 60) }),
         tag: "emergency-quest",
     };
 }
@@ -155,8 +160,8 @@ function checkEmergencyMorning(state) {
     const hour = new Date().getHours();
     if (hour < 8 || hour > 12) return null; // Expanded: 8-12 Uhr (was 9-10)
     return {
-        title: "NOTFALL-MISSION aktiv!",
-        body: `"${state.emergencyQuest.title}" wartet auf dich!`,
+        title: nt(state, "notifications.emergencyMorningTitle"),
+        body: nt(state, "notifications.emergencyMorningBody", { title: state.emergencyQuest.title }),
         tag: "emergency-morning",
     };
 }
@@ -170,8 +175,8 @@ function checkHabitNudge(state) {
     const unfinished = habits.filter(h => h.active && !h.history?.[today]?.completed).length;
     if (unfinished === 0) return null;
     return {
-        title: "Habits noch offen",
-        body: `${unfinished} Habit${unfinished > 1 ? "s" : ""} warten noch auf dich.`,
+        title: nt(state, "notifications.habitOpenTitle"),
+        body: nt(state, "notifications.habitOpenBody", { count: unfinished, plural: unfinished > 1 ? "s" : "" }),
         tag: "habit-nudge",
     };
 }
@@ -182,8 +187,8 @@ function checkDungeonReset(state) {
     const today = getToday();
     if (state?.lastDungeonRefresh === today) return null;
     return {
-        title: "Neue Gates verfügbar!",
-        body: `Dungeon Gates warten auf dich.`,
+        title: nt(state, "notifications.gatesTitle"),
+        body: nt(state, "notifications.gatesBody"),
         tag: "dungeon-reset",
     };
 }
@@ -196,8 +201,8 @@ function checkCustomReminders(state) {
         if (now >= new Date(r.reminderAt).getTime()) {
             const quest = r.questId ? (state?.quests || []).find(q => q.id === r.questId) : null;
             return {
-                title: r.title || "Erinnerung",
-                body: quest ? `Quest-Erinnerung: ${quest.title}` : (r.body || "Erinnerung"),
+                title: r.title || nt(state, "notifications.reminderTitle"),
+                body: quest ? nt(state, "notifications.reminderQuestBody", { title: quest.title }) : (r.body || nt(state, "notifications.reminderTitle")),
                 tag: `reminder-${r.id}`,
                 reminderId: r.id,
                 questId: r.questId,
@@ -216,10 +221,10 @@ function checkDueDateWarning(state) {
     const target = overdue[0] || dueToday[0];
     if (!target) return null;
     return {
-        title: overdue.length ? "Überfällige Quest" : "Quest heute fällig",
+        title: overdue.length ? nt(state, "notifications.overdueTitle") : nt(state, "notifications.dueTodayPlainTitle"),
         body: overdue.length
-            ? `${overdue.length} Quest${overdue.length > 1 ? "s" : ""} überfällig: ${target.title}`
-            : `${dueToday.length} Quest${dueToday.length > 1 ? "s" : ""} heute fällig: ${target.title}`,
+            ? nt(state, "notifications.overdueBody", { count: overdue.length, plural: overdue.length > 1 ? "s" : "", title: target.title })
+            : nt(state, "notifications.dueTodayBody", { count: dueToday.length, plural: dueToday.length > 1 ? "s" : "", title: target.title }),
         tag: `due-date-${today}`,
     };
 }
@@ -235,8 +240,8 @@ function checkDueDateUpcoming(state) {
     const dueTomorrow = quests.filter(q => q.dueDate === tomorrowKey);
     if (!dueTomorrow.length) return null;
     return {
-        title: "Quest morgen fällig!",
-        body: `${dueTomorrow[0].title} ist morgen fällig.`,
+        title: nt(state, "notifications.dueTomorrowTitle"),
+        body: nt(state, "notifications.dueTomorrowBody", { title: dueTomorrow[0].title }),
         tag: `due-upcoming-${tomorrowKey}`,
     };
 }
@@ -257,8 +262,8 @@ function checkKalenderRuneDeadlines(state) {
     const soon = quests.filter(q => q.dueDate === in3Key || q.dueDate === in2Key);
     if (!soon.length) return null;
     return {
-        title: "⧗ Kalender-Rune: Deadline naht",
-        body: `\"${soon[0].title}\" fällt in ${soon[0].dueDate === in2Key ? 2 : 3} Tagen.`,
+        title: nt(state, "notifications.runeDeadlineTitle"),
+        body: nt(state, "notifications.runeDeadlineBody", { title: soon[0].title, days: soon[0].dueDate === in2Key ? 2 : 3 }),
         tag: `rune-deadline-${in3Key}`,
     };
 }
@@ -276,8 +281,12 @@ function checkWeeklyQuestExpiry(state) {
     const expiring = weeklyQuests.filter(q => new Date(q.timeLimit) <= tonight);
     if (!expiring.length) return null;
     return {
-        title: "Weekly Quests laufen ab!",
-        body: `${expiring.length} Weekly-Quest${expiring.length > 1 ? "s laufen" : " läuft"} heute Nacht ab!`,
+        title: nt(state, "notifications.weeklyExpiringTitle"),
+        body: nt(state, "notifications.weeklyExpiringBody", {
+            count: expiring.length,
+            plural: expiring.length > 1 ? "s" : "",
+            verb: expiring.length > 1 ? (getStateLocale(state) === "de" ? "laufen" : "expire") : (getStateLocale(state) === "de" ? "laeuft" : "expires"),
+        }),
         tag: `weekly-expiry-${getToday()}`,
     };
 }
@@ -291,8 +300,8 @@ function checkWeeklySummary(state) {
     weekAgo.setDate(weekAgo.getDate() - 7);
     const weekQuests = completed.filter(q => q.completedAt >= getLocalDateKey(weekAgo)).length;
     return {
-        title: "Deine Woche",
-        body: `${weekQuests} Quests · ${state?.streak || 0}d Streak · Level ${state?.level || 1}`,
+        title: nt(state, "notifications.weeklySummaryTitle"),
+        body: nt(state, "notifications.weeklySummaryBody", { quests: weekQuests, streak: state?.streak || 0, level: state?.level || 1 }),
         tag: "weekly-summary",
     };
 }
@@ -339,49 +348,49 @@ export async function scheduleBackgroundNotifications(state) {
             const d11 = new Date(); d11.setHours(11, 0, 0, 0);
             const d14 = new Date(); d14.setHours(14, 0, 0, 0);
             const d17 = new Date(); d17.setHours(17, 0, 0, 0);
-            addNotif("Noch keine Aktivität heute", "Starte mit einer Quest!", d11);
-            addNotif("Keine Quest heute erledigt", "Dein Streak wartet auf dich!", d14);
-            addNotif("Tag fast vorbei!", "Erledige mindestens eine Quest heute.", d17);
+            addNotif(nt(state, "notifications.noActivityTitle"), nt(state, "notifications.noActivityBody"), d11);
+            addNotif(nt(state, "notifications.noQuestTitle"), nt(state, "notifications.noQuestBody"), d14);
+            addNotif(nt(state, "notifications.dayEndingTitle"), nt(state, "notifications.dayEndingBody"), d17);
         }
 
         // Streak protection at 19:00
         if ((state?.streak || 0) >= 3 && !hasActivity) {
             const d19 = new Date(); d19.setHours(19, 0, 0, 0);
-            addNotif("SYSTEM WARNUNG: STREAK IN GEFAHR", `Du hast heute noch nichts erreicht. Dein ${state.streak}-Tage Streak endet bald!`, d19);
+            addNotif(nt(state, "notifications.streakDangerTitle"), nt(state, "notifications.streakDangerBody", { streak: state.streak, hours: 5 }), d19);
         }
 
         // Late Night Energy Warning at 21:00
         const deepQuests = (state?.quests || []).filter(q => !q.completed && q.energy === "deep");
         if (deepQuests.length > 0) {
             const d21 = new Date(); d21.setHours(21, 0, 0, 0);
-            addNotif("SYSTEM WARNUNG: ZEIT/ENERGIE", `Es ist spät. Hast du noch genug Ausdauer für "${deepQuests[0].title}"?`, d21);
+            addNotif(nt(state, "notifications.lateNightTitle"), nt(state, "notifications.lateNightBody", { title: deepQuests[0].title }), d21);
         }
 
         // Habit reminder at 20:00
         const unfinished = (state?.habits || []).filter(h => h.active && !h.history?.[today]?.completed).length;
         if (unfinished > 0) {
             const d20 = new Date(); d20.setHours(20, 0, 0, 0);
-            addNotif("Habits noch offen", `${unfinished} Habit${unfinished > 1 ? "s" : ""} warten noch.`, d20);
+            addNotif(nt(state, "notifications.habitOpenTitle"), nt(state, "notifications.habitOpenBody", { count: unfinished, plural: unfinished > 1 ? "s" : "" }), d20);
         }
 
         // Emergency quest: 2h before expiry
         if (state?.emergencyQuest && !state.emergencyDone && !state.emergencyFailed) {
             const expires = new Date(state.emergencyQuest.timeLimit);
             const warnAt = new Date(expires.getTime() - 2 * 60 * 60 * 1000);
-            addNotif("NOTFALL-QUEST läuft ab!", `"${state.emergencyQuest.title}" endet bald!`, warnAt);
+            addNotif(nt(state, "notifications.emergencyExpiringTitle"), nt(state, "notifications.emergencyExpiringBody", { title: state.emergencyQuest.title, minutes: 120 }), warnAt);
         }
 
         // DueDate reminders at 9 AM on due day
         for (const q of (state?.quests || []).filter(q => !q.completed && q.dueDate)) {
             const dueAt = new Date(q.dueDate + "T09:00:00");
-            addNotif("Quest heute fällig!", `"${q.title}" ist heute fällig.`, dueAt);
+            addNotif(nt(state, "notifications.dueTodayTitle"), nt(state, "notifications.dueTodayBody", { count: 1, plural: "", title: q.title }), dueAt);
         }
 
         // Tomorrow morning dungeon reset at 8 AM
         const tomorrow8 = new Date();
         tomorrow8.setDate(tomorrow8.getDate() + 1);
         tomorrow8.setHours(8, 0, 0, 0);
-        addNotif("Neue Gates verfügbar!", "Dungeon Gates wurden zurückgesetzt.", tomorrow8);
+        addNotif(nt(state, "notifications.gatesTitle"), nt(state, "notifications.gatesBody"), tomorrow8);
 
         if (notifications.length > 0) {
             await LocalNotifications.schedule({ notifications });

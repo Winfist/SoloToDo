@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=1080,height=1920"/>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:1080px;height:1920px;overflow:hidden;background:#050505;color:#fff;font-family:'Inter',sans-serif}
+    .clip{position:absolute;inset:0;overflow:hidden}
+
+    /* Background Setup */
+    .bg-gradient{position:absolute;inset:0;background:radial-gradient(circle at 50% 0%, rgba(14,165,233,0.15) 0%, transparent 60%), radial-gradient(circle at 50% 100%, rgba(99,102,241,0.1) 0%, transparent 60%);}
+    .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse at center, black 20%, transparent 80%);-webkit-mask-image:radial-gradient(ellipse at center, black 20%, transparent 80%)}
+
+    /* S1: HOOK */
+    #s1{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#050505;z-index:50}
+    .hook-txt{position:absolute;font-weight:900;font-size:110px;text-align:center;line-height:1.1;letter-spacing:-4px;opacity:0;transform:scale(0.8)}
+    .hook-txt span{color:#0ea5e9}
+    
+    /* S2: THE APP (POV GOD MODE) */
+    #s2{position:absolute;inset:0;opacity:0}
+    .phone-ui{position:absolute;left:50%;top:50%;width:800px;height:1500px;margin-left:-400px;margin-top:-750px;border-radius:60px;background:#0f172a;border:2px solid rgba(255,255,255,0.1);box-shadow:0 0 100px rgba(0,0,0,0.8), inset 0 0 40px rgba(0,0,0,0.5);overflow:hidden;display:flex;flex-direction:column;padding:60px 40px}
+    
+    /* Top Bar */
+    .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:60px}
+    .app-title{font-weight:900;font-size:36px;color:#f8fafc;letter-spacing:-1px}
+    .streak-badge{background:rgba(245,158,11,0.2);color:#fcd34d;padding:12px 24px;border-radius:100px;font-family:'JetBrains Mono';font-size:20px;font-weight:700;border:1px solid rgba(245,158,11,0.4)}
+    
+    /* XP Circle Header */
+    .xp-section{display:flex;align-items:center;gap:40px;margin-bottom:60px}
+    .xp-circle{width:200px;height:200px;border-radius:50%;background:conic-gradient(#0ea5e9 0%, #0ea5e9 60%, rgba(255,255,255,0.1) 60%);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 40px rgba(14,165,233,0.3)}
+    .xp-circle::before{content:'';position:absolute;inset:16px;background:#0f172a;border-radius:50%}
+    .lvl-txt{position:relative;z-index:10;text-align:center}
+    .lvl-num{font-family:'JetBrains Mono';font-size:64px;font-weight:800;color:#fff;line-height:1}
+    .lvl-lbl{font-size:20px;font-weight:700;color:#94a3b8;letter-spacing:2px}
+    
+    .xp-info{flex:1}
+    .rank-title{font-size:42px;font-weight:900;margin-bottom:8px}
+    .xp-count{font-family:'JetBrains Mono';font-size:28px;color:#0ea5e9}
+    
+    /* Quest List */
+    .quests-container{display:flex;flex-direction:column;gap:24px}
+    .quest-card{background:rgba(30,41,59,0.5);border:1px solid rgba(255,255,255,0.05);border-radius:32px;padding:32px;display:flex;align-items:center;gap:32px;position:relative;overflow:hidden}
+    .q-icon{width:80px;height:80px;background:rgba(255,255,255,0.05);border-radius:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .q-icon img{width:48px;height:48px;object-fit:contain}
+    .q-details{flex:1}
+    .q-name{font-size:32px;font-weight:700;margin-bottom:8px}
+    .q-reward{font-family:'JetBrains Mono';font-size:20px;color:#10b981;font-weight:700}
+    
+    .q-check-box{width:64px;height:64px;border:4px solid rgba(255,255,255,0.2);border-radius:20px;position:relative}
+    .q-check-fill{position:absolute;inset:-4px;background:#10b981;border-radius:20px;display:flex;align-items:center;justify-content:center;opacity:0;box-shadow:0 0 40px rgba(16,185,129,0.5)}
+    .q-check-fill::after{content:'';width:16px;height:32px;border:solid #fff;border-width:0 6px 6px 0;transform:rotate(45deg);margin-top:-8px}
+    
+    .card-flash{position:absolute;inset:0;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);transform:translateX(-100%);opacity:0}
+
+    /* Screen Flash */
+    .screen-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100}
+
+    /* S3: PAYOFF (Shadow Army) */
+    #s3{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0}
+    .unlock-txt{font-weight:900;font-size:64px;letter-spacing:-2px;color:#a78bfa;margin-bottom:40px;text-align:center;text-shadow:0 0 40px rgba(167,139,250,0.5);opacity:0}
+    .shadow-hero{width:600px;filter:drop-shadow(0 0 80px rgba(139,92,246,0.6));opacity:0;transform:scale(0.9)}
+
+    /* S4: CTA */
+    #s4{position:absolute;inset:0;background:#030712;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0}
+    .cta-logo{font-weight:900;font-size:100px;letter-spacing:-4px;margin-bottom:20px}
+    .cta-sub{font-size:36px;color:#94a3b8;margin-bottom:60px}
+    .cta-btn{background:#fff;color:#000;padding:32px 80px;border-radius:100px;font-weight:900;font-size:40px;box-shadow:0 20px 40px rgba(255,255,255,0.1)}
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="15" data-fps="30" data-width="1080" data-height="1920">
+    
+    <div class="bg-gradient clip" data-start="0" data-duration="15" data-track-index="0"></div>
+    <div class="grid-bg clip" data-start="0" data-duration="15" data-track-index="1"></div>
+
+    <!-- S1: HOOK -->
+    <section id="s1" class="clip" data-start="0" data-duration="2" data-track-index="2">
+      <div id="h1" class="hook-txt">DU FÜHLST DICH<br>WIE EIN <span>NPC?</span></div>
+      <div id="h2" class="hook-txt">DANN ÄNDERE ES.</div>
+    </section>
+
+    <!-- S2: THE APP -->
+    <section id="s2" class="clip" data-start="2" data-duration="7.5" data-track-index="3">
+      <div class="phone-ui" id="phone">
+        <div class="top-bar">
+          <div class="app-title">SoloToDo</div>
+          <div class="streak-badge">🔥 STREAK: 12</div>
+        </div>
+
+        <div class="xp-section">
+          <div class="xp-circle" id="xp-circ">
+            <div class="lvl-txt">
+              <div class="lvl-num" id="lvl-n">12</div>
+              <div class="lvl-lbl">LEVEL</div>
+            </div>
+          </div>
+          <div class="xp-info">
+            <div class="rank-title">A-RANG HUNTER</div>
+            <div class="xp-count" id="xp-c">4,200 / 5,000 XP</div>
+          </div>
+        </div>
+
+        <div class="quests-container">
+          <div class="quest-card" id="qc1">
+            <div class="card-flash" id="cf1"></div>
+            <div class="q-icon"><img src="../assets/quest_daily.webp" alt=""/></div>
+            <div class="q-details">
+              <div class="q-name">100 Pushups</div>
+              <div class="q-reward">+300 XP</div>
+            </div>
+            <div class="q-check-box"><div class="q-check-fill" id="qcf1"></div></div>
+          </div>
+          
+          <div class="quest-card" id="qc2">
+            <div class="card-flash" id="cf2"></div>
+            <div class="q-icon"><img src="../assets/quest_daily.webp" alt=""/></div>
+            <div class="q-details">
+              <div class="q-name">Deep Work Session</div>
+              <div class="q-reward">+500 XP</div>
+            </div>
+            <div class="q-check-box"><div class="q-check-fill" id="qcf2"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-flash" id="s-flash"></div>
+    </section>
+
+    <!-- S3: SHADOW ARMY PAYOFF -->
+    <section id="s3" class="clip" data-start="9.5" data-duration="2.5" data-track-index="4">
+      <div class="unlock-txt" id="u-txt">SHADOW ARMY<br>UNLOCKED</div>
+      <img src="../assets/shadow_igris.webp" class="shadow-hero" id="igris" alt=""/>
+    </section>
+
+    <!-- S4: CTA -->
+    <section id="s4" class="clip" data-start="12" data-duration="3" data-track-index="5">
+      <div class="cta-logo" id="clogo">SoloToDo</div>
+      <div class="cta-sub" id="csub">Werde zum Player.</div>
+      <div class="cta-btn" id="cbtn">Kostenlos Downloaden</div>
+    </section>
+
+    <audio id="bgm" data-start="0" data-duration="15" data-track-index="6" data-volume="0.8" src="../assets/solo_grind_ad_cut.mp3"></audio>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // S1: HOOK (0 - 2s)
+    tl.to("#h1", { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.5)" }, 0.2);
+    tl.to("#h1", { opacity: 0, scale: 1.1, duration: 0.2 }, 1.2);
+    tl.fromTo("#h2", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power2.out" }, 1.3);
+    tl.to("#s1", { opacity: 0, duration: 0.2 }, 2.0);
+
+    // S2: THE APP (2 - 9.5s)
+    tl.set("#s2", { opacity: 1 }, 2.0);
+    tl.fromTo("#phone", { y: 100, scale: 0.9, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.6, ease: "power4.out" }, 2.0);
+
+    // Beat 1: Quest 1 checked (approx 3.5s)
+    tl.to("#qcf1", { opacity: 1, duration: 0.1 }, 3.5);
+    tl.to("#qc1", { scale: 1.05, background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.3)", duration: 0.1 }, 3.5);
+    tl.to("#qc1", { scale: 1, duration: 0.3, ease: "power2.out" }, 3.6);
+    tl.fromTo("#cf1", { x: "-100%", opacity: 0.5 }, { x: "100%", opacity: 0, duration: 0.4 }, 3.5);
+    // XP goes up a bit
+    tl.to("#xp-circ", { background: "conic-gradient(#0ea5e9 0%, #0ea5e9 75%, rgba(255,255,255,0.1) 75%)", duration: 0.4 }, 3.5);
+    tl.to("#xp-c", { innerHTML: "4,500 / 5,000 XP", duration: 0.4, snap: "innerHTML" }, 3.5);
+
+    // Beat 2: Quest 2 checked (approx 5.5s)
+    tl.to("#qcf2", { opacity: 1, duration: 0.1 }, 5.5);
+    tl.to("#qc2", { scale: 1.05, background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.3)", duration: 0.1 }, 5.5);
+    tl.to("#qc2", { scale: 1, duration: 0.3, ease: "power2.out" }, 5.6);
+    tl.fromTo("#cf2", { x: "-100%", opacity: 0.5 }, { x: "100%", opacity: 0, duration: 0.4 }, 5.5);
+    
+    // Massive XP fill & Level Up
+    tl.to("#xp-circ", { background: "conic-gradient(#0ea5e9 0%, #0ea5e9 100%, rgba(255,255,255,0.1) 100%)", duration: 0.6, ease: "power2.inOut" }, 5.5);
+    let xpObj = { val: 4500 };
+    tl.to(xpObj, { 
+      val: 5000, 
+      duration: 0.6, 
+      onUpdate: () => { document.getElementById("xp-c").innerHTML = Math.round(xpObj.val).toLocaleString('en-US') + " / 5,000 XP"; }
+    }, 5.5);
+
+    // Level up pop (approx 6.5s)
+    tl.to("#lvl-n", { scale: 1.5, color: "#fcd34d", duration: 0.2 }, 6.5);
+    tl.to("#lvl-n", { innerHTML: "13", duration: 0.1, snap: "innerHTML" }, 6.6);
+    tl.to("#lvl-n", { scale: 1, duration: 0.4, ease: "back.out(2)" }, 6.7);
+    tl.to("#xp-circ", { boxShadow: "0 0 100px rgba(245,158,11,0.6)", duration: 0.3 }, 6.5);
+
+    // Transition to Payoff (approx 9s)
+    tl.to("#phone", { scale: 1.2, opacity: 0, filter: "blur(20px)", duration: 0.5, ease: "power2.in" }, 9.0);
+    tl.to("#s-flash", { opacity: 1, duration: 0.1 }, 9.4);
+    tl.to("#s-flash", { opacity: 0, duration: 0.3 }, 9.5);
+    tl.set("#s2", { opacity: 0 }, 9.5);
+
+    // S3: PAYOFF (9.5 - 12s)
+    tl.set("#s3", { opacity: 1 }, 9.5);
+    tl.to("#u-txt", { opacity: 1, y: -40, duration: 0.6, ease: "power3.out" }, 9.6);
+    tl.to("#igris", { opacity: 1, scale: 1, duration: 0.8, ease: "back.out(1.2)" }, 9.8);
+    tl.to("#s3", { opacity: 0, duration: 0.3 }, 12.0);
+
+    // S4: CTA (12 - 15s)
+    tl.set("#s4", { opacity: 1 }, 12.0);
+    tl.fromTo("#clogo", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 12.2);
+    tl.fromTo("#csub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 12.4);
+    tl.fromTo("#cbtn", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, 12.6);
+
+    window.__timelines["main"] = tl;
+  </script>
+</body>
+</html>

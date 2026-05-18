@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=1080,height=1920"/>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Cinzel:wght@700;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:1080px;height:1920px;overflow:hidden;background:#050505;color:#e2e8f0;font-family:'Outfit',sans-serif}
+    .clip{position:absolute;inset:0;overflow:hidden}
+
+    /* Flash */
+    .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:999}
+    .shake-container{position:absolute;inset:0}
+
+    /* S1: HOOK */
+    #s1{position:absolute;inset:0;background:#050505;display:flex;align-items:center;justify-content:center;z-index:10}
+    .txt-hook{font-family:'Cinzel',serif;font-weight:900;font-size:120px;text-align:center;color:#fff;line-height:1;text-shadow:0 0 40px rgba(255,255,255,0.3);transform:scale(2);opacity:0}
+    .txt-red{color:#ef4444;text-shadow:0 0 60px rgba(239,68,68,0.5)}
+
+    /* S2: REAL APP UI */
+    #s2{position:absolute;inset:0;background:#02020a;opacity:0;display:flex;align-items:center;justify-content:center}
+    .app-screen{width:900px;height:1600px;background:linear-gradient(180deg, #050510, #000);border-radius:40px;border:2px solid rgba(255,255,255,0.05);padding:40px;box-shadow:0 0 100px rgba(0,0,0,1);position:relative}
+
+    /* Banner */
+    .banner{background:linear-gradient(135deg, rgba(10,10,22,0.9) 0%, rgba(10,10,22,0.4) 100%);border:1px solid rgba(34,211,238,0.15);border-radius:18px;padding:30px;display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;box-shadow:0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)}
+    .b-title{font-family:'JetBrains Mono';font-size:16px;color:#22d3ee;letter-spacing:4px;margin-bottom:10px}
+    .b-main{font-size:32px;font-weight:700;color:#e2e8f0}
+    .b-circ{width:100px;height:100px;border-radius:50%;background:rgba(34,211,238,0.12);border:4px solid rgba(34,211,238,0.3);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(34,211,238,0.15)}
+    .b-circ span{font-family:'Cinzel';font-weight:900;font-size:28px;color:#67e8f9}
+
+    /* Cards */
+    .cards{display:flex;flex-direction:column;gap:20px}
+    .card{background:rgba(10,10,22,0.92);border:1px solid rgba(255,255,255,0.05);border-left:6px solid #ef4444;border-radius:16px;padding:24px 30px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03);position:relative;overflow:hidden}
+    .c-left{display:flex;align-items:center;gap:24px}
+    .c-icon{width:60px;height:60px;background:rgba(239,68,68,0.1);border-radius:16px;border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;font-size:32px}
+    .c-title{font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:#e2e8f0;margin-bottom:6px}
+    .c-tags{display:flex;gap:10px}
+    .tag{font-family:'JetBrains Mono';font-size:14px;background:rgba(239,68,68,0.1);color:#ef4444;padding:4px 10px;border-radius:8px}
+    
+    .btn-done{background:linear-gradient(135deg, rgba(239,68,68,0.2), transparent);border:2px solid rgba(239,68,68,0.4);color:#ef4444;font-family:'JetBrains Mono';font-size:16px;font-weight:700;padding:12px 24px;border-radius:12px;letter-spacing:2px}
+
+    /* Checked State Classes */
+    .card.checked{background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);border-left-color:#22c55e}
+    .card.checked .c-title{color:#22c55e;text-decoration:line-through;opacity:0.7}
+    .card.checked .c-icon{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3)}
+    .card.checked .btn-done{display:none}
+    .check-mark{display:none;color:#22c55e;font-size:40px;font-weight:900}
+    .card.checked .check-mark{display:block}
+
+    /* S3: LEVEL UP */
+    #s3{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;z-index:20}
+    .lvl-txt{font-family:'Cinzel';font-weight:900;font-size:160px;color:#fcd34d;text-shadow:0 0 100px rgba(245,158,11,0.6)}
+    
+    /* S4: SHADOW ARMY */
+    #s4{position:absolute;inset:0;background:#000;display:flex;align-items:center;justify-content:center;opacity:0;z-index:30}
+    .s-army{position:absolute;width:1000px;bottom:0;filter:drop-shadow(0 0 100px #a855f7)}
+    .s-txt{position:absolute;font-family:'Cinzel';font-weight:900;font-size:100px;color:#fff;text-shadow:0 0 60px #fff;z-index:31;text-align:center}
+
+    /* Cursor */
+    #cursor{position:absolute;width:60px;height:60px;background:rgba(255,255,255,0.4);border:4px solid #fff;border-radius:50%;box-shadow:0 0 20px #fff;opacity:0;z-index:900;transform:translate(-50%, -50%)}
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="15" data-fps="30" data-width="1080" data-height="1920">
+    
+    <div id="flash" class="flash"></div>
+
+    <div class="shake-container" id="shake">
+      <!-- S1 -->
+      <section id="s1" class="clip" data-start="0" data-duration="1.5" data-track-index="0">
+        <div id="h1" class="txt-hook">DU BIST<br>EIN <span class="txt-red">NPC.</span></div>
+      </section>
+
+      <!-- S2 -->
+      <section id="s2" class="clip" data-start="1.5" data-duration="5" data-track-index="1">
+        <div class="app-screen">
+          <div class="banner">
+            <div>
+              <div class="b-title">HABIT TRACKER</div>
+              <div class="b-main" id="b-count">0/3 heute erledigt</div>
+            </div>
+            <div class="b-circ" id="b-circ"><span id="b-pct">0%</span></div>
+          </div>
+
+          <div class="cards">
+            <!-- Card 1 -->
+            <div class="card" id="c1">
+              <div class="c-left">
+                <div class="c-icon" id="ci1">💪</div>
+                <div>
+                  <div class="c-title">100 Pushups</div>
+                  <div class="c-tags"><span class="tag">Fitness</span><span class="tag">12d Streak</span></div>
+                </div>
+              </div>
+              <div class="btn-done" id="btn1">DONE</div>
+              <div class="check-mark">✓</div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="card" id="c2" style="border-left-color:#3b82f6">
+              <div class="c-left">
+                <div class="c-icon" id="ci2" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3)">📖</div>
+                <div>
+                  <div class="c-title">Code Review</div>
+                  <div class="c-tags"><span class="tag" style="background:rgba(59,130,246,0.1);color:#3b82f6">Learning</span></div>
+                </div>
+              </div>
+              <div class="btn-done" id="btn2" style="background:linear-gradient(135deg, rgba(59,130,246,0.2), transparent);border-color:rgba(59,130,246,0.4);color:#3b82f6">DONE</div>
+              <div class="check-mark">✓</div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="card" id="c3" style="border-left-color:#f59e0b">
+              <div class="c-left">
+                <div class="c-icon" id="ci3" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3)">⚡</div>
+                <div>
+                  <div class="c-title">Deep Work</div>
+                  <div class="c-tags"><span class="tag" style="background:rgba(245,158,11,0.1);color:#f59e0b">Produktiv</span></div>
+                </div>
+              </div>
+              <div class="btn-done" id="btn3" style="background:linear-gradient(135deg, rgba(245,158,11,0.2), transparent);border-color:rgba(245,158,11,0.4);color:#f59e0b">DONE</div>
+              <div class="check-mark">✓</div>
+            </div>
+          </div>
+        </div>
+        <div id="cursor"></div>
+      </section>
+
+      <!-- S3 -->
+      <section id="s3" class="clip" data-start="6.5" data-duration="2" data-track-index="2">
+        <div id="ltxt" class="lvl-txt">LEVEL UP</div>
+      </section>
+
+      <!-- S4 -->
+      <section id="s4" class="clip" data-start="8.5" data-duration="6.5" data-track-index="3">
+        <div id="stxt" class="s-txt">SHADOW ARMY<br>UNLOCKED</div>
+        <img id="simg" class="s-army" src="assets/shadow_igris.webp" alt=""/>
+      </section>
+    </div>
+
+    <audio id="bgm" data-start="0" data-duration="15" data-track-index="5" data-volume="0.8" src="assets/solo_grind_ad_cut.mp3"></audio>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // FAST MACROS
+    const flash = (time) => {
+      tl.set("#flash", { opacity: 1 }, time);
+      tl.set("#flash", { opacity: 0 }, time + 0.05);
+    };
+    const shake = (time) => {
+      tl.to("#shake", { x: -15, y: 10, duration: 0.02 }, time);
+      tl.to("#shake", { x: 15, y: -10, duration: 0.02 }, time + 0.02);
+      tl.to("#shake", { x: 0, y: 0, duration: 0.02 }, time + 0.04);
+    };
+
+    /* ── S1: HOOK ── */
+    tl.to("#h1", { opacity: 1, scale: 1, duration: 0.1 }, 0); // Instant boom
+    tl.to("#h1", { scale: 1.2, duration: 1.5, ease: "none" }, 0);
+    
+    // Transition
+    tl.set("#s1", { opacity: 0 }, 1.5);
+    tl.set("#s2", { opacity: 1 }, 1.5);
+    flash(1.5); shake(1.5);
+
+    /* ── S2: APP ACTIONS ── */
+    // Cursor movement & Clicks
+    tl.set("#cursor", { x: 800, y: 1400, opacity: 1 }, 1.5);
+    
+    // Action 1 (2.5s)
+    tl.to("#cursor", { x: 860, y: 550, duration: 0.2 }, 2.3);
+    tl.to("#cursor", { scale: 0.5, duration: 0.05 }, 2.5); // click down
+    tl.set("#c1", { className: "card checked" }, 2.5); // INSTANT CHANGE
+    tl.set("#b-count", { innerHTML: "1/3 heute erledigt" }, 2.5);
+    tl.set("#b-pct", { innerHTML: "33%" }, 2.5);
+    tl.to("#cursor", { scale: 1, duration: 0.05 }, 2.55); // click up
+    flash(2.5); shake(2.5);
+
+    // Action 2 (3.5s)
+    tl.to("#cursor", { x: 860, y: 720, duration: 0.2 }, 3.3);
+    tl.to("#cursor", { scale: 0.5, duration: 0.05 }, 3.5);
+    tl.set("#c2", { className: "card checked" }, 3.5);
+    tl.set("#b-count", { innerHTML: "2/3 heute erledigt" }, 3.5);
+    tl.set("#b-pct", { innerHTML: "66%" }, 3.5);
+    tl.to("#cursor", { scale: 1, duration: 0.05 }, 3.55);
+    flash(3.5); shake(3.5);
+
+    // Action 3 (4.5s)
+    tl.to("#cursor", { x: 860, y: 890, duration: 0.2 }, 4.3);
+    tl.to("#cursor", { scale: 0.5, duration: 0.05 }, 4.5);
+    tl.set("#c3", { className: "card checked" }, 4.5);
+    tl.set("#b-count", { innerHTML: "3/3 heute erledigt" }, 4.5);
+    tl.set("#b-pct", { innerHTML: "100%" }, 4.5);
+    tl.set("#b-circ", { background: "rgba(34,197,94,0.18)", borderColor: "#22c55e", boxShadow: "0 0 60px #22c55e" }, 4.5);
+    tl.set("#b-pct", { color: "#22c55e" }, 4.5);
+    tl.to("#cursor", { scale: 1, duration: 0.05 }, 4.55);
+    flash(4.5); shake(4.5);
+
+    // Hard cut out of S2
+    tl.set("#s2", { opacity: 0 }, 6.5);
+
+    /* ── S3: LEVEL UP ── */
+    tl.set("#s3", { opacity: 1 }, 6.5);
+    flash(6.5); shake(6.5);
+    tl.fromTo("#ltxt", { scale: 0.5 }, { scale: 1.1, duration: 2, ease: "none" }, 6.5);
+    tl.set("#s3", { opacity: 0 }, 8.5);
+
+    /* ── S4: SHADOW ARMY ── */
+    tl.set("#s4", { opacity: 1 }, 8.5);
+    flash(8.5); shake(8.5);
+    tl.fromTo("#simg", { scale: 1.2 }, { scale: 1, duration: 4, ease: "power2.out" }, 8.5);
+    tl.fromTo("#stxt", { scale: 0.8 }, { scale: 1, duration: 4, ease: "power2.out" }, 8.5);
+
+    window.__timelines["main"] = tl;
+  </script>
+</body>
+</html>

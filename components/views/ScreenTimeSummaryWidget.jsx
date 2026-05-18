@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedNumber } from '../../hooks/useAnimatedCounter.jsx';
 import { screenTimeService } from '../../services/screenTimeService.js';
 import { addLocalDays, getLocalDateKey, getToday } from '../../data/dateUtils.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 
 const DEFAULT_LIMIT = 180;
 
@@ -55,13 +56,14 @@ function sumRows(rows) {
   return rows.reduce((sum, row) => sum + (Number(row.totalMinutes) || 0), 0);
 }
 
-function getTrend(currentTotal, previousTotal) {
-  if (!previousTotal) return currentTotal > 0 ? 'NEU' : '0%';
+function getTrend(currentTotal, previousTotal, newLabel = 'NEU') {
+  if (!previousTotal) return currentTotal > 0 ? newLabel : '0%';
   const pct = ((currentTotal - previousTotal) / previousTotal) * 100;
   return `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%`;
 }
 
 export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScreenTimeData }) {
+  const { t, locale } = useI18n();
   const primaryColor = '#f59e0b';
   const today = getTodayRow(state);
   const limit = getLimit(state);
@@ -117,7 +119,7 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
     };
   }, [capabilities?.canExportDurations, limit, updateScreenTimeData]);
 
-  const trend = getTrend(currentTotal, previousTotal);
+  const trend = getTrend(currentTotal, previousTotal, locale === 'de' ? 'NEU' : 'NEW');
   const underLimit = currentToday.totalMinutes <= limit;
 
   return (
@@ -144,11 +146,11 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 800, color: statusColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.4 }}>FOKUS</div>
-          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>Bildschirmzeit</div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: statusColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.4 }}>{t('screenTime.focus')}</div>
+          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>{t('screenTime.title')}</div>
         </div>
         <div style={{ fontSize: 10, color: underLimit ? '#22c55e' : '#ef4444', fontFamily: "'JetBrains Mono',monospace", padding: '4px 8px', borderRadius: 8, border: `1px solid ${underLimit ? '#22c55e35' : '#ef444435'}`, background: underLimit ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)' }}>
-          {underLimit ? 'Unter Limit' : 'Limit'}
+          {underLimit ? t('screenTime.under') : t('screenTime.limitShort')}
         </div>
       </div>
 
@@ -160,8 +162,8 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
           <div style={{ color: '#94a3b8', fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>min</div>
         </div>
         <div style={{ color: '#94a3b8', fontSize: 11, textAlign: 'right', lineHeight: 1.45 }}>
-          Limit {formatMinutes(limit)}<br />
-          Avg {formatMinutes(avg)}
+          {t('screenTime.limitShort')} {formatMinutes(limit)}<br />
+          {t('screenTime.avgShort')} {formatMinutes(avg)}
         </div>
       </div>
 
@@ -170,7 +172,7 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, color: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>
-        <span>Trend</span>
+        <span>{t('screenTime.trendShort')}</span>
         <strong style={{ color: currentTotal <= previousTotal ? '#22c55e' : '#ef4444', fontSize: 12 }}>{trend}</strong>
       </div>
     </div>
@@ -210,7 +212,7 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
           </svg>
           <div style={{ fontSize: 10, fontWeight: 800, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>FOKUS</div>
         </div>
-        <div style={{ fontSize: 9, color: `${primaryColor}aa`, fontFamily: "'JetBrains Mono',monospace" }}>DETAILS &#10095;</div>
+        <div style={{ fontSize: 9, color: `${primaryColor}aa`, fontFamily: "'JetBrains Mono',monospace" }}>{t('common.details').toUpperCase()} &#10095;</div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 12, position: 'relative', zIndex: 1 }}>
@@ -223,7 +225,7 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
               </svg>
             </div>
             <div style={{ fontSize: 8, color: currentToday.totalMinutes > limit ? '#fca5a5' : '#86efac', fontFamily: "'JetBrains Mono',monospace", textAlign: 'right' }}>
-              {currentToday.totalMinutes > limit ? '\u00dcBER LIMIT' : 'UNTER LIMIT'}
+              {currentToday.totalMinutes > limit ? t('screenTime.over').toUpperCase() : t('screenTime.under').toUpperCase()}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
@@ -235,16 +237,16 @@ export function ScreenTimeSummaryWidget({ state, theme, openDetails, updateScree
           <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{ width: `${progress}%`, height: '100%', background: statusColor, borderRadius: 2, transition: 'width 0.8s cubic-bezier(0.34,1.56,0.64,1)' }} />
           </div>
-          <div style={{ fontSize: 8, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", marginTop: 6 }}>Limit {formatMinutes(limit)}</div>
+          <div style={{ fontSize: 8, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", marginTop: 6 }}>{t('screenTime.limitShort')} {formatMinutes(limit)}</div>
         </div>
 
         <div style={{ display: 'grid', gap: 8 }}>
           <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: '10px 11px', border: `1px solid ${primaryColor}22` }}>
-            <div style={{ fontSize: 8, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>AVG 7T</div>
+            <div style={{ fontSize: 8, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{t('screenTime.avg7')}</div>
             <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', fontFamily: "'Cinzel',serif", marginTop: 3 }}>{formatMinutes(avg)}</div>
           </div>
           <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: '10px 11px', border: `1px solid ${currentTotal <= previousTotal ? '#22c55e22' : '#ef444422'}` }}>
-            <div style={{ fontSize: 8, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>TREND</div>
+            <div style={{ fontSize: 8, color: '#64748b', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{t('screenTime.trendShort').toUpperCase()}</div>
             <div style={{ fontSize: 15, fontWeight: 900, color: currentTotal <= previousTotal ? '#22c55e' : '#ef4444', fontFamily: "'Cinzel',serif", marginTop: 3 }}>{getTrend(currentTotal, previousTotal)}</div>
           </div>
         </div>

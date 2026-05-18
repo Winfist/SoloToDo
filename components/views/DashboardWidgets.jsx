@@ -201,6 +201,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
 }
 
 function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeReminder, onCompleteQuest, onOpenQuest, createQuest, setShowTaskScan, setShowCreate }) {
+  const { t } = useI18n();
   const today = getToday();
   const priorityRank = { high: 0, medium: 1, low: 2 };
   const typeRank = { daily: 0, weekly: 1, side: 2, chained: 3, hidden: 4 };
@@ -231,9 +232,9 @@ function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeR
   const primaryQuest = focusQuests[0] || null;
 
   const dueLabel = (quest) => {
-    if (!quest.dueDate) return quest.energy || "Offen";
-    if (quest.dueDate < today) return "Überfällig";
-    if (quest.dueDate === today) return "Heute";
+    if (!quest.dueDate) return quest.energy || t("common.open");
+    if (quest.dueDate < today) return t("dashboard.board.sectionOverdue");
+    if (quest.dueDate === today) return t("dashboard.board.sectionToday");
     return quest.dueDate;
   };
 
@@ -252,12 +253,12 @@ function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeR
   };
 
   const primaryMeta = primaryQuest ? questMeta(primaryQuest) : null;
-  const primaryActionLabel = primaryQuest?.isScreenTime ? "PRUEFEN" : primaryMeta?.blocked ? "ETAPPEN" : "ERLEDIGT";
+  const primaryActionLabel = primaryQuest?.isScreenTime ? t("dashboard.command.check") : primaryMeta?.blocked ? t("dashboard.command.stages") : t("dashboard.command.completed");
 
   const handleQuestAction = (quest) => {
     if (!quest) {
       if (setShowCreate) setShowCreate(true);
-      else if (createQuest) createQuest({ title: "5 Minuten Ordnung schaffen", difficulty: "easy", category: "agi", type: "side", priority: "medium", energy: "quick" });
+      else if (createQuest) createQuest({ title: t("dashboard.command.fallbackQuestTitle"), difficulty: "easy", category: "agi", type: "side", priority: "medium", energy: "quick" });
       return;
     }
     const meta = questMeta(quest);
@@ -280,10 +281,10 @@ function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeR
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 10, letterSpacing: 1.4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>HEUTE</div>
-          <h2 style={{ margin: "3px 0 0", fontSize: 24, lineHeight: 1.04, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900 }}>Naechste Quest</h2>
+          <div style={{ fontSize: 10, letterSpacing: 1.4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{t("dashboard.command.kicker")}</div>
+          <h2 style={{ margin: "3px 0 0", fontSize: 24, lineHeight: 1.04, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900 }}>{t("dashboard.command.nextQuest")}</h2>
           <div style={{ marginTop: 5, color: "#94a3b8", fontSize: 12 }}>
-            {overdueCount > 0 ? `${overdueCount} überfällig` : "Keine Altlasten"} / {dueNowCount} Schritte offen
+            {overdueCount > 0 ? t("dashboard.command.overdue", { count: overdueCount }) : t("dashboard.command.noDebt")} / {t("dashboard.command.stepsOpen", { count: dueNowCount })}
           </div>
         </div>
         <div style={{
@@ -299,7 +300,7 @@ function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeR
           <div style={{ width: 46, height: 46, borderRadius: 13, background: "rgba(5,7,15,0.96)", display: "grid", placeItems: "center", textAlign: "center" }}>
             <div>
               <div style={{ fontSize: 16, color: "#f8fafc", fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>{progressPct}%</div>
-              <div style={{ color: "#64748b", fontSize: 8, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>DONE</div>
+              <div style={{ color: "#64748b", fontSize: 8, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{t("dashboard.command.doneBadge")}</div>
             </div>
           </div>
         </div>
@@ -356,7 +357,7 @@ function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeR
               </div>
               <div style={{ color: "#64748b", fontSize: 11, marginTop: 6, lineHeight: 1.35, fontFamily: "'Outfit',sans-serif" }}>
                 {primaryQuest.context ? `${primaryQuest.context} / ` : ""}{primaryQuest.energy || "medium"} / +{primaryMeta.gold} Gold
-                {primaryMeta.subQuests.length > 0 ? ` / ${primaryMeta.completedSubs}/${primaryMeta.subQuests.length} Etappen` : ""}
+                {primaryMeta.subQuests.length > 0 ? ` / ${t("dashboard.command.subQuestCount", { done: primaryMeta.completedSubs, total: primaryMeta.subQuests.length })}` : ""}
               </div>
             </div>
           </div>
@@ -382,31 +383,31 @@ function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeR
             </button>
             {onOpenQuest && (
               <button onClick={(e) => { e.stopPropagation(); onOpenQuest(primaryQuest); }} style={{ minHeight: 38, padding: "0 11px", borderRadius: 10, background: "rgba(255,255,255,0.035)", color: "#cbd5e1", border: "1px solid rgba(255,255,255,0.08)", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>
-                DETAILS
+                {t("dashboard.command.details")}
               </button>
             )}
             {can?.("focus_mode") && (
               <button onClick={(e) => { e.stopPropagation(); setShowFocusMode?.(true); }} style={{ minHeight: 38, padding: "0 11px", borderRadius: 10, background: `${theme.primary}12`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}2e`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>
-                FOKUS
+                {t("dashboard.command.focus")}
               </button>
             )}
           </div>
         </div>
       ) : (
         <div style={{ padding: 15, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", marginBottom: 12 }}>
-          <div style={{ color: "#f8fafc", fontSize: 17, fontWeight: 900, fontFamily: "'Outfit',sans-serif" }}>Alles frei.</div>
-          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5, lineHeight: 1.45 }}>Lege eine kleine Quest an, damit der naechste Schritt sofort sichtbar ist.</div>
+          <div style={{ color: "#f8fafc", fontSize: 17, fontWeight: 900, fontFamily: "'Outfit',sans-serif" }}>{t("dashboard.command.emptyTitle")}</div>
+          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5, lineHeight: 1.45 }}>{t("dashboard.command.emptyHint")}</div>
           <div style={{ display: "grid", gridTemplateColumns: setShowTaskScan && can?.("ai_task_scan") ? "1fr 1fr" : "1fr", gap: 8, marginTop: 12 }}>
-            <button onClick={() => handleQuestAction(null)} style={{ minHeight: 38, borderRadius: 10, background: `${theme.primary}18`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}34`, fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>NEUE QUEST</button>
+            <button onClick={() => handleQuestAction(null)} style={{ minHeight: 38, borderRadius: 10, background: `${theme.primary}18`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}34`, fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>{t("dashboard.command.newQuest")}</button>
             {setShowTaskScan && can?.("ai_task_scan") && (
-              <button onClick={() => setShowTaskScan(true)} style={{ minHeight: 38, borderRadius: 10, background: "rgba(255,255,255,0.035)", color: "#cbd5e1", border: "1px solid rgba(255,255,255,0.08)", fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>SCAN</button>
+              <button onClick={() => setShowTaskScan(true)} style={{ minHeight: 38, borderRadius: 10, background: "rgba(255,255,255,0.035)", color: "#cbd5e1", border: "1px solid rgba(255,255,255,0.08)", fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>{t("dashboard.command.scan")}</button>
             )}
           </div>
         </div>
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
-        <div style={{ color: "#64748b", fontSize: 10, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.2 }}>NÄCHSTE SCHRITTE</div>
+        <div style={{ color: "#64748b", fontSize: 10, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.2 }}>{t("dashboard.command.nextSteps")}</div>
         {can?.("focus_mode") && (
           <button onClick={() => setShowFocusMode?.(true)} style={{
             minHeight: 30,
@@ -453,15 +454,15 @@ function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeR
           );
         }) : (
           <div style={{ padding: 14, borderRadius: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", color: "#94a3b8", fontSize: 12 }}>
-            Keine weiteren Schritte.
+            {t("dashboard.command.noMoreSteps")}
           </div>
         )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 12 }}>
         <div style={{ padding: "9px 10px", borderRadius: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", minWidth: 0 }}>
-          <div style={{ color: nextReminder ? theme.primary : "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>REMINDER</div>
-          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis" }}>{nextReminder ? formatLocalDateTime(nextReminder.reminderAt) : "Keiner"}</div>
+          <div style={{ color: nextReminder ? theme.primary : "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{t("dashboard.command.reminder")}</div>
+          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis" }}>{nextReminder ? formatLocalDateTime(nextReminder.reminderAt) : t("dashboard.command.none")}</div>
           {nextReminder && (
             <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
               <button onClick={() => snoozeReminder?.(nextReminder.id, 15)} style={{ padding: "5px 7px", borderRadius: 7, background: `${theme.primary}14`, border: `1px solid ${theme.primary}24`, color: theme.primary, fontSize: 9, fontWeight: 800 }}>+15</button>
@@ -470,12 +471,12 @@ function LegacyTodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeR
           )}
         </div>
         <div style={{ padding: "9px 10px", borderRadius: 10, background: streakRisk ? "rgba(245,158,11,0.08)" : "rgba(255,255,255,0.025)", border: `1px solid ${streakRisk ? "#f59e0b44" : "rgba(255,255,255,0.06)"}` }}>
-          <div style={{ color: streakRisk ? "#f59e0b" : "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>SERIE</div>
-          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4 }}>{streakRisk ? "Heute offen" : "Stabil"}</div>
+          <div style={{ color: streakRisk ? "#f59e0b" : "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{t("dashboard.command.streak")}</div>
+          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4 }}>{streakRisk ? t("dashboard.command.todayOpen") : t("dashboard.command.streakStable")}</div>
         </div>
         <div style={{ padding: "9px 10px", borderRadius: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ color: "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>HABITS</div>
-          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4 }}>{habitsOpen} offen</div>
+          <div style={{ color: "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{t("dashboard.command.habits")}</div>
+          <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4 }}>{t("dashboard.command.habitsOpen", { count: habitsOpen })}</div>
         </div>
       </div>
     </section>
@@ -573,9 +574,9 @@ export function ArtifactShowcaseWidget({ state, theme }) {
   if (discoveredIds.length === 0) return null;
 
   const artifactDetails = {
-    fokus_amulett: { label: "Focus Amulett", color: "#fbbf24", icon: "A", desc: "Verstärkt Tagesfokus-Quests." },
-    kalender_rune: { label: "Kalender-Rune", color: "#ef4444", icon: "T", desc: "Warnt bei nahen Deadlines." },
-    routine_stein: { label: "Routine-Stein", color: "#22c55e", icon: "R", desc: "Erweitert Habit Tracker Kapazität." }
+    fokus_amulett: { label: t("dashboard.artifacts.fokus_amulett.label"), color: "#fbbf24", icon: "A", desc: t("dashboard.artifacts.fokus_amulett.desc") },
+    kalender_rune: { label: t("dashboard.artifacts.kalender_rune.label"), color: "#ef4444", icon: "T", desc: t("dashboard.artifacts.kalender_rune.desc") },
+    routine_stein: { label: t("dashboard.artifacts.routine_stein.label"), color: "#22c55e", icon: "R", desc: t("dashboard.artifacts.routine_stein.desc") }
   };
 
   return (
@@ -594,14 +595,14 @@ export function ArtifactShowcaseWidget({ state, theme }) {
         fontFamily: "'JetBrains Mono',monospace",
         fontWeight: 800,
         marginBottom: 12,
-      }}>ARTIFACTS</div>
+      }}>{t("dashboard.artifacts.title")}</div>
       <div style={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 8,
       }}>
         {discoveredIds.map(id => {
-          const info = artifactDetails[id] || { label: id, color: "#94a3b8", icon: "?", desc: "Unbekanntes Artefakt" };
+          const info = artifactDetails[id] || { label: id, color: "#94a3b8", icon: "?", desc: t("dashboard.artifacts.unknown") };
           return (
             <div key={id} style={{
               display: "flex",

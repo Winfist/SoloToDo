@@ -7,7 +7,7 @@ import { StatRadar, QuestCard, EmergencyQuestCard } from "../../data/constants";
 import HabitTracker from "../HabitTracker.jsx";
 import MicroHabits from "../MicroHabits.jsx";
 import GemBoosterBanner from "../GemBoosterBanner.jsx";
-import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_LAYOUT, DEFAULT_HIDDEN_WIDGETS, mergeConfig, getWidgetDef } from "./DashboardWidgetRegistry.js";
+import { DEFAULT_DASHBOARD_LAYOUT, DEFAULT_HIDDEN_WIDGETS, mergeConfig, getWidgetDef, getDashboardWidgets } from "./DashboardWidgetRegistry.js";
 import { StreakDisplayWidget, DailyProgressWidget, QuickAccessWidget, TodayCommandCenter, ArtifactShowcaseWidget } from "./DashboardWidgets.jsx";
 import ScrollReveal from "../ui/ScrollReveal.jsx";
 import TiltCard from "../ui/TiltCard.jsx";
@@ -20,6 +20,7 @@ import ScreenTimeDashboard from "../ScreenTimeDashboard.jsx";
 import { ScreenTimeVerifyModal } from "../ScreenTimeVerifyModal.jsx";
 import QuestIntensityControl from "../QuestIntensityControl.jsx";
 import { isPremiumDashboardWidget } from "../../data/premium.js";
+import { useI18n } from "../i18n/I18nProvider.jsx";
 
 // ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
 const EDIT_MODE_CSS = `
@@ -69,36 +70,35 @@ const CAROUSEL_CSS = `
 
 const PREMIUM_WIDGET_LOCK_COPY = {
   health_summary: {
-    eyebrow: "BIOMETRIC CORE",
-    title: "Biometrics freischalten",
-    desc: "Schritte, Schlaf und Health-Rewards werden als Live-Modul im Dashboard sichtbar.",
     iconSrc: HEALTH_ICONS.steps,
     feature: "advanced_widgets",
   },
   screen_time_summary: {
-    eyebrow: "FOCUS CORE",
-    title: "Bildschirmzeit freischalten",
-    desc: "Limits, Trends und Fokus-Quests landen direkt in deiner Kommandozentrale.",
     iconSrc: NAV_ICONS.timer,
     feature: "advanced_widgets",
   },
   vision_board: {
-    eyebrow: "VISION CORE",
-    title: "Vision Board freischalten",
-    desc: "Halte Ziele, Affirmationen und System-Identitaet dauerhaft vor Augen.",
     iconSrc: STAT_ICONS.int,
     feature: "advanced_widgets",
   },
 };
 
 function PremiumDashboardLockCard({ widgetKey, def, theme, onOpenPremium, compact = false }) {
-  const copy = PREMIUM_WIDGET_LOCK_COPY[widgetKey] || {
-    eyebrow: "HUNTER PRO",
-    title: `${def?.label || "Modul"} freischalten`,
-    desc: "Dieses Dashboard-Modul ist in Hunter Pro enthalten.",
+  const { t } = useI18n();
+  const staticCopy = PREMIUM_WIDGET_LOCK_COPY[widgetKey] || {};
+  const localText = (key, params) => {
+    const value = t(key, params);
+    return value && value !== key ? value : null;
+  };
+  const copy = {
+    eyebrow: localText(`dashboard.premiumLock.${widgetKey}.eyebrow`) || t("dashboard.premiumLock.fallbackEyebrow"),
+    title: localText(`dashboard.premiumLock.${widgetKey}.title`) || t("dashboard.premiumLock.fallbackTitle", { label: def?.label || "Module" }),
+    desc: localText(`dashboard.premiumLock.${widgetKey}.desc`) || t("dashboard.premiumLock.fallbackDesc"),
     iconSrc: null,
     feature: "advanced_widgets",
   };
+  copy.iconSrc = staticCopy.iconSrc || copy.iconSrc;
+  copy.feature = staticCopy.feature || copy.feature;
   const accent = def?.color || theme?.primary || "#a855f7";
   const glow = theme?.accent || accent;
   const minHeight = compact ? 152 : 188;
@@ -195,7 +195,7 @@ function PremiumDashboardLockCard({ widgetKey, def, theme, onOpenPremium, compac
           boxShadow: `0 8px 22px ${accent}20, inset 0 1px 0 rgba(255,255,255,0.12)`,
           whiteSpace: "nowrap",
         }}>
-          PRO FREISCHALTEN
+          {t("dashboard.premiumLock.cta")}
         </span>
       </div>
     </div>
@@ -246,6 +246,7 @@ export default function DashboardView({
   requireQuestSlot,
   setDailyFocusQuest
 }) {
+  const { t, locale } = useI18n();
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
 
   // --- Screen Time OCR Modal State ---
@@ -409,14 +410,14 @@ export default function DashboardView({
 
   // ── Widget Actions ──
   const removeWidget = useCallback((key) => {
-    const def = getWidgetDef(key);
+    const def = getWidgetDef(key, locale);
     if (!def?.removable) return;
     const newLayout = localLayout.filter(k => k !== key);
     const newHidden = [...localHidden, key];
     setLocalLayout(newLayout);
     setLocalHidden(newHidden);
     commitConfig(newLayout, newHidden, localCollapsed);
-  }, [localLayout, localHidden, localCollapsed, commitConfig]);
+  }, [localLayout, localHidden, localCollapsed, commitConfig, locale]);
 
   const addWidget = useCallback((key) => {
     const newLayout = [...localLayout, key];
@@ -446,7 +447,7 @@ export default function DashboardView({
   // Split into carousel (horizontal strip) and regular (vertical stack)
   const { carouselWidgets, regularWidgets } = useMemo(() => {
     const all = localLayout
-      .map(key => getWidgetDef(key))
+      .map(key => getWidgetDef(key, locale))
       .filter(w => {
         if (!w) return false;
         const premiumLocked = isPremiumDashboardWidget(w.key) && !premiumStatus?.active;
@@ -458,7 +459,7 @@ export default function DashboardView({
       carouselWidgets: all.filter(w => w.carousel),
       regularWidgets: all.filter(w => !w.carousel),
     };
-  }, [localLayout, can, editMode, premiumStatus?.active]);
+  }, [localLayout, can, editMode, premiumStatus?.active, locale]);
 
   // For edit mode & drag: all widgets flat
   const visibleWidgets = useMemo(() => {
@@ -481,11 +482,11 @@ export default function DashboardView({
 
   // Available widgets to add (hidden + feature-unlocked)
   const availableWidgets = useMemo(() => {
-    return DASHBOARD_WIDGETS.filter(w => {
+    return getDashboardWidgets(locale).filter(w => {
       if (localLayout.includes(w.key)) return false;
       return true;
     });
-  }, [localLayout]);
+  }, [localLayout, locale]);
 
   // ── Quest rendering helpers (unchanged) ──
   const visibleQuests = originFilter === "system"
@@ -519,32 +520,32 @@ export default function DashboardView({
   const dueTodayVisibleCount = visibleQuests.filter(q => q.type === "daily" || q.dueDate === todayKey).length;
   const quickVisibleCount = visibleQuests.filter(q => q.energy === "quick").length;
   const questTypeFilterOptions = [
-    { key: "all", label: "Alle", color: theme.accent || theme.primary },
-    { key: "daily", label: "Daily", color: "#22d3ee" },
-    { key: "side", label: "Side", color: "#a78bfa" },
-    ...(can('weekly_quests') ? [{ key: "weekly", label: "Woche", color: "#8b5cf6" }] : []),
-    ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
+    { key: "all", label: t("dashboard.board.typeAll"), color: theme.accent || theme.primary },
+    { key: "daily", label: t("dashboard.board.typeDaily"), color: "#22d3ee" },
+    { key: "side", label: t("dashboard.board.typeSide"), color: "#a78bfa" },
+    ...(can('weekly_quests') ? [{ key: "weekly", label: t("dashboard.board.typeWeekly"), color: "#8b5cf6" }] : []),
+    ...(can('chained_quests') ? [{ key: "chained", label: t("dashboard.board.typeChained"), color: "#f59e0b" }] : []),
     ...(can('hidden_quests') && hiddenQuestCount > 0 ? [{ key: "hidden", label: `Hidden ${hiddenQuestCount}`, color: "#6366f1", icon: QUEST_ICONS.hidden }] : []),
   ];
   const questOriginFilterOptions = [
-    { key: "all", label: "Alle Quellen" },
-    { key: "system", label: "System" },
-    { key: "custom", label: "Eigene" },
+    { key: "all", label: t("dashboard.board.originAll") },
+    { key: "system", label: t("dashboard.board.originSystem") },
+    { key: "custom", label: t("dashboard.board.originCustom") },
   ];
   const activeQuestFilterCount = (questFilter !== "all" ? 1 : 0) + (originFilter !== "all" ? 1 : 0);
   const hasActiveQuestFilters = activeQuestFilterCount > 0;
-  const questTypeLabel = questTypeFilterOptions.find(f => f.key === questFilter)?.label || "Alle";
-  const questOriginLabel = questOriginFilterOptions.find(f => f.key === originFilter)?.label || "Alle Quellen";
+  const questTypeLabel = questTypeFilterOptions.find(f => f.key === questFilter)?.label || t("dashboard.board.typeAll");
+  const questOriginLabel = questOriginFilterOptions.find(f => f.key === originFilter)?.label || t("dashboard.board.originAll");
   const questFilterSummary = hasActiveQuestFilters
     ? [questFilter !== "all" ? questTypeLabel : null, originFilter !== "all" ? questOriginLabel : null].filter(Boolean).join(" / ")
-    : "Alle offenen Quests";
+    : t("dashboard.board.summaryAll");
   const overdueQuestList = sortedVisibleQuests.filter(q => q.dueDate && q.dueDate < todayKey);
   const todayQuestList = sortedVisibleQuests.filter(q => !(q.dueDate && q.dueDate < todayKey) && (q.type === "daily" || q.dueDate === todayKey));
   const laterQuestList = sortedVisibleQuests.filter(q => !(q.dueDate && q.dueDate < todayKey) && !(q.type === "daily" || q.dueDate === todayKey));
   const questBoardSections = [
-    { key: "overdue", title: "Ueberfaellig", color: "#ef4444", quests: overdueQuestList },
-    { key: "today", title: "Heute", color: theme.primary, quests: todayQuestList },
-    { key: "later", title: "Spaeter", color: "#64748b", quests: laterQuestList },
+    { key: "overdue", title: t("dashboard.board.sectionOverdue"), color: "#ef4444", quests: overdueQuestList },
+    { key: "today", title: t("dashboard.board.sectionToday"), color: theme.primary, quests: todayQuestList },
+    { key: "later", title: t("dashboard.board.sectionLater"), color: "#64748b", quests: laterQuestList },
   ].filter(section => section.quests.length > 0);
   const showGrouped = false && originFilter === "all" && (systemQuests.length > 0 && userQuests.length > 0);
 
@@ -571,7 +572,7 @@ export default function DashboardView({
     const isCollapsed = localCollapsed[widgetKey];
     const premiumLocked = isPremiumDashboardWidget(widgetKey) && !premiumStatus?.active;
     if (premiumLocked) {
-      const def = getWidgetDef(widgetKey);
+      const def = getWidgetDef(widgetKey, locale);
       return {
         content: (
           <PremiumDashboardLockCard
@@ -766,24 +767,24 @@ export default function DashboardView({
                 margin: "2px 0 12px",
               }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 10, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.4 }}>AUFTRAEGE</div>
-                  <div style={{ fontSize: 24, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900, lineHeight: 1.05 }}>Quest Board</div>
+                  <div style={{ fontSize: 10, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.4 }}>{t("dashboard.board.eyebrow")}</div>
+                  <div style={{ fontSize: 24, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900, lineHeight: 1.05 }}>{t("dashboard.board.title")}</div>
                   <div style={{ marginTop: 5, color: "#94a3b8", fontSize: 12, lineHeight: 1.35 }}>
-                    Alle offenen Quests an einem Ort. Erledigen, filtern, neu anlegen.
+                    {t("dashboard.board.desc")}
                   </div>
                 </div>
                 <div style={{ minWidth: 66, textAlign: "center", padding: "8px 10px", borderRadius: 12, background: `${theme.primary}10`, border: `1px solid ${theme.primary}28`, color: theme.accent || theme.primary, fontFamily: "'JetBrains Mono',monospace" }}>
                   <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{visibleQuests.length}</div>
-                  <div style={{ fontSize: 8, fontWeight: 900, marginTop: 3 }}>OFFEN</div>
+                  <div style={{ fontSize: 8, fontWeight: 900, marginTop: 3 }}>{t("dashboard.board.open")}</div>
                 </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 7, marginBottom: 12 }}>
                 {[
-                  { label: "Heute", value: dueTodayVisibleCount, color: theme.primary },
-                  { label: "Erledigt", value: completedTodayCount, color: "#22c55e" },
-                  { label: "Quick", value: quickVisibleCount, color: "#f59e0b" },
-                  { label: "Ueber", value: overdueVisibleCount, color: overdueVisibleCount > 0 ? "#ef4444" : "#64748b" },
+                  { label: t("dashboard.board.statToday"), value: dueTodayVisibleCount, color: theme.primary },
+                  { label: t("dashboard.board.statCompleted"), value: completedTodayCount, color: "#22c55e" },
+                  { label: t("dashboard.board.statQuick"), value: quickVisibleCount, color: "#f59e0b" },
+                  { label: t("dashboard.board.statOverdue"), value: overdueVisibleCount, color: overdueVisibleCount > 0 ? "#ef4444" : "#64748b" },
                 ].map(item => (
                   <div key={item.label} style={{
                     minWidth: 0,
@@ -801,7 +802,7 @@ export default function DashboardView({
               <div style={{ marginBottom: 12, padding: 11, borderRadius: 14, background: "rgba(2,6,23,0.52)", border: "1px solid rgba(148,163,184,0.12)" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 10, alignItems: "center", marginBottom: can('quest_filters') ? 10 : 0 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>BOARD-STEUERUNG</div>
+                    <div style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>{t("dashboard.board.control")}</div>
                     <div style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{questFilterSummary}</div>
                   </div>
                   {can('quest_filters') && (
@@ -821,13 +822,13 @@ export default function DashboardView({
                         cursor: "pointer",
                       }}
                     >
-                      FILTER{hasActiveQuestFilters ? ` ${activeQuestFilterCount}` : ""}
+                      {t("dashboard.board.filter")}{hasActiveQuestFilters ? ` ${activeQuestFilterCount}` : ""}
                     </button>
                   )}
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 6 }}>
-                  <button data-tutorial="create-quest-btn" onClick={() => setShowCreate(true)} style={{ minHeight: 36, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}24, ${theme.primary}10)`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}36`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>NEUE QUEST</button>
+                  <button data-tutorial="create-quest-btn" onClick={() => setShowCreate(true)} style={{ minHeight: 36, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}24, ${theme.primary}10)`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}36`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>{t("dashboard.board.create")}</button>
                   {createQuest && (
                     <button onClick={() => quickAddMode ? setQuickAddMode(false) : (requireQuestSlot ? requireQuestSlot(() => setQuickAddMode(true)) : setQuickAddMode(true))} style={{ minHeight: 36, borderRadius: 10, background: quickAddMode ? `${theme.primary}18` : "rgba(255,255,255,0.032)", color: quickAddMode ? theme.primary : "#94a3b8", border: `1px solid ${quickAddMode ? theme.primary + "40" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>QUICK +</button>
                   )}
@@ -839,7 +840,7 @@ export default function DashboardView({
                 {can('quest_filters') && (filtersOpen || hasActiveQuestFilters) && (
                   <div style={{ marginTop: 11, paddingTop: 10, borderTop: "1px solid rgba(148,163,184,0.1)", display: "grid", gap: 10 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>ANZEIGE EINGRENZEN</div>
+                      <div style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>{t("dashboard.board.narrow")}</div>
                       {hasActiveQuestFilters && (
                         <button
                           onClick={() => { setQuestFilter("all"); setOriginFilter("all"); }}
@@ -855,7 +856,7 @@ export default function DashboardView({
                             cursor: "pointer",
                           }}
                         >
-                          ZURUECK
+                          {t("dashboard.board.reset")}
                         </button>
                       )}
                     </div>
@@ -907,10 +908,10 @@ export default function DashboardView({
               <div style={{ marginBottom: 12, padding: 11, borderRadius: 14, background: "rgba(15,23,42,0.34)", border: "1px dashed rgba(148,163,184,0.18)" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, alignItems: "center", marginBottom: 8 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ color: "#94a3b8", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>SYSTEM-EINSTELLUNG</div>
-                    <div style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4 }}>Regelt automatische Systemrufe.</div>
+                    <div style={{ color: "#94a3b8", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>{t("dashboard.board.systemSetting")}</div>
+                    <div style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4 }}>{t("dashboard.board.systemSettingDesc")}</div>
                   </div>
-                  <span style={{ padding: "5px 8px", borderRadius: 999, background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.13)", color: "#94a3b8", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>KEINE QUEST</span>
+                  <span style={{ padding: "5px 8px", borderRadius: 999, background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.13)", color: "#94a3b8", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{t("dashboard.board.noQuest")}</span>
                 </div>
                 <QuestIntensityControl state={state} persist={persist} theme={theme} compact surface="embedded" premiumStatus={premiumStatus} onOpenPremium={openPremiumModal} />
               </div>
@@ -930,7 +931,7 @@ export default function DashboardView({
                       }
                       if (e.key === "Escape") { setQuickAddTitle(""); setQuickAddMode(false); }
                     }}
-                    placeholder="Neue Quest... Enter speichert, Esc bricht ab"
+                    placeholder={t("dashboard.board.quickPlaceholder")}
                     style={{
                       flex: 1, padding: "8px 12px", borderRadius: 8,
                       background: "rgba(255,255,255,0.03)",
@@ -948,8 +949,8 @@ export default function DashboardView({
                   <div style={{ marginBottom: 10, animation: "float 3s ease-in-out infinite", display: "flex", justifyContent: "center" }}>
                     <img src="/icons/skill_attack.webp" alt="no quests" style={{ width: 44, height: 44, objectFit: "contain", opacity: 0.4, filter: "drop-shadow(0 0 10px rgba(100,116,139,0.4))" }} />
                   </div>
-                  <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
-                  <div style={{ fontSize: 11, color: "#334155" }}>Erstelle eine Quest um XP zu verdienen</div>
+                  <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>{t("dashboard.board.emptyTitle")}</div>
+                  <div style={{ fontSize: 11, color: "#334155" }}>{t("dashboard.board.emptyDesc")}</div>
                 </div>
               ) : (
                 <div style={{ marginBottom: 24, display: "grid", gap: 12 }}>
@@ -986,7 +987,7 @@ export default function DashboardView({
                     <>
                       {systemQuests.length > 0 && (
                         <>
-                          <SectionHeader title="SYSTEM-AUFTRÄGE" icon="⚙" color="#06b6d4" count={systemQuests.length} sectionKey="system" />
+                          <SectionHeader title={t("dashboard.board.systemSection")} icon="⚙" color="#06b6d4" count={systemQuests.length} sectionKey="system" />
                           {!collapsedSections.system && systemQuests.map((q, i) => (
                             <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
                           ))}
@@ -994,7 +995,7 @@ export default function DashboardView({
                       )}
                       {userQuests.length > 0 && (
                         <>
-                          <SectionHeader title="DEINE QUESTS" icon="✦" color="#f59e0b" count={userQuests.length} sectionKey="user" />
+                          <SectionHeader title={t("dashboard.board.userSection")} icon="✦" color="#f59e0b" count={userQuests.length} sectionKey="user" />
                           {!collapsedSections.user && userQuests.map((q, i) => (
                             <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
                           ))}
@@ -1039,16 +1040,14 @@ export default function DashboardView({
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <img src={STAT_ICONS.int} alt="Vision Board" style={{ width: 24, height: 24, objectFit: "contain", filter: "drop-shadow(0 0 6px #a855f788)" }} />
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: "#a855f7", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>VISION BOARD</div>
-                  <div style={{ fontSize: 9, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>MANIFESTIERE DEIN SCHICKSAL</div>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: "#a855f7", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{t("dashboard.widgets.vision_board.label").toUpperCase()}</div>
+                  <div style={{ fontSize: 9, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{t("dashboard.vision.subtitle")}</div>
                 </div>
               </div>
               <ul style={{ margin: 0, padding: "0 0 0 20px", color: "#e2e8f0", fontSize: 13, lineHeight: 1.8, fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
-                <li style={{ paddingBottom: 4 }}>Ich levele jeden Tag auf – körperlich, geistig und finanziell.</li>
-                <li style={{ paddingBottom: 4 }}>Mein Disziplin-Stat wächst mit jeder abgeschlossenen Quest.</li>
-                <li style={{ paddingBottom: 4 }}>Ich ziehe Erfolg und Fülle wie magische Drops an.</li>
-                <li style={{ paddingBottom: 4 }}>Meine Shadow Army bekämpft meine Ausreden in meinem Rücken.</li>
-                <li>Ich bin der Architekt meines eigenen Systems.</li>
+                {["0", "1", "2", "3", "4"].map((_, index) => (
+                  <li key={index} style={{ paddingBottom: index < 4 ? 4 : 0 }}>{t(`dashboard.vision.lines.${index}`)}</li>
+                ))}
               </ul>
             </div>
           )
@@ -1083,8 +1082,8 @@ export default function DashboardView({
               <div style={{ padding: "14px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(34,211,153,0.06), rgba(34,211,153,0.02))", border: "1px solid rgba(34,211,153,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
                 <div><img src={GATE_ICONS.normal} alt="all unlocked" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #34d39988) hue-rotate(90deg)" }} /></div>
                 <div>
-                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#34d399", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>ALL SYSTEMS ONLINE</div>
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Alle Features freigeschaltet. Volle Kontrolle, Hunter.</div>
+                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#34d399", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{t("dashboard.unlock.allOnline")}</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{t("dashboard.unlock.allUnlocked")}</div>
                 </div>
               </div>
             )
@@ -1097,7 +1096,7 @@ export default function DashboardView({
             <div style={{ padding: "14px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(99,102,241,0.02))", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ animation: "pulse 2s infinite" }}><img src={GATE_ICONS.normal} alt="locked" style={{ width: 28, height: 28, objectFit: "contain", filter: "grayscale(80%) brightness(0.5)" }} /></div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 9, letterSpacing: 3, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>NÄCHSTES SYSTEM-UPDATE</div>
+                <div style={{ fontSize: 9, letterSpacing: 3, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{t("dashboard.unlock.nextUpdate")}</div>
                 <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3, lineHeight: 1.4 }}>
                   {getUnlocks(nextLevel).map(f => f.label).join(" · ")}
                 </div>
@@ -1176,8 +1175,8 @@ export default function DashboardView({
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif" }}>Dashboard anpassen</div>
-                <div style={{ fontSize: 9, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>DRAG / HIDE / REORDER</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif" }}>{t("dashboard.edit.title")}</div>
+                <div style={{ fontSize: 9, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{t("dashboard.edit.subtitle")}</div>
               </div>
             </div>
             <button
@@ -1189,7 +1188,7 @@ export default function DashboardView({
                 fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer",
                 transition: "all 0.2s",
               }}
-            >FERTIG</button>
+            >{t("dashboard.edit.done")}</button>
           </>
         ) : (
           <div style={{ display: "flex", width: "100%", justifyContent: "flex-end" }}>
@@ -1207,7 +1206,7 @@ export default function DashboardView({
               onMouseEnter={e => { e.currentTarget.style.borderColor = theme.primary + "44"; e.currentTarget.style.color = theme.accent; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#64748b"; }}
             >
-              Layout
+              {t("dashboard.edit.layout")}
             </button>
           </div>
         )}
@@ -1280,7 +1279,7 @@ export default function DashboardView({
                       fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace",
                       padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.03)",
                       border: "1px solid rgba(255,255,255,0.06)",
-                    }}>INAKTIV</span>
+                    }}>{t("dashboard.edit.inactive")}</span>
                   )}
 
                   {/* Collapse toggle */}
@@ -1313,7 +1312,7 @@ export default function DashboardView({
                         display: "flex", alignItems: "center", justifyContent: "center",
                         transition: "all 0.2s",
                       }}
-                      title="Widget konfigurieren"
+                      title={t("dashboard.edit.configureWidget")}
                     >⚙</button>
                   )}
 
@@ -1337,7 +1336,7 @@ export default function DashboardView({
                       background: "rgba(255,255,255,0.02)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 11, color: "#334155",
-                    }} title="Dieses Widget kann nicht entfernt werden">🔒</div>
+                    }} title={t("dashboard.edit.lockedWidget")}>🔒</div>
                   )}
                 </div>
               )}
@@ -1370,7 +1369,7 @@ export default function DashboardView({
               onMouseEnter={e => { e.currentTarget.style.borderColor = theme.primary + "88"; e.currentTarget.style.color = theme.accent; }}
               onMouseLeave={e => { if (!showAddPanel) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#64748b"; } }}
             >
-              <span style={{ fontSize: 18 }}>+</span> WIDGET HINZUFÜGEN
+              <span style={{ fontSize: 18 }}>+</span> {t("dashboard.edit.addWidget")}
             </button>
           )}
 
@@ -1386,7 +1385,7 @@ export default function DashboardView({
                 fontSize: 9, letterSpacing: 3, color: theme.accent,
                 fontFamily: "'JetBrains Mono',monospace", fontWeight: 700,
                 marginBottom: 12,
-              }}>VERFÜGBARE WIDGETS</div>
+              }}>{t("dashboard.edit.availableWidgets")}</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 {availableWidgets.map(widget => {
                   const premiumLocked = isPremiumDashboardWidget(widget.key) && !premiumStatus?.active;
@@ -1426,7 +1425,7 @@ export default function DashboardView({
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: premiumLocked ? "#fde68a" : locked ? "#475569" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{widget.label}</div>
                         <div style={{ fontSize: 8, color: premiumLocked ? "#a78bfa" : "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
-                          {premiumLocked ? "Noch nicht verfuegbar im Free-Modus" : locked ? "Feature gesperrt" : widget.desc}
+                          {premiumLocked ? t("dashboard.edit.freeLocked") : locked ? t("dashboard.edit.featureLocked") : widget.desc}
                         </div>
                       </div>
                       {!locked && (
@@ -1452,7 +1451,7 @@ export default function DashboardView({
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "#94a3b8"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#64748b"; }}
-          >↻ Standard wiederherstellen</button>
+          >↻ {t("dashboard.edit.restoreDefault")}</button>
         </>
       )}
 

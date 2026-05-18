@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=1080,height=1920"/>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:1080px;height:1920px;overflow:hidden;background:#000;color:#fff;font-family:'Cinzel',serif;perspective:1200px}
+    .clip{position:absolute;inset:0;overflow:hidden}
+
+    /* Scene Setup */
+    .scene{position:absolute;inset:0;transform-style:preserve-3d}
+    .flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:999;pointer-events:none}
+
+    /* Text */
+    .epic-txt{position:absolute;top:300px;width:1080px;text-align:center;font-weight:900;font-size:80px;letter-spacing:10px;text-shadow:0 0 40px rgba(34,211,238,0.8);z-index:50;opacity:0}
+    .red-txt{color:#ef4444;text-shadow:0 0 60px rgba(239,68,68,0.8)}
+    
+    /* The Gate (Nested 3D Rings) */
+    .gate-container{position:absolute;left:50%;top:50%;width:800px;height:800px;margin-left:-400px;margin-top:-300px;transform-style:preserve-3d;transform:translateZ(-1500px) rotateX(10deg)}
+    
+    .gate-ring{position:absolute;inset:0;border-radius:50%;border:8px solid transparent;transform-style:preserve-3d}
+    .r1{border-top-color:#22d3ee;border-bottom-color:#22d3ee;box-shadow:0 0 100px rgba(34,211,238,0.5), inset 0 0 100px rgba(34,211,238,0.5)}
+    .r2{inset:40px;border-left-color:#60a5fa;border-right-color:#60a5fa;box-shadow:0 0 80px rgba(96,165,250,0.6), inset 0 0 80px rgba(96,165,250,0.6)}
+    .r3{inset:100px;border:10px dashed rgba(34,211,238,0.8);border-radius:50%}
+    .gate-core{position:absolute;inset:150px;border-radius:50%;background:radial-gradient(circle, rgba(34,211,238,1) 0%, rgba(0,0,0,0) 70%);opacity:0.2;filter:blur(20px)}
+
+    /* Particles */
+    .ptc{position:absolute;width:4px;height:20px;background:#fff;border-radius:2px;box-shadow:0 0 20px #22d3ee;opacity:0;transform-style:preserve-3d}
+
+    /* Hologram Quest UI */
+    .holo-ui{position:absolute;left:50%;top:50%;width:700px;margin-left:-350px;margin-top:-100px;background:rgba(10,10,20,0.8);border:2px solid rgba(34,211,238,0.5);border-radius:20px;padding:40px;box-shadow:0 0 60px rgba(34,211,238,0.2), inset 0 0 30px rgba(34,211,238,0.1);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;transform-style:preserve-3d;transform:translateZ(-800px);opacity:0}
+    .h-icon{font-size:60px;filter:drop-shadow(0 0 20px #22d3ee)}
+    .h-info{flex:1;margin:0 40px}
+    .h-title{font-size:40px;font-weight:900;color:#fff;margin-bottom:10px}
+    .h-sub{font-family:'JetBrains Mono';font-size:24px;color:#22d3ee}
+    .h-rank{background:rgba(239,68,68,0.2);color:#ef4444;border:2px solid #ef4444;padding:10px 20px;border-radius:12px;font-weight:900;font-size:28px;text-shadow:0 0 20px #ef4444}
+
+    /* XP Explosion Text */
+    .xp-hit{position:absolute;left:50%;top:50%;font-family:'JetBrains Mono';font-size:120px;font-weight:900;color:#22c55e;text-shadow:0 0 80px #22c55e;transform:translate(-50%,-50%) scale(0);opacity:0}
+
+    /* S4: IGRIS */
+    .shadow-army{position:absolute;bottom:-100px;left:50%;width:1200px;margin-left:-600px;filter:drop-shadow(0 0 100px #a855f7);transform:translateZ(-500px) scale(0.8);opacity:0}
+
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="15" data-fps="30" data-width="1080" data-height="1920">
+    
+    <div class="flash" id="flash"></div>
+
+    <div class="scene" id="scene">
+      <!-- Background Ambient -->
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%, rgba(34,211,238,0.1) 0%, #000 60%);" id="bg-glow"></div>
+
+      <!-- Epic Text -->
+      <div class="epic-txt" id="txt1">DAS GATE<br>ÖFFNET SICH.</div>
+      <div class="epic-txt" id="txt2">TRITT EIN.</div>
+      <div class="epic-txt" id="txt3" style="top:200px">SOLOTODO<br><br><span class="red-txt" style="font-size:50px">DEIN LEBEN IST EIN RPG.</span></div>
+
+      <!-- The 3D Gate -->
+      <div class="gate-container" id="gate">
+        <div class="gate-ring r1" id="r1"></div>
+        <div class="gate-ring r2" id="r2"></div>
+        <div class="gate-ring r3" id="r3"></div>
+        <div class="gate-core" id="core"></div>
+        
+        <!-- Generated Particles go here -->
+        <div id="particles"></div>
+      </div>
+
+      <!-- Holographic UI -->
+      <div class="holo-ui" id="holo1">
+        <div class="h-icon">⚔️</div>
+        <div class="h-info">
+          <div class="h-title">100 Pushups</div>
+          <div class="h-sub">Daily Quest</div>
+        </div>
+        <div class="h-rank">D-RANG</div>
+      </div>
+      <div class="xp-hit" id="xp1">+300 XP</div>
+
+      <!-- Holographic UI 2 -->
+      <div class="holo-ui" id="holo2">
+        <div class="h-icon">🧠</div>
+        <div class="h-info">
+          <div class="h-title">Deep Work</div>
+          <div class="h-sub">Focus Session</div>
+        </div>
+        <div class="h-rank" style="color:#a855f7;border-color:#a855f7;background:rgba(168,85,247,0.2)">S-RANG</div>
+      </div>
+      <div class="xp-hit" id="xp2" style="color:#a855f7;text-shadow:0 0 80px #a855f7">+1000 XP</div>
+
+      <!-- Shadow Army -->
+      <img src="assets/shadow_igris.webp" class="shadow-army" id="igris" alt="Igris"/>
+    </div>
+
+    <audio id="bgm" data-start="0" data-duration="15" data-track-index="5" data-volume="0.8" src="assets/solo_grind_ad_cut.mp3"></audio>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Generate Particles
+    const pContainer = document.getElementById("particles");
+    for(let i=0; i<60; i++) {
+      const p = document.createElement("div");
+      p.className = "ptc";
+      // random angle and distance inside the gate
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 100 + Math.random() * 200;
+      const x = 400 + Math.cos(angle) * radius;
+      const y = 400 + Math.sin(angle) * radius;
+      p.style.left = x + "px";
+      p.style.top = y + "px";
+      // random z depth
+      const z = -200 - Math.random() * 600;
+      p.style.transform = `translateZ(${z}px)`;
+      pContainer.appendChild(p);
+
+      // Particle animation loop
+      tl.to(p, {
+        z: 800, // flies out of screen
+        opacity: 1,
+        duration: 0.5 + Math.random() * 1.5,
+        repeat: -1,
+        ease: "none"
+      }, Math.random() * 2);
+    }
+
+    // Flash macro
+    const flash = (time) => {
+      tl.set("#flash", { opacity: 1 }, time);
+      tl.set("#flash", { opacity: 0 }, time + 0.05);
+    };
+
+    /* ── 0.0 - 5.0s: GATE OPENING ── */
+    // Gate rings spinning
+    tl.to("#r1", { rotationZ: 360, duration: 15, ease: "none", repeat: -1 }, 0);
+    tl.to("#r2", { rotationZ: -360, duration: 10, ease: "none", repeat: -1 }, 0);
+    tl.to("#r3", { rotationZ: 180, duration: 5, ease: "none", repeat: -1 }, 0);
+    
+    // Gate enters from deep Z
+    tl.fromTo("#gate", { z: -3000, opacity: 0 }, { z: -800, opacity: 1, duration: 4, ease: "power2.out" }, 0);
+    tl.to("#core", { opacity: 0.8, filter: "blur(40px)", duration: 2, yoyo: true, repeat: -1 }, 0);
+    
+    // Text 1
+    tl.to("#txt1", { opacity: 1, scale: 1, duration: 0.1 }, 0.5);
+    tl.to("#txt1", { opacity: 0, scale: 1.1, duration: 0.2 }, 3.5);
+    
+    // Text 2
+    tl.fromTo("#txt2", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.1 }, 3.7);
+    tl.to("#txt2", { opacity: 0, duration: 0.2 }, 5.5);
+
+    /* ── 5.0 - 10.0s: HOLOGRAM GRIND ── */
+    // Quest 1 flies out
+    tl.fromTo("#holo1", { z: -1500, opacity: 0, rotationX: 45 }, { z: 200, opacity: 1, rotationX: 0, duration: 1, ease: "back.out(1.5)" }, 5.8);
+    // HIT!
+    flash(7.0);
+    tl.set("#holo1", { opacity: 0 }, 7.0);
+    tl.to("#xp1", { scale: 1.2, opacity: 1, duration: 0.1, ease: "back.out(2)" }, 7.0);
+    tl.to("#xp1", { scale: 1.5, opacity: 0, y: -200, duration: 0.6, ease: "power2.in" }, 7.1);
+    
+    // Quest 2 flies out
+    tl.fromTo("#holo2", { z: -1500, opacity: 0, rotationY: -45 }, { z: 300, opacity: 1, rotationY: 0, duration: 0.8, ease: "back.out(1.5)" }, 7.5);
+    // HIT!
+    flash(8.5);
+    tl.set("#holo2", { opacity: 0 }, 8.5);
+    tl.to("#xp2", { scale: 1.2, opacity: 1, duration: 0.1, ease: "back.out(2)" }, 8.5);
+    tl.to("#xp2", { scale: 1.5, opacity: 0, y: -200, duration: 0.6, ease: "power2.in" }, 8.6);
+
+    /* ── 10.0 - 15.0s: EPIC REVEAL (Igris) ── */
+    // Gate turns purple/red
+    tl.to(".r1", { borderTopColor: "#a855f7", borderBottomColor: "#a855f7", boxShadow: "0 0 100px rgba(168,85,247,0.5)", duration: 0.5 }, 9.5);
+    tl.to(".r2", { borderLeftColor: "#ef4444", borderRightColor: "#ef4444", boxShadow: "0 0 80px rgba(239,68,68,0.6)", duration: 0.5 }, 9.5);
+    tl.to(".r3", { borderColor: "rgba(168,85,247,0.8)", duration: 0.5 }, 9.5);
+    tl.to("#core", { background: "radial-gradient(circle, rgba(168,85,247,1) 0%, rgba(0,0,0,0) 70%)", duration: 0.5 }, 9.5);
+    tl.to("#bg-glow", { background: "radial-gradient(circle at 50% 40%, rgba(168,85,247,0.1) 0%, #000 60%)", duration: 0.5 }, 9.5);
+
+    // Igris Steps Out
+    flash(10.0);
+    tl.fromTo("#igris", { z: -800, opacity: 0, y: 200 }, { z: 0, opacity: 1, y: 0, duration: 3, ease: "power3.out" }, 10.0);
+    
+    // Final Text
+    tl.fromTo("#txt3", { opacity: 0, y: 100 }, { opacity: 1, y: 0, duration: 1, ease: "power3.out" }, 11.0);
+
+    window.__timelines["main"] = tl;
+  </script>
+</body>
+</html>

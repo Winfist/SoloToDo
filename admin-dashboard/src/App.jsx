@@ -335,7 +335,11 @@ function UserDetail({ user, onBack, onUpdate }) {
   const handleReset = async (wipeQuests) => {
     try {
       const userRef = doc(db, 'users', user.id);
+      const resetTimestamp = new Date().toISOString();
       let payload = {
+        // ── Admin reset marker (signals client to force-accept cloud state) ──
+        _adminResetAt: resetTimestamp,
+        _adminResetType: wipeQuests ? 'hard' : 'soft',
         level: 1,
         gold: 0,
         xp: 0,

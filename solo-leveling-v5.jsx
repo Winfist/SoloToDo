@@ -55,6 +55,8 @@ import HUDOverlay from "./components/ui/HUDOverlay.jsx";
 import SystemLoadingScreen from "./components/ui/SystemLoadingScreen.jsx";
 import { useStickyHeader } from "./hooks/useStickyHeader.js";
 import { useTimeOfDay } from "./hooks/useTimeOfDay.js";
+import { useI18n } from "./components/i18n/I18nProvider.jsx";
+import { getLocalizedCatalog } from "./data/localizedGameData.js";
 
 // ─ RANKS ─
 import {
@@ -289,6 +291,11 @@ function App({ initialHunterName, onLogout }) {
     abandonSystemChallenge,
     setDailyFocusQuest
   } = gameState;
+  const { t: tr, locale } = useI18n();
+  const localizedCatalog = useMemo(() => getLocalizedCatalog(locale), [locale]);
+  const catalogCategories = localizedCatalog.categories;
+  const catalogDifficulties = localizedCatalog.difficulties;
+  const catalogAchievements = localizedCatalog.achievements;
   const [forgeTab, setForgeTab] = useState("create");
   // ── v3.0 Neural Boot Sequence state (must be before any early returns) ──
   const [bootComplete, setBootComplete] = React.useState(false);
@@ -404,13 +411,13 @@ function App({ initialHunterName, onLogout }) {
   const [transitionTargetView, setTransitionTargetView] = React.useState(null);
   const [transitionPreview, setTransitionPreview] = React.useState(null);
   const VIEW_LABELS = useMemo(() => ({
-    dashboard: "HEUTE", stats: "HUNTER STATS", shadows: "SHADOW ARMY",
-    dungeon: "DUNGEON GATES", story: "STORY", equipment: "ARSENAL",
-    shop: "HUNTER SHOP", jobs: "HUNTER JOBS", achievements: "ACHIEVEMENTS",
-    analytics: "ANALYTICS", training: "TRAINING", system: "SYSTEM",
-    goals: "ZIELE", calendar: "KALENDER", challenges: "EVENTS",
-    settings: "EINSTELLUNGEN", sanctum: "INNER SANCTUM",
-  }), []);
+    dashboard: tr("nav.viewLabels.dashboard"), stats: tr("nav.viewLabels.stats"), shadows: tr("nav.viewLabels.shadows"),
+    dungeon: tr("nav.viewLabels.dungeon"), story: tr("nav.viewLabels.story"), equipment: tr("nav.viewLabels.equipment"),
+    shop: tr("nav.viewLabels.shop"), jobs: tr("nav.viewLabels.jobs"), achievements: tr("nav.viewLabels.achievements"),
+    analytics: tr("nav.viewLabels.analytics"), training: tr("nav.viewLabels.training"), system: tr("nav.viewLabels.system"),
+    goals: tr("nav.viewLabels.goals"), calendar: tr("nav.viewLabels.calendar"), challenges: tr("nav.viewLabels.challenges"),
+    settings: tr("nav.viewLabels.settings"), sanctum: tr("nav.viewLabels.sanctum"),
+  }), [tr]);
   const navigateTo = useCallback((newView) => {
     if (newView === view || isPageTransitioning || transitionPreview) return;
     setTransitionTargetView(newView);
@@ -670,9 +677,9 @@ function App({ initialHunterName, onLogout }) {
     return (
       <SystemLoadingScreen
         variant="data"
-        title="APP WIRD GELADEN"
-        label="Daten werden synchronisiert"
-        detail="Quests, Schatten und Dashboard werden geladen"
+        title={tr("loading.appTitle")}
+        label={tr("loading.appLabel")}
+        detail={tr("loading.dataDetail")}
       />
     );
   }
@@ -1117,7 +1124,7 @@ function App({ initialHunterName, onLogout }) {
                   <button
                     onClick={() => navigateTo("settings")}
                     className="press-feedback"
-                    title="Einstellungen"
+                    title={tr("settings.title")}
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "center",
                       width: 32, height: 32, borderRadius: 8,
@@ -1423,7 +1430,7 @@ function App({ initialHunterName, onLogout }) {
                         Reset in {hoursUntilMidnight()}h · {modifier?.id !== "none" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{modifier?.iconSrc ? <img src={modifier.iconSrc} alt={modifier.name} style={{ width: 14, height: 14, objectFit: "contain", verticalAlign: "middle" }} /> : modifier?.icon} {modifier?.name}</span> : "Stable Gates"}
                       </div>
                     </div>
-                    {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ marginBottom: 10 }}><GameIcon src={GATE_ICONS.normal} fallback="🚪" size={48} glow glowColor={theme.primary} animate="float" /></div><div style={{ fontSize: 14, color: "#475569" }}>Keine aktiven Gates</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>Kommen morgen wieder zurück</div></div>}
+                    {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ marginBottom: 10 }}><GameIcon src={GATE_ICONS.normal} fallback="🚪" size={48} glow glowColor={theme.primary} animate="float" /></div><div style={{ fontSize: 14, color: "#475569" }}>{tr("systemHub.noActiveGates")}</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>{tr("systemHub.gatesReturnTomorrow")}</div></div>}
                     {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} modifier={modifier} /></div>)}
                     {(state.dungeons || []).filter(d => d.cleared).length > 0 && (
                       <div style={{ marginTop: 20 }}>
@@ -1491,16 +1498,16 @@ function App({ initialHunterName, onLogout }) {
                               totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
                             },
                           });
-                          enqueueRewardFlow(buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelUp, newLevel, earnedPoints));
+                          enqueueRewardFlow(buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, locale));
                         } else {
-                          notify(`Du hast dieses Kapitel bereits abgeschlossen.`, "info");
+                          notify(tr("notifications.storyChapterAlreadyCompleted"), "info");
                         }
                       }}
                       onBossComplete={(boss, arcId) => {
                         const prev = state;
                         const defeatedBosses = [...(prev.story?.defeatedBosses || [])];
                         if (defeatedBosses.includes(arcId)) {
-                          notify("Dieser Boss wurde bereits besiegt.", "info");
+                          notify(tr("notifications.storyBossAlreadyDefeated"), "info");
                           return;
                         }
                         defeatedBosses.push(arcId);
@@ -1522,7 +1529,7 @@ function App({ initialHunterName, onLogout }) {
                             totalStoryXp: (prev.story?.totalStoryXp || 0) + xpGain,
                           },
                         });
-                        enqueueRewardFlow(buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, titleGranted));
+                        enqueueRewardFlow(buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, titleGranted, locale));
                       }}
                     />
                   </React.Suspense>
@@ -1624,28 +1631,28 @@ function App({ initialHunterName, onLogout }) {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                       <div>
                         <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>ACHIEVEMENTS</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>{achUnlocked.length}/{ACHIEVEMENTS.length} freigeschaltet</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>{achUnlocked.length}/{catalogAchievements.length} {tr("stats.unlockedWord")}</div>
                       </div>
                       <div style={{ padding: "8px 14px", borderRadius: 10, background: "#f59e0b12", border: "1px solid #f59e0b22", textAlign: "center" }}>
-                        <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>PUNKTE</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b", fontFamily: "'Cinzel',serif" }}>{achUnlocked.reduce((sum, id) => { const a = ACHIEVEMENTS.find(ac => ac.id === id); return sum + (a?.reward?.xp || 0); }, 0)}</div>
+                        <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{tr("stats.points")}</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b", fontFamily: "'Cinzel',serif" }}>{achUnlocked.reduce((sum, id) => { const a = catalogAchievements.find(ac => ac.id === id); return sum + (a?.reward?.xp || 0); }, 0)}</div>
                       </div>
                     </div>
                     <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden", marginBottom: 20 }}>
-                      <div style={{ width: `${(achUnlocked.length / ACHIEVEMENTS.length) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg,#f59e0b88,#f59e0b)", transition: "width 0.8s ease" }} />
+                      <div style={{ width: `${(achUnlocked.length / catalogAchievements.length) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg,#f59e0b88,#f59e0b)", transition: "width 0.8s ease" }} />
                     </div>
                     {["quests", "dungeons", "story", "streaks", "stats", "shadows", "misc", "habits"].map(cat => {
-                      const catAchs = ACHIEVEMENTS.filter(a => a.cat === cat);
+                      const catAchs = catalogAchievements.filter(a => a.cat === cat);
                       if (catAchs.length === 0) return null;
                       const catMeta = {
-                        quests: { label: "Quests", icon: QUEST_ICONS.daily },
-                        dungeons: { label: "Dungeons", icon: GATE_ICONS.normal },
-                        story: { label: "Story", icon: STORY_ICONS.scroll },
-                        streaks: { label: "Streaks", icon: NAV_ICONS.timer },
-                        stats: { label: "Stats", icon: NAV_ICONS.analytics },
-                        shadows: { label: "Army", icon: SHADOW_ICONS.soldier },
-                        misc: { label: "Sonstiges", icon: NAV_ICONS.achievements },
-                        habits: { label: "Habits", icon: HABIT_ICONS.fitness },
+                        quests: { label: tr("stats.achievementCategories.quests"), icon: QUEST_ICONS.daily },
+                        dungeons: { label: tr("stats.achievementCategories.dungeons"), icon: GATE_ICONS.normal },
+                        story: { label: tr("stats.achievementCategories.story"), icon: STORY_ICONS.scroll },
+                        streaks: { label: tr("stats.achievementCategories.streaks"), icon: NAV_ICONS.timer },
+                        stats: { label: tr("stats.achievementCategories.stats"), icon: NAV_ICONS.analytics },
+                        shadows: { label: tr("stats.achievementCategories.shadows"), icon: SHADOW_ICONS.soldier },
+                        misc: { label: tr("stats.achievementCategories.misc"), icon: NAV_ICONS.achievements },
+                        habits: { label: tr("stats.achievementCategories.habits"), icon: HABIT_ICONS.fitness },
                       };
                       const cm = catMeta[cat] || { label: cat, icon: null };
                       return (
@@ -1848,41 +1855,41 @@ function App({ initialHunterName, onLogout }) {
                 <div style={{ maxWidth: 480, margin: "0 auto" }}>
                   {/* System header */}
                   <div style={{ textAlign: "center", marginBottom: 20 }}>
-                    <div style={{ fontSize: 9, letterSpacing: 5, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, animation: "pulse 3s infinite" }}>&gt; SYSTEM INTERFACE ACTIVE</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>System</div>
+                    <div style={{ fontSize: 9, letterSpacing: 5, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, animation: "pulse 3s infinite" }}>{tr("systemHub.active")}</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{tr("systemHub.title")}</div>
                     <div style={{ width: 60, height: 2, background: `linear-gradient(90deg, transparent, ${theme.primary}, transparent)`, margin: "10px auto 0" }} />
                   </div>
 
                   {/* HUNTER PROFILE SECTION */}
                   {[{
-                    title: "HUNTER INTEL", iconSrc: NAV_ICONS.analytics, icon: "📋", color: theme.accent,
+                    title: tr("systemHub.hunterIntel"), iconSrc: NAV_ICONS.analytics, icon: "📋", color: theme.accent,
                     items: [
-                      { key: "stats", iconSrc: STAT_ICONS.str, icon: "📋", label: "Hunter Stats", desc: "Stats & Skills", badge: state.statPoints > 0 ? state.statPoints : 0 },
-                      ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📋", label: "Analytics", desc: "Fortschritt & Trends" }] : [{ key: "analytics_locked", iconSrc: NAV_ICONS.analytics, icon: "📋", label: "Analytics", locked: true, unlockLevel: 8 }]),
-                      ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: "Achievements", desc: `${achUnlocked.length}/${ACHIEVEMENTS.length} freigeschaltet`, badge: ACHIEVEMENTS.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: "Achievements", locked: true, unlockLevel: 8 }]),
-                      ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "⚔️", label: "Events", desc: "Challenges & Missionen" }] : [{ key: "challenges_locked", iconSrc: NAV_ICONS.events, icon: "⚔️", label: "Events", locked: true, unlockLevel: 21 }]),
+                      { key: "stats", iconSrc: STAT_ICONS.str, icon: "📋", label: tr("systemHub.stats.label"), desc: tr("systemHub.stats.desc"), badge: state.statPoints > 0 ? state.statPoints : 0 },
+                      ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📋", label: tr("systemHub.analytics.label"), desc: tr("systemHub.analytics.desc") }] : [{ key: "analytics_locked", iconSrc: NAV_ICONS.analytics, icon: "📋", label: tr("systemHub.analytics.label"), locked: true, unlockLevel: 8 }]),
+                      ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: tr("systemHub.achievements.label"), desc: tr("systemHub.achievements.desc", { unlocked: achUnlocked.length, total: catalogAchievements.length }), badge: catalogAchievements.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: tr("systemHub.achievements.label"), locked: true, unlockLevel: 8 }]),
+                      ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "⚔️", label: tr("systemHub.challenges.label"), desc: tr("systemHub.challenges.desc") }] : [{ key: "challenges_locked", iconSrc: NAV_ICONS.events, icon: "⚔️", label: tr("systemHub.challenges.label"), locked: true, unlockLevel: 21 }]),
                     ]
                   }, {
-                    title: "ARSENAL", iconSrc: NAV_ICONS.shop, icon: "📋", color: "#f59e0b",
+                    title: tr("systemHub.arsenal"), iconSrc: NAV_ICONS.shop, icon: "📋", color: "#f59e0b",
                     items: [
-                      ...(can('shadow_army') ? [{ key: "shadows", iconSrc: SHADOW_ICONS.soldier, icon: "👤", label: "Shadow Army", desc: "Erweckte Schatten", badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", iconSrc: SHADOW_ICONS.soldier, icon: "👤", label: "Shadow Army", locked: true, unlockLevel: 15 }]),
-                      ...(can('equipment') ? [{ key: "equipment", iconSrc: ITEM_ICONS.blade, icon: "📋", label: "Equipment", desc: "Waffen & Rüstung", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", iconSrc: ITEM_ICONS.blade, icon: "📋", label: "Equipment", locked: true, unlockLevel: 11 }]),
-                      ...(can('jobs') ? [{ key: "jobs", iconSrc: NAV_ICONS.jobs, icon: "📋", label: "Jobs", desc: "Hunter-Klassen" }] : [{ key: "jobs_locked", iconSrc: NAV_ICONS.jobs, icon: "📋", label: "Jobs", locked: true, unlockLevel: 21 }]),
-                      ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, icon: "📋", label: "Shop", desc: `${state.gold.toLocaleString()} Gold` }] : [{ key: "shop_locked", iconSrc: NAV_ICONS.shop, icon: "📋", label: "Shop", locked: true, unlockLevel: 11 }]),
+                      ...(can('shadow_army') ? [{ key: "shadows", iconSrc: SHADOW_ICONS.soldier, icon: "👤", label: tr("systemHub.shadows.label"), desc: tr("systemHub.shadows.desc"), badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", iconSrc: SHADOW_ICONS.soldier, icon: "👤", label: tr("systemHub.shadows.label"), locked: true, unlockLevel: 15 }]),
+                      ...(can('equipment') ? [{ key: "equipment", iconSrc: ITEM_ICONS.blade, icon: "📋", label: tr("systemHub.equipment.label"), desc: tr("systemHub.equipment.desc"), badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", iconSrc: ITEM_ICONS.blade, icon: "📋", label: tr("systemHub.equipment.label"), locked: true, unlockLevel: 11 }]),
+                      ...(can('jobs') ? [{ key: "jobs", iconSrc: NAV_ICONS.jobs, icon: "📋", label: tr("systemHub.jobs.label"), desc: tr("systemHub.jobs.desc") }] : [{ key: "jobs_locked", iconSrc: NAV_ICONS.jobs, icon: "📋", label: tr("systemHub.jobs.label"), locked: true, unlockLevel: 21 }]),
+                      ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, icon: "📋", label: tr("systemHub.shop.label"), desc: tr("systemHub.shop.desc", { gold: state.gold.toLocaleString() }) }] : [{ key: "shop_locked", iconSrc: NAV_ICONS.shop, icon: "📋", label: tr("systemHub.shop.label"), locked: true, unlockLevel: 11 }]),
 
                     ]
                   }, {
-                    title: "SOCIAL & SPECIAL", iconSrc: NAV_ICONS.guild, icon: "📋", color: "#a855f7",
+                    title: tr("systemHub.socialSpecial"), iconSrc: NAV_ICONS.guild, icon: "📋", color: "#a855f7",
                     items: [
-                      ...(can('sanctum') ? [{ key: "sanctum", icon: "🧘‍♂️", label: "Inner Sanctum", desc: "Meditation & Willenskraft", isOverlay: false }] : [{ key: "sanctum_locked", icon: "🧘‍♂️", label: "Inner Sanctum", locked: true, unlockLevel: 11 }]),
-                      ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "⏰", label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen", isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", iconSrc: NAV_ICONS.timer, icon: "⏰", label: "Dawn / Dusk Protocol", locked: true, unlockLevel: 8 }]),
-                      ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "📋", label: "Soul Link", desc: state.soulLink?.linkCode ? `Verbunden mit ${state.soulLink.partnerName || "Partner"}` : "Mit Partner verbinden", isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "📋", label: "Soul Link", locked: true, unlockLevel: 30 }]),
-                      ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", iconSrc: CHA_ICONS.conversation, icon: "📋", label: "Charisma Dungeons", desc: `${(state.charismaDungeons?.completedChains || []).length}/${5} Ketten · CHA ${state.stats?.cha || 0}`, isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", iconSrc: CHA_ICONS.conversation, icon: "📋", label: "Charisma Dungeons", locked: true, unlockLevel: 30 }]),
+                      ...(can('sanctum') ? [{ key: "sanctum", icon: "🧘‍♂️", label: tr("systemHub.sanctum.label"), desc: tr("systemHub.sanctum.desc"), isOverlay: false }] : [{ key: "sanctum_locked", icon: "🧘‍♂️", label: tr("systemHub.sanctum.label"), locked: true, unlockLevel: 11 }]),
+                      ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "⏰", label: tr("systemHub.protocol.label"), desc: tr("systemHub.protocol.desc"), isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", iconSrc: NAV_ICONS.timer, icon: "⏰", label: tr("systemHub.protocol.label"), locked: true, unlockLevel: 8 }]),
+                      ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "📋", label: tr("systemHub.soulLink.label"), desc: state.soulLink?.linkCode ? tr("systemHub.soulLink.descLinked", { name: state.soulLink.partnerName || "Partner" }) : tr("systemHub.soulLink.descEmpty"), isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "📋", label: tr("systemHub.soulLink.label"), locked: true, unlockLevel: 30 }]),
+                      ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", iconSrc: CHA_ICONS.conversation, icon: "📋", label: tr("systemHub.charisma.label"), desc: tr("systemHub.charisma.desc", { done: (state.charismaDungeons?.completedChains || []).length, total: 5, cha: state.stats?.cha || 0 }), isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", iconSrc: CHA_ICONS.conversation, icon: "📋", label: tr("systemHub.charisma.label"), locked: true, unlockLevel: 30 }]),
                     ]
                   }, {
-                    title: "SYSTEM", iconSrc: NAV_ICONS.settings, icon: "⚙️", color: "#64748b",
+                    title: tr("systemHub.system"), iconSrc: NAV_ICONS.settings, icon: "⚙️", color: "#64748b",
                     items: [
-                      { key: "settings", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: "Einstellungen", desc: "Theme, Export & mehr" },
+                      { key: "settings", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: tr("systemHub.settings.label"), desc: tr("systemHub.settings.desc") },
                     ]
                   }].map((section, si) => (
                     <div key={section.title} data-tutorial={section.title === "HUNTER INTEL" ? "system-hunter-intel" : undefined} style={{ marginBottom: 20, animation: `slideUp 0.3s ease ${si * 0.08}s both` }}>
@@ -1987,10 +1994,10 @@ function App({ initialHunterName, onLogout }) {
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 13, fontWeight: 700, color: premiumLocked ? "#fde68a" : item.locked ? "#475569" : "#e2e8f0", fontFamily: "'Cinzel',serif", paddingRight: premiumLocked ? 42 : 0 }}>{item.label}</div>
                                 <div style={{ fontSize: 9, color: premiumLocked ? "#a78bfa" : item.locked ? "#334155" : "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
-                                  {premiumLocked ? "Noch nicht verfuegbar im Free-Modus" : item.locked ? `🔒 AB LEVEL ${item.unlockLevel}` : item.desc}
+                                  {premiumLocked ? tr("systemHub.freeLocked") : item.locked ? tr("systemHub.levelLocked", { level: item.unlockLevel }) : item.desc}
                                 </div>
                               </div>
-                              <div style={{ fontSize: premiumLocked ? 9 : 12, color: premiumLocked ? "#fde68a" : "#334155", opacity: premiumLocked ? 1 : 0.5, fontFamily: premiumLocked ? "'JetBrains Mono',monospace" : "inherit", fontWeight: premiumLocked ? 900 : 400 }}>{item.locked ? "" : premiumLocked ? "OPEN" : "›"}</div>
+                              <div style={{ fontSize: premiumLocked ? 9 : 12, color: premiumLocked ? "#fde68a" : "#334155", opacity: premiumLocked ? 1 : 0.5, fontFamily: premiumLocked ? "'JetBrains Mono',monospace" : "inherit", fontWeight: premiumLocked ? 900 : 400 }}>{item.locked ? "" : premiumLocked ? tr("systemHub.open") : "›"}</div>
                             </button>
                           );
                         })}
@@ -2051,13 +2058,13 @@ function App({ initialHunterName, onLogout }) {
                   <div style={{ padding: "20px 24px 0", flexShrink: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                       <div>
-                        <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>QUEST FORGE</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{editingQuestId ? "Quest anpassen" : "Quest schmieden"}</div>
+                        <div style={{ fontSize: 10, letterSpacing: 4, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, textShadow: `0 0 12px ${theme.glow}` }}>{tr("quests.forge.kicker")}</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{editingQuestId ? tr("quests.forge.titleEdit") : tr("quests.forge.titleCreate")}</div>
                       </div>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         {/* RANDOMIZER BUTTON */}
                         <button
-                          title="Zufällige Quest-Idee"
+                          title={tr("quests.forge.randomIdea")}
                           onClick={() => {
                             const pool = QUEST_POOL;
                             const pick = pool[Math.floor(Math.random() * pool.length)];
@@ -2079,9 +2086,9 @@ function App({ initialHunterName, onLogout }) {
                     {/* 3 Mode tabs: Erstellen / Mein Pool / Bibliothek */}
                     <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
                       {[
-                        { key: "create", label: "✏️ Erstellen" },
-                        { key: "pool", label: "📦 Mein Pool" },
-                        { key: "library", label: "💡 Bibliothek" },
+                        { key: "create", label: tr("quests.forge.tabs.create") },
+                        { key: "pool", label: tr("quests.forge.tabs.pool") },
+                        { key: "library", label: tr("quests.forge.tabs.library") },
                       ].map(tab => (
                         <button key={tab.key} onClick={() => setForgeTab(tab.key)} style={{
                           flex: 1, padding: "10px 6px", fontSize: 11, fontWeight: 900,
@@ -2107,7 +2114,7 @@ function App({ initialHunterName, onLogout }) {
                       /* ─── BIBLIOTHEK TAB ─── */
                       <>
                         <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", paddingBottom: 2 }}>
-                          {[{ key: "all", label: "Alle" }, { key: "favorites", label: "⭐ Favoriten", color: "#fbbf24" }, ...CATEGORIES.map(c => ({ key: c.key, label: c.stat, color: c.color }))].map(f => (
+                          {[{ key: "all", label: tr("quests.forge.all") }, { key: "favorites", label: tr("quests.forge.favorites"), color: "#fbbf24" }, ...catalogCategories.map(c => ({ key: c.key, label: c.stat, color: c.color }))].map(f => (
                             <button key={f.key} onClick={() => setTemplateFilter(f.key)} style={{
                               padding: "5px 10px", borderRadius: 8, fontSize: 10, fontWeight: 600, flexShrink: 0,
                               background: templateFilter === f.key ? (f.color || theme.primary) + "22" : "transparent",
@@ -2119,8 +2126,8 @@ function App({ initialHunterName, onLogout }) {
                         </div>
                         <div style={{ display: "grid", gap: 6 }}>
                           {QUEST_POOL.filter(t => templateFilter === "all" || t.category === templateFilter || (templateFilter === "favorites" && state.customQuestPool?.favorites?.includes(t.title))).map((t, i) => {
-                            const cat = CATEGORIES.find(c => c.key === t.category);
-                            const diff = DIFFICULTIES.find(d => d.key === t.difficulty);
+                            const cat = catalogCategories.find(c => c.key === t.category);
+                            const diff = catalogDifficulties.find(d => d.key === t.difficulty);
                             return (
                               <button key={i} onClick={() => {
                                 setQTitle(t.title);
@@ -2150,7 +2157,7 @@ function App({ initialHunterName, onLogout }) {
                       <>
                         {state.customQuestPool?.recentlyUsed?.length > 0 && (
                           <div style={{ marginBottom: 18 }}>
-                            <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>ZULETZT VERWENDET</div>
+                            <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>{tr("quests.forge.recentlyUsed")}</div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                               {state.customQuestPool.recentlyUsed.map((title, i) => (
                                 <button key={i} onClick={() => { setQTitle(title); setForgeTab("create"); }} style={{ padding: "6px 12px", borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8", fontSize: 11, fontFamily: "'Outfit',sans-serif", cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}>
@@ -2161,13 +2168,13 @@ function App({ initialHunterName, onLogout }) {
                           </div>
                         )}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>DEINE VORLAGEN</div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.forge.yourTemplates")}</div>
                         </div>
                         <div style={{ display: "grid", gap: 6 }}>
                           {state.customQuestPool?.templates?.length > 0 ? (
                             state.customQuestPool.templates.map((t) => {
-                              const cat = CATEGORIES.find(c => c.key === t.category);
-                              const diff = DIFFICULTIES.find(d => d.key === t.difficulty);
+                              const cat = catalogCategories.find(c => c.key === t.category);
+                              const diff = catalogDifficulties.find(d => d.key === t.difficulty);
                               return (
                                 <button key={t.id} onClick={() => { if (requireQuestSlot()) createQuestFromTemplate(t); }}
                                   style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s", position: "relative" }}
@@ -2183,7 +2190,7 @@ function App({ initialHunterName, onLogout }) {
                             })
                           ) : (
                             <div style={{ textAlign: "center", padding: "30px 20px", color: "#64748b", fontSize: 12, fontFamily: "'Outfit',sans-serif", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px dashed rgba(255,255,255,0.1)" }}>
-                              Dein Pool ist leer.<br /><br />Aktiviere beim Erstellen einer Quest das Häkchen "In meinen Pool speichern".
+                              {tr("quests.forge.poolEmpty")}
                             </div>
                           )}
                         </div>
@@ -2193,10 +2200,10 @@ function App({ initialHunterName, onLogout }) {
                       <>
                         {/* QUEST TITLE */}
                         <div style={{ marginBottom: 16 }}>
-                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>QUEST-TITEL</div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.forge.titleLabel")}</div>
                           <input
                             data-tutorial="quest-title-input"
-                            value={qTitle} onChange={e => setQTitle(e.target.value)} placeholder="Quest-Titel eingeben..."
+                            value={qTitle} onChange={e => setQTitle(e.target.value)} placeholder={tr("quests.forge.titlePlaceholder")}
                             style={{ width: "100%", boxSizing: "border-box", padding: "14px 16px", borderRadius: 14, background: "rgba(10,10,24,0.8)", border: `1px solid ${qTitle.trim() ? theme.primary + "66" : "rgba(255,255,255,0.08)"}`, color: "#fff", fontSize: 16, fontFamily: "'Outfit',sans-serif", transition: "all 0.3s", outline: "none", boxShadow: qTitle.trim() ? `0 0 16px ${theme.primary}22` : "inset 0 2px 4px rgba(0,0,0,0.5)" }}
                             onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.boxShadow = `0 0 20px ${theme.primary}44`; e.currentTarget.style.background = "rgba(15,15,30,0.95)"; }}
                             onBlur={e => { e.currentTarget.style.borderColor = qTitle.trim() ? theme.primary + "66" : "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = qTitle.trim() ? `0 0 16px ${theme.primary}22` : "inset 0 2px 4px rgba(0,0,0,0.5)"; e.currentTarget.style.background = "rgba(10,10,24,0.8)"; }}
@@ -2205,13 +2212,13 @@ function App({ initialHunterName, onLogout }) {
 
                         {/* TYPE */}
                         <div style={{ marginBottom: 14 }}>
-                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>TYP</div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.forge.typeLabel")}</div>
                           <div style={{ display: "flex", gap: 6 }}>
                             {[
-                              { key: "side", label: "Side", color: "#94a3b8" },
-                              { key: "daily", label: "Daily", color: "#22d3ee" },
-                              ...(can('weekly_quests') ? [{ key: "weekly", label: "Weekly", color: "#8b5cf6" }] : []),
-                              ...(can('chained_quests') ? [{ key: "chained", label: "Kette", color: "#f59e0b" }] : []),
+                              { key: "side", label: tr("quests.forge.typeSide"), color: "#94a3b8" },
+                              { key: "daily", label: tr("quests.forge.typeDaily"), color: "#22d3ee" },
+                              ...(can('weekly_quests') ? [{ key: "weekly", label: tr("quests.forge.typeWeekly"), color: "#8b5cf6" }] : []),
+                              ...(can('chained_quests') ? [{ key: "chained", label: tr("quests.forge.chain"), color: "#f59e0b" }] : []),
                             ].map(t => {
                               const conf = QUEST_TYPES_CONFIG[t.key] || QUEST_TYPES_CONFIG.side;
                               return (
@@ -2240,9 +2247,9 @@ function App({ initialHunterName, onLogout }) {
 
                         {/* DIFFICULTY */}
                         <div data-tutorial="quest-difficulty" style={{ marginBottom: 14 }}>
-                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>SCHWIERIGKEIT</div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.forge.difficultyLabel")}</div>
                           <div style={{ display: "flex", gap: 6 }}>
-                            {DIFFICULTIES.map(d => (
+                            {catalogDifficulties.map(d => (
                               <button key={d.key} onClick={() => setQDiff(d.key)} style={{
                                 flex: 1, padding: "8px 4px", fontSize: 10, fontWeight: 900,
                                 background: qDiff === d.key ? `linear-gradient(145deg, ${d.color}25 0%, ${d.color}05 100%)` : "rgba(255,255,255,0.02)",
@@ -2267,9 +2274,9 @@ function App({ initialHunterName, onLogout }) {
 
                         {/* CATEGORY */}
                         <div data-tutorial="quest-category" style={{ marginBottom: 14 }}>
-                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>KATEGORIE</div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.forge.categoryLabel")}</div>
                           <div style={{ display: "flex", gap: 6 }}>
-                            {CATEGORIES.map(c => (
+                            {catalogCategories.map(c => (
                               <button key={c.key} onClick={() => setQCat(c.key)} style={{
                                 flex: 1, padding: "8px 4px", fontSize: 10, fontWeight: 900,
                                 background: qCat === c.key ? `linear-gradient(145deg, ${c.color}25 0%, ${c.color}05 100%)` : "rgba(255,255,255,0.02)",
@@ -2307,7 +2314,7 @@ function App({ initialHunterName, onLogout }) {
                           onMouseLeave={e => { e.currentTarget.style.background = showDetails ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : "rgba(255,255,255,0.02)"; e.currentTarget.style.color = showDetails ? theme.primary : "#64748b"; }}
                         >
                           <span style={{ transform: showDetails ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▼</span>
-                          DETAILS HINZUFÜGEN
+                          {tr("quests.forge.detailsToggle")}
                           <span style={{ fontSize: 9, color: showDetails ? theme.primary : "#475569" }}>{(qDescription.trim() || qSubQuests.length > 0) ? "●" : ""}</span>
                         </button>
 
@@ -2328,7 +2335,7 @@ function App({ initialHunterName, onLogout }) {
                             {/* DESCRIPTION */}
                             <div style={{ marginBottom: 16 }}>
                               <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, marginBottom: 6, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <span>MISSIONSDETAILS</span>
+                                <span>{tr("quests.forge.descriptionLabel")}</span>
                                 {can('ai_quest_desc') && state?.ai?.enabled && qTitle.trim() && (
                                   <button
                                     disabled={geminiAI.isLoading}
@@ -2349,7 +2356,7 @@ function App({ initialHunterName, onLogout }) {
                               <textarea
                                 value={qDescription}
                                 onChange={e => { if (e.target.value.length <= 300) setQDescription(e.target.value); }}
-                                placeholder="Beschreibe deine Quest genauer..."
+                                placeholder={tr("quests.forge.descriptionPlaceholder")}
                                 rows={3}
                                 style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 12, background: "rgba(10,10,24,0.8)", border: `1px solid rgba(255,255,255,0.08)`, color: "#e2e8f0", fontSize: 13, fontFamily: "'Outfit',sans-serif", resize: "vertical", minHeight: 60, maxHeight: 120, outline: "none", transition: "all 0.3s" }}
                                 onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.boxShadow = `0 0 16px ${theme.primary}33`; }}
@@ -2361,7 +2368,7 @@ function App({ initialHunterName, onLogout }) {
                             {/* SUB-QUESTS / ETAPPEN */}
                             <div style={{ marginBottom: 12 }}>
                               <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, marginBottom: 8, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <span>ETAPPEN (SUB-QUESTS)</span>
+                                <span>{tr("quests.forge.stagesLabel")}</span>
                                 <span style={{ color: "#475569", fontWeight: 400 }}>{qSubQuests.length}/5</span>
                               </div>
                               {qSubQuests.map((sq, i) => (
@@ -2370,7 +2377,7 @@ function App({ initialHunterName, onLogout }) {
                                   <input
                                     value={sq.title}
                                     onChange={e => { const next = [...qSubQuests]; next[i] = { ...next[i], title: e.target.value }; setQSubQuests(next); }}
-                                    placeholder={`Etappe ${i + 1}...`}
+                                    placeholder={tr("quests.forge.stagePlaceholder", { number: i + 1 })}
                                     style={{ flex: 1, padding: "8px 12px", borderRadius: 10, background: "rgba(10,10,24,0.8)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontSize: 12, fontFamily: "'Outfit',sans-serif", outline: "none", transition: "all 0.2s" }}
                                     onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.boxShadow = `0 0 12px ${theme.primary}33`; e.currentTarget.style.background = "rgba(15,15,30,0.95)"; }}
                                     onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "rgba(10,10,24,0.8)"; }}
@@ -2390,7 +2397,7 @@ function App({ initialHunterName, onLogout }) {
                                 }}
                                   onMouseEnter={e => { e.currentTarget.style.background = `${theme.primary}0a`; e.currentTarget.style.borderColor = `${theme.primary}66`; }}
                                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = `${theme.primary}33`; }}
-                                >+ ETAPPE HINZUFÜGEN</button>
+                                >{tr("quests.forge.addStage")}</button>
                               )}
                             </div>
 
@@ -2405,15 +2412,15 @@ function App({ initialHunterName, onLogout }) {
                                     color: theme.primary, fontSize: 12, transition: "all 0.2s"
                                   }}>{qSaveToPool ? "✓" : ""}</div>
                                   <div>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color: qSaveToPool ? theme.primary : "#e2e8f0" }}>In meinen Pool speichern</div>
-                                    <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Quest als Vorlage für später wiederverwenden.</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: qSaveToPool ? theme.primary : "#e2e8f0" }}>{tr("quests.forge.saveToPool")}</div>
+                                    <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{tr("quests.forge.saveToPoolDesc")}</div>
                                   </div>
                                 </label>
                                 {qSaveToPool && (
                                   <div style={{ marginTop: 8, padding: "0 4px", animation: "slideDown 0.3s ease" }}>
-                                    <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>TAGS (KOMMA GETRENNT)</div>
+                                    <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.forge.tagsLabel")}</div>
                                     <input
-                                      value={qTags} onChange={e => setQTags(e.target.value)} placeholder="z.B. workout, morgens, fokussiert"
+                                      value={qTags} onChange={e => setQTags(e.target.value)} placeholder={tr("quests.forge.tagsPlaceholder")}
                                       style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, background: "rgba(10,10,24,0.8)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontSize: 12, fontFamily: "'Outfit',sans-serif", outline: "none", transition: "all 0.2s" }}
                                       onFocus={e => { e.currentTarget.style.borderColor = theme.primary; e.currentTarget.style.boxShadow = `0 0 12px ${theme.primary}33`; }}
                                       onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; }}
@@ -2428,27 +2435,27 @@ function App({ initialHunterName, onLogout }) {
                         {/* PRODUCTIVITY SIGNALS */}
                         <div style={{ marginBottom: 14, display: "grid", gap: 12 }}>
                           <div>
-                            <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>PRIORITAET</div>
+                            <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{tr("quests.forge.priorityLabel")}</div>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-                              {[{ key: "low", label: "NIEDRIG" }, { key: "medium", label: "MITTEL" }, { key: "high", label: "HOCH" }].map(p => (
+                              {[{ key: "low", label: tr("quests.forge.priorityLow") }, { key: "medium", label: tr("quests.forge.priorityMedium") }, { key: "high", label: tr("quests.forge.priorityHigh") }].map(p => (
                                 <button key={p.key} type="button" onClick={() => setQPriority(p.key)} style={{ padding: "8px 6px", borderRadius: 8, fontSize: 9, fontWeight: 800, background: qPriority === p.key ? `${theme.primary}18` : "rgba(255,255,255,0.025)", border: `1px solid ${qPriority === p.key ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: qPriority === p.key ? theme.primary : "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer" }}>{p.label}</button>
                               ))}
                             </div>
                           </div>
                           <div>
-                            <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>ENERGIE / DAUER</div>
+                            <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{tr("quests.forge.energyLabel")}</div>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-                              {[{ key: "quick", label: "5 MIN" }, { key: "medium", label: "30 MIN" }, { key: "deep", label: "DEEP" }].map(e => (
+                              {[{ key: "quick", label: tr("quests.forge.energyQuick") }, { key: "medium", label: tr("quests.forge.energyMedium") }, { key: "deep", label: tr("quests.forge.energyDeep") }].map(e => (
                                 <button key={e.key} type="button" onClick={() => setQEnergy(e.key)} style={{ padding: "8px 6px", borderRadius: 8, fontSize: 9, fontWeight: 800, background: qEnergy === e.key ? `${theme.secondary}18` : "rgba(255,255,255,0.025)", border: `1px solid ${qEnergy === e.key ? theme.secondary + "66" : "rgba(255,255,255,0.06)"}`, color: qEnergy === e.key ? theme.secondary : "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer" }}>{e.label}</button>
                               ))}
                             </div>
                           </div>
-                          <input value={qContext} onChange={e => setQContext(e.target.value)} placeholder="Kontext: Zuhause, PC, Draussen..." style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontFamily: "'JetBrains Mono',monospace", fontSize: 11, outline: "none", boxSizing: "border-box" }} />
+                          <input value={qContext} onChange={e => setQContext(e.target.value)} placeholder={tr("quests.forge.contextPlaceholder")} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontFamily: "'JetBrains Mono',monospace", fontSize: 11, outline: "none", boxSizing: "border-box" }} />
                         </div>
 
                         {/* DUE DATE */}
                         <div style={{ marginBottom: 14 }}>
-                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>FÄLLIG BIS</div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{tr("quests.forge.dueDateLabel")}</div>
                           <input
                             type="date"
                             value={qDueDate}
@@ -2467,9 +2474,9 @@ function App({ initialHunterName, onLogout }) {
 
                         {/* REMINDER */}
                         <div style={{ marginBottom: 14 }}>
-                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>REMINDER</div>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{tr("quests.forge.reminderLabel")}</div>
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: qReminderPreset === "custom" ? 8 : 0 }}>
-                            {[{ key: "none", label: "AUS" }, { key: "in30", label: "30 MIN" }, { key: "evening", label: "18:00" }, { key: "tomorrow_morning", label: "MORGEN" }, { key: "before_due", label: "VOR DUE" }, { key: "custom", label: "CUSTOM" }].map(r => (
+                            {[{ key: "none", label: tr("quests.forge.reminderOff") }, { key: "in30", label: "30 MIN" }, { key: "evening", label: "18:00" }, { key: "tomorrow_morning", label: tr("quests.forge.reminderTomorrow") }, { key: "before_due", label: tr("quests.forge.reminderBeforeDue") }, { key: "custom", label: tr("quests.forge.reminderCustom") }].map(r => (
                               <button key={r.key} type="button" onClick={() => setQReminderPreset(r.key)} style={{ padding: "8px 5px", borderRadius: 8, fontSize: 8, fontWeight: 800, background: qReminderPreset === r.key ? `${theme.primary}18` : "rgba(255,255,255,0.025)", border: `1px solid ${qReminderPreset === r.key ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: qReminderPreset === r.key ? theme.primary : "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer" }}>{r.label}</button>
                             ))}
                           </div>
@@ -2488,26 +2495,26 @@ function App({ initialHunterName, onLogout }) {
                               color: theme.primary, fontSize: 13, transition: "all 0.2s"
                             }}>{qSyncHabit ? "✓" : ""}</div>
                             <div>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>Mit Habit-Tracker verknüpfen</div>
-                              <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>Erstellt automatisch eine Routine zum Tracken des Streaks.</div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>{tr("quests.forge.habitLink")}</div>
+                              <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{tr("quests.forge.habitLinkDesc")}</div>
                             </div>
                           </label>
                         )}
 
                         {/* XP PREVIEW */}
                         {qTitle.trim() && (() => {
-                          const previewDiff = DIFFICULTIES.find(d => d.key === qDiff);
+                          const previewDiff = catalogDifficulties.find(d => d.key === qDiff);
                           const previewType = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
                           const previewXp = Math.round((previewDiff?.xp || 5) * (previewType.xpMult || 1));
                           const previewGold = Math.round((previewDiff?.gold || 5) * (previewType.goldMult || 1));
                           const subs = qSubQuests.filter(sq => sq.title.trim()).length;
                           return (
                             <div style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.02)", border: `1px solid ${theme.primary}15`, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>BELOHNUNG</div>
+                              <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{tr("quests.forge.reward")}</div>
                               <div style={{ display: "flex", gap: 12, fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>
                                 <span style={{ color: "#a78bfa" }}>+{subs > 0 ? Math.round(previewXp * 1.2) : previewXp} XP</span>
                                 <span style={{ color: "#fbbf24" }}>+{previewGold} G</span>
-                                {subs > 0 && <span style={{ color: theme.primary, fontSize: 9 }}>{subs}× Etappen</span>}
+                                {subs > 0 && <span style={{ color: theme.primary, fontSize: 9 }}>{tr("quests.forge.stagesShort", { count: subs })}</span>}
                               </div>
                             </div>
                           );
@@ -2527,7 +2534,7 @@ function App({ initialHunterName, onLogout }) {
                       }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(10,10,24,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 6px 30px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.3)` : "inset 0 2px 4px rgba(0,0,0,0.5)", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid rgba(255,255,255,0.04)" }}
                         onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-3px) scale(1.01)"; e.currentTarget.style.boxShadow = `0 12px 40px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.4)`; } }}
                         onMouseLeave={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 6px 30px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.3)`; } }}
-                      >{qTitle.trim() ? (editingQuestId ? "✦ SPEICHERN ✦" : "✦ QUEST ANNEHMEN ✦") : "Quest-Titel eingeben..."}</button>
+                      >{qTitle.trim() ? (editingQuestId ? `✦ ${tr("quests.forge.submitSave")} ✦` : `✦ ${tr("quests.forge.submitAccept")} ✦`) : tr("quests.forge.submitNeedTitle")}</button>
                     </div>
                   )}
 

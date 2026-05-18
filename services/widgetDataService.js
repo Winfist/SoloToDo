@@ -39,22 +39,32 @@ export const DEFAULT_WIDGET_CONFIG = {
 };
 
 // ─── All available widget modules ─────────────────────────────
-export const WIDGET_MODULES = [
-  { key: 'streak_xp', label: 'Streak & XP', icon: '🔥', color: '#f97316', desc: 'Aktuelle Serie + Level + XP-Fortschritt' },
-  { key: 'quests', label: 'Quest Board', icon: '🗡️', color: '#f59e0b', desc: 'Aktive Quests als Liste mit Difficulty' },
-  { key: 'daily_quests', label: 'Daily Quests', icon: '📋', color: '#22d3ee', desc: 'Nur tägliche Quests (erledigt/offen)' },
-  { key: 'focus_quest', label: 'Focus Quest', icon: '🎯', color: '#ef4444', desc: 'Die eine wichtigste Quest prominent' },
-  { key: 'habits', label: 'Habit Progress', icon: '💪', color: '#22c55e', desc: 'Heutige Habits als Checklist' },
-  { key: 'micro_habits', label: 'Micro-Habits', icon: '🧬', color: '#06b6d4', desc: 'Kompakte Counter-Leiste' },
-  { key: 'hunter_card', label: 'Hunter Card', icon: '🏆', color: '#a855f7', desc: 'Level, Rang, Titel, Stats' },
-  { key: 'health', label: 'Biometrics', icon: '❤️', color: '#ef4444', desc: 'Schritte + Schlaf von heute' },
-  { key: 'screen_time', label: 'Screen Time', icon: '📱', color: '#f59e0b', desc: 'Heutiges Limit vs. Aktuell' },
-  { key: 'deadline_alert', label: 'Deadline Alert', icon: '⏰', color: '#dc2626', desc: 'Quest mit nächstem Fälligkeitsdatum' },
-  { key: 'system_message', label: 'System Message', icon: '💬', color: '#6366f1', desc: 'Motivations-Spruch im System-Stil' },
-  { key: 'week_heatmap', label: 'Wochen-Heatmap', icon: '📊', color: '#22c55e', desc: '7-Tage Mini-Grid der Aktivität' },
-  { key: 'streak_shield', label: 'Streak Shield', icon: '🛡️', color: '#3b82f6', desc: 'Streak-Schutz-Status + Warnung' },
-  { key: 'shadow_army', label: 'Shadow Army', icon: '👻', color: '#64748b', desc: 'Anzahl Shadows + stärkster Shadow' },
+const WIDGET_MODULE_BASE = [
+  { key: 'streak_xp', icon: '🔥', color: '#f97316' },
+  { key: 'quests', icon: '🗡️', color: '#f59e0b' },
+  { key: 'daily_quests', icon: '📋', color: '#22d3ee' },
+  { key: 'focus_quest', icon: '🎯', color: '#ef4444' },
+  { key: 'habits', icon: '💪', color: '#22c55e' },
+  { key: 'micro_habits', icon: '🧬', color: '#06b6d4' },
+  { key: 'hunter_card', icon: '🏆', color: '#a855f7' },
+  { key: 'health', icon: '❤️', color: '#ef4444' },
+  { key: 'screen_time', icon: '📱', color: '#f59e0b' },
+  { key: 'deadline_alert', icon: '⏰', color: '#dc2626' },
+  { key: 'system_message', icon: '💬', color: '#6366f1' },
+  { key: 'week_heatmap', icon: '📊', color: '#22c55e' },
+  { key: 'streak_shield', icon: '🛡️', color: '#3b82f6' },
+  { key: 'shadow_army', icon: '👻', color: '#64748b' },
 ];
+
+export function getWidgetModules(localeOrMode = 'auto') {
+  return WIDGET_MODULE_BASE.map(module => ({
+    ...module,
+    label: translate(localeOrMode, `widgets.modules.${module.key}.label`),
+    desc: translate(localeOrMode, `widgets.modules.${module.key}.desc`),
+  }));
+}
+
+export const WIDGET_MODULES = getWidgetModules('de');
 
 // ─── RANKS (duplicated minimally for widget payload) ──────────
 const RANKS_MINIMAL = [

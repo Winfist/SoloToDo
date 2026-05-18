@@ -1,5 +1,10 @@
 import { STAT_ICONS, NAV_ICONS, HABIT_ICONS, STORY_ICONS, SEASON_ICONS } from "../data/icons.js";
 import { getToday, getLocalDateKey } from "../data/dateUtils.js";
+import { getStateLocale, translate } from "../data/i18n.js";
+
+function ct(state, key, params = {}) {
+    return translate(getStateLocale(state), key, params);
+}
 
 /**
  * SystemCoach – Adaptive AI Coach Interventions.
@@ -29,12 +34,12 @@ export function checkInactivity(state) {
         type: "coaching",
         icon: "⚠",
         iconSrc: NAV_ICONS.events,
-        title: "ANOMALIE DETEKTIERT",
+        title: ct(state, "systemCoach.anomalyTitle"),
         lines: [
-            `SYSTEM: Hunter ${state.hunterName || "Unbekannt"} zeigt reduzierte Aktivität.`,
-            `Letzte Aktion vor ${days} Tagen.`,
-            `Warnung: Langfristige Inaktivität führt zu Streak-Verlust.`,
-            `Empfehlung: Starte mit einer Easy-Quest um Momentum aufzubauen.`,
+            ct(state, "systemCoach.inactivityHunter", { name: state.hunterName || ct(state, "common.unknown") }),
+            ct(state, "systemCoach.lastActionDays", { days }),
+            ct(state, "systemCoach.inactivityWarning"),
+            ct(state, "systemCoach.startEasy"),
         ],
         priority: 2,
     };
@@ -51,11 +56,11 @@ export function checkOverexertion(state) {
         type: "coaching",
         icon: "🛡️",
         iconSrc: STAT_ICONS.vit,
-        title: "ÜBERLASTUNG ERKANNT",
+        title: ct(state, "systemCoach.overloadTitle"),
         lines: [
-            `SYSTEM: ${recent} Quests in 3 Tagen. Überlastungsmuster erkannt.`,
-            `Hunter-Effizienz sinkt bei Erschöpfung um 40%.`,
-            `Empfehlung: Mache eine VIT-Quest. Erholung stärkt den Körper.`,
+            ct(state, "systemCoach.overloadDetected", { count: recent }),
+            ct(state, "systemCoach.overloadEfficiency"),
+            ct(state, "systemCoach.recovery"),
         ],
         priority: 1,
     };
@@ -77,12 +82,12 @@ export function checkImbalance(state) {
         type: "coaching",
         icon: "⚖️",
         iconSrc: STAT_ICONS.int,
-        title: "STAT-UNGLEICHGEWICHT",
+        title: ct(state, "systemCoach.imbalanceTitle"),
         lines: [
-            `SYSTEM: Kritisches Ungleichgewicht in Hunter-Profil.`,
-            `${weakName}-Stat ist deutlich unter dem Durchschnitt deines Levels.`,
-            `Warnung: Ausgewogene Hunter überleben länger in Dungeons.`,
-            `Empfehlung: Fokussiere ${weakName}-Quests in den nächsten Tagen.`,
+            ct(state, "systemCoach.imbalanceDetected"),
+            ct(state, "systemCoach.statBelowAverage", { stat: weakName }),
+            ct(state, "systemCoach.balancedWarning"),
+            ct(state, "systemCoach.focusWeak", { stat: weakName }),
         ],
         priority: 1,
     };
@@ -103,12 +108,12 @@ export function checkStreakDanger(state) {
         type: "warning",
         icon: "🔥",
         iconSrc: STAT_ICONS.str,
-        title: "STREAK IN GEFAHR",
+        title: ct(state, "systemCoach.streakDangerTitle"),
         lines: [
-            `⚠ KRITISCHE WARNUNG ⚠`,
-            `Dein ${streak}-Tage-Streak endet in ${hoursLeft} Stunden!`,
-            `Eine einzige Easy-Quest rettet deinen Fortschritt.`,
-            `Streak-Bonus aktuell: +${streakBonus}% XP`,
+            ct(state, "systemCoach.criticalWarning"),
+            ct(state, "systemCoach.streakEnds", { streak, hours: hoursLeft }),
+            ct(state, "systemCoach.oneQuest"),
+            ct(state, "systemCoach.streakBonus", { bonus: streakBonus }),
         ],
         priority: 3,
     };
@@ -126,11 +131,11 @@ export function checkHabitReminder(state) {
         type: "coaching",
         icon: "🔄",
         iconSrc: HABIT_ICONS.weekday,
-        title: "HABITS OFFEN",
+        title: ct(state, "systemCoach.habitOpenTitle"),
         lines: [
-            `SYSTEM: ${unfinished} Habit${unfinished > 1 ? "s" : ""} noch nicht erledigt.`,
-            `Konsistenz ist der Schlüssel zu echter Veränderung.`,
-            `Selbst eine kleine Aktion zählt.`,
+            ct(state, "systemCoach.habitOpenLine", { count: unfinished, plural: unfinished > 1 ? "s" : "" }),
+            ct(state, "systemCoach.consistencyLine"),
+            ct(state, "systemCoach.smallActionLine"),
         ],
         priority: 1,
     };
@@ -139,16 +144,16 @@ export function checkHabitReminder(state) {
 // ── Celebration Messages ─────────────────────────────────────
 
 const CELEBRATIONS = [
-    { check: s => (s.totalQuestsCompleted || 0) === 1, msg: "Deine erste Quest. Der Anfang einer Reise.", icon: "⚔️", iconSrc: STAT_ICONS.str },
-    { check: s => (s.streak || 0) === 7, msg: "Eine Woche ungebrochener Wille. Du wirst stärker.", icon: "🔥", iconSrc: STAT_ICONS.str },
-    { check: s => (s.streak || 0) === 30, msg: "30 Tage. Eiserne Disziplin. Du bist nicht derselbe Mensch.", icon: "💎", iconSrc: STORY_ICONS.butterfly },
-    { check: s => s.level === 10, msg: "Level 10. Der schwächste Hunter überlebt.", icon: "✨", iconSrc: STAT_ICONS.cha },
-    { check: s => s.level === 25, msg: "Level 25. Du hast mehr erreicht als die meisten.", icon: "🌟", iconSrc: NAV_ICONS.achievements },
-    { check: s => s.level === 50, msg: "Level 50. Ein wahrer Veteran.", icon: "👑", iconSrc: SEASON_ICONS.merchant },
-    { check: s => (s.totalQuestsCompleted || 0) === 100, msg: "100 Quests. Du bist kein E-Rank mehr.", icon: "💯", iconSrc: NAV_ICONS.achievements },
-    { check: s => (s.shadowArmy?.shadows || []).length === 1, msg: "Dein erster Schatten erhebt sich. ARISE.", icon: "🌑", iconSrc: STORY_ICONS.arise },
-    { check: s => (s.shadowArmy?.shadows || []).some(sh => sh.isNamed), msg: "Ein Named Shadow erkennt dich als würdig an.", icon: "🩸", iconSrc: SEASON_ICONS.redgate },
-    { check: s => (s.dungeonHistory || []).filter(d => d.won).length === 1, msg: "Dein erstes Gate. Der Pfad der Stärke beginnt.", icon: "🌀", iconSrc: NAV_ICONS.dashboard },
+    { check: s => (s.totalQuestsCompleted || 0) === 1, msgKey: "systemCoach.firstQuest", icon: "⚔️", iconSrc: STAT_ICONS.str },
+    { check: s => (s.streak || 0) === 7, msgKey: "systemCoach.celebrationWeek", icon: "🔥", iconSrc: STAT_ICONS.str },
+    { check: s => (s.streak || 0) === 30, msgKey: "systemCoach.celebrationThirty", icon: "💎", iconSrc: STORY_ICONS.butterfly },
+    { check: s => s.level === 10, msgKey: "systemCoach.celebrationLevel10", icon: "✨", iconSrc: STAT_ICONS.cha },
+    { check: s => s.level === 25, msgKey: "systemCoach.celebrationLevel25", icon: "🌟", iconSrc: NAV_ICONS.achievements },
+    { check: s => s.level === 50, msgKey: "systemCoach.celebrationLevel50", icon: "👑", iconSrc: SEASON_ICONS.merchant },
+    { check: s => (s.totalQuestsCompleted || 0) === 100, msgKey: "systemCoach.hundredQuests", icon: "💯", iconSrc: NAV_ICONS.achievements },
+    { check: s => (s.shadowArmy?.shadows || []).length === 1, msgKey: "systemCoach.celebrationFirstShadow", icon: "🌑", iconSrc: STORY_ICONS.arise },
+    { check: s => (s.shadowArmy?.shadows || []).some(sh => sh.isNamed), msgKey: "systemCoach.celebrationNamedShadow", icon: "🩸", iconSrc: SEASON_ICONS.redgate },
+    { check: s => (s.dungeonHistory || []).filter(d => d.won).length === 1, msgKey: "systemCoach.celebrationFirstGate", icon: "🌀", iconSrc: NAV_ICONS.dashboard },
 ];
 
 export function checkCelebrations(state, prevState) {
@@ -160,8 +165,8 @@ export function checkCelebrations(state, prevState) {
                     type: "celebration",
                     icon: c.icon,
                     iconSrc: c.iconSrc,
-                    title: "SYSTEM NACHRICHT",
-                    lines: [c.msg],
+                    title: ct(state, "systemCoach.systemMessageTitle"),
+                    lines: [ct(state, c.msgKey)],
                     priority: 2,
                 };
             }
@@ -237,17 +242,22 @@ export function checkWeeklyPathReport(state) {
         const focusStats = [...new Set(focusDomains.map(d => domainToStat[d.toLowerCase()] || d))];
         const neglectedFocus = focusStats.filter(s => counts[s] <= 1);
         if (neglectedFocus.length > 0) {
-            focusWarning = ` Deine Fokus-Domänen (${neglectedFocus.map(s => statNames[s]).join(", ")}) brauchen mehr Aufmerksamkeit!`;
+            focusWarning = ct(state, "systemCoach.focusDomainsWarning", { stats: neglectedFocus.map(s => statNames[s]).join(", ") });
         }
     }
 
     const lines = [
-        `Wochenanalyse: ${total} Quests in 7 Tagen.`,
-        sorted.map(([s, c]) => `${statNames[s]}: ${c}`).join(" · "),
-        `Stärkster Bereich: ${statNames[strongest[0]]} (${strongest[1]}x). Schwächster: ${statNames[weakest[0]]} (${weakest[1]}x).`,
+        ct(state, "systemCoach.weeklyAnalysis", { count: total }),
+        sorted.map(([s, c]) => `${statNames[s]}: ${c}`).join(" - "),
+        ct(state, "systemCoach.weeklyStrongWeak", {
+            strongest: statNames[strongest[0]],
+            strongestCount: strongest[1],
+            weakest: statNames[weakest[0]],
+            weakestCount: weakest[1],
+        }),
     ];
     if (focusWarning) lines.push(focusWarning);
-    lines.push(`Empfehlung: Fokussiere diese Woche auf ${statNames[weakest[0]]}-Quests.`);
+    lines.push(ct(state, "systemCoach.weeklyFocus", { stat: statNames[weakest[0]] }));
 
     return {
         type: "coaching",

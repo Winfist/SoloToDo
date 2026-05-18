@@ -583,6 +583,24 @@ export function resolveStateConflict(localState, cloudState) {
   if (!localState) return { data: cloudState, source: "cloud", reason: "cloud-only" };
   if (!cloudState) return { data: localState, source: "local", reason: "local-only" };
 
+  // ── Admin reset override ──
+  // If an admin has reset the user via the dashboard, the cloud state will
+  // carry an `_adminResetAt` timestamp.  When that timestamp is newer than
+  // the local state's last save, we MUST honour the admin reset – otherwise
+  // the stale local cache would win through the normal progress-protection
+  // checks and undo the admin's work.
+  const adminResetAtMs = parseTime(cloudState._adminResetAt);
+  if (adminResetAtMs > 0) {
+    const localTime = getStateTimestamp(localState);
+    if (adminResetAtMs >= localTime) {
+      console.log("System: Admin-Reset erkannt – Cloud-State wird erzwungen.", {
+        adminResetAt: cloudState._adminResetAt,
+        resetType: cloudState._adminResetType,
+      });
+      return { data: mergeLocalOnlyCaches(cloudState, localState), source: "cloud", reason: "admin-reset" };
+    }
+  }
+
   const localScore = getStateProgressScore(localState);
   const cloudScore = getStateProgressScore(cloudState);
   const localTime = getStateTimestamp(localState);
@@ -912,7 +930,7 @@ export async function saveState(s) {
           if (cleanState.hunterName || user.displayName) {
             cleanState.displayName = cleanState.hunterName || user.displayName;
           }
-        } else if (shouldProtectCloudWrite(cleanState) && shouldSkipCloudWrite(cleanState, cloudState)) {
+        } else if (resolved.reason !== 'admin-reset' && shouldProtectCloudWrite(cleanState) && shouldSkipCloudWrite(cleanState, cloudState)) {
           console.warn("System: Cloud-Speicherung blockiert, um vorhandene Fortschritte vor einem Reset zu schuetzen.");
           return;
         }

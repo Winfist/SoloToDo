@@ -3,6 +3,7 @@ import { healthService } from '../../services/healthService';
 import { Capacitor } from '@capacitor/core';
 import { AnimatedNumber } from '../../hooks/useAnimatedCounter.jsx';
 import { getLocalDateKey, getToday } from '../../data/dateUtils.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 
 const IS_NATIVE = Capacitor.isNativePlatform();
 
@@ -70,6 +71,7 @@ function getHistorySignature(stepsData = [], sleepData = []) {
 }
 
 export function HealthSummaryWidget({ state, theme, openDetails, updateHealthData }) {
+    const { t } = useI18n();
     const cachedToday = getCachedToday(state);
     const sleepMode = state?.healthPreferences?.sleepMode || 'auto';
     const manualSleepToday = state?.healthPreferences?.manualSleepToday || 0;
@@ -213,19 +215,19 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
                 <div>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.4 }}>BIOMETRICS</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>Körperstatus</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.4 }}>{t('health.title').toUpperCase()}</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>{t('health.bodyStatus')}</div>
                 </div>
                 <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: "'JetBrains Mono',monospace", padding: '4px 8px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.04)' }}>
-                    Details
+                    {t('common.details')}
                 </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: sleepMode === 'off' ? '1fr' : '1fr 1fr', gap: 10 }}>
                 <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>
-                        <span>Schritte</span>
-                        <span style={{ color: stepGoalReached ? '#22c55e' : '#64748b' }}>{stepGoalReached ? 'Ziel' : '10k'}</span>
+                        <span>{t('health.steps')}</span>
+                        <span style={{ color: stepGoalReached ? '#22c55e' : '#64748b' }}>{stepGoalReached ? t('health.goal') : '10k'}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
                         <div style={{ color: '#f8fafc', fontSize: 28, fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>
@@ -240,8 +242,8 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
                 {sleepMode !== 'off' && (
                     <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: 10, fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>
-                            <span>Schlaf</span>
-                            <span style={{ color: sleepValue >= 7 ? '#a78bfa' : '#64748b' }}>{sleepMode === 'manual' ? 'Manuell' : 'Ziel 7h'}</span>
+                            <span>{t('health.sleep')}</span>
+                            <span style={{ color: sleepValue >= 7 ? '#a78bfa' : '#64748b' }}>{sleepMode === 'manual' ? t('health.manual') : t('health.sleepGoal')}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
                             <div style={{ color: '#f8fafc', fontSize: 28, fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>
@@ -258,11 +260,11 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
 
             <div style={{ display: 'grid', gridTemplateColumns: sleepMode === 'off' ? '1fr' : '1fr 1fr', gap: 8, marginTop: 12 }}>
                 <div style={{ color: '#94a3b8', fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>
-                    7T Schnitt <strong style={{ color: primaryColor, fontSize: 11 }}>{weekStats.avgSteps.toLocaleString()}</strong>
+                    {t('health.avg7')} <strong style={{ color: primaryColor, fontSize: 11 }}>{weekStats.avgSteps.toLocaleString()}</strong>
                 </div>
                 {sleepMode !== 'off' && (
                     <div style={{ color: '#94a3b8', fontSize: 10, fontFamily: "'JetBrains Mono',monospace", textAlign: 'right' }}>
-                        Schlaf <strong style={{ color: '#a78bfa', fontSize: 11 }}>{weekStats.avgSleep}h</strong>
+                        {t('health.sleep')} <strong style={{ color: '#a78bfa', fontSize: 11 }}>{weekStats.avgSleep}h</strong>
                     </div>
                 )}
             </div>
@@ -305,10 +307,10 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={primaryColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 4px ${primaryColor}88)` }}>
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>BIOMETRICS</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>{t('health.title').toUpperCase()}</div>
                 </div>
                 <div style={{ fontSize: 9, color: `${primaryColor}aa`, fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 4 }}>
-                    DETAILS &#10095;
+                    {t('common.details').toUpperCase()} &#10095;
                 </div>
             </div>
 
@@ -336,7 +338,7 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
                             )}
                         </div>
                         <div style={{ fontSize: 8, color: steps >= 10000 ? "#4ade80" : "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, textAlign: "right" }}>
-                            {steps >= 10000 ? "ZIEL ERREICHT" : "TÄGLICHES ZIEL"}
+                            {steps >= 10000 ? t('health.goalReached').toUpperCase() : t('health.dailyGoal').toUpperCase()}
                         </div>
                     </div>
 
@@ -371,7 +373,7 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
                                 </svg>
                             </div>
                             <div style={{ fontSize: 8, color: parseFloat(displaySleep) >= 7 ? "#a78bfa" : "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2, textAlign: "right" }}>
-                                {sleepMode === "manual" ? "MANUELL" : (parseFloat(displaySleep) >= 7 ? "GUT ERHOLT" : "SCHLAFDAUER")}
+                                {sleepMode === "manual" ? t('health.manual').toUpperCase() : (parseFloat(displaySleep) >= 7 ? t('health.wellRested').toUpperCase() : t('health.sleepDuration').toUpperCase())}
                             </div>
                         </div>
 
@@ -392,12 +394,12 @@ export function HealthSummaryWidget({ state, theme, openDetails, updateHealthDat
             </div>
             <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: sleepMode === "off" ? "1fr" : "1fr 1fr", gap: 8, position: "relative", zIndex: 1 }}>
                 <div style={{ background: "rgba(56,189,248,0.06)", border: `1px solid ${primaryColor}22`, borderRadius: 10, padding: "8px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>AVG 7T</span>
-                    <span style={{ fontSize: 10, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{weekStats.avgSteps.toLocaleString()} / Tag</span>
+                    <span style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{t('health.avg7').toUpperCase()}</span>
+                    <span style={{ fontSize: 10, color: primaryColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{weekStats.avgSteps.toLocaleString()} {t('health.perDay')}</span>
                 </div>
                 {sleepMode !== "off" && (
                     <div style={{ background: "rgba(167,139,250,0.06)", border: "1px solid #a78bfa22", borderRadius: 10, padding: "8px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>AVG 7T</span>
+                        <span style={{ fontSize: 8, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{t('health.avg7').toUpperCase()}</span>
                         <span style={{ fontSize: 10, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{weekStats.avgSleep}h Schlaf</span>
                     </div>
                 )}

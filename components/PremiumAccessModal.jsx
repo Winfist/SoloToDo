@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
 import Modal from "./ui/Modal.jsx";
 import { GEM_ICONS, NAV_ICONS } from "../data/icons.js";
-import { getPremiumFeature, getPremiumStatus, PREMIUM_PRODUCT } from "../data/premium.js";
+import { getLocalizedPremiumFeature, getLocalizedPremiumProduct, getPremiumStatus, PREMIUM_PRODUCT } from "../data/premium.js";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 
-function PremiumBadge({ active, theme }) {
+function PremiumBadge({ active, theme, label }) {
   return (
     <div style={{
       display: "inline-flex",
@@ -26,7 +27,7 @@ function PremiumBadge({ active, theme }) {
         background: active ? "#22c55e" : theme.primary,
         boxShadow: `0 0 8px ${active ? "#22c55e" : theme.primary}`,
       }} />
-      {active ? "PREMIUM ACTIVE" : PREMIUM_PRODUCT.badge}
+      {active ? label : PREMIUM_PRODUCT.badge}
     </div>
   );
 }
@@ -38,14 +39,16 @@ const PREMIUM_SIGNALS = [
 ];
 
 export default function PremiumAccessModal({ open, onClose, state, theme, activatePremiumCode, notify, contextFeature }) {
+  const { t, locale } = useI18n();
   const [code, setCode] = useState("");
   const [inlineMessage, setInlineMessage] = useState(null);
   const premiumStatus = useMemo(() => getPremiumStatus(state?.premium), [state?.premium]);
-  const feature = useMemo(() => getPremiumFeature(contextFeature), [contextFeature]);
-  const accessStatus = premiumStatus.active ? "ACCESS ACTIVE" : "ACCESS LOCKED";
+  const premiumProduct = useMemo(() => getLocalizedPremiumProduct(locale), [locale]);
+  const feature = useMemo(() => getLocalizedPremiumFeature(contextFeature, locale), [contextFeature, locale]);
+  const accessStatus = premiumStatus.active ? t("premium.accessActive") : t("premium.accessLocked");
   const planOptions = [
-    { label: "Monatlich", price: PREMIUM_PRODUCT.monthlyPrice, note: "spaeter per In-App Purchase", featured: false },
-    { label: "Jaehrlich", price: PREMIUM_PRODUCT.yearlyPrice, note: "Bester Wert fuer Power-User", featured: true },
+    { label: t("premium.planMonthly"), price: PREMIUM_PRODUCT.monthlyPrice, note: t("premium.planMonthlyNote"), featured: false },
+    { label: t("premium.planYearly"), price: PREMIUM_PRODUCT.yearlyPrice, note: t("premium.planYearlyNote"), featured: true },
   ];
 
   const redeemCode = () => {
@@ -59,7 +62,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
   };
 
   const startCheckout = () => {
-    const msg = "Beta-Modus: Das echte Store-Billing wird vor dem App-Store-Release verbunden. Nutze aktuell einen Beta-Code.";
+    const msg = t("premium.checkoutInfo");
     setInlineMessage({ type: "info", text: msg });
     notify?.(msg, "info");
   };
@@ -147,7 +150,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
           <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", marginBottom: 18 }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <PremiumBadge active={premiumStatus.active} theme={theme} />
+                <PremiumBadge active={premiumStatus.active} theme={theme} label={t("premium.badgeActive")} />
                 <span style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -162,7 +165,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
                   fontFamily: "'JetBrains Mono',monospace",
                   letterSpacing: 2,
                 }}>
-                  PREMIUM ACCESS
+                  {t("premium.accessBadge")}
                 </span>
               </div>
               <div style={{
@@ -189,15 +192,15 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
                 fontFamily: "'Cinzel',serif",
                 textShadow: `0 0 26px ${theme.glow}`,
               }}>
-                {premiumStatus.active ? PREMIUM_PRODUCT.name : feature.title}
+                {premiumStatus.active ? premiumProduct.name : feature.title}
               </h2>
               <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>
-                {premiumStatus.active ? "Mehr KI, mehr Auswertung, mehr Style. Die Core-App bleibt frei spielbar." : feature.desc}
+                {premiumStatus.active ? t("premium.activeDesc") : feature.desc}
               </div>
             </div>
             <button
               onClick={onClose}
-              aria-label="Schliessen"
+              aria-label={t("common.close")}
               style={{
                 width: 34,
                 height: 34,
@@ -242,7 +245,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
                 {accessStatus}
               </div>
               <div style={{ color: "#94a3b8", fontSize: 10, lineHeight: 1.45, marginTop: 5 }}>
-                Ein sauberer Premium-Layer fuer Store-Kaeufe, Beta-Codes und gesperrte Pro-Module.
+                {t("premium.layerDesc")}
               </div>
             </div>
             <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7 }}>
@@ -274,7 +277,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
               fontFamily: "'JetBrains Mono',monospace",
               lineHeight: 1.5,
             }}>
-              Hunter Pro ist aktiv bis {premiumStatus.activeUntilLabel}. Noch {premiumStatus.daysRemaining} Tage.
+              {t("premium.activeUntil", { date: premiumStatus.activeUntilLabel, days: premiumStatus.daysRemaining })}
             </div>
           )}
 
@@ -319,10 +322,10 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ color: "#f8fafc", fontSize: 13, fontWeight: 900, fontFamily: "'Cinzel',serif" }}>
-                    Dieses Modul ist im Free-Modus gesperrt
+                    {t("premium.lockedTitle")}
                   </div>
                   <div style={{ color: "#94a3b8", fontSize: 10, lineHeight: 1.45, marginTop: 2 }}>
-                    Schalte Hunter Pro frei oder nutze in der Beta einen Code von dir.
+                    {t("premium.lockedDesc")}
                   </div>
                 </div>
               </div>
@@ -372,7 +375,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
                     fontFamily: "'JetBrains Mono',monospace",
                     letterSpacing: 1,
                   }}>
-                    BESTER WERT
+                    {t("premium.bestValue")}
                   </div>
                 )}
                 <div style={{ fontSize: 9, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 8 }}>
@@ -390,8 +393,8 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
             {[
-              { label: "FREE", value: "Core Leveling", sub: "Quests, Habits, Streaks" },
-              { label: "PRO", value: "Full System", sub: "AI, Analytics, VFX" },
+              { label: "FREE", value: t("premium.freeTier.value"), sub: t("premium.freeTier.sub") },
+              { label: "PRO", value: t("premium.proTier.value"), sub: t("premium.proTier.sub") },
             ].map((tier) => (
               <div key={tier.label} style={{
                 padding: "11px 12px",
@@ -407,7 +410,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
           </div>
 
           <div style={{ display: "grid", gap: 8, marginBottom: 18 }}>
-            {PREMIUM_PRODUCT.benefits.map((benefit, index) => (
+            {premiumProduct.benefits.map((benefit, index) => (
               <div key={benefit.title} style={{
                 display: "grid",
                 gridTemplateColumns: "28px minmax(0, 1fr)",

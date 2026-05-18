@@ -20,12 +20,17 @@ export const DASHBOARD_WIDGETS = [
   { key: "vision_board", label: "Vision Board", icon: "VIS", color: "#a855f7", desc: "Affirmationen", requires: "vision_board", removable: true },
 ];
 
+function localizeValue(locale, key, fallback) {
+  const value = translate(locale, key);
+  return value && value !== key ? value : fallback;
+}
+
 export function localizeWidgetDef(widget, locale = "de") {
   if (!widget) return null;
   return {
     ...widget,
-    label: translate(locale, `dashboard.widgets.${widget.key}.label`) || widget.label,
-    desc: translate(locale, `dashboard.widgets.${widget.key}.desc`) || widget.desc,
+    label: localizeValue(locale, `dashboard.widgets.${widget.key}.label`, widget.label),
+    desc: localizeValue(locale, `dashboard.widgets.${widget.key}.desc`, widget.desc),
   };
 }
 

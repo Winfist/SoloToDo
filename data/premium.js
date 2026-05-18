@@ -1,3 +1,5 @@
+import { getLocaleObject, resolveLocale } from "./i18n.js";
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const FREE_DAILY_QUEST_LIMIT = 1;
 
@@ -175,6 +177,26 @@ export const PREMIUM_FEATURES = {
 
 export function getPremiumFeature(featureKey) {
   return PREMIUM_FEATURES[featureKey] || PREMIUM_FEATURES.premium_store;
+}
+
+export function getLocalizedPremiumFeature(featureKey, localeOrMode = "auto") {
+  const key = PREMIUM_FEATURES[featureKey] ? featureKey : "premium_store";
+  const base = getPremiumFeature(key);
+  const override = getLocaleObject(resolveLocale(localeOrMode))?.premium?.features?.[key];
+  if (!override) return base;
+  return {
+    ...base,
+    ...override,
+    bullets: override.bullets || base.bullets,
+  };
+}
+
+export function getLocalizedPremiumProduct(localeOrMode = "auto") {
+  const premium = getLocaleObject(resolveLocale(localeOrMode))?.premium || {};
+  return {
+    ...PREMIUM_PRODUCT,
+    benefits: premium.benefits || PREMIUM_PRODUCT.benefits,
+  };
 }
 
 export const PREMIUM_ROUTE_FEATURES = {

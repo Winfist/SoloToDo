@@ -15,6 +15,11 @@ import { generateRedemptionQuests } from '../data/protocolHelpers.js';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
 import { isFeatureUnlocked } from '../data/featureUnlocks.js';
 import { hasFocusQuestAbility, getFocusQuestXpBonus, getMomentumBonus, getQuestTimerReduction } from '../data/artifactHelpers.js';
+import { getStateLocale, translate } from '../data/i18n.js';
+
+function ltState(state, key, params = {}) {
+  return translate(getStateLocale(state), key, params);
+}
 
 /**
  * Compute XP gain for a quest based on bonuses.
@@ -86,13 +91,13 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     if ((state.dailyUserXP || 0) > 200 + state.level * 5) {
       xpGain = Math.round(xpGain * 0.5);
     } else if ((state.dailyUserXP || 0) + xpGain > 200 + state.level * 5) {
-      notifications.push({ msg: "Tägliches XP Soft-Cap erreicht. Künftige eigene Quests geben -50%.", type: "warning" });
+      notifications.push({ msg: ltState(state, "questActions.softCap"), type: "warning" });
     }
     const actualElapsedHours = (Date.now() - (quest.createdAtMs || Date.now())) / 3600000;
     if (actualElapsedHours < 0.1) finalSysIntegrity = Math.max(0, finalSysIntegrity - 5);
     if (finalSysIntegrity < 50) {
       xpGain = Math.round(xpGain * (finalSysIntegrity / 100));
-      if (Math.random() < 0.3) notifications.push({ msg: "System-Integrität niedrig. XP für eigene Quests verringert.", type: "warning" });
+      if (Math.random() < 0.3) notifications.push({ msg: ltState(state, "questActions.integrityLow"), type: "warning" });
     }
   }
 
@@ -113,7 +118,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   });
 
   if (next._jobLevelUp) {
-    notifications.push({ msg: `JOB LEVEL UP: ${JOBS[next._jobLevelUp.job].name} ist nun Level ${next._jobLevelUp.newLevel}!`, type: "levelup" });
+    notifications.push({ msg: ltState(state, "questActions.jobLevelUp", { job: JOBS[next._jobLevelUp.job].name, level: next._jobLevelUp.newLevel }), type: "levelup" });
     // NOTE: Do NOT delete _jobLevelUp — the cinematic in App reads it from state.
     // It will be cleaned up by the JobLevelUpCinematic onClose handler.
   }
@@ -125,10 +130,10 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     const newShadow = createShadowFromQuest(quest, newLevel);
     newShadowArmy = { ...newShadowArmy, shadows: [...(newShadowArmy.shadows || []), newShadow] };
     ariseData = newShadow;
-    notifications.push({ msg: `${quest.title} wurde zu einem ${SHADOW_CLASSES[newShadow.class].name}!`, type: "shadow" });
+    notifications.push({ msg: ltState(state, "questActions.shadowCreated", { title: quest.title, className: SHADOW_CLASSES[newShadow.class].name }), type: "shadow" });
   }
 
-  if (soulLinkActive) notifications.push({ msg: "🔗 Soul Link aktiv! +25% XP Bonus", type: "success" });
+  if (soulLinkActive) notifications.push({ msg: ltState(state, "questActions.soulLinkActive"), type: "success" });
 
   // Penalty
   let newPenalty = { ...state.penaltyZone };
@@ -137,7 +142,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     const needed = newPenalty.redemptionLeft || 3;
     if (newPenalty.questsCompletedInPenalty >= needed) {
       newPenalty.active = false;
-      notifications.push({ msg: "Strafe abgebüßt. Willkommen zurück, Hunter.", type: "success" });
+      notifications.push({ msg: ltState(state, "questActions.penaltyCleared"), type: "success" });
     }
   }
 
@@ -159,14 +164,19 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
       };
       newPenalty = { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 };
       regressionSystemMessage = {
-        title: "SCHATTENRÜCKKEHR VOLLSTÄNDIG",
-        lines: ["Du hast die Dunkelheit überwunden.", `Streak wiederhergestellt: ${restoredStreak} Tage`, "Der Schatten wird zu deiner Stärke.", "WILLKOMMEN ZURÜCK, HUNTER."]
+        title: ltState(state, "questActions.regressionTitle"),
+        lines: [
+          ltState(state, "questActions.regressionLine1"),
+          ltState(state, "questActions.regressionStreakRestored", { streak: restoredStreak }),
+          ltState(state, "questActions.regressionLine3"),
+          ltState(state, "questActions.regressionWelcome"),
+        ]
       };
       xpGain = Math.round(xpGain * 2);
-      notifications.push({ msg: `⚡ SHADOW REGRESSION ABGESCHLOSSEN! Streak auf ${restoredStreak} Tage wiederhergestellt!`, type: "named" });
+      notifications.push({ msg: ltState(state, "questActions.regressionCompleted", { streak: restoredStreak }), type: "named" });
     } else {
       const remaining = 3 - newShadowRegression.questsCompleted;
-      notifications.push({ msg: `Schattenrückforderung ${newShadowRegression.questsCompleted}/3 – Noch ${remaining} verbleibend.`, type: "info" });
+      notifications.push({ msg: ltState(state, "questActions.regressionProgress", { completed: newShadowRegression.questsCompleted, remaining }), type: "info" });
     }
   }
 
@@ -175,9 +185,9 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   if (quest.type === "chained" && quest.chainStep < quest.chainTotal) {
     const nextStep = generateChainedQuest(quest.title, quest.category, quest.difficulty, quest.chainStep + 1, quest.chainTotal);
     extraQuests = [nextStep];
-    notifications.push({ msg: `⛓️ Kette ${quest.chainStep}/${quest.chainTotal} erfüllt! Multiplikator: x${nextStep.chainMultiplier.toFixed(2)}`, type: "info" });
+    notifications.push({ msg: ltState(state, "questActions.chainStep", { step: quest.chainStep, total: quest.chainTotal, multiplier: nextStep.chainMultiplier.toFixed(2) }), type: "info" });
   } else if (quest.type === "chained" && quest.chainStep >= quest.chainTotal) {
-    notifications.push({ msg: "⛓️ QUEST-KETTE ABGESCHLOSSEN! Maximaler Multiplikator erreicht!", type: "gold" });
+    notifications.push({ msg: ltState(state, "questActions.chainCompleted"), type: "gold" });
   }
 
   // Charisma dungeon progression
@@ -192,7 +202,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
         const nextStepData = chain.steps[nextStepIdx];
         const nextQ = {
           id: genId(),
-          title: `[${chain.name}] Etage ${nextStepIdx + 1}: ${nextStepData.title}`,
+          title: ltState(state, "questActions.charismaQuestTitle", { name: chain.name, floor: nextStepIdx + 1, title: nextStepData.title }),
           category: "cha", difficulty: nextStepData.difficulty, type: "side",
           isSystem: true, isCharismaQuest: true, charismaChainId: chain.id,
           charismaStep: nextStepIdx + 1, xpMult: nextStepData.xpMult,
@@ -200,7 +210,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
         };
         extraQuests = [...extraQuests, nextQ];
         newCharismaDungeons = { ...newCharismaDungeons, stepHistory };
-        notifications.push({ msg: `🎭 ${chain.name}: Etage ${quest.charismaStep} bezwungen! Weiter zu Etage ${nextStepIdx + 1}.`, type: "info" });
+        notifications.push({ msg: ltState(state, "questActions.charismaNextFloor", { name: chain.name, floor: quest.charismaStep, nextFloor: nextStepIdx + 1 }), type: "info" });
       } else {
         const chaBonus = chain.reward.chaBonus || 3;
         newCharismaDungeons = {
@@ -209,10 +219,15 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
           activeChains: Object.fromEntries(Object.entries(newCharismaDungeons.activeChains || {}).filter(([k]) => k !== chain.id))
         };
         charismaDungeonSystemMessage = {
-          title: "CHARISMA-DUNGEON BEZWUNGEN",
-          lines: [`${chain.icon} ${chain.name} vollständig abgeschlossen.`, `+${chaBonus} CHA dauerhaft erlangt.`, `Titel freigeschaltet: "${chain.reward.title}"`, "Das System erkennt dein soziales Erwachen an."]
+          title: ltState(state, "questActions.charismaCompletedTitle"),
+          lines: [
+            ltState(state, "questActions.charismaCompletedLine", { icon: chain.icon, name: chain.name }),
+            ltState(state, "questActions.charismaChaBonus", { bonus: chaBonus }),
+            ltState(state, "questActions.charismaTitleUnlocked", { title: chain.reward.title }),
+            ltState(state, "questActions.charismaAwakening"),
+          ]
         };
-        notifications.push({ msg: `👑 CHARISMA DUNGEON ABGESCHLOSSEN: ${chain.name}! +${chaBonus} CHA permanent.`, type: "named" });
+        notifications.push({ msg: ltState(state, "questActions.charismaCompletedNotify", { name: chain.name, bonus: chaBonus }), type: "named" });
         next._charismaChaBonus = (next._charismaChaBonus || 0) + chaBonus;
         next._charismaTitle = chain.reward.title;
       }
@@ -226,7 +241,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
       discovered: (newHiddenQuests.discovered || []).filter(id => id !== quest.hiddenId),
       completed: [...(newHiddenQuests.completed || []), quest.hiddenId || quest.id]
     };
-    notifications.push({ msg: "🌟 Verborgene Quest erfüllt! Legendäre Belohnung erhalten!", type: "named" });
+    notifications.push({ msg: ltState(state, "questActions.hiddenCompleted"), type: "named" });
   }
 
   const updatedQuests = [
@@ -253,7 +268,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     if (!newCodexMastered.includes(quest.codexId)) {
       newCodexMastered = [...newCodexMastered, quest.codexId];
       codexStatBonus = 1;
-      notifications.push({ msg: `📜 CODEX GEMEISTERT! Permanente Weisheit erlangt. +1 ${quest.rewardStat?.toUpperCase() || quest.category.toUpperCase()}`, type: "success" });
+      notifications.push({ msg: ltState(state, "questActions.codexMastered", { stat: quest.rewardStat?.toUpperCase() || quest.category.toUpperCase() }), type: "success" });
     }
   }
 
@@ -344,14 +359,14 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
         summonsCount: 1, dungeonsCleared: 0, totalXpGenerated: 0,
       };
       next.shadowArmy.shadows = [...next.shadowArmy.shadows, namedShadow];
-      notifications.push({ msg: `${ns.name} – ${ns.title} – ist erwacht!`, type: "named" });
+      notifications.push({ msg: ltState(state, "questActions.namedShadowAwakened", { name: ns.name, title: ns.title }), type: "named" });
     });
   }
 
   // Apply verification bonus tracking before achievement check
   if (verificationBonus) {
     next.ai = { ...(next.ai || {}), verifiedQuests: ((next.ai?.verifiedQuests) || 0) + 1 };
-    notifications.push({ msg: "📸 Beweis-Bonus: +20% XP & +10% Gold!", type: "success" });
+    notifications.push({ msg: ltState(state, "questActions.verificationBonus"), type: "success" });
   }
 
   const { nextState: afterAch, newAchievements } = processAchievements(next);
@@ -363,7 +378,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   const newlyUnlockedChains = CHARISMA_CHAINS.filter(c => newCha >= c.chaThreshold && !currentUnlocked.includes(c.id));
   if (newlyUnlockedChains.length > 0) {
     next.charismaDungeons = { ...next.charismaDungeons, unlockedChains: [...currentUnlocked, ...newlyUnlockedChains.map(c => c.id)] };
-    newlyUnlockedChains.forEach(c => notifications.push({ msg: `🎭 Charisma-Dungeon freigeschaltet: ${c.icon} ${c.name}!`, type: "success", delay: 800 }));
+    newlyUnlockedChains.forEach(c => notifications.push({ msg: ltState(state, "questActions.charismaUnlocked", { icon: c.icon, name: c.name }), type: "success", delay: 800 }));
   }
 
   return {

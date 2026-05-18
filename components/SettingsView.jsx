@@ -941,7 +941,7 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme, premiumStatu
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: premiumLocked ? "#fde68a" : locked ? "#475569" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</div>
                     <div style={{ fontSize: 8, color: premiumLocked ? "#a78bfa" : "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
-                      {premiumLocked ? "Noch nicht verfuegbar im Free-Modus" : locked ? `Level ${tab.requires === "training_tab" ? 5 : tab.requires === "story" || tab.requires === "dungeons" ? 11 : "?"}` : tab.desc}
+                      {premiumLocked ? t("settings.widget.freeLocked") : locked ? `Level ${tab.requires === "training_tab" ? 5 : tab.requires === "story" || tab.requires === "dungeons" ? 11 : "?"}` : tab.desc}
                     </div>
                   </div>
                   {premiumLocked && <span style={{ fontSize: 8, color: "#fde68a", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>OPEN</span>}
@@ -1612,23 +1612,28 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
         {/* ── Module Toggles ── */}
         <div style={{ paddingTop: 14 }}>
-          <div style={{ fontSize: 9, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>WIDGET MODULE</div>
+          <div style={{ fontSize: 9, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.modulesTitle")}</div>
           {[
-            { key: 'streak_xp', label: 'Streak & XP', icon: '🔥', color: '#f97316', desc: 'Serie + Level + XP-Fortschritt' },
-            { key: 'quests', label: 'Quest Board', icon: '🗡️', color: '#f59e0b', desc: 'Aktive Quests als Liste' },
-            { key: 'daily_quests', label: 'Daily Quests', icon: '📋', color: '#22d3ee', desc: 'Nur tägliche Quests' },
-            { key: 'focus_quest', label: 'Focus Quest', icon: '🎯', color: '#ef4444', desc: 'Wichtigste Quest prominent' },
-            { key: 'habits', label: 'Habit Progress', icon: '💪', color: '#22c55e', desc: 'Heutige Habits als Checklist' },
-            { key: 'micro_habits', label: 'Micro-Habits', icon: '🧬', color: '#06b6d4', desc: 'Kompakte Counter-Leiste' },
-            { key: 'hunter_card', label: 'Hunter Card', icon: '🏆', color: '#a855f7', desc: 'Level, Rang, Titel, Stats' },
-            { key: 'health', label: 'Biometrics', icon: '❤️', color: '#ef4444', desc: 'Schritte + Schlaf' },
-            { key: 'screen_time', label: 'Screen Time', icon: '📱', color: '#f59e0b', desc: 'Limit vs. Aktuell' },
-            { key: 'deadline_alert', label: 'Deadline Alert', icon: '⏰', color: '#dc2626', desc: 'Nächstes Fälligkeitsdatum' },
-            { key: 'system_message', label: 'System Message', icon: '💬', color: '#6366f1', desc: 'Motivations-Spruch' },
-            { key: 'week_heatmap', label: 'Wochen-Heatmap', icon: '📊', color: '#22c55e', desc: '7-Tage Aktivitäts-Grid' },
-            { key: 'streak_shield', label: 'Streak Shield', icon: '🛡️', color: '#3b82f6', desc: 'Schutz-Status' },
-            { key: 'shadow_army', label: 'Shadow Army', icon: '👻', color: '#64748b', desc: 'Shadows + Stärkstes' },
-          ].map(mod => {
+            { key: 'streak_xp', icon: '🔥', color: '#f97316' },
+            { key: 'quests', icon: '🗡️', color: '#f59e0b' },
+            { key: 'daily_quests', icon: '📋', color: '#22d3ee' },
+            { key: 'focus_quest', icon: '🎯', color: '#ef4444' },
+            { key: 'habits', icon: '💪', color: '#22c55e' },
+            { key: 'micro_habits', icon: '🧬', color: '#06b6d4' },
+            { key: 'hunter_card', icon: '🏆', color: '#a855f7' },
+            { key: 'health', icon: '❤️', color: '#ef4444' },
+            { key: 'screen_time', icon: '📱', color: '#f59e0b' },
+            { key: 'deadline_alert', icon: '⏰', color: '#dc2626' },
+            { key: 'system_message', icon: '💬', color: '#6366f1' },
+            { key: 'week_heatmap', icon: '📊', color: '#22c55e' },
+            { key: 'streak_shield', icon: '🛡️', color: '#3b82f6' },
+            { key: 'shadow_army', icon: '👻', color: '#64748b' },
+          ].map(baseMod => {
+            const mod = {
+              ...baseMod,
+              label: t(`widgets.modules.${baseMod.key}.label`),
+              desc: t(`widgets.modules.${baseMod.key}.desc`),
+            };
             const wc = state.widgetConfig || {};
             const activeModules = wc.modules || ['streak_xp', 'quests', 'habits', 'micro_habits', 'hunter_card'];
             const isActive = activeModules.includes(mod.key);
@@ -1642,7 +1647,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
                       <div style={{ fontSize: 12, fontWeight: 700, color: lockedByPremium ? "#fde68a" : isActive ? "#e2e8f0" : "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mod.label}</div>
                       {lockedByPremium && <span style={{ padding: "2px 6px", borderRadius: 999, background: "rgba(251,191,36,0.10)", border: "1px solid rgba(251,191,36,0.22)", color: "#fde68a", fontSize: 7, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>PRO</span>}
                     </div>
-                    <div style={{ fontSize: 9, color: lockedByPremium ? "#a78bfa" : "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{lockedByPremium ? "Noch nicht verfuegbar im Free-Modus" : mod.desc}</div>
+                    <div style={{ fontSize: 9, color: lockedByPremium ? "#a78bfa" : "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>{lockedByPremium ? t("settings.widget.freeLocked") : mod.desc}</div>
                   </div>
                 </div>
                 <Toggle value={!lockedByPremium && isActive} onChange={() => { if (lockedByPremium) { onOpenPremium?.("widgets"); return; } const modules = isActive ? activeModules.filter(k => k !== mod.key) : [...activeModules, mod.key]; const widgetConfig = { ...(state.widgetConfig || {}), modules }; persist({ ...state, widgetConfig }); }} color={mod.color} />
@@ -1653,15 +1658,15 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
         {/* ── Additional Toggles ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
-        <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>ERWEITERTE OPTIONEN</div>
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.advancedOptions")}</div>
         <SettingRow label={t("settings.widget.syncTheme")} desc={t("settings.widget.syncThemeDesc")} value={(state.widgetConfig || {}).syncTheme !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, syncTheme: !(wc.syncTheme !== false) } }); }} color="#22d3ee" theme={theme} />
         <SettingRow label={t("settings.widget.systemMessages")} desc={t("settings.widget.systemMessagesDesc")} value={(state.widgetConfig || {}).showSystemMessage !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, showSystemMessage: !(wc.showSystemMessage !== false) } }); }} color="#6366f1" theme={theme} />
 
         {/* ── Quest Rotation ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
-        <div style={{ fontSize: 9, letterSpacing: 3, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>QUEST-ROTATION</div>
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.rotation")}</div>
         <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>
-          Bei vielen Quests rotiert das Widget automatisch alle paar Minuten durch verschiedene Quest-Gruppen, statt nur die Top-3 zu zeigen.
+          {t("settings.widget.rotationInfo")}
         </div>
 
         <SettingRow label={t("settings.widget.rotation")} desc={t("settings.widget.rotationDesc")} value={(state.widgetConfig || {}).rotationEnabled !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, rotationEnabled: !(wc.rotationEnabled !== false) } }); }} color="#f59e0b" theme={theme} />
@@ -1686,20 +1691,25 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
         {/* ── Widget Display Sections ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
-        <div style={{ fontSize: 9, letterSpacing: 3, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>WIDGET SEKTIONEN</div>
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.sectionsTitle")}</div>
         <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>
-          Bestimme welche Bereiche im Large Widget sichtbar sind.
+          {t("settings.widget.sectionsDesc")}
         </div>
 
         {[
-          { key: "streak", label: "Streak & XP", desc: "Serie, Level, XP-Fortschritt", color: "#f97316" },
-          { key: "quests", label: "Quest-Liste", desc: "Aktive Quests mit Difficulty-Icons", color: "#f59e0b" },
-          { key: "habits", label: "Habits", desc: "Heutige Habits als Checkmarks", color: "#22c55e" },
-          { key: "microHabits", label: "Micro-Habits", desc: "Mini-Fortschritts-Dots", color: "#06b6d4" },
-          { key: "stats", label: "Stats-Footer", desc: "STR INT VIT AGI CHA Anzeige", color: "#a78bfa" },
-          { key: "heatmap", label: "Wochen-Heatmap", desc: "7-Tage Aktivitäts-Übersicht", color: "#22c55e" },
-          { key: "systemMessage", label: "Motivations-Spruch", desc: "Tägliche System-Nachricht", color: "#6366f1" },
-        ].map(section => {
+          { key: "streak", color: "#f97316" },
+          { key: "quests", color: "#f59e0b" },
+          { key: "habits", color: "#22c55e" },
+          { key: "microHabits", color: "#06b6d4" },
+          { key: "stats", color: "#a78bfa" },
+          { key: "heatmap", color: "#22c55e" },
+          { key: "systemMessage", color: "#6366f1" },
+        ].map(baseSection => {
+          const section = {
+            ...baseSection,
+            label: t(`settings.widget.sections.${baseSection.key}.label`),
+            desc: t(`settings.widget.sections.${baseSection.key}.desc`),
+          };
           const wc = state.widgetConfig || {};
           const sections = wc.showSections || {};
           const active = sections[section.key] !== false;
@@ -1720,11 +1730,11 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
         {/* ── Live Activity Toggles ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
-        <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>LIVE ACTIVITIES</div>
-        <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>Temporäre Lock Screen Anzeigen für zeitkritische Events (max. 8h).</div>
-        <SettingRow label="Emergency Quests" desc="Live Alert bei Emergency Quest" value={(state.widgetConfig?.liveActivity || {}).emergencyQuest !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), emergencyQuest: !(wc.liveActivity?.emergencyQuest !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#ef4444" theme={theme} />
-        <SettingRow label="Streak-Warnung" desc="Live Alert wenn Streak in Gefahr" value={(state.widgetConfig?.liveActivity || {}).streakWarning !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), streakWarning: !(wc.liveActivity?.streakWarning !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#f97316" theme={theme} />
-        <SettingRow label="Deadline-Countdown" desc="Live Timer bei Quest Deadline < 2h" value={(state.widgetConfig?.liveActivity || {}).deadlineAlert !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), deadlineAlert: !(wc.liveActivity?.deadlineAlert !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#dc2626" theme={theme} />
+        <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.liveActivitiesTitle")}</div>
+        <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>{t("settings.widget.liveActivitiesDesc")}</div>
+        <SettingRow label={t("settings.widget.live.emergencyQuest.label")} desc={t("settings.widget.live.emergencyQuest.desc")} value={(state.widgetConfig?.liveActivity || {}).emergencyQuest !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), emergencyQuest: !(wc.liveActivity?.emergencyQuest !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#ef4444" theme={theme} />
+        <SettingRow label={t("settings.widget.live.streakWarning.label")} desc={t("settings.widget.live.streakWarning.desc")} value={(state.widgetConfig?.liveActivity || {}).streakWarning !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), streakWarning: !(wc.liveActivity?.streakWarning !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#f97316" theme={theme} />
+        <SettingRow label={t("settings.widget.live.deadlineAlert.label")} desc={t("settings.widget.live.deadlineAlert.desc")} value={(state.widgetConfig?.liveActivity || {}).deadlineAlert !== false} onChange={() => { const wc = state.widgetConfig || {}; const la = { ...(wc.liveActivity || {}), deadlineAlert: !(wc.liveActivity?.deadlineAlert !== false) }; persist({ ...state, widgetConfig: { ...wc, liveActivity: la } }); }} color="#dc2626" theme={theme} />
 
         {/* ── Widget Preview ── */}
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />

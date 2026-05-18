@@ -16,8 +16,20 @@
 
 import { CATEGORIES, DIFFICULTIES, SHADOW_CLASSES } from '../data/gameData.js';
 import { genId } from '../data/helpers.js';
+import { getLocaleObject, getStateLocale, resolveLocale, translate } from '../data/i18n.js';
 
 export function genFlowId() { return `flow_${genId()}`; }
+
+function trFlow(locale, key, params = {}) {
+  return translate(locale, `rewardFlows.${key}`, params);
+}
+
+function getFlowPool(localeOrMode, key) {
+  const locale = resolveLocale(localeOrMode);
+  const localized = getLocaleObject(locale)?.rewardFlows?.pools?.[key];
+  const fallback = getLocaleObject("de")?.rewardFlows?.pools?.[key];
+  return localized || fallback || MSG[key] || [];
+}
 
 // ─── SYSTEM TEXT POOL ─────────────────────────────────────────────────────────
 const MSG = {
@@ -79,6 +91,7 @@ const MSG = {
 };
 
 function pickMsg(arr) {
+  if (!arr || !arr.length) return [];
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
@@ -88,29 +101,34 @@ function fillMsg(lines, vars) {
   );
 }
 
-function getQuestSystemLines(quest, ctx) {
+function pickFlowMsg(locale, key) {
+  return pickMsg(getFlowPool(locale, key));
+}
+
+function getQuestSystemLines(quest, ctx, locale) {
   const { streak, penaltyActive, isFirstToday, didLevelUp, newLevel } = ctx;
-  if (didLevelUp) return fillMsg(pickMsg(MSG.levelup), { lvl: newLevel });
-  if (penaltyActive) return pickMsg(MSG.penalty);
-  if (quest.type === "emergency") return pickMsg(MSG.emergency);
-  if (quest.difficulty === "boss") return pickMsg(MSG.boss);
-  if (quest.difficulty === "hard") return pickMsg(MSG.hard);
-  if (quest.type === "hidden") return pickMsg(MSG.hidden);
-  if (isFirstToday) return pickMsg(MSG.first);
-  if (streak >= 14) return fillMsg(pickMsg(MSG.streak_high), { n: streak });
-  if (streak >= 7) return fillMsg(pickMsg(MSG.streak_mid), { n: streak });
-  if (streak >= 3) return fillMsg(pickMsg(MSG.streak_low), { n: streak });
-  return pickMsg(MSG.normal);
+  if (didLevelUp) return fillMsg(pickFlowMsg(locale, "levelup"), { lvl: newLevel });
+  if (penaltyActive) return pickFlowMsg(locale, "penalty");
+  if (quest.type === "emergency") return pickFlowMsg(locale, "emergency");
+  if (quest.difficulty === "boss") return pickFlowMsg(locale, "boss");
+  if (quest.difficulty === "hard") return pickFlowMsg(locale, "hard");
+  if (quest.type === "hidden") return pickFlowMsg(locale, "hidden");
+  if (isFirstToday) return pickFlowMsg(locale, "first");
+  if (streak >= 14) return fillMsg(pickFlowMsg(locale, "streak_high"), { n: streak });
+  if (streak >= 7) return fillMsg(pickFlowMsg(locale, "streak_mid"), { n: streak });
+  if (streak >= 3) return fillMsg(pickFlowMsg(locale, "streak_low"), { n: streak });
+  return pickFlowMsg(locale, "normal");
 }
 
 // ─── BUILD: REGULAR QUEST ─────────────────────────────────────────────────────
-export function buildQuestRewardFlow(result, oldLevel, rect) {
+export function buildQuestRewardFlow(result, oldLevel, rect, localeOrMode = null) {
   const {
     nextState, didLevelUp, earnedPoints, newLevel, xpGain, goldGain,
     ariseData, newNameds, soulLinkActive, notifications,
     newlyDiscoveredHQ, regressionSystemMessage, charismaDungeonSystemMessage,
     quest, newAchievements,
   } = result;
+  const locale = localeOrMode || getStateLocale(nextState);
 
   const isBoss = quest.difficulty === 'boss';
   const variant = isBoss ? 'boss' : 'standard';
@@ -121,15 +139,15 @@ export function buildQuestRewardFlow(result, oldLevel, rect) {
 
   // ── Rewards ──
   const rewards = [
-    { kind: 'xp',   label: 'ERFAHRUNGSPUNKTE', value: `+${xpGain} XP`,   accent: '#a78bfa', icon: '⚔' },
-    { kind: 'gold', label: 'GOLD ERHALTEN',     value: `+${goldGain} G`,  accent: '#fbbf24', icon: '◈' },
-    { kind: 'stat', label: `${(cat?.stat || quest.category).toUpperCase()} ERHÖHT`, value: `+${statGain}`, accent: cat?.color || '#60a5fa', icon: '↑' },
+    { kind: 'xp',   label: trFlow(locale, "labels.xp"), value: `+${xpGain} XP`,   accent: '#a78bfa', icon: '⚔' },
+    { kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`,  accent: '#fbbf24', icon: '◈' },
+    { kind: 'stat', label: trFlow(locale, "labels.statIncreased", { stat: (cat?.stat || quest.category).toUpperCase() }), value: `+${statGain}`, accent: cat?.color || '#60a5fa', icon: '↑' },
   ];
   if (soulLinkActive) {
-    rewards.push({ kind: 'bonus', label: 'SOUL LINK BONUS', value: '+25% XP', accent: '#f472b6', icon: '🔗' });
+    rewards.push({ kind: 'bonus', label: trFlow(locale, "labels.soulLinkBonus"), value: '+25% XP', accent: '#f472b6', icon: '🔗' });
   }
   if (didLevelUp) {
-    rewards.push({ kind: 'level', label: 'LEVEL UP', value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true });
+    rewards.push({ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true });
   }
 
   // ── Highlights ──
@@ -144,11 +162,16 @@ export function buildQuestRewardFlow(result, oldLevel, rect) {
   }
   if (ariseData && (!newNameds || !newNameds.length)) {
     const cls = SHADOW_CLASSES?.[ariseData.class];
-    highlights.push({ kind: 'arise', title: `${ariseData.name} ist erwacht`, body: cls ? `Klasse: ${cls.name}` : 'Schatten erhoben', priority: 1 });
+    highlights.push({
+      kind: 'arise',
+      title: trFlow(locale, "highlights.shadowAwakened", { name: ariseData.name }),
+      body: cls ? trFlow(locale, "highlights.shadowClass", { className: cls.name }) : trFlow(locale, "highlights.shadowRaised"),
+      priority: 1
+    });
   }
   if (newNameds && newNameds.length) {
     newNameds.forEach(ns => {
-      highlights.push({ kind: 'named_shadow', title: `${ns.name} — ${ns.title || ''}`, body: 'Benannter Schatten freigeschaltet', priority: 1 });
+      highlights.push({ kind: 'named_shadow', title: `${ns.name} — ${ns.title || ''}`, body: trFlow(locale, "highlights.namedShadowUnlocked"), priority: 1 });
     });
   }
   if (regressionSystemMessage) {
@@ -159,7 +182,7 @@ export function buildQuestRewardFlow(result, oldLevel, rect) {
   }
   if (newlyDiscoveredHQ && newlyDiscoveredHQ.length) {
     newlyDiscoveredHQ.forEach(hq => {
-      highlights.push({ kind: 'hidden_quest', title: hq.title, body: hq.discoveryMsg || 'Verborgene Quest entdeckt', priority: 2 });
+      highlights.push({ kind: 'hidden_quest', title: hq.title, body: hq.discoveryMsg || trFlow(locale, "highlights.hiddenQuestDiscovered"), priority: 2 });
     });
   }
   highlights.sort((a, b) => a.priority - b.priority);
@@ -198,14 +221,14 @@ export function buildQuestRewardFlow(result, oldLevel, rect) {
   const penaltyActive = nextState.penaltyZone?.active || false;
   const systemLines = getQuestSystemLines(quest, {
     streak, penaltyActive, isFirstToday: false, didLevelUp, newLevel
-  });
+  }, locale);
 
   return {
     id: genFlowId(),
     source: 'quest',
     variant,
     summary: {
-      title: 'QUEST ABGESCHLOSSEN',
+      title: trFlow(locale, "summary.questCompleted"),
       subtitle: quest.title,
       tone,
       systemLines,
@@ -228,8 +251,9 @@ export function buildQuestRewardFlow(result, oldLevel, rect) {
 }
 
 // ─── BUILD: EMERGENCY QUEST ───────────────────────────────────────────────────
-export function buildEmergencyRewardFlow(result) {
+export function buildEmergencyRewardFlow(result, localeOrMode = null) {
   const { nextState, didLevelUp, earnedPoints, newLevel, xpGain, goldGain, newAchievements, eq } = result;
+  const locale = localeOrMode || getStateLocale(nextState);
 
   const highlights = [];
   const achievementsShownInModal = [];
@@ -240,7 +264,7 @@ export function buildEmergencyRewardFlow(result) {
     });
   }
   if (didLevelUp) {
-    highlights.push({ kind: 'level_up', title: `LEVEL ${newLevel}`, body: `${earnedPoints} Stat-Punkte erhalten`, priority: 1 });
+    highlights.push({ kind: 'level_up', title: `LEVEL ${newLevel}`, body: trFlow(locale, "highlights.statPointsEarned", { points: earnedPoints }), priority: 1 });
   }
 
   const animationQueue = [];
@@ -256,16 +280,16 @@ export function buildEmergencyRewardFlow(result) {
     source: 'emergency',
     variant: 'emergency',
     summary: {
-      title: 'NOTFALL BEWÄLTIGT',
-      subtitle: eq?.title || 'Notfallmission',
+      title: trFlow(locale, "summary.emergencyCompleted"),
+      subtitle: eq?.title || trFlow(locale, "summary.emergencyFallback"),
       tone: 'red',
-      systemLines: pickMsg(MSG.emergency),
+      systemLines: pickFlowMsg(locale, "emergency"),
     },
     rewards: [
-      { kind: 'xp',   label: 'NOTFALL-XP (2.5×)', value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-      { kind: 'gold', label: 'NOTFALL-GOLD (2.5×)', value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
-      { kind: 'stat', label: `${(cat?.stat || eq?.category || 'STAT').toUpperCase()} ERHÖHT`, value: `+${statGain}`, accent: '#ef4444', icon: '↑' },
-      ...(didLevelUp ? [{ kind: 'level', label: 'LEVEL UP', value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+      { kind: 'xp',   label: trFlow(locale, "labels.emergencyXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
+      { kind: 'gold', label: trFlow(locale, "labels.emergencyGold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
+      { kind: 'stat', label: trFlow(locale, "labels.statIncreased", { stat: (cat?.stat || eq?.category || 'STAT').toUpperCase() }), value: `+${statGain}`, accent: '#ef4444', icon: '↑' },
+      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
     ],
     highlights,
     animationQueue,
@@ -284,7 +308,8 @@ export function buildEmergencyRewardFlow(result) {
 }
 
 // ─── BUILD: DUNGEON ───────────────────────────────────────────────────────────
-export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints, newLevel, oldLevel, xpGain, goldGain, newNameds, newAchievements, artifactDrop = null) {
+export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints, newLevel, oldLevel, xpGain, goldGain, newNameds, newAchievements, artifactDrop = null, localeOrMode = "auto") {
+  const locale = resolveLocale(localeOrMode);
   const won = result === 'win' || result?.won !== false;
   const variant = !won ? 'defeat' : (dungeon.difficulty === 'boss' ? 'boss' : 'standard');
   const tone = !won ? 'red' : (variant === 'boss' ? 'gold' : 'cold');
@@ -299,11 +324,11 @@ export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints
     });
   }
   if (didLevelUp && won) {
-    highlights.push({ kind: 'level_up', title: `LEVEL ${newLevel}`, body: `${earnedPoints} Stat-Punkte erhalten`, priority: 1 });
+    highlights.push({ kind: 'level_up', title: `LEVEL ${newLevel}`, body: trFlow(locale, "highlights.statPointsEarned", { points: earnedPoints }), priority: 1 });
   }
   if (newNameds && newNameds.length) {
     newNameds.forEach(ns => {
-      highlights.push({ kind: 'named_shadow', title: `${ns.name} — ${ns.title || ''}`, body: 'Benannter Schatten freigeschaltet', priority: 1 });
+      highlights.push({ kind: 'named_shadow', title: `${ns.name} — ${ns.title || ''}`, body: trFlow(locale, "highlights.namedShadowUnlocked"), priority: 1 });
     });
   }
   // Gate Artifact highlight
@@ -335,15 +360,15 @@ export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints
     });
   }
 
-  const sysPool = !won ? MSG.dungeon_defeat : (variant === 'boss' ? MSG.dungeon_boss : MSG.dungeon_win);
+  const sysPoolKey = !won ? "dungeon_defeat" : (variant === 'boss' ? "dungeon_boss" : "dungeon_win");
 
   const rewards = won ? [
-    { kind: 'xp',   label: 'DUNGEON-XP',   value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-    { kind: 'gold', label: 'DUNGEON-GOLD',  value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
-    ...(didLevelUp ? [{ kind: 'level', label: 'LEVEL UP', value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
-    ...(artifactDrop ? [{ kind: 'artifact', label: 'ARTIFACT ENTDECKT', value: artifactDrop.name, accent: artifactDrop.color || '#f59e0b', icon: artifactDrop.icon || '⚡', special: true }] : []),
+    { kind: 'xp',   label: trFlow(locale, "labels.dungeonXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
+    { kind: 'gold', label: trFlow(locale, "labels.dungeonGold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
+    ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+    ...(artifactDrop ? [{ kind: 'artifact', label: trFlow(locale, "labels.artifactDiscovered"), value: artifactDrop.name, accent: artifactDrop.color || '#f59e0b', icon: artifactDrop.icon || '⚡', special: true }] : []),
   ] : [
-    { kind: 'defeat', label: 'NIEDERLAGE', value: 'Kein Reward', accent: '#ef4444', icon: '✗' },
+    { kind: 'defeat', label: trFlow(locale, "labels.defeat"), value: trFlow(locale, "labels.noReward"), accent: '#ef4444', icon: '✗' },
   ];
 
   return {
@@ -351,10 +376,10 @@ export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints
     source: 'dungeon',
     variant,
     summary: {
-      title: won ? 'DUNGEON BEZWUNGEN' : 'DUNGEON GESCHEITERT',
+      title: won ? trFlow(locale, "summary.dungeonWon") : trFlow(locale, "summary.dungeonFailed"),
       subtitle: dungeon.name || dungeon.title || 'Gate',
       tone,
-      systemLines: pickMsg(sysPool),
+      systemLines: pickFlowMsg(locale, sysPoolKey),
     },
     rewards,
     highlights,
@@ -374,10 +399,11 @@ export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints
 }
 
 // ─── BUILD: STORY CHAPTER ─────────────────────────────────────────────────────
-export function buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelUp, newLevel, earnedPoints) {
+export function buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, localeOrMode = "auto") {
+  const locale = resolveLocale(localeOrMode);
   const highlights = [];
   if (didLevelUp) {
-    highlights.push({ kind: 'level_up', title: `LEVEL ${newLevel}`, body: `${earnedPoints || 0} Stat-Punkte erhalten`, priority: 1 });
+    highlights.push({ kind: 'level_up', title: `LEVEL ${newLevel}`, body: trFlow(locale, "highlights.statPointsEarned", { points: earnedPoints || 0 }), priority: 1 });
   }
 
   const animationQueue = [];
@@ -390,15 +416,15 @@ export function buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelU
     source: 'story_chapter',
     variant: 'standard',
     summary: {
-      title: 'KAPITEL ABGESCHLOSSEN',
-      subtitle: chapter.title || 'Story-Kapitel',
+      title: trFlow(locale, "summary.storyChapterCompleted"),
+      subtitle: chapter.title || trFlow(locale, "summary.storyChapterFallback"),
       tone: 'cold',
-      systemLines: pickMsg(MSG.story_chapter),
+      systemLines: pickFlowMsg(locale, "story_chapter"),
     },
     rewards: [
-      { kind: 'xp',   label: 'KAPITEL-XP',   value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-      ...(goldGain > 0 ? [{ kind: 'gold', label: 'GOLD ERHALTEN', value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' }] : []),
-      ...(didLevelUp ? [{ kind: 'level', label: 'LEVEL UP', value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+      { kind: 'xp',   label: trFlow(locale, "labels.chapterXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
+      ...(goldGain > 0 ? [{ kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' }] : []),
+      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
     ],
     highlights,
     animationQueue,
@@ -417,13 +443,14 @@ export function buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelU
 }
 
 // ─── BUILD: STORY BOSS ────────────────────────────────────────────────────────
-export function buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, titleGranted) {
+export function buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, newLevel, earnedPoints, titleGranted, localeOrMode = "auto") {
+  const locale = resolveLocale(localeOrMode);
   const highlights = [];
   if (titleGranted) {
-    highlights.push({ kind: 'title', title: `Titel erhalten: "${titleGranted}"`, body: 'Permanentes Erbe des Monarchen', priority: 1 });
+    highlights.push({ kind: 'title', title: trFlow(locale, "highlights.titleGranted", { title: titleGranted }), body: trFlow(locale, "highlights.monarchLegacy"), priority: 1 });
   }
   if (didLevelUp) {
-    highlights.push({ kind: 'level_up', title: `LEVEL ${newLevel}`, body: `${earnedPoints || 0} Stat-Punkte erhalten`, priority: 2 });
+    highlights.push({ kind: 'level_up', title: `LEVEL ${newLevel}`, body: trFlow(locale, "highlights.statPointsEarned", { points: earnedPoints || 0 }), priority: 2 });
   }
 
   const animationQueue = [];
@@ -436,15 +463,15 @@ export function buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, new
     source: 'story_boss',
     variant: 'story_boss',
     summary: {
-      title: 'BOSS BESIEGT',
-      subtitle: boss.name || boss.title || 'Story-Boss',
+      title: trFlow(locale, "summary.storyBossDefeated"),
+      subtitle: boss.name || boss.title || trFlow(locale, "summary.storyBossFallback"),
       tone: 'gold',
-      systemLines: pickMsg(MSG.story_boss),
+      systemLines: pickFlowMsg(locale, "story_boss"),
     },
     rewards: [
-      { kind: 'xp',   label: 'BOSS-XP',    value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-      ...(goldGain > 0 ? [{ kind: 'gold', label: 'GOLD ERHALTEN', value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' }] : []),
-      ...(didLevelUp ? [{ kind: 'level', label: 'LEVEL UP', value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+      { kind: 'xp',   label: trFlow(locale, "labels.bossXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
+      ...(goldGain > 0 ? [{ kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' }] : []),
+      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
     ],
     highlights,
     animationQueue,
@@ -463,17 +490,18 @@ export function buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, new
 }
 
 // ─── BUILD: PROTOCOL (DAWN/DUSK PERFECT RUN) ─────────────────────────────────
-export function buildProtocolRewardFlow(run, xpGain, isPerfect, elapsed) {
+export function buildProtocolRewardFlow(run, xpGain, isPerfect, elapsed, localeOrMode = "auto") {
+  const locale = resolveLocale(localeOrMode);
   const isDAWN = run?.type === 'dawn' || run?.protocol === 'dawn';
-  const subtitle = isDAWN ? 'Morgenprotokoll' : 'Abendprotokoll';
+  const subtitle = isDAWN ? trFlow(locale, "summary.morningProtocol") : trFlow(locale, "summary.eveningProtocol");
 
   const systemMessage = {
-    title: 'PERFECT RUN BESTÄTIGT',
+    title: trFlow(locale, "summary.protocolPerfectConfirmed"),
     lines: [
-      'Alle Aufgaben abgeschlossen.',
-      `Protokoll: ${subtitle}`,
-      'Das System honoriert absolute Disziplin.',
-      'Bonus-XP für perfekte Ausführung gewährt.',
+      trFlow(locale, "protocol.allTasksCompleted"),
+      trFlow(locale, "protocol.protocolName", { protocol: subtitle }),
+      trFlow(locale, "protocol.disciplineRewarded"),
+      trFlow(locale, "protocol.bonusGranted"),
     ],
   };
 
@@ -485,10 +513,10 @@ export function buildProtocolRewardFlow(run, xpGain, isPerfect, elapsed) {
       title: 'PERFECT RUN',
       subtitle,
       tone: 'gold',
-      systemLines: pickMsg(MSG.protocol_perfect),
+      systemLines: pickFlowMsg(locale, "protocol_perfect"),
     },
     rewards: [
-      { kind: 'xp', label: 'PROTOKOLL-XP (PERFECT)', value: `+${xpGain} XP`, accent: '#fbbf24', icon: '★' },
+      { kind: 'xp', label: trFlow(locale, "labels.protocolXpPerfect"), value: `+${xpGain} XP`, accent: '#fbbf24', icon: '★' },
     ],
     highlights: [],
     animationQueue: [

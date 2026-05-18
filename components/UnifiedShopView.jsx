@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { GEM_ICONS, QUEST_ICONS, STORY_ICONS, STAT_ICONS } from '../data/icons.js';
 import { getToday as getLocalToday } from '../data/dateUtils.js';
+import { useI18n } from './i18n/I18nProvider.jsx';
+import { getGemCategories, localizeCatalogItems } from '../data/localizedGameData.js';
 
 const GEM_CATEGORIES = [
   { key: "transition", label: "Animationen", icon: "FX", color: "#c084fc" },
@@ -41,6 +43,7 @@ export default function UnifiedShopView({
   watchRewardedAd, claimDailyGemBonus, getActiveGemBoosters, onWatchAd,
   onPreviewPageTransition
 }) {
+  const { t, locale } = useI18n();
   const [activeShop, setActiveShop] = useState(window.__SHOP_START_TAB || "gold");
   const [activeGemTab, setActiveGemTab] = useState(window.__GEM_SHOP_START_CATEGORY || "all");
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -71,6 +74,9 @@ export default function UnifiedShopView({
   const dailyClaimed = state.gemStreak?.lastClaimDate === today;
   const gemStreak = state.gemStreak?.current || 0;
   const activeBoosters = getActiveGemBoosters ? getActiveGemBoosters() : [];
+  const localizedShopItems = useMemo(() => localizeCatalogItems(SHOP_ITEMS || [], "shopItems", locale), [SHOP_ITEMS, locale]);
+  const localizedGemShopItems = useMemo(() => localizeCatalogItems(GEM_SHOP_ITEMS || [], "gemShopItems", locale), [GEM_SHOP_ITEMS, locale]);
+  const gemCategories = useMemo(() => getGemCategories(locale), [locale]);
 
   const handleGemBuy = (item) => {
     const willEquipTransition = item.type === "transition"
@@ -87,35 +93,35 @@ export default function UnifiedShopView({
   const handleGemUse = (item) => {
     if (item.type === "theme") {
       persist({ ...state, selectedTheme: item.themeKey });
-      notify(`${item.name} aktiviert!`, "named");
+      notify(t("shop.notifications.activated", { name: item.name }), "named");
     } else if (item.type === "title") {
       persist({ ...state, selectedTitle: item.name });
-      notify(`${item.name} aktiviert!`, "named");
+      notify(t("shop.notifications.activated", { name: item.name }), "named");
     } else if (item.type === "transition") {
       persist({ ...state, selectedPageTransition: item.transitionKey || "domain_shift" });
-      notify(`${item.name} aktiviert!`, "named");
+      notify(t("shop.notifications.activated", { name: item.name }), "named");
       onPreviewPageTransition?.(item.transitionKey || "domain_shift", item.name);
     }
   };
 
   const gemFilteredItems = useMemo(() => {
-    if (activeGemTab === "all") return GEM_SHOP_ITEMS || [];
-    return (GEM_SHOP_ITEMS || []).filter(item => item.category === activeGemTab);
-  }, [activeGemTab, GEM_SHOP_ITEMS]);
+    if (activeGemTab === "all") return localizedGemShopItems || [];
+    return (localizedGemShopItems || []).filter(item => item.category === activeGemTab);
+  }, [activeGemTab, localizedGemShopItems]);
 
   const gemGroupedItems = useMemo(() => {
     if (activeGemTab !== "all") return null;
     const groups = {};
-    (GEM_SHOP_ITEMS || []).forEach(item => {
+    (localizedGemShopItems || []).forEach(item => {
       const cat = item.category || "other";
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(item);
     });
     return groups;
-  }, [activeGemTab, GEM_SHOP_ITEMS]);
+  }, [activeGemTab, localizedGemShopItems]);
 
-  const getGemCatLabel = (cat) => GEM_CATEGORIES.find(c => c.key === cat)?.label?.toUpperCase() || "ITEMS";
-  const getGemCatColor = (cat) => GEM_CATEGORIES.find(c => c.key === cat)?.color || "#a855f7";
+  const getGemCatLabel = (cat) => (gemCategories.find(c => c.key === cat)?.label || t("shop.categories.items")).toUpperCase();
+  const getGemCatColor = (cat) => gemCategories.find(c => c.key === cat)?.color || "#a855f7";
 
   return (
     <div style={{ animation: "fadeIn 0.4s ease", position: "relative" }}>
@@ -161,6 +167,9 @@ export default function UnifiedShopView({
             { id: "gold", label: "Gold Shop", icon: "🪙", color: "#fbbf24" },
             { id: "gems", label: "Gem Shop", icon: "💎", color: "#a855f7", locked: !can('gem_shop') }
           ].map(tab => {
+            tab = tab.id === "gold"
+              ? { ...tab, label: t("shop.tabs.gold"), icon: "G" }
+              : { ...tab, label: t("shop.tabs.gems"), icon: "G" };
             const isActive = activeShop === tab.id;
             return (
               <button
@@ -192,12 +201,12 @@ export default function UnifiedShopView({
               fontSize: 10, letterSpacing: 4, color: secondaryColor,
               fontFamily: "'JetBrains Mono',monospace", marginBottom: 4,
               textShadow: `0 0 12px ${primaryColor}88`,
-            }}>◆ {isGem ? "PREMIUM STORE" : "SYSTEM SHOP"} ◆</div>
+            }}>◆ {isGem ? t("shop.header.premiumStore") : t("shop.header.systemShop")} ◆</div>
             <div style={{
               fontSize: 22, fontWeight: 900, color: "#fff",
               fontFamily: "'Cinzel',serif", letterSpacing: 2,
               textShadow: `0 2px 12px ${primaryColor}66`,
-            }}>{isGem ? "Kristallium" : "Gold Kammer"}</div>
+            }}>{isGem ? t("shop.header.gemTitle") : t("shop.header.goldTitle")}</div>
           </div>
 
           <div style={{
@@ -245,8 +254,8 @@ export default function UnifiedShopView({
               }}
             >
               <span style={{ fontSize: 16 }}>🎬</span>
-              <span>Werbung ansehen</span>
-              <div style={{ fontSize: 9, opacity: 0.8 }}>{adsRemaining}/5 heute · +3-5 💎</div>
+              <span>{t("shop.gems.watchAd")}</span>
+              <div style={{ fontSize: 9, opacity: 0.8 }}>{t("shop.gems.remainingToday", { count: adsRemaining })}</div>
             </button>
 
             <button
@@ -264,8 +273,8 @@ export default function UnifiedShopView({
               }}
             >
               <span style={{ fontSize: 16 }}>{dailyClaimed ? "✅" : "🎁"}</span>
-              <span>{dailyClaimed ? "Beansprucht!" : "Daily Bonus"}</span>
-              <div style={{ fontSize: 9, opacity: 0.8 }}>🔥 Streak: {gemStreak} Tage</div>
+              <span>{dailyClaimed ? t("shop.gems.claimed") : t("shop.gems.dailyBonus")}</span>
+              <div style={{ fontSize: 9, opacity: 0.8 }}>{t("shop.gems.streak", { count: gemStreak })}</div>
             </button>
           </div>
         )}
@@ -281,7 +290,7 @@ export default function UnifiedShopView({
               padding: "18px", marginBottom: 18, textAlign: "center",
               fontSize: 12, color: "#f87171", position: "relative", overflow: "hidden",
             }}>
-              <div style={{ fontSize: 20, marginBottom: 6 }}>🔒</div>Shop ab D-Rang verfügbar
+              <div style={{ fontSize: 20, marginBottom: 6 }}>🔒</div>{t("shop.status.lockedRank")}
             </div>
           )}
 
@@ -289,11 +298,13 @@ export default function UnifiedShopView({
             { type: "consumable", label: "VERBRAUCHSGÜTER", icon: "⚗️", color: "#22c55e" },
             { type: "title", label: "PREMIUM TITEL", icon: "🏅", color: "#f59e0b" },
             { type: "theme", label: "EXKLUSIVE THEMES", icon: "🎨", color: "#06b6d4" },
-          ].map((section, si) => (
+          ].map((section, si) => {
+            section = { ...section, label: t(`shop.sections.${section.type}`), icon: section.type === "consumable" ? "C" : section.type === "title" ? "R" : "T" };
+            return (
             <div key={section.type} style={{ marginBottom: 28, animation: `shopSectionIn 0.4s ease ${si * 0.1}s both` }}>
               <CategoryHeader label={section.label} icon={section.icon} color={section.color} />
               
-              {SHOP_ITEMS.filter(i => i.type === section.type).map((item, idx) => {
+              {localizedShopItems.filter(i => i.type === section.type).map((item, idx) => {
                 const owned = state.shopPurchases.includes(item.id);
                 const canAfford = state.gold >= item.cost;
                 const rankOk = getRankIndex(rank.name) >= getRankIndex(item.minRank);
@@ -313,7 +324,7 @@ export default function UnifiedShopView({
                 );
               })}
             </div>
-          ))}
+          )})}
 
           {/* Hunter's Codex */}
           {shopUnlocked && can('codex') && (
@@ -337,7 +348,7 @@ export default function UnifiedShopView({
             display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 20,
             WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none",
           }}>
-            {GEM_CATEGORIES.slice().sort((a, b) => (a.key === "all" ? -1 : b.key === "all" ? 1 : 0)).map(cat => {
+            {gemCategories.slice().sort((a, b) => (a.key === "all" ? -1 : b.key === "all" ? 1 : 0)).map(cat => {
               const isActive = activeGemTab === cat.key;
               return (
                 <button
@@ -402,7 +413,7 @@ export default function UnifiedShopView({
                 );
               })}
               {gemFilteredItems.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px", color: "#475569", border: "1px dashed rgba(168,85,247,0.15)", borderRadius: 18 }}>💎 Keine Items in dieser Kategorie</div>
+                <div style={{ textAlign: "center", padding: "40px", color: "#475569", border: "1px dashed rgba(168,85,247,0.15)", borderRadius: 18 }}>💎 {t("shop.status.emptyCategory")}</div>
               )}
             </div>
           )}
@@ -427,6 +438,7 @@ function CategoryHeader({ label, icon, color }) {
 }
 
 function ShopItemCard({ item, color, isHovered, onHover, purchaseFlash, isActive, isOwned, canBuy, rankOk = true, currencyIcon, delay, onBuy, onUse }) {
+  const { t } = useI18n();
   return (
     <div
       className="shop-card-hover"
@@ -464,17 +476,17 @@ function ShopItemCard({ item, color, isHovered, onHover, purchaseFlash, isActive
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? color : "#f1f5f9", fontFamily: "'Cinzel',serif" }}>{item.name}</div>
           {item.type === "transition" && item.rarity && <div style={{ fontSize: 8, color: item.previewColor || color, padding: "2px 7px", borderRadius: 4, background: `${item.previewColor || color}12`, border: `1px solid ${(item.previewColor || color)}33`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, textTransform: "uppercase" }}>{item.rarity}</div>}
-          {isActive && <div style={{ fontSize: 8, color, padding: "2px 8px", borderRadius: 4, background: `linear-gradient(90deg, ${color}25, ${color}10)`, border: `1px solid ${color}33`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>✦ AKTIV</div>}
-          {isOwned && !isActive && <div style={{ fontSize: 8, color: "#4ade80", padding: "2px 8px", borderRadius: 4, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.2)", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>✓ BESITZT</div>}
+          {isActive && <div style={{ fontSize: 8, color, padding: "2px 8px", borderRadius: 4, background: `linear-gradient(90deg, ${color}25, ${color}10)`, border: `1px solid ${color}33`, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>✦ {t("shop.status.active")}</div>}
+          {isOwned && !isActive && <div style={{ fontSize: 8, color: "#4ade80", padding: "2px 8px", borderRadius: 4, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.2)", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>✓ {t("shop.status.owned")}</div>}
         </div>
         <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.4 }}>{item.desc}</div>
-        {!rankOk && <div style={{ fontSize: 9, marginTop: 4, fontFamily: "'JetBrains Mono',monospace", color: "#f87171" }}>🔒 {item.minRank}-Rang benötigt</div>}
+        {!rankOk && <div style={{ fontSize: 9, marginTop: 4, fontFamily: "'JetBrains Mono',monospace", color: "#f87171" }}>🔒 {t("shop.status.rankNeeded", { rank: item.minRank })}</div>}
       </div>
 
       <div style={{ position: "relative", zIndex: 1 }}>
         {isOwned ? (
           (item.type === "theme" || item.type === "title" || item.type === "transition") ? (
-            <button className="shop-btn-hover" onClick={onUse} style={{ padding: "10px 18px", borderRadius: 12, fontSize: 10, fontWeight: 800, background: isActive ? `linear-gradient(145deg, ${color}25, ${color}10)` : "rgba(255,255,255,0.03)", color: isActive ? color : "#64748b", border: `1px solid ${isActive ? color + "44" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", boxShadow: isActive ? `0 4px 16px ${color}22` : "none" }}>{isActive ? "AKTIV" : "NUTZEN"}</button>
+            <button className="shop-btn-hover" onClick={onUse} style={{ padding: "10px 18px", borderRadius: 12, fontSize: 10, fontWeight: 800, background: isActive ? `linear-gradient(145deg, ${color}25, ${color}10)` : "rgba(255,255,255,0.03)", color: isActive ? color : "#64748b", border: `1px solid ${isActive ? color + "44" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", boxShadow: isActive ? `0 4px 16px ${color}22` : "none" }}>{isActive ? t("shop.status.active") : t("shop.status.use")}</button>
           ) : (
             <div style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", color: "#4ade80", fontSize: 16 }}>✓</div>
           )
@@ -519,11 +531,12 @@ function TransitionMiniPreview({ item, color, active }) {
 }
 
 function ActiveBoosters({ boosters }) {
+  const { t } = useI18n();
   return (
     <div style={{ background: "linear-gradient(145deg, rgba(124,58,237,0.1), rgba(168,85,247,0.04))", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 18, padding: "14px 18px", marginBottom: 18, position: "relative", overflow: "hidden", animation: "shopSectionIn 0.5s ease both" }}>
       <div style={{ fontSize: 9, letterSpacing: 3, color: "#c084fc", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#a855f7", boxShadow: "0 0 8px #a855f7", animation: "boosterOrb 1.5s infinite" }} />
-        AKTIVE BOOSTER
+        {t("shop.sections.boosters")}
       </div>
       {boosters.map((b, i) => {
         const remaining = Math.max(0, b.expiresAt - Date.now());
@@ -548,13 +561,14 @@ function ActiveBoosters({ boosters }) {
 }
 
 function CodexSection({ state, persist, HUNTER_CODEX, genId, getToday, notify }) {
+  const { t } = useI18n();
   return (
     <div style={{ marginTop: 32, padding: "24px", borderRadius: 22, background: "linear-gradient(145deg, rgba(124,58,237,0.1), rgba(168,85,247,0.04), rgba(99,102,241,0.08))", border: "1px solid rgba(124,58,237,0.3)", position: "relative", overflow: "hidden", animation: "shopSectionIn 0.6s ease 0.4s both" }}>
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, #a855f744, #7c3aed66, #a855f744, transparent)", backgroundSize: "200% 100%", animation: "holoShimmer 4s linear infinite" }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: "#c084fc", fontFamily: "'Cinzel',serif", letterSpacing: 2, textShadow: "0 0 16px #a855f755", animation: "codexGlow 3s ease-in-out infinite" }}>Hunter's Codex</div>
-          <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 4 }}>VERLORENE WEISHEITEN</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "#c084fc", fontFamily: "'Cinzel',serif", letterSpacing: 2, textShadow: "0 0 16px #a855f755", animation: "codexGlow 3s ease-in-out infinite" }}>{t("shop.sections.codex")}</div>
+          <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 4 }}>{t("shop.sections.codexSub")}</div>
         </div>
         <div style={{ width: 50, height: 50, borderRadius: 14, background: "linear-gradient(145deg, rgba(168,85,247,0.15), rgba(124,58,237,0.05))", border: "1px solid rgba(168,85,247,0.25)", display: "flex", alignItems: "center", justifyContent: "center", animation: "float 3s infinite", boxShadow: "0 4px 20px rgba(168,85,247,0.15)" }}>
           <img src={STORY_ICONS.scroll} alt="Codex" style={{ width: 30, height: 30, objectFit: "contain", filter: "drop-shadow(0 0 8px #a855f7aa)" }} />
@@ -572,16 +586,16 @@ function CodexSection({ state, persist, HUNTER_CODEX, genId, getToday, notify })
             <div key={item.id} className="shop-card-hover" style={{ "--card-glow": "rgba(168,85,247,0.15)", "--card-border-hover": "#a855f744", background: "rgba(10,10,22,0.5)", border: "1px solid rgba(124,58,237,0.25)", borderLeft: "3px solid rgba(168,85,247,0.5)", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, animation: `itemReveal 0.4s ease ${0.2 + ci * 0.08}s both` }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: "linear-gradient(145deg, rgba(168,85,247,0.15), rgba(124,58,237,0.05))", border: "1px solid rgba(168,85,247,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📜</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#e9d5ff", fontFamily: "'Cinzel',serif", marginBottom: 4 }}>Unbekanntes Fragment {item.id.replace(/codex_|_gen_/g, "")}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#e9d5ff", fontFamily: "'Cinzel',serif", marginBottom: 4 }}>{t("shop.status.unknownFragment", { id: item.id.replace(/codex_|_gen_/g, "") })}</div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}>
-                  <span style={{ color: "#c084fc", padding: "1px 6px", borderRadius: 4, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.15)" }}>{item.stat.toUpperCase()}-Pfad</span>
+                  <span style={{ color: "#c084fc", padding: "1px 6px", borderRadius: 4, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.15)" }}>{t("shop.status.statPath", { stat: item.stat.toUpperCase() })}</span>
                   <span style={{ color: rankOk ? "#4ade80" : "#f87171", padding: "1px 6px", borderRadius: 4, background: rankOk ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.06)" }}>{rankOk ? "✓" : "✗"} {rqLv} {item.stat.toUpperCase()}</span>
                 </div>
               </div>
               <button className="shop-btn-hover" onClick={() => {
-                const newQuest = { id: genId(), title: `Codex meistern: ${item.rule}`, category: item.stat, difficulty: item.tier === 1 ? "easy" : item.tier === 2 ? "normal" : "hard", type: "side", isCodexQuest: true, codexId: item.id, rewardStat: item.stat, createdAt: getToday(), createdAtMs: Date.now() };
+                const newQuest = { id: genId(), title: t("shop.status.codexQuestTitle", { rule: item.rule }), category: item.stat, difficulty: item.tier === 1 ? "easy" : item.tier === 2 ? "normal" : "hard", type: "side", isCodexQuest: true, codexId: item.id, rewardStat: item.stat, createdAt: getToday(), createdAtMs: Date.now(), i18nKey: "shop.status.codexQuestTitle", i18nParams: { rule: item.rule } };
                 persist({ ...state, gold: state.gold - item.cost, codex: [...(state.codex || []), item.id], quests: [...state.quests, newQuest] });
-                notify(`Codex gekauft! Schließe die Quest ab.`, "success");
+                notify(t("shop.status.codexBought"), "success");
               }} disabled={!buyable} style={{ padding: "10px 16px", borderRadius: 12, fontSize: 11, fontWeight: 800, background: buyable ? "linear-gradient(145deg, rgba(168,85,247,0.22), rgba(168,85,247,0.06))" : "rgba(255,255,255,0.02)", color: buyable ? "#c084fc" : "#475569", border: `1px solid ${buyable ? "rgba(168,85,247,0.4)" : "rgba(255,255,255,0.06)"}`, cursor: buyable ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 5, boxShadow: buyable ? "0 4px 16px rgba(168,85,247,0.12)" : "none" }}>
                 <img src="/icon/coin.png" style={{ width: 12, height: 12, opacity: buyable ? 1 : 0.3 }} alt="G" />{item.cost}
               </button>
@@ -595,7 +609,7 @@ function CodexSection({ state, persist, HUNTER_CODEX, genId, getToday, notify })
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingTop: 18, borderTop: "1px solid rgba(124,58,237,0.2)" }}>
             <div style={{ width: 3, height: 14, borderRadius: 2, background: "#7c3aed" }} />
-            <div style={{ fontSize: 9, letterSpacing: 3, color: "#a855f7", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>DEIN CODEX ({state.codex.length}/{HUNTER_CODEX.length})</div>
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#a855f7", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{t("shop.sections.yourCodex", { owned: state.codex.length, total: HUNTER_CODEX.length })}</div>
             <div style={{ height: 1, flex: 1, background: "linear-gradient(90deg, #7c3aed33, transparent)" }} />
           </div>
           <div style={{ display: "grid", gap: 8 }}>
@@ -608,9 +622,9 @@ function CodexSection({ state, persist, HUNTER_CODEX, genId, getToday, notify })
                   <div style={{ fontSize: 13, fontWeight: 700, color: isMastered ? "#86efac" : "#f1f5f9", marginBottom: 4, fontFamily: "'Cinzel',serif" }}>{item.rule}</div>
                   <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5 }}>{item.desc}</div>
                   {isMastered ? (
-                    <div style={{ fontSize: 9, color: "#4ade80", fontFamily: "'JetBrains Mono',monospace", marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", borderRadius: 6, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.15)", width: "fit-content" }}><img src={STAT_ICONS[item.stat]} alt={item.stat} style={{ width: 11, height: 11 }} /> GEMEISTERT (+1)</div>
+                    <div style={{ fontSize: 9, color: "#4ade80", fontFamily: "'JetBrains Mono',monospace", marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", borderRadius: 6, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.15)", width: "fit-content" }}><img src={STAT_ICONS[item.stat]} alt={item.stat} style={{ width: 11, height: 11 }} /> {t("shop.status.mastered")}</div>
                   ) : (
-                    <div style={{ fontSize: 9, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", borderRadius: 6, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.12)", width: "fit-content" }}><img src={QUEST_ICONS.daily} alt="active" style={{ width: 11, height: 11 }} /> Quest aktiv...</div>
+                    <div style={{ fontSize: 9, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", marginTop: 8, display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", borderRadius: 6, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.12)", width: "fit-content" }}><img src={QUEST_ICONS.daily} alt="active" style={{ width: 11, height: 11 }} /> {t("shop.status.questActive")}</div>
                   )}
                 </div>
               );
