@@ -13,6 +13,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { getToday as getLocalToday, formatLocalDateTime } from "./dateUtils.js";
 import { getQuestDescription } from "./questUtils.js";
+import { useI18n } from "../components/i18n/I18nProvider.jsx";
 
 // â”€â”€â”€ RE-EXPORTS FROM SPLIT MODULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export {
