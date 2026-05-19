@@ -1,5 +1,6 @@
 // AuthScreen.jsx - Premium Solo Leveling Login/Register (Firebase Integrated)
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { Capacitor } from "@capacitor/core";
 import { SYSTEM_ICONS, SKILL_ICONS } from "./data/icons.js";
 import ScrollApproachHint from "./components/ui/ScrollApproachHint.jsx";
 import { useI18n } from "./components/i18n/I18nProvider.jsx";
@@ -27,7 +28,15 @@ import {
 } from "firebase/auth";
 
 // Detect native Capacitor environment (WKWebView on iOS)
-const IS_CAPACITOR = typeof window !== "undefined" && window.Capacitor?.isNativePlatform();
+function isNativePlatform() {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
+const IS_CAPACITOR = isNativePlatform();
 const AUTH_RETRY_DELAY_MS = 700;
 const RECENT_REGISTRATION_RECOVERY_MS = 5 * 60 * 1000;
 
@@ -51,7 +60,73 @@ async function runAuthRequest(fn) {
   }
 }
 
-// ─── AUTH CSS ─────────────────────────────────────────────────
+// ─── AUTH HELPERS ──────────────────────────────────────────────
+function readNativeDisplayName(nativeResult) {
+  return (
+    nativeResult?.user?.displayName
+    || nativeResult?.additionalUserInfo?.profile?.name
+    || nativeResult?.additionalUserInfo?.profile?.given_name
+    || ""
+  );
+}
+
+function getNativeCredential(nativeResult, providerName) {
+  const credential = nativeResult?.credential;
+  if (!credential) {
+    throw new Error(`${providerName} returned no credential from the native sign-in flow.`);
+  }
+  return credential;
+}
+
+function createGoogleCredential(nativeResult) {
+  const credential = getNativeCredential(nativeResult, "Google");
+  const idToken = credential.idToken || null;
+  const accessToken = credential.accessToken || null;
+  if (!idToken && !accessToken) {
+    throw new Error("Google returned no ID token or access token from the native sign-in flow.");
+  }
+  return GoogleAuthProvider.credential(idToken, accessToken);
+}
+
+function createAppleCredential(nativeResult) {
+  const credential = getNativeCredential(nativeResult, "Apple");
+  if (!credential.idToken) {
+    throw new Error("Apple returned no ID token from the native sign-in flow.");
+  }
+  const provider = new OAuthProvider("apple.com");
+  return provider.credential({
+    idToken: credential.idToken,
+    rawNonce: credential.nonce || undefined,
+  });
+}
+
+function shouldRetryGoogleWithoutCredentialManager(err) {
+  const message = `${err?.code || ""} ${err?.message || ""}`;
+  return Capacitor.getPlatform?.() === "android"
+    && /credential/i.test(message)
+    && !/cancel|aborted|user/i.test(message);
+}
+
+async function signInWithNativeCredential(startNativeSignIn, createCredential) {
+  const nativeResult = await startNativeSignIn();
+  const credential = createCredential(nativeResult);
+  const userCredential = await runAuthRequest(() => signInWithCredential(auth, credential));
+  const nativeDisplayName = readNativeDisplayName(nativeResult);
+
+  if (nativeDisplayName && !userCredential.user.displayName) {
+    try {
+      await updateProfile(userCredential.user, { displayName: nativeDisplayName });
+    } catch (profileErr) {
+      console.warn("Native social display name could not be stored.", profileErr);
+    }
+  }
+
+  return {
+    userCredential,
+    displayName: userCredential.user.displayName || nativeDisplayName || "Hunter",
+  };
+}
+
 function isRecentlyCreatedUser(user) {
   const createdAtMs = Date.parse(user?.metadata?.creationTime || "");
   return Number.isFinite(createdAtMs) && Date.now() - createdAtMs < RECENT_REGISTRATION_RECOVERY_MS;
@@ -258,7 +333,7 @@ function AuthButton({ children, onClick, loading, disabled, variant = "primary",
   const [hover, setHover] = useState(false);
   const isPrimary = variant === "primary";
   return (
-    <button onClick={onClick} disabled={disabled || loading}
+    <button type="button" onClick={onClick} disabled={disabled || loading}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
         width: "100%", padding: isPrimary ? "18px 24px" : "14px 24px", borderRadius: 14,
@@ -289,17 +364,18 @@ function AuthButton({ children, onClick, loading, disabled, variant = "primary",
 }
 
 // ─── SOCIAL BUTTON ────────────────────────────────────────────
-function SocialButton({ icon, label, onClick, delay = 0 }) {
+function SocialButton({ icon, label, onClick, disabled = false, delay = 0 }) {
   const [hover, setHover] = useState(false);
   return (
-    <button onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+    <button type="button" onClick={onClick} disabled={disabled} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
         flex: 1, padding: "14px 16px", borderRadius: 12, fontSize: 12,
         fontFamily: "'JetBrains Mono', monospace",
         background: hover ? "rgba(124,58,237,0.1)" : "rgba(15,15,30,0.6)",
         color: hover ? "#a78bfa" : "#94a3b8",
         border: `1px solid ${hover ? "#7c3aed44" : "#1e1e3f"}`,
-        cursor: "pointer", transition: "all 0.3s ease",
+        cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.3s ease",
+        opacity: disabled ? 0.55 : 1,
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
         animation: `slideUp 0.6s ease ${delay}s both`,
       }}
@@ -504,14 +580,26 @@ export default function AuthScreen({ onAuthSuccess }) {
         // With skipNativeAuth:true, the plugin returns credentials without signing in.
         // We sign in via the JS SDK so it can persist the session in localStorage.
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-        const result = await FirebaseAuthentication.signInWithGoogle();
-        const credential = GoogleAuthProvider.credential(result.credential?.idToken);
-        const userCredential = await signInWithCredential(auth, credential);
-        setHunterName(userCredential.user.displayName || "Hunter");
+        const { displayName } = await signInWithNativeCredential(
+          async () => {
+            try {
+              return await FirebaseAuthentication.signInWithGoogle({ skipNativeAuth: true, useCredentialManager: true });
+            } catch (nativeErr) {
+              if (shouldRetryGoogleWithoutCredentialManager(nativeErr)) {
+                return await FirebaseAuthentication.signInWithGoogle({ skipNativeAuth: true, useCredentialManager: false });
+              }
+              throw nativeErr;
+            }
+          },
+          createGoogleCredential
+        );
+        setHunterName(displayName);
         setShowSuccess(true);
       } else {
         // Web: popup-based sign-in
         const provider = new GoogleAuthProvider();
+        provider.addScope("email");
+        provider.addScope("profile");
         const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
         setHunterName(result.user.displayName || "Hunter");
         setShowSuccess(true);
@@ -536,18 +624,17 @@ export default function AuthScreen({ onAuthSuccess }) {
         // With skipNativeAuth:true, the plugin returns credentials without signing in.
         // We sign in via the JS SDK so it can persist the session in localStorage.
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-        const result = await FirebaseAuthentication.signInWithApple();
-        const provider = new OAuthProvider('apple.com');
-        const credential = provider.credential({
-          idToken: result.credential?.idToken,
-          rawNonce: result.credential?.nonce,
-        });
-        const userCredential = await signInWithCredential(auth, credential);
-        setHunterName(userCredential.user.displayName || "Hunter");
+        const { displayName } = await signInWithNativeCredential(
+          () => FirebaseAuthentication.signInWithApple({ skipNativeAuth: true }),
+          createAppleCredential
+        );
+        setHunterName(displayName);
         setShowSuccess(true);
       } else {
         // Web: popup-based sign-in
         const provider = new OAuthProvider('apple.com');
+        provider.addScope("email");
+        provider.addScope("name");
         const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
         setHunterName(result.user.displayName || "Hunter");
         setShowSuccess(true);
@@ -657,8 +744,8 @@ export default function AuthScreen({ onAuthSuccess }) {
             <div style={{ flex: 1, height: 1, background: "#1a1035" }} />
           </div>
           <div style={{ display: "flex", gap: 12 }}>
-            <SocialButton icon="🔷" label="Google" onClick={handleGoogleLogin} delay={0.35} />
-            <SocialButton icon="🍎" label="Apple" onClick={handleAppleLogin} delay={0.4} />
+            <SocialButton icon="🔷" label="Google" onClick={handleGoogleLogin} disabled={loading} delay={0.35} />
+            <SocialButton icon="🍎" label="Apple" onClick={handleAppleLogin} disabled={loading} delay={0.4} />
           </div>
         </>
       )}

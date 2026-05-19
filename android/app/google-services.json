@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "528898647146",
+    "project_id": "solo-todo",
+    "storage_bucket": "solo-todo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528898647146:android:da245af9c0878e88449613",
+        "android_client_info": {
+          "package_name": "com.solotodo.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528898647146-00df9laejqkaliun4r0bi1l83478p332.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.solotodo.app",
+            "certificate_hash": "5d3b2b7b151c1fdd232e5d6b1058d2c2e2d0539a"
+          }
+        },
+        {
+          "client_id": "528898647146-ole039bvgbnaopeq39259vljfj9aepes.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAH78KUKX1xxfgqAO--XXz1r6hLhjKXcgo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528898647146-ole039bvgbnaopeq39259vljfj9aepes.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "528898647146-tfis0r7s3ojlmnc84gkgkpj91q3lio3t.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.solotodo.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

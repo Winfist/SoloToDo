@@ -1,5 +1,6 @@
 // firebase.js
 import { initializeApp } from "firebase/app";
+import { Capacitor } from "@capacitor/core";
 import {
   initializeAuth,
   indexedDBLocalPersistence,
@@ -29,7 +30,15 @@ const app = initializeApp(firebaseConfig);
 //   IndexedDB is unreliable in WKWebView and gets wiped on app restart, killing auth.
 // - Web (desktop browsers): use IndexedDB first, then localStorage as fallback.
 // NOTE: No popupRedirectResolver — it creates a cross-origin iframe that crashes WKWebView
-const isNative = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform();
+function isNativePlatform() {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
+const isNative = isNativePlatform();
 const auth = initializeAuth(app, {
   persistence: isNative
     ? [browserLocalPersistence]
