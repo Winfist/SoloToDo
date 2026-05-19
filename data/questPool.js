@@ -188,7 +188,7 @@ export const QUEST_POOL = [
     id: "qp_vit_01e", title: "Ocular Rest Protocol", category: "vit", difficulty: "easy", minLevel: 3,
     desc: "Die optischen Sensoren sind überlastet. Minimiere die Screen-Strahlung zur Prävention von Ermüdung.",
     tags: ["eyes", "rest", "screen-free"],
-    subQuests: [{ id: "1", title: "Wende 3x heute die 20-20-20 Regel an (20 Fuß, 20 Sekunden alle 20 Minuten)", completed: false }, { id: "2", title: "10 Minuten Augen komplett schließen ohne einzuschlafen", completed: false }]
+    subQuests: [{ id: "1", title: "Wende 3x heute die 20-20-20 Regel an (6 Meter, 20 Sekunden alle 20 Minuten)", completed: false }, { id: "2", title: "10 Minuten Augen komplett schließen ohne einzuschlafen", completed: false }]
   },
   { 
     id: "qp_vit_02", title: "Toxin Purge", category: "vit", difficulty: "normal", minLevel: 4,

@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import { CHARISMA_CHAINS } from "../data/charismaDungeons.js";
+import { getLocalizedCharismaChains } from "../data/localizedCharismaDungeons.js";
 import { STAT_ICONS, NAV_ICONS, GATE_ICONS } from "../data/icons.js";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 
 // ═══════════════════════════════════════════════════════════════
 // CHARISMA DUNGEONS VIEW — Exposure Therapy Quest Chains
 // ═══════════════════════════════════════════════════════════════
 
 export default function CharismaDungeonsView({ state, theme, startCharismaChain, onClose }) {
+  const { t: tr, locale } = useI18n();
+  const CHARISMA_CHAINS = getLocalizedCharismaChains(locale);
   const [selectedChain, setSelectedChain] = useState(null);
   const t = theme || { primary: "#22d3ee", card: "rgba(10,10,22,0.88)" };
   const cha = state?.stats?.cha || 0;
@@ -31,7 +34,7 @@ export default function CharismaDungeonsView({ state, theme, startCharismaChain,
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
           <div>
             <div style={{ fontSize: "0.65rem", letterSpacing: "0.3em", color: "#a855f7", textTransform: "uppercase", opacity: 0.7 }}>
-              SPEZIALISIERTER DUNGEON
+              {tr("charisma.specialDungeon")}
             </div>
             <div style={{ fontSize: "1.4rem", fontWeight: 900, color: "#e2e8f0", display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <img src={STAT_ICONS.cha} alt="" style={{ width: 28, height: 28, objectFit: "contain", filter: "brightness(1.5)" }} /> CHARISMA DUNGEONS
@@ -56,7 +59,7 @@ export default function CharismaDungeonsView({ state, theme, startCharismaChain,
                 }} />
               </div>
               <div style={{ color: "#6b7280", fontSize: "0.75rem", flexShrink: 0 }}>
-                {nextLock?.chaThreshold} für {nextLock?.name}
+                {nextLock?.chaThreshold} {tr("charisma.required")} {nextLock?.name}
               </div>
             </>
           )}
@@ -104,11 +107,11 @@ export default function CharismaDungeonsView({ state, theme, startCharismaChain,
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <div style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.9rem" }}>{chain.name}</div>
-                    {isCompleted && <span style={{ fontSize: "0.65rem", color: chain.color, background: chain.color + "20", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>BEZWUNGEN</span>}
-                    {isActive && <span style={{ fontSize: "0.65rem", color: "#fbbf24", background: "rgba(251,191,36,0.15)", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>AKTIV</span>}
+                    {isCompleted && <span style={{ fontSize: "0.65rem", color: chain.color, background: chain.color + "20", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>{tr("charisma.conquered")}</span>}
+                    {isActive && <span style={{ fontSize: "0.65rem", color: "#fbbf24", background: "rgba(251,191,36,0.15)", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>{tr("charisma.active")}</span>}
                   </div>
                   <div style={{ color: "#6b7280", fontSize: "0.75rem", marginTop: "0.15rem" }}>
-                    {!isUnlocked ? `CHA ${chain.chaThreshold} erforderlich` : `${chain.steps.length} Etagen · +${chain.reward.chaBonus} CHA`}
+                    {!isUnlocked ? `CHA ${chain.chaThreshold} ${tr("charisma.required")}` : `${chain.steps.length} ${tr("quests.stagesLower")} · +${chain.reward.chaBonus} CHA`}
                   </div>
 
                   {/* Progress bar for active chains */}
@@ -117,8 +120,8 @@ export default function CharismaDungeonsView({ state, theme, startCharismaChain,
                       <div style={{ height: "3px", background: "rgba(255,255,255,0.08)", borderRadius: "2px", overflow: "hidden" }}>
                         <div style={{ width: `${stepPct}%`, height: "100%", background: chain.color, borderRadius: "2px" }} />
                       </div>
-                      <div style={{ color: "#9ca3af", fontSize: "0.65rem", marginTop: "0.2rem" }}>
-                        Etage {currentStep}/{chain.steps.length}
+                      <div style={{ color: "#9ca3af", fontSize: "0.65rem", marginTop: "0.2rem", textTransform: "capitalize" }}>
+                        {tr("quests.stagesLower")} {currentStep}/{chain.steps.length}
                       </div>
                     </div>
                   )}
@@ -183,7 +186,7 @@ export default function CharismaDungeonsView({ state, theme, startCharismaChain,
                     background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)"
                   }}>
                     <div style={{ color: "#fbbf24", fontSize: "0.75rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                      <img src={NAV_ICONS.achievements} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> Belohnung: +{chain.reward.chaBonus} CHA · Titel "{chain.reward.title}"
+                      <img src={NAV_ICONS.achievements} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> {tr("charisma.reward")} +{chain.reward.chaBonus} CHA · {tr("seasons.titleReceived").replace(":", "")} "{chain.reward.title}"
                     </div>
                   </div>
 
@@ -195,12 +198,12 @@ export default function CharismaDungeonsView({ state, theme, startCharismaChain,
                       borderRadius: "8px", color: chain.color, cursor: "pointer",
                       fontWeight: 700, fontSize: "0.85rem", letterSpacing: "0.1em"
                     }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={STAT_ICONS.str} alt="" style={{ width: 16, height: 16, objectFit: "contain", filter: "brightness(2)" }} /> DUNGEON BETRETEN</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><img src={STAT_ICONS.str} alt="" style={{ width: 16, height: 16, objectFit: "contain", filter: "brightness(2)" }} /> {tr("charisma.dungeonEntered")}</span>
                     </button>
                   )}
                   {isCompleted && (
                     <div style={{ color: chain.color, textAlign: "center", marginTop: "0.75rem", fontSize: "0.85rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
-                      <span style={{ color: "#22c55e", fontSize: "1rem" }}>✓</span> Abgeschlossen · Titel "{chain.reward.title}" erhalten
+                      <span style={{ color: "#22c55e", fontSize: "1rem" }}>✓</span> {tr("charisma.conquered")} · {tr("seasons.titleReceived").replace(":", "")} "{chain.reward.title}"
                     </div>
                   )}
                 </div>

@@ -1,5 +1,6 @@
 import React from "react";
-import { SEASONS, WORLD_EVENTS } from "../data/seasons.js";
+import { getLocalizedSeasons, getLocalizedWorldEvents } from "../data/localizedSeasons.js";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 
 // ═══════════════════════════════════════════════════════════════
 // SEASON VIEW — Gate Seasons & World Events
@@ -14,6 +15,9 @@ function daysUntilMonday() {
 
 export default function SeasonView({ state, theme, onClose }) {
   const t = theme || { primary: "#22d3ee", accent: "#67e8f9", card: "rgba(10,10,22,0.88)" };
+  const { t: tr, locale } = useI18n();
+  const SEASONS = getLocalizedSeasons(locale);
+  const WORLD_EVENTS = getLocalizedWorldEvents(locale);
   const seasonKey = state?.seasons?.currentSeason || "frost";
   const worldEventKey = state?.seasons?.currentWorldEvent;
   const season = SEASONS[seasonKey] || SEASONS.frost;
@@ -42,7 +46,7 @@ export default function SeasonView({ state, theme, onClose }) {
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
           <div style={{ fontSize: "0.65rem", letterSpacing: "0.3em", color: season.colors.primary, textTransform: "uppercase" }}>
-            GATE SEASON — AKTIV
+            {tr("seasons.active")}
           </div>
           <button onClick={onClose} style={{
             background: "transparent", border: "1px solid rgba(255,255,255,0.15)",
@@ -77,7 +81,7 @@ export default function SeasonView({ state, theme, onClose }) {
           border: `1px solid ${season.colors.primary}30`,
           fontSize: "0.8rem", color: season.colors.accent || season.colors.primary
         }}>
-           <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{season.iconSrc ? <img src={season.iconSrc} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> : null} Saison-Bonus: {season.questModifier.category?.toUpperCase()} Quests geben ×{season.questModifier.xpMult} XP</span>
+           <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{season.iconSrc ? <img src={season.iconSrc} alt="" style={{ width: 14, height: 14, objectFit: "contain" }} /> : null} {tr("seasons.bonus")} {season.questModifier.category?.toUpperCase()} Quests ×{season.questModifier.xpMult} XP</span>
         </div>
       </div>
 
@@ -90,8 +94,8 @@ export default function SeasonView({ state, theme, onClose }) {
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: "0.65rem", letterSpacing: "0.25em", color: "#fbbf24", marginBottom: "0.25rem" }}>
-                WORLD EVENT — Diese Woche
+              <div style={{ fontSize: "0.65rem", letterSpacing: "0.25em", color: "#fbbf24", marginBottom: "0.25rem", textTransform: "uppercase" }}>
+                {tr("seasons.worldEvent")}
               </div>
               <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fde68a", display: "flex", alignItems: "center", gap: 6 }}>
                 {worldEvent.iconSrc ? <img src={worldEvent.iconSrc} alt={worldEvent.name} style={{ width: 20, height: 20, objectFit: "contain", filter: "drop-shadow(0 0 5px #fbbf2488)" }} /> : worldEvent.icon}
@@ -103,7 +107,7 @@ export default function SeasonView({ state, theme, onClose }) {
             </div>
             <div style={{ textAlign: "center", flexShrink: 0 }}>
               <div style={{ color: "#fbbf24", fontSize: "1.5rem", fontWeight: 900 }}>{daysLeft}</div>
-              <div style={{ color: "#9ca3af", fontSize: "0.65rem" }}>Tage bis<br />Wechsel</div>
+              <div style={{ color: "#9ca3af", fontSize: "0.65rem" }}>{tr("seasons.daysToChange")}</div>
             </div>
           </div>
         </div>
@@ -112,7 +116,7 @@ export default function SeasonView({ state, theme, onClose }) {
         <div style={{ marginBottom: "1.25rem" }}>
           <div style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: 6 }}>
             {season.iconSrc ? <img src={season.iconSrc} alt={season.name} style={{ width: 18, height: 18, objectFit: "contain", filter: `drop-shadow(0 0 4px ${season.colors.primary}88)` }} /> : season.icon}
-            Saison-Quests
+            {tr("seasons.quests")}
           </div>
           {seasonalQuests.length > 0 ? (
             seasonalQuests.map(q => (
@@ -132,7 +136,7 @@ export default function SeasonView({ state, theme, onClose }) {
               color: "#6b7280", fontSize: "0.8rem", textAlign: "center",
               padding: "1rem", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: "8px"
             }}>
-              Saison-Quests erscheinen beim nächsten Tages-Reset
+              {tr("seasons.questsReset")}
             </div>
           )}
         </div>
@@ -143,7 +147,7 @@ export default function SeasonView({ state, theme, onClose }) {
           borderRadius: "10px", padding: "1rem"
         }}>
           <div style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "0.85rem", marginBottom: "0.75rem" }}>
-             Saison-Achievement
+             {tr("seasons.achievement")}
           </div>
           <div style={{ color: "#9ca3af", fontSize: "0.8rem", marginBottom: "0.5rem" }}>
             {season.achievement.desc}
@@ -163,7 +167,7 @@ export default function SeasonView({ state, theme, onClose }) {
           </div>
           {seasonalCompletions >= 10 && (
             <div style={{ color: season.colors.primary, fontSize: "0.8rem", marginTop: "0.5rem", fontWeight: 700 }}>
-              ✅ Titel erhalten: "{season.achievement.title}"
+              ✅ {tr("seasons.titleReceived")} "{season.achievement.title}"
             </div>
           )}
         </div>
@@ -171,7 +175,7 @@ export default function SeasonView({ state, theme, onClose }) {
         {/* All World Events */}
         <div style={{ marginTop: "1.25rem" }}>
           <div style={{ color: "#6b7280", fontSize: "0.7rem", letterSpacing: "0.2em", marginBottom: "0.75rem" }}>
-            WORLD EVENT ROTATION
+            {tr("seasons.rotation")}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
             {WORLD_EVENTS.map((ev, i) => (

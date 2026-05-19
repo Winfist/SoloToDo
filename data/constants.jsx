@@ -962,6 +962,7 @@ function ChainedQuestProgress({ quest }) {
 
 // ═══ QUEST CARD 2.0 ═══════════════════════════════════════════
 function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false }) {
+  const { t } = useI18n();
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [hover, setHover] = useState(false);
@@ -978,8 +979,8 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   const isHard = quest.difficulty === 'hard';
   const isEasy = quest.difficulty === 'easy';
   const originBadge = isSystemQuest
-    ? { label: "SYSTEM", color: "#06b6d4", icon: "⚙" }
-    : { label: "EIGENE", color: "#f59e0b", icon: "✦" };
+    ? { label: t("dashboard.board.originSystem").toUpperCase(), color: "#06b6d4", icon: "⚙" }
+    : { label: t("dashboard.board.originCustom").toUpperCase(), color: "#f59e0b", icon: "✦" };
   const subQuests = quest.subQuests || [];
   const completedSubs = subQuests.filter(sq => sq.completed).length;
   const allSubsDone = subQuests.length > 0 && completedSubs === subQuests.length;
@@ -990,14 +991,14 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   const isOverdue = quest.dueDate && quest.dueDate < todayKey && !quest.completed;
   const isDueToday = quest.dueDate === todayKey;
   const priorityMeta = {
-    high: { label: "HOCH", color: "#f59e0b" },
-    medium: { label: "MITTEL", color: "#38bdf8" },
-    low: { label: "NIEDRIG", color: "#64748b" },
+    high: { label: t("modals.questCreate.priorityHigh"), color: "#f59e0b" },
+    medium: { label: t("modals.questCreate.priorityMedium"), color: "#38bdf8" },
+    low: { label: t("modals.questCreate.priorityLow"), color: "#64748b" },
   }[quest.priority || "medium"];
   const energyMeta = {
-    quick: "5 MIN",
-    medium: "30 MIN",
-    deep: "DEEP",
+    quick: t("modals.questCreate.energyQuick"),
+    medium: t("modals.questCreate.energyMedium"),
+    deep: t("modals.questCreate.energyDeep"),
   }[quest.energy || "medium"];
   const reminderLabel = quest.reminderAt ? formatLocalDateTime(quest.reminderAt) : null;
   const handleComplete = () => {
@@ -1030,7 +1031,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   const questAccent = isOverdue ? "#ef4444" : isDueToday ? "#f59e0b" : isSystemQuest ? "#38bdf8" : isHidden ? typeCfg.color : diff.color;
   const completionBlocked = subQuests.length > 0 && !allSubsDone;
   const subQuestProgress = subQuests.length > 0 ? (completedSubs / subQuests.length) * 100 : 0;
-  const dueLabel = isOverdue ? "ÜBERFÄLLIG" : isDueToday ? "HEUTE" : quest.dueDate;
+  const dueLabel = isOverdue ? t("modals.questDetail.overdue").toUpperCase() : isDueToday ? t("modals.questDetail.today").toUpperCase() : quest.dueDate;
   const typeLabel = (typeCfg.label || quest.type || "Quest").toUpperCase();
   const categoryLabel = cat.stat || quest.category || "STAT";
 
@@ -1061,7 +1062,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
         <button
           onClick={(e) => { e.stopPropagation(); handleComplete(); }}
           className="press-feedback"
-          title={completionBlocked ? "Erst Etappen abschliessen" : "Quest abschliessen"}
+          title={completionBlocked ? t("dashboard.board.completeBlockedTooltip") : t("dashboard.board.completeQuestTooltip")}
           style={{
             width: 34,
             height: 34,
@@ -1079,7 +1080,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             transition: "background 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
           }}
         >
-          {completing ? "OK" : confirming ? "JA?" : completionBlocked ? `${completedSubs}/${subQuests.length}` : (
+          {completing ? "OK" : confirming ? t("dashboard.board.completeConfirm") : completionBlocked ? `${completedSubs}/${subQuests.length}` : (
             <span style={{ width: 9, height: 9, borderRadius: 999, background: "currentColor", opacity: 0.45 }} />
           )}
         </button>
@@ -1090,7 +1091,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
               {typeLabel}
             </span>
             <span style={{ padding: "2px 7px", borderRadius: 7, color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
-              {isSystemQuest ? "System" : "Eigen"}
+              {isSystemQuest ? t("dashboard.board.originSystem") : t("dashboard.board.originCustom")}
             </span>
             <span style={{ padding: "2px 7px", borderRadius: 7, color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
               {categoryLabel}
@@ -1191,7 +1192,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
               )}
               {subQuests.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 9, letterSpacing: 1.4, color: questAccent, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, marginBottom: 7 }}>ETAPPEN</div>
+                  <div style={{ fontSize: 9, letterSpacing: 1.4, color: questAccent, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, marginBottom: 7 }}>{t("quests.stages")}</div>
                   {subQuests.map((sq, si) => (
                     <div key={sq.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: si === 0 ? "none" : "1px solid rgba(255,255,255,0.055)" }}>
                       <button
@@ -1386,7 +1387,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
               )}
               {subQuests.length > 0 && (
                 <div style={{ marginBottom: 6 }}>
-                  <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginBottom: 6 }}>ETAPPEN</div>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginBottom: 6 }}>{t("quests.stages")}</div>
                   {subQuests.map((sq, si) => (
                     <div key={sq.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", marginBottom: 3, borderRadius: 8, background: sq.completed ? "rgba(34,197,94,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${sq.completed ? "#22c55e22" : "rgba(255,255,255,0.04)"}`, transition: "all 0.2s" }}>
                       <button
@@ -1405,7 +1406,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
                     <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                       <div style={{ height: "100%", borderRadius: 2, background: allSubsDone ? "#22c55e" : `linear-gradient(90deg,${theme.primary},${theme.accent})`, width: `${(completedSubs / subQuests.length) * 100}%`, transition: "width 0.4s ease" }} />
                     </div>
-                    <span style={{ fontSize: 9, color: allSubsDone ? "#22c55e" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace" }}>{allSubsDone ? "ALLE ETAPPEN ERLEDIGT ✓" : `${completedSubs}/${subQuests.length} Etappen`}</span>
+                    <span style={{ fontSize: 9, color: allSubsDone ? "#22c55e" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace" }}>{allSubsDone ? t("quests.allStagesDone") : `${completedSubs}/${subQuests.length} ${t("quests.stagesLower")}`}</span>
                   </div>
                 </div>
               )}
@@ -1416,7 +1417,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             <span style={{ margin: "0 5px", color: "#1e293b" }}>·</span>
             <span style={{ color: "#fbbf24", textShadow: hover ? "0 0 6px #fbbf2444" : "none", transition: "text-shadow 0.3s" }}>+{goldGain} G</span>
             {subQuests.length > 0 && <span style={{ margin: "0 5px", color: "#334155" }}>·</span>}
-            {subQuests.length > 0 && <span style={{ color: theme.primary, fontSize: 9 }}>{subQuests.length} Etappen</span>}
+            {subQuests.length > 0 && <span style={{ color: theme.primary, fontSize: 9 }}>{subQuests.length} {t("quests.stagesLower")}</span>}
             {isHidden && <span style={{ margin: "0 5px", color: typeCfg.color }}>· ✨ Verborgene Belohnung</span>}
           </div>
         </div>

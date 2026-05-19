@@ -68,8 +68,8 @@ export default function QuestDetailModal({
       hints.push({
         type: "warning",
         color: "#f59e0b",
-        title: "STREAK IN GEFAHR",
-        text: `Du hast heute noch nichts erreicht. Dein ${gameState.streak}-Tage Streak endet, wenn du diese Quest ignorierst!`,
+        title: t("modals.questDetail.streakWarningTitle"),
+        text: t("modals.questDetail.streakWarningText", { streak: gameState.streak }),
         icon: "⚠️"
       });
     }
@@ -80,8 +80,8 @@ export default function QuestDetailModal({
       hints.push({
         type: "danger",
         color: "#ef4444",
-        title: "ZEIT/ENERGIE WARNUNG",
-        text: "Es ist nach 21 Uhr. Bist du sicher, dass du noch die nötige Ausdauer für eine so tiefgreifende Aufgabe hast?",
+        title: t("modals.questDetail.timeEnergyWarningTitle"),
+        text: t("modals.questDetail.timeEnergyWarningText"),
         icon: "🌙"
       });
     }
@@ -93,8 +93,8 @@ export default function QuestDetailModal({
       hints.push({
         type: "success",
         color: "#22c55e",
-        title: "SYSTEM ANALYSE",
-        text: `Deine ${cat.stat} (Level ${catStat}) ist überlegen. Diese Aufgabe sollte ein Leichtes für dich sein.`,
+        title: t("modals.questDetail.systemAnalysisTitle"),
+        text: t("modals.questDetail.systemAnalysisText", { stat: cat.stat, level: catStat }),
         icon: "📊"
       });
     }
@@ -247,9 +247,9 @@ export default function QuestDetailModal({
               {/* Stack Info */}
               {(quest.stackCount > 1 || quest.stackItems?.length > 1) && (
                 <div style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.06), transparent)", borderRadius: 12, padding: "12px 16px", border: "1px solid rgba(251,191,36,0.15)" }}>
-                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8, fontWeight: 800 }}>GESTAPELTE INSTANZEN</div>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8, fontWeight: 800 }}>{t("modals.questDetail.stackedInstances")}</div>
                   <div style={{ fontSize: 12, color: "#e2e8f0", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif", marginBottom: 8 }}>
-                    {quest.stackCount || quest.stackItems?.length} offene Instanzen dieser Quest. Ein Abschluss erledigt genau eine Instanz.
+                    {t("modals.questDetail.stackedCount", { count: quest.stackCount || quest.stackItems?.length })}
                   </div>
                   {quest.stackItems && quest.stackItems.length > 1 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -257,9 +257,9 @@ export default function QuestDetailModal({
                         <div key={item.id || idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: idx === 0 ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.02)", border: `1px solid ${idx === 0 ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.05)"}` }}>
                           <span style={{ width: 6, height: 6, borderRadius: 999, background: idx === 0 ? "#fbbf24" : "#64748b", flexShrink: 0 }} />
                           <span style={{ fontSize: 11, color: idx === 0 ? "#fbbf24" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace", fontWeight: idx === 0 ? 800 : 500 }}>
-                            {item.dueDate ? (item.dueDate < getLocalToday() ? `Verpasst (${item.dueDate})` : item.dueDate === getLocalToday() ? "Heute fällig" : item.dueDate) : item.createdAt || "Offen"}
+                            {item.dueDate ? (item.dueDate < getLocalToday() ? `${t("modals.questDetail.overdueLabel")} (${item.dueDate})` : item.dueDate === getLocalToday() ? t("modals.questDetail.dueTodayLabel") : item.dueDate) : item.createdAt || t("modals.questDetail.openLabel")}
                           </span>
-                          {idx === 0 && <span style={{ fontSize: 8, color: "#fbbf24", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", marginLeft: "auto" }}>AKTIV</span>}
+                          {idx === 0 && <span style={{ fontSize: 8, color: "#fbbf24", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", marginLeft: "auto" }}>{t("modals.questDetail.activeLabel")}</span>}
                         </div>
                       ))}
                     </div>
