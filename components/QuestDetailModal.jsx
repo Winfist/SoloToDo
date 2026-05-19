@@ -3,6 +3,7 @@ import { DIFFICULTIES, CATEGORIES, QUEST_TYPES_CONFIG } from "../data/gameData.j
 import { getToday as getLocalToday, formatLocalDateTime } from "../data/dateUtils.js";
 import GlitchText from "./ui/GlitchText.jsx";
 import { useI18n } from "./i18n/I18nProvider.jsx";
+import { getQuestDescription } from "../data/questUtils.js";
 
 const CornerBracket = ({ pos }) => {
   const styles = {
@@ -162,6 +163,9 @@ export default function QuestDetailModal({
               <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 6, background: typeCfg.color + "15", color: typeCfg.color, border: `1px solid ${typeCfg.color}44`, fontFamily: "'JetBrains Mono',monospace" }}>{typeCfg.label.toUpperCase()}</span>
               <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 6, background: diff.color + "15", color: diff.color, border: `1px solid ${diff.color}44`, fontFamily: "'JetBrains Mono',monospace" }}>{diff.label.toUpperCase()}</span>
               <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 6, background: cat.color + "15", color: cat.color, border: `1px solid ${cat.color}44`, fontFamily: "'JetBrains Mono',monospace" }}>{cat.stat}</span>
+              {(quest.stackCount > 1 || quest.stackItems?.length > 1) && (
+                <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 6, background: "rgba(251,191,36,0.1)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.28)", fontFamily: "'JetBrains Mono',monospace", fontWeight: 900 }}>x{quest.stackCount || quest.stackItems?.length}</span>
+              )}
             </div>
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748b", fontSize: 20, cursor: "pointer", padding: 4 }}>✕</button>
@@ -231,12 +235,35 @@ export default function QuestDetailModal({
               )}
 
               {/* Description */}
-              {(quest.description || quest.desc) && (
+              {getQuestDescription(quest) && (
                 <div>
                   <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{t("modals.questDetail.description")}</div>
                   <div style={{ fontSize: 13, color: "#e2e8f0", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>
-                    {quest.description || quest.desc}
+                    {getQuestDescription(quest)}
                   </div>
+                </div>
+              )}
+
+              {/* Stack Info */}
+              {(quest.stackCount > 1 || quest.stackItems?.length > 1) && (
+                <div style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.06), transparent)", borderRadius: 12, padding: "12px 16px", border: "1px solid rgba(251,191,36,0.15)" }}>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8, fontWeight: 800 }}>GESTAPELTE INSTANZEN</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif", marginBottom: 8 }}>
+                    {quest.stackCount || quest.stackItems?.length} offene Instanzen dieser Quest. Ein Abschluss erledigt genau eine Instanz.
+                  </div>
+                  {quest.stackItems && quest.stackItems.length > 1 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      {quest.stackItems.map((item, idx) => (
+                        <div key={item.id || idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: idx === 0 ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.02)", border: `1px solid ${idx === 0 ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.05)"}` }}>
+                          <span style={{ width: 6, height: 6, borderRadius: 999, background: idx === 0 ? "#fbbf24" : "#64748b", flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: idx === 0 ? "#fbbf24" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace", fontWeight: idx === 0 ? 800 : 500 }}>
+                            {item.dueDate ? (item.dueDate < getLocalToday() ? `Verpasst (${item.dueDate})` : item.dueDate === getLocalToday() ? "Heute fällig" : item.dueDate) : item.createdAt || "Offen"}
+                          </span>
+                          {idx === 0 && <span style={{ fontSize: 8, color: "#fbbf24", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", marginLeft: "auto" }}>AKTIV</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

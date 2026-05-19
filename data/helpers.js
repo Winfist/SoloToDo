@@ -8,6 +8,7 @@ import { QUEST_POOL } from "./questPool.js";
 import { getSystemQuestPoolForLocale, localizeQuestTemplate } from "./localizedQuestPool.js";
 import { getToday } from "./dateUtils.js";
 import { getStateLocale, resolveLocale, translate } from "./i18n.js";
+import { getQuestKey, normalizeQuestForStorage } from "./questUtils.js";
 
 // ─── JOB XP CONFIG ────────────────────────────────────────────
 export const JOB_XP_SOURCES = {
@@ -118,9 +119,10 @@ export function generateStarterQuests(languageMode = "auto") {
     .map(templateId => QUEST_POOL.find(q => q.id === templateId))
     .filter(Boolean)
     .map(q => localizeQuestTemplate(q, locale))
-    .map((q, index) => ({
+    .map((q, index) => normalizeQuestForStorage({
       ...q,
       id: `starter_${genId()}`,
+      templateId: q.templateId || q.id,
       type: "daily",
       isSystem: true,
       isStarter: true,
@@ -136,6 +138,8 @@ export function generateDailySystemQuests(count = 3, state = null) {
   const level = state?.level || 1;
   const stats = state?.stats || { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
   const locale = getStateLocale(state);
+  const today = getToday();
+  const activeQuestKeys = new Set((state?.quests || []).filter(q => !q.completed).map(getQuestKey));
 
   // Pool nach Level filtern
   const validPool = getSystemQuestPoolForLocale(locale).filter(q => level >= (q.minLevel || 1));
@@ -159,31 +163,35 @@ export function generateDailySystemQuests(count = 3, state = null) {
     if (penaltyPool.length > 0) {
       const penaltyQ = penaltyPool[Math.floor(Math.random() * penaltyPool.length)];
       generatedIds.add(penaltyQ.id);
-      selected.push({
+      selected.push(normalizeQuestForStorage({
         ...penaltyQ,
         id: `sys_${genId()}`,
+        templateId: penaltyQ.templateId || penaltyQ.id,
         type: "daily",
         isSystem: true,
         xpMult: 1.5,
         systemMessage: translate(locale, "quests.deficiencyMessage", { stat: lowestStat.toUpperCase() }),
-        createdAt: getToday()
-      });
+        createdAt: today,
+        dueDate: today,
+      }));
     }
   }
 
   // --- Inject Screen Time OCR Quest only when the feature is configured ---
-  if (state?.screenTimePreferences?.enabled && selected.length < count) {
+  const screenTimeQuestKey = `screen_time_quest:${today}`;
+  if (state?.screenTimePreferences?.enabled && selected.length < count && !activeQuestKeys.has(screenTimeQuestKey)) {
     const limitMinutes = state?.screenTimePreferences?.dailyLimitMinutes || 120;
     const hours = Math.floor(limitMinutes / 60);
     const minutes = limitMinutes % 60;
     const timeString = minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 
     generatedIds.add("screen_time_quest");
-    selected.push({
+    selected.push(normalizeQuestForStorage({
       id: `sys_screentime_${genId()}`,
       templateId: "screen_time_quest",
+      questKey: screenTimeQuestKey,
       title: translate(locale, "quests.screenTimeTitle", { time: timeString }),
-      desc: translate(locale, "quests.screenTimeDesc"),
+      description: translate(locale, "quests.screenTimeDesc"),
       category: "int",
       difficulty: "hard", // Making it a bit harder to encourage focus!
       type: "daily",
@@ -191,20 +199,23 @@ export function generateDailySystemQuests(count = 3, state = null) {
       isScreenTime: true, // Special flag for our Modal intercept
       xpMult: 2.0,
       goldMult: 2.5,
-      createdAt: getToday()
-    });
+      createdAt: today,
+      dueDate: today,
+    }));
   }
 
   const shuffled = validPool.filter(q => !generatedIds.has(q.id)).sort(() => Math.random() - 0.5);
   for (const q of shuffled) {
     if (selected.length >= count) break; // Now selected.length will correctly count the injected quest
-    selected.push({
+    selected.push(normalizeQuestForStorage({
       ...q,
       id: `sys_${genId()}`,
+      templateId: q.templateId || q.id,
       type: "daily",
       isSystem: true,
-      createdAt: getToday()
-    });
+      createdAt: today,
+      dueDate: today,
+    }));
   }
 
   return selected;
@@ -228,13 +239,14 @@ export async function generateDailySystemQuestsAsync(count = 3, state = null, ge
 
     if (aiResult?.quests?.length > 0) {
       const today = getToday();
-      return aiResult.quests.slice(0, count).map(q => ({
+      return aiResult.quests.slice(0, count).map(q => normalizeQuestForStorage({
         ...q,
         id: `sys_ai_${genId()}`,
         type: "daily",
         isSystem: true,
         aiGenerated: true,
         createdAt: today,
+        dueDate: today,
       }));
     }
   } catch {

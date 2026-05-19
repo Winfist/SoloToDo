@@ -12,6 +12,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { getToday as getLocalToday, formatLocalDateTime } from "./dateUtils.js";
+import { getQuestDescription } from "./questUtils.js";
 
 // â”€â”€â”€ RE-EXPORTS FROM SPLIT MODULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export {
@@ -918,7 +919,7 @@ function EmergencyQuestCard({ quest, done, failed, onComplete, theme }) {
           <div style={{ fontSize: 14, fontWeight: 700, color: done ? "#64748b" : "#fff", fontFamily: "'Outfit',sans-serif", textDecoration: done ? "line-through" : "none" }}>{quest.title}</div>
         </div>
       </div>
-      <div style={{ fontSize: 10, color: "#64748b", marginBottom: 10, lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>{quest.desc}</div>
+      <div style={{ fontSize: 10, color: "#64748b", marginBottom: 10, lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>{getQuestDescription(quest)}</div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>
           <span style={{ color: cat.color }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 12, height: 12, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)`, verticalAlign: "middle", marginTop: -2 }} /> : cat.icon} {cat.stat}</span>
@@ -960,7 +961,7 @@ function ChainedQuestProgress({ quest }) {
 }
 
 // ═══ QUEST CARD 2.0 ═══════════════════════════════════════════
-function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet }) {
+function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false }) {
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [hover, setHover] = useState(false);
@@ -982,7 +983,9 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   const subQuests = quest.subQuests || [];
   const completedSubs = subQuests.filter(sq => sq.completed).length;
   const allSubsDone = subQuests.length > 0 && completedSubs === subQuests.length;
-  const hasDetails = (quest.description && quest.description.trim()) || subQuests.length > 0;
+  const questDescription = getQuestDescription(quest);
+  const stackCount = quest.stackCount || quest.stackItems?.length || 1;
+  const hasDetails = !!questDescription || subQuests.length > 0 || stackCount > 1;
   const todayKey = getLocalToday();
   const isOverdue = quest.dueDate && quest.dueDate < todayKey && !quest.completed;
   const isDueToday = quest.dueDate === todayKey;
@@ -1092,6 +1095,11 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             <span style={{ padding: "2px 7px", borderRadius: 7, color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
               {categoryLabel}
             </span>
+            {stackCount > 1 && (
+              <span style={{ padding: "2px 7px", borderRadius: 7, color: "#fbbf24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.28)", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>
+                x{stackCount}
+              </span>
+            )}
             {quest.dueDate && (
               <span style={{ padding: "2px 7px", borderRadius: 7, color: isOverdue ? "#ef4444" : isDueToday ? "#f59e0b" : "#94a3b8", background: isOverdue ? "rgba(239,68,68,0.1)" : isDueToday ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.035)", border: `1px solid ${isOverdue ? "#ef444433" : isDueToday ? "#f59e0b33" : "rgba(255,255,255,0.07)"}`, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
                 {dueLabel}
@@ -1139,9 +1147,9 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             </span>
           </div>
 
-          {quest.description && quest.description.trim() && !expanded && (
+          {questDescription && !expanded && (
             <div style={{ marginTop: 4, color: "#64748b", fontSize: 11, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>
-              {quest.description}
+              {questDescription}
             </div>
           )}
 
@@ -1171,9 +1179,14 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
 
           {expanded && (
             <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              {quest.description && quest.description.trim() && (
+              {questDescription && (
                 <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.5, marginBottom: subQuests.length ? 10 : 0 }}>
-                  {quest.description}
+                  {questDescription}
+                </div>
+              )}
+              {stackCount > 1 && (
+                <div style={{ color: "#fbbf24", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>
+                  {stackCount} INSTANZEN GESTAPELT / ABSCHLUSS ERLEDIGT 1
                 </div>
               )}
               {subQuests.length > 0 && (
@@ -1226,6 +1239,9 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             >
               FOK
             </button>
+          )}
+          {canReplace && onReplace && (
+            <button onClick={(e) => { e.stopPropagation(); onReplace(quest); }} className="press-feedback" style={{ width: 30, height: 24, borderRadius: 7, color: "#fbbf24", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.22)", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>ALT</button>
           )}
           {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(quest); }} className="press-feedback" style={{ width: 30, height: 24, borderRadius: 7, color: "#60a5fa", background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>EDIT</button>}
           {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(quest.id); }} className="press-feedback" style={{ width: 30, height: 24, borderRadius: 7, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>DEL</button>}
@@ -1344,8 +1360,8 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             }} style={{ fontSize: 14, fontWeight: 600, color: completing ? "#64748b" : "#e2e8f0", textDecoration: completing ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: expanded ? "normal" : "nowrap", fontFamily: "'Outfit',sans-serif", cursor: (onOpenDetail || hasDetails) ? "pointer" : "inherit", flex: 1 }}>{quest.title}</div>
             {hasDetails && <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} style={{ background: "transparent", border: "none", color: "#475569", fontSize: 10, cursor: "pointer", padding: "2px 4px", transition: "transform 0.2s", transform: expanded ? "rotate(180deg)" : "none", flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>▼</button>}
           </div>
-          {quest.description && quest.description.trim() && !expanded && (
-            <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif", fontStyle: "italic" }}>{quest.description}</div>
+          {questDescription && !expanded && (
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif", fontStyle: "italic" }}>{questDescription}</div>
           )}
           {(quest.priority || quest.energy || quest.context) && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontSize: 9 }}>
@@ -1365,8 +1381,8 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
           )}
           {expanded && (
             <div style={{ marginTop: 8, animation: "slideDown 0.25s ease", overflow: "hidden" }}>
-              {quest.description && quest.description.trim() && (
-                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5, marginBottom: 10, fontFamily: "'Outfit',sans-serif", fontStyle: "italic", padding: "8px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 10, borderLeft: `2px solid ${diff.color}44` }}>{quest.description}</div>
+              {questDescription && (
+                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5, marginBottom: 10, fontFamily: "'Outfit',sans-serif", fontStyle: "italic", padding: "8px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 10, borderLeft: `2px solid ${diff.color}44` }}>{questDescription}</div>
               )}
               {subQuests.length > 0 && (
                 <div style={{ marginBottom: 6 }}>

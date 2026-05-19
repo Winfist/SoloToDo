@@ -739,6 +739,144 @@ export const de = {
     },
   },
   tutorial: {
+    steps: {
+      awakening: {
+        title: "DAS SYSTEM ERWACHT",
+        text: "Willkommen, Hunter. Diese App verwandelt deine Aufgaben in Quests, Fortschritt und Belohnungen.",
+      },
+      system_online: {
+        title: "SYSTEM: ONLINE",
+        text: "Du sammelst XP, Gold und Stats, indem du echte Aufgaben erledigst. Mit jedem Level werden neue Module freigeschaltet.",
+      },
+      show_header: {
+        title: "DEIN HUD",
+        text: "Hier siehst du Rang, Level, Gold und deine Serie. Das ist dein schneller System-Status.",
+      },
+      show_xp_bar: {
+        title: "HUNTER STATUS",
+        text: "Diese Karte zeigt deine XP-Leiste und deinen Level-Fortschritt. Level-Ups schalten neue Bereiche frei.",
+      },
+      show_dashboard_stats: {
+        title: "DEINE ATTRIBUTE",
+        text: "STR, INT, VIT, AGI und CHA wachsen durch passende Quests. Diese Werte bestimmen spaeter auch Skills, Gates und Builds.",
+      },
+      show_quest_board: {
+        title: "QUEST BOARD",
+        text: "Hier landen deine offenen Quests. System-Quests kommen automatisch dazu, eigene Quests erstellst du selbst.",
+      },
+      click_create_quest: {
+        title: "ERSTE QUEST ERSTELLEN",
+        text: "Tippe auf Neue Quest. Fuer diesen Schritt ist nur dieser Button freigegeben.",
+      },
+      quest_title_input: {
+        title: "QUEST-NAME",
+        text: "Gib deiner Aufgabe einen klaren Namen, zum Beispiel 30 Minuten lesen oder 10 Liegestuetze.",
+      },
+      quest_difficulty: {
+        title: "SCHWIERIGKEIT",
+        text: "Easy, Normal, Hard und Boss bestimmen, wie stark die Belohnung ausfaellt. Fuer den Anfang ist Normal perfekt.",
+      },
+      quest_category: {
+        title: "KATEGORIE",
+        text: "Jede Quest staerkt einen Stat: STR, INT, VIT, AGI oder CHA. Waehle den Bereich, zu dem deine Aufgabe passt.",
+      },
+      submit_quest: {
+        title: "QUEST AKTIVIEREN",
+        text: "Jetzt annehmen. Sobald du klickst, wird die Quest in dein System eingetragen.",
+      },
+      quest_activated: {
+        title: "QUEST REGISTRIERT",
+        text: "Sehr gut. Deine erste eigene Quest ist aktiv. Erledige sie, um XP und Gold zu verdienen.",
+      },
+      show_nav: {
+        title: "NAVIGATION",
+        text: "Unten wechselst du zwischen den Modulen. Neue Tabs erscheinen, sobald dein Level hoch genug ist.",
+      },
+      open_system_hub: {
+        title: "SYSTEM-HUB OEFFNEN",
+        text: "Tippe auf System. Dort findest du Hunter Stats, Einstellungen und spaeter viele freigeschaltete Module.",
+      },
+      open_hunter_stats: {
+        title: "HUNTER STATS",
+        text: "Oeffne Hunter Stats. Das ist dein Charakterbogen: Attribute, Power Level, Skills und Erfolge.",
+      },
+      stats_overview: {
+        title: "STATUS-ANALYSE",
+        text: "Hier siehst du Radar, Power Level und Gesamtfortschritt. Das zeigt dir, wie dein Hunter-Profil gerade verteilt ist.",
+      },
+      stats_attributes: {
+        title: "ATTRIBUTE STEIGERN",
+        text: "Jede Kategorie hat einen Wert. Wenn du Stat-Punkte bekommst, kannst du hier gezielt STR, INT, VIT, AGI oder CHA verbessern.",
+      },
+      return_dashboard: {
+        title: "ZURUECK ZUR JAGD",
+        text: "Zurueck zum Heute-Tab. Dort startest du deine Quests und baust deinen Fortschritt weiter aus.",
+      },
+      arise_finale: {
+        title: "A R I S E",
+        text: "Das System ist kalibriert. Ab jetzt begleitet dich das Tutorial nur noch, wenn du neue Features freischaltest.",
+      },
+      tier1_intro: {
+        title: "SYSTEM UPDATE",
+        text: "Level 3 erreicht. Erste Zusatzmodule wurden freigeschaltet.",
+      },
+      habit_tracker: {
+        title: "HABIT TRACKER",
+        text: "Hier baust du Routinen auf. Habits helfen dir, kleine Wiederholungen sichtbar zu machen.",
+      },
+      emergency_quests: {
+        title: "NOTFALL-QUESTS",
+        text: "Wenn eine Notfall-Quest aktiv ist, erscheint sie hier. Sie ist zeitkritisch und lohnt sich besonders.",
+      },
+      tier1_done: {
+        title: "MODULE AKTIVIERT",
+        text: "Habit Tracker, Notfall-Quests, Quest-Filter und Focus Mode sind jetzt Teil deines Systems.",
+      },
+      tier2_intro: {
+        title: "SYSTEM EXPANSION",
+        text: "Level 5 erreicht. Langfristige Ziele und Micro-Habits sind freigeschaltet.",
+      },
+      training_tab: {
+        title: "TRAINING HUB",
+        text: "Der Training-Tab buendelt Ziele, Habits und Planung. Hier entsteht dein laengerer Fortschritt.",
+      },
+      tier2_done: {
+        title: "NEUE SYSTEME ONLINE",
+        text: "Ziele, Micro-Habits, Vision Board und KI-Hilfe stehen bereit.",
+      },
+      tier3_intro: {
+        title: "ERKENNUNG",
+        text: "Level 8 erreicht. Achievements, Weekly Quests, Dawn/Dusk und der KI-Coach sind freigeschaltet.",
+      },
+      tier4_intro: {
+        title: "D-RANG AUFSTIEG",
+        text: "Level 11 erreicht. Dungeon Gates, Shop, Equipment, Story und Inner Sanctum sind jetzt verfuegbar.",
+      },
+      dungeon_nav: {
+        title: "DUNGEON GATES",
+        text: "Ueber diesen Tab betrittst du Gates. Dort warten Etagen, Bosse und seltene Belohnungen.",
+      },
+      tier4_done: {
+        title: "NEUE AERA",
+        text: "Du bist kein Anfaenger mehr. Die Jagd beginnt.",
+      },
+      tier5_intro: {
+        title: "SCHATTEN-ERWECKUNG",
+        text: "Level 15 erreicht. Shadow Army, Hunter Codex und dynamische KI-Quests sind freigeschaltet.",
+      },
+      tier6_intro: {
+        title: "C-RANG UEBERSCHRITTEN",
+        text: "Level 21 erreicht. Jobs, Formationen, Events und Hidden Quests sind freigeschaltet.",
+      },
+      tier7_intro: {
+        title: "FORTGESCHRITTENE SYSTEME",
+        text: "Level 30 erreicht. Soul Link, Charisma Dungeons, Named Shadows und Seasons sind freigeschaltet.",
+      },
+      tier8_intro: {
+        title: "B-RANG ELITESTATUS",
+        text: "Level 36 erreicht. Multiplayer ist freigeschaltet. Die Hunter Association steht offen.",
+      },
+    },
     hud: {
       systemGuidance: "SYSTEM-ANLEITUNG",
       awakeningProtocol: "ERWECKUNGS-PROTOKOLL",

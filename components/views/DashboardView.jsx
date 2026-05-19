@@ -20,6 +20,13 @@ import ScreenTimeDashboard from "../ScreenTimeDashboard.jsx";
 import { ScreenTimeVerifyModal } from "../ScreenTimeVerifyModal.jsx";
 import QuestIntensityControl from "../QuestIntensityControl.jsx";
 import { isPremiumDashboardWidget } from "../../data/premium.js";
+import {
+  getQuestDescription,
+  getQuestReplacementStatus,
+  groupQuestStacks,
+  isQuestReplaceable,
+  QUEST_FOCUS_SOFT_CAP
+} from "../../data/questUtils.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 
 // ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
@@ -223,6 +230,7 @@ export default function DashboardView({
   filteredQuests, hiddenQuestCount,
   questFilter, setQuestFilter,
   completeQuest, completeSubQuest, startEditingQuest, deleteQuest,
+  getReplacementCandidates, replaceSystemQuest,
   completeEmergencyQuest, createQuest, onOpenDetail,
   setShowCreate, setShowTaskScan,
   snoozeReminder,
@@ -270,6 +278,8 @@ export default function DashboardView({
   const [quickAddMode, setQuickAddMode] = useState(false);
   const [quickAddTitle, setQuickAddTitle] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [replacementQuest, setReplacementQuest] = useState(null);
+  const [replacementOptions, setReplacementOptions] = useState([]);
 
   const toggleSection = (key) => setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -513,12 +523,13 @@ export default function DashboardView({
     || (typeOrder[a.type] ?? 5) - (typeOrder[b.type] ?? 5)
     || (diffOrder[a.difficulty] ?? 2) - (diffOrder[b.difficulty] ?? 2);
   const sortedVisibleQuests = [...visibleQuests].sort(sortByFocus);
+  const sortedVisibleQuestGroups = groupQuestStacks(sortedVisibleQuests);
   const systemQuests = visibleQuests.filter(q => q.isSystem).sort(sortByFocus);
   const userQuests = visibleQuests.filter(q => !q.isSystem).sort(sortByFocus);
   const completedTodayCount = (state.completedQuests || []).filter(q => q.completedAt === todayKey).length;
-  const overdueVisibleCount = visibleQuests.filter(q => q.dueDate && q.dueDate < todayKey).length;
-  const dueTodayVisibleCount = visibleQuests.filter(q => q.type === "daily" || q.dueDate === todayKey).length;
-  const quickVisibleCount = visibleQuests.filter(q => q.energy === "quick").length;
+  const overdueVisibleCount = sortedVisibleQuestGroups.filter(q => q.dueDate && q.dueDate < todayKey).length;
+  const dueTodayVisibleCount = sortedVisibleQuestGroups.filter(q => q.type === "daily" || q.dueDate === todayKey).length;
+  const quickVisibleCount = sortedVisibleQuestGroups.filter(q => q.energy === "quick").length;
   const questTypeFilterOptions = [
     { key: "all", label: t("dashboard.board.typeAll"), color: theme.accent || theme.primary },
     { key: "daily", label: t("dashboard.board.typeDaily"), color: "#22d3ee" },
@@ -539,15 +550,60 @@ export default function DashboardView({
   const questFilterSummary = hasActiveQuestFilters
     ? [questFilter !== "all" ? questTypeLabel : null, originFilter !== "all" ? questOriginLabel : null].filter(Boolean).join(" / ")
     : t("dashboard.board.summaryAll");
-  const overdueQuestList = sortedVisibleQuests.filter(q => q.dueDate && q.dueDate < todayKey);
-  const todayQuestList = sortedVisibleQuests.filter(q => !(q.dueDate && q.dueDate < todayKey) && (q.type === "daily" || q.dueDate === todayKey));
-  const laterQuestList = sortedVisibleQuests.filter(q => !(q.dueDate && q.dueDate < todayKey) && !(q.type === "daily" || q.dueDate === todayKey));
-  const questBoardSections = [
+  const overdueQuestList = sortedVisibleQuestGroups.filter(q => q.dueDate && q.dueDate < todayKey);
+  const todayQuestList = sortedVisibleQuestGroups.filter(q => !(q.dueDate && q.dueDate < todayKey) && (q.type === "daily" || q.dueDate === todayKey));
+  const laterQuestList = sortedVisibleQuestGroups.filter(q => !(q.dueDate && q.dueDate < todayKey) && !(q.type === "daily" || q.dueDate === todayKey));
+  const rawQuestBoardSections = [
     { key: "overdue", title: t("dashboard.board.sectionOverdue"), color: "#ef4444", quests: overdueQuestList },
     { key: "today", title: t("dashboard.board.sectionToday"), color: theme.primary, quests: todayQuestList },
     { key: "later", title: t("dashboard.board.sectionLater"), color: "#64748b", quests: laterQuestList },
   ].filter(section => section.quests.length > 0);
+  let focusQuestIndex = 0;
+  const questBoardSections = rawQuestBoardSections.map(section => {
+    const focus = [];
+    section.quests.forEach(q => {
+      if (focusQuestIndex < QUEST_FOCUS_SOFT_CAP) focus.push(q);
+      focusQuestIndex += 1;
+    });
+    return { ...section, quests: focus };
+  }).filter(section => section.quests.length > 0);
+  let reserveQuestIndex = 0;
+  const reserveQuestSections = rawQuestBoardSections.map(section => {
+    const reserve = [];
+    section.quests.forEach(q => {
+      if (reserveQuestIndex >= QUEST_FOCUS_SOFT_CAP) reserve.push(q);
+      reserveQuestIndex += 1;
+    });
+    return { ...section, quests: reserve };
+  }).filter(section => section.quests.length > 0);
+  const reserveQuestCount = reserveQuestSections.reduce((sum, section) => sum + section.quests.length, 0);
   const showGrouped = false && originFilter === "all" && (systemQuests.length > 0 && userQuests.length > 0);
+  const replacementStatus = getQuestReplacementStatus(state);
+
+  const openReplacementPicker = useCallback((quest) => {
+    if (!quest || !replaceSystemQuest || !getReplacementCandidates) return;
+    const status = getQuestReplacementStatus(state);
+    if (!status.canReplace) {
+      notify?.(`Ersatzlimit erreicht (${status.used}/${status.limit})`, "warning");
+      return;
+    }
+    const candidates = getReplacementCandidates(quest.id);
+    if (!candidates.length) {
+      notify?.("Keine passenden Ersatz-Quests verfuegbar.", "warning");
+      return;
+    }
+    setReplacementQuest(quest);
+    setReplacementOptions(candidates);
+  }, [state, replaceSystemQuest, getReplacementCandidates, notify]);
+
+  const confirmReplacement = useCallback((template) => {
+    if (!replacementQuest || !template) return;
+    const replaced = replaceSystemQuest?.(replacementQuest.id, template);
+    if (replaced !== false) {
+      setReplacementQuest(null);
+      setReplacementOptions([]);
+    }
+  }, [replacementQuest, replaceSystemQuest]);
 
   const SectionHeader = ({ title, icon, color, count, sectionKey }) => (
     <div onClick={() => toggleSection(sectionKey)} style={{
@@ -774,7 +830,7 @@ export default function DashboardView({
                   </div>
                 </div>
                 <div style={{ minWidth: 66, textAlign: "center", padding: "8px 10px", borderRadius: 12, background: `${theme.primary}10`, border: `1px solid ${theme.primary}28`, color: theme.accent || theme.primary, fontFamily: "'JetBrains Mono',monospace" }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{visibleQuests.length}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{sortedVisibleQuestGroups.length}</div>
                   <div style={{ fontSize: 8, fontWeight: 900, marginTop: 3 }}>{t("dashboard.board.open")}</div>
                 </div>
               </div>
@@ -968,7 +1024,7 @@ export default function DashboardView({
                           <QuestCard
                             key={q.id}
                             quest={q}
-                            index={sortedVisibleQuests.findIndex(item => item.id === q.id)}
+                            index={sortedVisibleQuestGroups.findIndex(item => item.id === q.id)}
                             theme={theme}
                             onComplete={handleInterceptComplete}
                             onEdit={startEditingQuest}
@@ -978,11 +1034,67 @@ export default function DashboardView({
                             onSetFocus={setDailyFocusQuest}
                             isDailyFocus={state.dailyFocusQuestId === q.id}
                             hasAmulet={state.artifacts?.focusAmulet}
+                            canReplace={isQuestReplaceable(q) && replacementStatus.remaining > 0}
+                            onReplace={openReplacementPicker}
                           />
                         ))}
                       </div>
                     </section>
                   ))}
+                  {reserveQuestCount > 0 && (
+                    <section>
+                      <div
+                        onClick={() => toggleSection("reserve")}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 8,
+                          margin: "2px 0 8px",
+                          padding: "9px 10px",
+                          borderRadius: 10,
+                          background: "rgba(100,116,139,0.08)",
+                          border: "1px solid rgba(148,163,184,0.13)",
+                          cursor: "pointer",
+                          userSelect: "none",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: 999, background: "#64748b", boxShadow: "0 0 12px rgba(100,116,139,0.45)" }} />
+                          <span style={{ color: "#94a3b8", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>RESERVE</span>
+                          <span style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{reserveQuestCount}</span>
+                        </div>
+                        <span style={{ fontSize: 9, color: "#64748b", transition: "transform 0.25s", transform: collapsedSections.reserve ? "rotate(-90deg)" : "rotate(0deg)", display: "inline-block" }}>▼</span>
+                      </div>
+                      {!collapsedSections.reserve && (
+                        <div style={{ display: "grid", gap: 10 }}>
+                          {reserveQuestSections.map(section => (
+                            <div key={`reserve-${section.key}`} style={{ display: "grid", gap: 8 }}>
+                              <div style={{ color: section.color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.1 }}>{section.title}</div>
+                              {section.quests.map(q => (
+                                <QuestCard
+                                  key={q.id}
+                                  quest={q}
+                                  index={sortedVisibleQuestGroups.findIndex(item => item.id === q.id)}
+                                  theme={theme}
+                                  onComplete={handleInterceptComplete}
+                                  onEdit={startEditingQuest}
+                                  onDelete={deleteQuest}
+                                  onCompleteSubQuest={completeSubQuest}
+                                  onOpenDetail={onOpenDetail}
+                                  onSetFocus={setDailyFocusQuest}
+                                  isDailyFocus={state.dailyFocusQuestId === q.id}
+                                  hasAmulet={state.artifacts?.focusAmulet}
+                                  canReplace={isQuestReplaceable(q) && replacementStatus.remaining > 0}
+                                  onReplace={openReplacementPicker}
+                                />
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  )}
                   {showGrouped ? (
                     <>
                       {systemQuests.length > 0 && (
@@ -1543,6 +1655,85 @@ export default function DashboardView({
                 claimScreenTimeReward={claimScreenTimeReward}
                 geminiAI={geminiAI}
               />
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {replacementQuest && typeof document !== "undefined" && createPortal(
+        <div
+          onClick={() => { setReplacementQuest(null); setReplacementOptions([]); }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 10001,
+            background: "rgba(0,0,0,0.84)",
+            backdropFilter: "blur(12px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 18,
+            animation: "fadeIn 0.2s ease",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: "min(520px, 96vw)",
+              maxHeight: "88vh",
+              overflowY: "auto",
+              borderRadius: 16,
+              background: "linear-gradient(180deg, rgba(8,12,24,0.98), rgba(4,6,14,0.98))",
+              border: `1px solid ${theme.primary}38`,
+              boxShadow: `0 24px 70px rgba(0,0,0,0.55), 0 0 32px ${theme.primary}16`,
+              padding: 18,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+              <div>
+                <div style={{ color: theme.primary, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.6 }}>SYSTEM:// QUEST_REPLACE</div>
+                <div style={{ color: "#f8fafc", fontSize: 20, fontWeight: 900, fontFamily: "'Outfit',sans-serif", marginTop: 4 }}>Quest ersetzen</div>
+                <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.4, marginTop: 5 }}>
+                  Waehle eine Alternative fuer <span style={{ color: "#e2e8f0", fontWeight: 800 }}>{replacementQuest.title}</span>.
+                  <br />Heute genutzt: {replacementStatus.used}/{replacementStatus.limit}
+                </div>
+              </div>
+              <button
+                onClick={() => { setReplacementQuest(null); setReplacementOptions([]); }}
+                style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#cbd5e1", cursor: "pointer" }}
+              >X</button>
+            </div>
+
+            <div style={{ display: "grid", gap: 10 }}>
+              {replacementOptions.map((option) => {
+                const desc = getQuestDescription(option);
+                return (
+                  <button
+                    key={option.questKey || option.templateId || option.id}
+                    onClick={() => confirmReplacement(option)}
+                    style={{
+                      textAlign: "left",
+                      padding: 13,
+                      borderRadius: 12,
+                      background: "rgba(255,255,255,0.035)",
+                      border: "1px solid rgba(148,163,184,0.13)",
+                      color: "#e2e8f0",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                      <div style={{ fontSize: 15, fontWeight: 900, fontFamily: "'Outfit',sans-serif" }}>{option.title}</div>
+                      <div style={{ color: theme.primary, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>{String(option.category || "agi").toUpperCase()} / {String(option.difficulty || "normal").toUpperCase()}</div>
+                    </div>
+                    {desc && <div style={{ marginTop: 6, color: "#94a3b8", fontSize: 12, lineHeight: 1.45 }}>{desc}</div>}
+                    {option.subQuests?.length > 0 && (
+                      <div style={{ marginTop: 8, color: "#64748b", fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+                        {option.subQuests.length} ETAPPEN
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>,

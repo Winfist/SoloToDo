@@ -25,6 +25,13 @@ import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensity
 import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
+import {
+  getQuestKey,
+  getQuestReplacementStatus,
+  isQuestReplaceable,
+  normalizeQuestForStorage
+} from '../data/questUtils.js';
+import { getSystemQuestPoolForLocale } from '../data/localizedQuestPool.js';
 
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
@@ -66,6 +73,7 @@ function createFreshHunterState(name) {
     equipment: { slots: { weapon: null, armor: null, ring1: null, ring2: null }, inventory: [] },
     penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },
     hiddenQuests: { discovered: [], completed: [] },
+    questReplacements: { date: today, used: 0, replacedKeys: [] },
   };
 }
 
@@ -429,6 +437,7 @@ export function useGameState(initialHunterName, onLogout) {
             s.dailyUserQuestsCreated = 0;
             s.extraDailySlots = 0;
             s.dailyUserXP = 0;
+            s.questReplacements = { date: today, used: 0, replacedKeys: [] };
             s.integrityScore = Math.min(100, (s.integrityScore !== undefined ? s.integrityScore : 100) + 20);
           }
           s.lastActiveDate = today;
@@ -565,14 +574,17 @@ export function useGameState(initialHunterName, onLogout) {
         }
 
         const randTask = poolToUse[Math.floor(Math.random() * poolToUse.length)];
-        const newQuest = {
+        const newQuest = normalizeQuestForStorage({
           id: genId(), title: randTask.title, difficulty: randTask.difficulty || "normal",
           category: randTask.category || "str", desc: randTask.desc || "",
+          description: randTask.desc || "",
           type: "side", createdAt: getToday(),
           createdAtMs: now,
           xpMult: 1, goldMult: 1, isSystem: true, autoAssigned: true,
-          intensityKey: intensity.key
-        };
+          intensityKey: intensity.key,
+          templateId: randTask.id || randTask.templateId || undefined,
+          subQuests: randTask.subQuests || undefined,
+        });
 
         // Only show full modal after boot phase (first 10s) to avoid modal spam on startup
         if (Date.now() - bootTimestampRef.current > 10000) {
@@ -722,6 +734,104 @@ export function useGameState(initialHunterName, onLogout) {
     quests: state.quests.filter(q => q.id !== id),
     reminders: (state.reminders || []).filter(r => r.questId !== id),
   });
+
+  const getReplacementCandidates = useCallback((questId) => {
+    const current = stateRef.current || state;
+    if (!current) return [];
+    const quest = (current.quests || []).find(q => q.id === questId);
+    if (!isQuestReplaceable(quest)) return [];
+
+    const status = getQuestReplacementStatus(current);
+    if (!status.canReplace) return [];
+
+    const locale = getStateLocale(current);
+    const today = getToday();
+    const currentKey = getQuestKey(quest);
+    const activeKeys = new Set((current.quests || []).filter(q => !q.completed && q.id !== questId).map(getQuestKey));
+    const blockedKeys = new Set([currentKey, ...(status.replacedKeys || [])]);
+    const level = current.level || 1;
+
+    const pool = getSystemQuestPoolForLocale(locale)
+      .filter(template => level >= (template.minLevel || 1))
+      .map(template => normalizeQuestForStorage({
+        ...template,
+        templateId: template.templateId || template.id,
+        type: quest.type || "daily",
+        isSystem: true,
+        createdAt: today,
+        dueDate: quest.dueDate || (quest.type === "daily" ? today : undefined),
+      }))
+      .filter(template => {
+        const key = getQuestKey(template);
+        return key !== currentKey && !activeKeys.has(key) && !blockedKeys.has(key);
+      });
+
+    const addUnique = (target, source) => {
+      source
+        .sort(() => Math.random() - 0.5)
+        .forEach(template => {
+          if (target.length >= 3) return;
+          if (!target.some(existing => getQuestKey(existing) === getQuestKey(template))) {
+            target.push(template);
+          }
+        });
+    };
+
+    const candidates = [];
+    addUnique(candidates, pool.filter(t => t.category === quest.category && t.difficulty === quest.difficulty));
+    addUnique(candidates, pool.filter(t => t.category === quest.category));
+    addUnique(candidates, pool);
+    return candidates.slice(0, 3);
+  }, [state]);
+
+  const replaceSystemQuest = useCallback((questId, selectedTemplate) => {
+    const current = stateRef.current || state;
+    if (!current || !selectedTemplate) return false;
+    const quest = (current.quests || []).find(q => q.id === questId);
+    if (!isQuestReplaceable(quest)) {
+      notify("Diese Quest kann nicht ersetzt werden.", "warning");
+      return false;
+    }
+
+    const status = getQuestReplacementStatus(current);
+    if (!status.canReplace) {
+      notify(`Ersatzlimit erreicht (${status.used}/${status.limit})`, "warning");
+      return false;
+    }
+
+    const today = getToday();
+    const sourceKey = getQuestKey(quest);
+    const replacement = normalizeQuestForStorage({
+      ...selectedTemplate,
+      id: `sys_${genId()}`,
+      templateId: selectedTemplate.templateId || selectedTemplate.id,
+      type: quest.type || "daily",
+      isSystem: true,
+      autoAssigned: quest.autoAssigned,
+      createdAt: quest.createdAt || today,
+      createdAtMs: Date.now(),
+      dueDate: quest.dueDate || (quest.type === "daily" ? today : undefined),
+      priority: quest.priority || selectedTemplate.priority || "medium",
+      energy: selectedTemplate.energy || quest.energy || "medium",
+      origin: "replacement",
+      replacedQuestId: quest.id,
+      replacedQuestKey: sourceKey,
+    });
+    const replacementKey = getQuestKey(replacement);
+
+    persist({
+      ...current,
+      quests: (current.quests || []).map(q => q.id === questId ? replacement : q),
+      reminders: (current.reminders || []).filter(r => r.questId !== questId),
+      questReplacements: {
+        date: today,
+        used: status.used + 1,
+        replacedKeys: [...new Set([...(status.replacedKeys || []), sourceKey, replacementKey])],
+      },
+    });
+    notify(`Quest ersetzt: ${replacement.title}`, "success");
+    return true;
+  }, [state, persist, notify]);
 
   const resetQuestForm = useCallback(() => {
     setQTitle("");
@@ -1032,7 +1142,7 @@ export function useGameState(initialHunterName, onLogout) {
           d.setDate(d.getDate() + daysUntilMonday); d.setHours(23, 59, 59, 999);
           timeLimit = d.toISOString();
         }
-        const quest = {
+        const quest = normalizeQuestForStorage({
           id: genId(),
           title: data.title,
           description: data.description || undefined,
@@ -1049,7 +1159,7 @@ export function useGameState(initialHunterName, onLogout) {
           createdAtMs: Date.now(),
           ...(timeLimit ? { timeLimit } : {}),
           ...(data.dueDate ? { dueDate: data.dueDate } : {}),
-        };
+        });
         const withReminder = attachQuestReminder(quest, data.reminderPreset, data.reminderAt);
         if (withReminder.reminder) reminders.push(withReminder.reminder);
         return withReminder.quest;
@@ -1075,7 +1185,7 @@ export function useGameState(initialHunterName, onLogout) {
   const startEditingQuest = useCallback((quest) => {
     setEditingQuestId(quest.id);
     setQTitle(quest.title);
-    setQDescription(quest.description || "");
+    setQDescription(quest.description || quest.desc || "");
     setQSubQuests((quest.subQuests || []).map(sq => ({ ...sq })));
     setQTags((quest.tags || []).join(", "));
     setQDiff(quest.difficulty);
@@ -1102,7 +1212,7 @@ export function useGameState(initialHunterName, onLogout) {
         q.id === editingQuestId
           ? (() => {
             const previousReminderId = q.reminderId || (state.reminders || []).find(r => r.questId === q.id)?.id;
-            const baseQuest = {
+            const baseQuest = normalizeQuestForStorage({
               ...q,
               title: data.title,
               description: data.description || undefined,
@@ -1118,7 +1228,7 @@ export function useGameState(initialHunterName, onLogout) {
               reminderAt: undefined,
               reminderId: undefined,
               reminderPreset: undefined,
-            };
+            });
             return attachQuestReminder(baseQuest, data.reminderPreset, data.reminderAt, previousReminderId).quest;
           })()
           : q
@@ -1157,7 +1267,7 @@ export function useGameState(initialHunterName, onLogout) {
       finalDiff = "easy";
     }
 
-    const quest = {
+    const quest = normalizeQuestForStorage({
       id: genId(), title: data.title,
       description: data.description || undefined,
       subQuests: data.subQuests.length > 0 ? data.subQuests : undefined,
@@ -1171,7 +1281,7 @@ export function useGameState(initialHunterName, onLogout) {
       ...(timeLimit ? { timeLimit } : {}),
       ...(habitId ? { linkedHabitId: habitId } : {}),
       ...(data.dueDate ? { dueDate: data.dueDate } : {}),
-    };
+    });
     const { quest: questWithReminder, reminder } = attachQuestReminder(quest, data.reminderPreset, data.reminderAt);
 
     let nextState = {
@@ -1273,7 +1383,7 @@ export function useGameState(initialHunterName, onLogout) {
       return;
     }
     const totalSteps = 3;
-    const firstQuest = generateChainedQuest(title, category, difficulty, 1, totalSteps);
+    const firstQuest = normalizeQuestForStorage(generateChainedQuest(title, category, difficulty, 1, totalSteps));
     persist({ ...state, quests: [...state.quests, firstQuest], dailyUserQuestsCreated: questLimit.createdCount + 1 });
     notify(ltState(state, "quests.chainStarted", { steps: totalSteps }), "info");
   }, [state, persist, notify]);
@@ -1322,7 +1432,7 @@ export function useGameState(initialHunterName, onLogout) {
       id: genId(), title, completed: false, completedAt: null, order: i + 1,
     }));
 
-    const quest = {
+    const quest = normalizeQuestForStorage({
       id: genId(),
       title: template.title,
       description: template.description || "",
@@ -1333,7 +1443,7 @@ export function useGameState(initialHunterName, onLogout) {
       type: template.type,
       createdAt: getToday(),
       createdAtMs: Date.now(),
-    };
+    });
 
     const pool = state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
     const updatedTemplates = pool.templates.map(t =>
@@ -2106,6 +2216,8 @@ export function useGameState(initialHunterName, onLogout) {
     completeQuest,
     completeSubQuest,
     deleteQuest,
+    getReplacementCandidates,
+    replaceSystemQuest,
     createQuest,
     createQuestsFromInputs,
     snoozeReminder,

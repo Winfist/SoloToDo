@@ -235,6 +235,8 @@ function App({ initialHunterName, onLogout }) {
     completeQuest,
     completeSubQuest,
     deleteQuest,
+    getReplacementCandidates,
+    replaceSystemQuest,
     createQuest,
     createQuestsFromInputs,
     snoozeReminder,
@@ -1400,6 +1402,8 @@ function App({ initialHunterName, onLogout }) {
                   filteredQuests={filteredQuests} hiddenQuestCount={hiddenQuestCount}
                   questFilter={questFilter} setQuestFilter={setQuestFilter}
                   completeQuest={handleCompleteQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
+                  getReplacementCandidates={getReplacementCandidates}
+                  replaceSystemQuest={replaceSystemQuest}
                   completeEmergencyQuest={completeEmergencyQuest} createQuest={createQuest} setDailyFocusQuest={setDailyFocusQuest}
                   setShowCreate={requestShowCreate}
                   setShowTaskScan={setShowTaskScan}

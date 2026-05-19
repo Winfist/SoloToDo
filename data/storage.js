@@ -4,6 +4,7 @@ import { db, auth } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { DEFAULT_STATE } from "./defaultState.js";
 import { calcShadowXpToNext, genId, getToday, getXpForLevel, recalculateLevelFromTotalXp } from "./helpers.js";
+import { normalizeQuestForStorage } from "./questUtils.js";
 import { syncWidgetData } from "../services/widgetDataService.js";
 
 const ACTIVE_STATE_KEY = "sl-todo-v5";
@@ -743,6 +744,7 @@ export function migrateState(oldState) {
   }
   s.achievements = { ...DEFAULT_STATE.achievements, ...(oldState.achievements || {}) };
   s.hiddenQuests = { ...DEFAULT_STATE.hiddenQuests, ...(oldState.hiddenQuests || {}) };
+  s.questReplacements = { ...DEFAULT_STATE.questReplacements, ...(oldState.questReplacements || {}) };
   s.healthPreferences = { ...DEFAULT_STATE.healthPreferences, ...(oldState.healthPreferences || {}) };
   s.healthPreferences.manualSleepLog = {
     ...DEFAULT_STATE.healthPreferences.manualSleepLog,
@@ -843,6 +845,9 @@ export function migrateState(oldState) {
     s.xp = Math.max(0, s.xp || 0);
     s.totalXpEarned = deriveTotalXpFromLevel(s.level, s.xp);
   }
+
+  s.quests = Array.isArray(s.quests) ? s.quests.map(normalizeQuestForStorage) : [];
+  s.completedQuests = Array.isArray(s.completedQuests) ? s.completedQuests.map(normalizeQuestForStorage) : [];
 
   return s;
 }
