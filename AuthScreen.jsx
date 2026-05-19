@@ -27,7 +27,7 @@ import {
 } from "firebase/auth";
 
 // Detect native Capacitor environment (WKWebView on iOS)
-const IS_CAPACITOR = typeof window !== "undefined" && !!window.Capacitor;
+const IS_CAPACITOR = typeof window !== "undefined" && window.Capacitor?.isNativePlatform();
 const AUTH_RETRY_DELAY_MS = 700;
 const RECENT_REGISTRATION_RECOVERY_MS = 5 * 60 * 1000;
 
