@@ -22,7 +22,8 @@ import {
   signInWithPopup,
   signInWithCredential,
   GoogleAuthProvider,
-  OAuthProvider
+  OAuthProvider,
+  browserPopupRedirectResolver
 } from "firebase/auth";
 
 // Detect native Capacitor environment (WKWebView on iOS)
@@ -511,7 +512,7 @@ export default function AuthScreen({ onAuthSuccess }) {
       } else {
         // Web: popup-based sign-in
         const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
         setHunterName(result.user.displayName || "Hunter");
         setShowSuccess(true);
       }
@@ -547,7 +548,7 @@ export default function AuthScreen({ onAuthSuccess }) {
       } else {
         // Web: popup-based sign-in
         const provider = new OAuthProvider('apple.com');
-        const result = await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
         setHunterName(result.user.displayName || "Hunter");
         setShowSuccess(true);
       }

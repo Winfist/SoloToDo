@@ -4,6 +4,7 @@ import {
   initializeAuth,
   indexedDBLocalPersistence,
   browserLocalPersistence,
+  browserPopupRedirectResolver
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
@@ -33,6 +34,7 @@ const auth = initializeAuth(app, {
   persistence: isNative
     ? [browserLocalPersistence]
     : [indexedDBLocalPersistence, browserLocalPersistence],
+  popupRedirectResolver: isNative ? undefined : browserPopupRedirectResolver
 });
 const db = getFirestore(app);
 const functions = getFunctions(app, "europe-west1");
