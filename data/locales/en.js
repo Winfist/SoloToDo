@@ -881,6 +881,10 @@ export const en = {
       systemGuidance: "SYSTEM GUIDANCE",
       awakeningProtocol: "AWAKENING PROTOCOL",
       unlockProtocol: "UNLOCK PROTOCOL",
+      systemWindow: "SYSTEM WINDOW",
+      contextLock: "CONTEXT LOCK",
+      actionLock: "ACTION LOCK",
+      guidance: "GUIDANCE",
     },
     actions: {
       skip: "Skip",

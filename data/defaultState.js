@@ -180,7 +180,7 @@ export const DEFAULT_STATE = {
     scannedTasks: 0,
   },
   settings: {
-    language: "auto",
+    language: "de",
     autoSystemTasks: false,
     questIntensity: "baby_gate",
     pageTransitionSpeed: 1,

@@ -2,7 +2,7 @@ import { de } from "./locales/de.js";
 import { en } from "./locales/en.js";
 
 export const SUPPORTED_LOCALES = ["de", "en"];
-export const DEFAULT_LANGUAGE_MODE = "auto";
+export const DEFAULT_LANGUAGE_MODE = "de";
 export const LANGUAGE_STORAGE_KEY = "sl-language-mode";
 export const LANGUAGE_CHANGE_EVENT = "solotodo:language-change";
 
@@ -24,10 +24,22 @@ export function getBrowserLocale() {
     ...(Array.isArray(nav?.languages) ? nav.languages : []),
     nav?.language,
     nav?.userLanguage,
+    typeof Intl !== "undefined" ? Intl.DateTimeFormat?.().resolvedOptions?.().locale : null,
   ].filter(Boolean);
 
   const match = candidates.find((value) => String(value).toLowerCase().startsWith("de"));
-  return match ? "de" : "en";
+  if (match) return "de";
+
+  try {
+    const timeZone = Intl.DateTimeFormat?.().resolvedOptions?.().timeZone;
+    if (["Europe/Berlin", "Europe/Vienna", "Europe/Zurich"].includes(timeZone)) {
+      return "de";
+    }
+  } catch {
+    // Fall back to English when browser locale and time zone cannot be read.
+  }
+
+  return "en";
 }
 
 export function resolveLocale(languageMode = DEFAULT_LANGUAGE_MODE) {

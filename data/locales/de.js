@@ -740,9 +740,13 @@ export const de = {
   },
   tutorial: {
     hud: {
-      systemGuidance: "SYSTEM GUIDANCE",
-      awakeningProtocol: "AWAKENING PROTOCOL",
-      unlockProtocol: "UNLOCK PROTOCOL",
+      systemGuidance: "SYSTEM-ANLEITUNG",
+      awakeningProtocol: "ERWECKUNGS-PROTOKOLL",
+      unlockProtocol: "FREISCHALT-PROTOKOLL",
+      systemWindow: "SYSTEMFENSTER",
+      contextLock: "KONTEXT-SPERRE",
+      actionLock: "AKTIONS-SPERRE",
+      guidance: "ANLEITUNG",
     },
     actions: {
       skip: "Ueberspringen",

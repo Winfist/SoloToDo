@@ -259,6 +259,7 @@ function TutorialSystemHud({ sequence, stepIndex, totalSteps, placement = "top" 
 }
 
 function ContextFrame({ rect, blockedPulse }) {
+  const { t } = useI18n();
   if (!rect) return null;
 
   return (
@@ -272,7 +273,7 @@ function ContextFrame({ rect, blockedPulse }) {
       }}
       aria-hidden="true"
     >
-      <span className="tutorial-context-frame__label">CONTEXT LOCK</span>
+      <span className="tutorial-context-frame__label">{t("tutorial.hud.contextLock")}</span>
       <span className="tutorial-context-frame__scan" />
     </div>
   );
@@ -323,7 +324,7 @@ function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
         <span className="tutorial-cinematic__sigil-ring tutorial-cinematic__sigil-ring--inner" />
         <span className="tutorial-cinematic__icon">{step.icon}</span>
       </div>
-      <div className="tutorial-cinematic__eyebrow">SYSTEM WINDOW</div>
+      <div className="tutorial-cinematic__eyebrow">{t("tutorial.hud.systemWindow")}</div>
       <div className={`tutorial-cinematic__title ${step.isFinale ? "tutorial-cinematic__title--finale" : ""}`}>
         {step.title}
       </div>
@@ -478,7 +479,7 @@ function TooltipStep({ step, stepIndex, totalSteps, targetRect, onContinue }) {
       <div className="tutorial-tooltip__card" role="dialog" aria-live="polite">
         <div className="tutorial-tooltip__eyebrow">
           <span className="tutorial-tooltip__system-tag">SYSTEM</span>
-          <span className="tutorial-tooltip__mode">{isActionStep ? "ACTION LOCK" : "GUIDANCE"}</span>
+          <span className="tutorial-tooltip__mode">{isActionStep ? t("tutorial.hud.actionLock") : t("tutorial.hud.guidance")}</span>
           <span className="tutorial-tooltip__step-counter">{stepIndex + 1}/{totalSteps}</span>
         </div>
         <div className="tutorial-tooltip__title">{step.title}</div>

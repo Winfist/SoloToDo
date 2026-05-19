@@ -50,7 +50,7 @@ function createFreshHunterState(name) {
     completedTutorials: [],
     lifeDomains: [],
     lastActiveDate: today,
-    quests: generateStarterQuests(),
+    quests: generateStarterQuests(startState.settings?.language || "de"),
     completedQuests: [],
     dailyUserQuestsCreated: 0,
     extraDailySlots: 0,

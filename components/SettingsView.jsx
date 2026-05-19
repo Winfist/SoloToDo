@@ -678,6 +678,7 @@ function TransitionSwitcher({ state, persist, theme, onOpenShop, onPreviewPageTr
 
 // ─── NAVBAR CUSTOMIZER (Drag & Drop + Tap) ────────────────────
 function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme, premiumStatus, onOpenPremium }) {
+  const { t } = useI18n();
   // Local state so drag reordering is snappy (persist only on commit)
   const [localKeys, setLocalKeys] = useState(navKeys);
   useEffect(() => setLocalKeys(navKeys), [navKeys]);

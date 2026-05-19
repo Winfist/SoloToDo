@@ -291,11 +291,14 @@ function App({ initialHunterName, onLogout }) {
     abandonSystemChallenge,
     setDailyFocusQuest
   } = gameState;
-  const { t: tr, locale } = useI18n();
+  const { t: tr, locale, setBootstrapLanguage } = useI18n();
   const localizedCatalog = useMemo(() => getLocalizedCatalog(locale), [locale]);
   const catalogCategories = localizedCatalog.categories;
   const catalogDifficulties = localizedCatalog.difficulties;
   const catalogAchievements = localizedCatalog.achievements;
+  useEffect(() => {
+    if (state?.settings?.language) setBootstrapLanguage(state.settings.language);
+  }, [state?.settings?.language, setBootstrapLanguage]);
   const [forgeTab, setForgeTab] = useState("create");
   // ── v3.0 Neural Boot Sequence state (must be before any early returns) ──
   const [bootComplete, setBootComplete] = React.useState(false);
