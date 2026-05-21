@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { DIFFICULTIES, CATEGORIES, QUEST_TYPES_CONFIG } from "../data/gameData.js";
 import { getToday as getLocalToday, formatLocalDateTime } from "../data/dateUtils.js";
 import GlitchText from "./ui/GlitchText.jsx";
@@ -27,7 +28,8 @@ export default function QuestDetailModal({
   onCompleteSubQuest,
   onSaveNotes,
   completedQuests = [], // Pass from parent for history
-  gameState // NEW: for tactical hints
+  gameState, // NEW: for tactical hints
+  readOnly = false
 }) {
   const { t } = useI18n();
   const [notes, setNotes] = useState(quest.notes || "");
@@ -59,7 +61,7 @@ export default function QuestDetailModal({
 
   // --- TACTICAL HINTS GENERATION ---
   const hints = [];
-  if (gameState && activeTab === "details") {
+  if (gameState && activeTab === "details" && !readOnly) {
     const questsToday = (gameState.completedQuests || []).filter(q => q.completedAt === todayKey).length;
     const habitsToday = (gameState.habits || []).filter(h => h.history?.[todayKey]?.completed).length;
 
@@ -118,7 +120,7 @@ export default function QuestDetailModal({
 
   const primary = diff.color || theme.primary;
 
-  return (
+  return ReactDOM.createPortal(
     <div style={{
       position: "fixed", inset: 0, zIndex: 10000,
       display: "flex", alignItems: "center", justifyContent: "center",
@@ -278,9 +280,9 @@ export default function QuestDetailModal({
                     {subQuests.map((sq, si) => (
                       <div key={sq.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: sq.completed ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.03)", borderRadius: 8, border: `1px solid ${sq.completed ? "#22c55e33" : "rgba(255,255,255,0.05)"}` }}>
                         <button
-                          onClick={() => { if (!sq.completed && onCompleteSubQuest) onCompleteSubQuest(quest.id, sq.id); }}
-                          disabled={sq.completed}
-                          style={{ width: 20, height: 20, borderRadius: 4, background: sq.completed ? "#22c55e" : "transparent", border: `1px solid ${sq.completed ? "#22c55e" : "#64748b"}`, color: "#000", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, cursor: sq.completed ? "default" : "pointer" }}
+                          onClick={() => { if (!sq.completed && onCompleteSubQuest && !readOnly) onCompleteSubQuest(quest.id, sq.id); }}
+                          disabled={sq.completed || readOnly}
+                          style={{ width: 20, height: 20, borderRadius: 4, background: sq.completed ? "#22c55e" : "transparent", border: `1px solid ${sq.completed ? "#22c55e" : "#64748b"}`, color: "#000", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, cursor: sq.completed || readOnly ? "default" : "pointer" }}
                         >
                           {sq.completed ? "✓" : ""}
                         </button>
@@ -315,9 +317,10 @@ export default function QuestDetailModal({
                 </div>
                 <textarea
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value.slice(0, 500))}
+                  onChange={(e) => { if (!readOnly) setNotes(e.target.value.slice(0, 500)); }}
                   onBlur={handleSaveNotes}
-                  placeholder={t("modals.questDetail.notesPlaceholder")}
+                  readOnly={readOnly}
+                  placeholder={readOnly ? t("modals.questDetail.none") : t("modals.questDetail.notesPlaceholder")}
                   style={{
                     width: "100%", height: 80, padding: "10px 12px", borderRadius: 8,
                     background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)",
@@ -361,31 +364,34 @@ export default function QuestDetailModal({
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-          <button
-            onClick={() => { onClose(); if (onEdit) onEdit(quest); }}
-            style={{ padding: "12px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "none", color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
-          >
-            {t("modals.questDetail.edit")}
-          </button>
-          <button
-            onClick={handleComplete}
-            disabled={subQuests.length > 0 && !allSubsDone}
-            style={{ padding: "12px", borderRadius: 8, background: (subQuests.length > 0 && !allSubsDone) ? "rgba(255,255,255,0.1)" : `linear-gradient(135deg, ${primary}33, ${primary}11)`, border: `1px solid ${(subQuests.length > 0 && !allSubsDone) ? "transparent" : primary}`, color: (subQuests.length > 0 && !allSubsDone) ? "#64748b" : primary, fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: (subQuests.length > 0 && !allSubsDone) ? "not-allowed" : "pointer", boxShadow: (subQuests.length > 0 && !allSubsDone) ? "none" : `0 0 16px ${primary}33` }}
-          >
-            {t("modals.questDetail.complete")}
-          </button>
-          {onDelete && (
+        {!readOnly && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
             <button
-              onClick={() => { onClose(); onDelete(quest.id); }}
-              style={{ gridColumn: "1 / -1", padding: "8px", borderRadius: 8, background: "transparent", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
+              onClick={() => { onClose(); if (onEdit) onEdit(quest); }}
+              style={{ padding: "12px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "none", color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
             >
-              {t("modals.questDetail.delete")}
+              {t("modals.questDetail.edit")}
             </button>
-          )}
-        </div>
+            <button
+              onClick={handleComplete}
+              disabled={subQuests.length > 0 && !allSubsDone}
+              style={{ padding: "12px", borderRadius: 8, background: (subQuests.length > 0 && !allSubsDone) ? "rgba(255,255,255,0.1)" : `linear-gradient(135deg, ${primary}33, ${primary}11)`, border: `1px solid ${(subQuests.length > 0 && !allSubsDone) ? "transparent" : primary}`, color: (subQuests.length > 0 && !allSubsDone) ? "#64748b" : primary, fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: (subQuests.length > 0 && !allSubsDone) ? "not-allowed" : "pointer", boxShadow: (subQuests.length > 0 && !allSubsDone) ? "none" : `0 0 16px ${primary}33` }}
+            >
+              {t("modals.questDetail.complete")}
+            </button>
+            {onDelete && (
+              <button
+                onClick={() => { onClose(); onDelete(quest.id); }}
+                style={{ gridColumn: "1 / -1", padding: "8px", borderRadius: 8, background: "transparent", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
+              >
+                {t("modals.questDetail.delete")}
+              </button>
+            )}
+          </div>
+        )}
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
