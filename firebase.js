@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { getAnalytics, logEvent as fbLogEvent } from "firebase/analytics";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 // Replace with your Firebase config
@@ -57,9 +58,19 @@ if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
   });
 }
 
+// Analytics — only in browser, not in WKWebView (Capacitor native)
+let analytics = null;
+try {
+  if (!isNative && typeof window !== "undefined") {
+    analytics = getAnalytics(app);
+  }
+} catch (_) {
+  // Analytics may fail in environments without cookie support
+}
+
 // Connect to local emulator in development
 if (import.meta.env.DEV) {
   // connectFunctionsEmulator(functions, "127.0.0.1", 5001); // DISABLED: connecting to live backend to use Blaze plan
 }
 
-export { auth, db, functions };
+export { auth, db, functions, analytics };

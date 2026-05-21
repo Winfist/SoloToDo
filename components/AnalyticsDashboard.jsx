@@ -15,31 +15,6 @@ export default function AnalyticsDashboard({ state, theme }) {
     const dungeonHistory = state?.dungeonHistory || [];
     const userJob = state?.job ? JOBS[state.job] : null;
 
-    // ── Feedback Insights ────────────────────────────────────────
-    const feedbackStats = useMemo(() => {
-        const rated = completedQuests.filter(q => q.rating != null);
-        if (rated.length === 0) return null;
-        const avgRating = (rated.reduce((s, q) => s + q.rating, 0) / rated.length).toFixed(1);
-        const ratingDist = [1, 2, 3, 4, 5].map(r => ({
-            stars: r,
-            count: rated.filter(q => q.rating === r).length,
-            pct: Math.round((rated.filter(q => q.rating === r).length / rated.length) * 100),
-        }));
-        const diffFeedback = {
-            zu_leicht: rated.filter(q => q.feltDifficulty === "zu_leicht").length,
-            passend: rated.filter(q => q.feltDifficulty === "passend").length,
-            zu_schwer: rated.filter(q => q.feltDifficulty === "zu_schwer").length,
-        };
-        const durFeedback = {
-            zu_kurz: rated.filter(q => q.durationFeedback === "zu_kurz").length,
-            passend: rated.filter(q => q.durationFeedback === "passend").length,
-            zu_lang: rated.filter(q => q.durationFeedback === "zu_lang").length,
-        };
-        const wrongCategory = rated.filter(q => q.categoryFeedback === "falsch").length;
-        const favorites = [...rated].sort((a, b) => b.rating - a.rating).slice(0, 3);
-        return { avgRating, ratingDist, diffFeedback, durFeedback, wrongCategory, favorites, totalRated: rated.length };
-    }, [completedQuests]);
-
     // ── Completion History ────────────────────────────────────────
     const [historyFilter, setHistoryFilter] = useState("all");
     const [historySort, setHistorySort] = useState("newest");
@@ -53,7 +28,6 @@ export default function AnalyticsDashboard({ state, theme }) {
         if (historyFilter === "week") list = list.filter(q => q.completedAt >= getLocalDateKey(weekAgo));
         if (historyFilter === "month") list = list.filter(q => q.completedAt >= getLocalDateKey(monthAgo));
         if (historySort === "newest") list.sort((a, b) => (b.completedAtMs || 0) - (a.completedAtMs || 0));
-        if (historySort === "highest_rated") list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         return list.slice(0, 50);
     }, [completedQuests, historyFilter, historySort]);
 
@@ -408,92 +382,6 @@ export default function AnalyticsDashboard({ state, theme }) {
                 </div>
             </div>
 
-            {/* ── SEKTION 6: INTEL REPORT (Feedback Insights) ── */}
-            {feedbackStats && (
-                <div style={{
-                    background: theme.card, border: `1px solid ${theme.primary}15`,
-                    borderRadius: 16, padding: "18px 18px 14px", marginBottom: 12,
-                    backdropFilter: "blur(8px)",
-                }}>
-                    {/* Header */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color: theme.primary, fontFamily: "'JetBrains Mono',monospace" }}>
-                            ★ INTEL REPORT
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontSize: 18, color: "#fbbf24", fontFamily: "'Cinzel',serif", fontWeight: 900, textShadow: "0 0 12px #fbbf2466" }}>{feedbackStats.avgRating}</span>
-                            <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>/ 5 · {feedbackStats.totalRated} bewertet</span>
-                        </div>
-                    </div>
-
-                    {/* Rating distribution */}
-                    <div style={{ fontSize: 9, letterSpacing: 2, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>BEWERTUNGSVERTEILUNG</div>
-                    {feedbackStats.ratingDist.slice().reverse().map(r => (
-                        <div key={r.stars} style={{ marginBottom: 5 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                                <span style={{ fontSize: 10, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace" }}>{"★".repeat(r.stars)}{"☆".repeat(5 - r.stars)}</span>
-                                <span style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>{r.count} ({r.pct}%)</span>
-                            </div>
-                            <div style={{ height: 5, background: "#0f0f1e", borderRadius: 3, overflow: "hidden" }}>
-                                <div style={{ width: `${r.pct}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg,#fbbf2466,#fbbf24)", transition: "width 0.6s ease" }} />
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Difficulty feedback */}
-                    <div style={{ fontSize: 9, letterSpacing: 2, color: "#475569", fontFamily: "'JetBrains Mono',monospace", margin: "12px 0 6px" }}>SCHWIERIGKEITS-FEEDBACK</div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {[
-                            { key: "zu_leicht", label: "▽ Zu leicht", color: "#22c55e", val: feedbackStats.diffFeedback.zu_leicht },
-                            { key: "passend",   label: "◆ Passend",   color: "#22d3ee", val: feedbackStats.diffFeedback.passend },
-                            { key: "zu_schwer", label: "△ Zu schwer", color: "#ef4444", val: feedbackStats.diffFeedback.zu_schwer },
-                        ].map(b => (
-                            <span key={b.key} style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, background: b.color + "15", color: b.color, fontFamily: "'JetBrains Mono',monospace", border: `1px solid ${b.color}22` }}>
-                                {b.label}: {b.val}
-                            </span>
-                        ))}
-                    </div>
-
-                    {/* Duration feedback */}
-                    <div style={{ fontSize: 9, letterSpacing: 2, color: "#475569", fontFamily: "'JetBrains Mono',monospace", margin: "10px 0 6px" }}>DAUER-FEEDBACK</div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {[
-                            { key: "zu_kurz", label: "◁ Zu kurz", color: "#f59e0b", val: feedbackStats.durFeedback.zu_kurz },
-                            { key: "passend", label: "◆ Passend", color: "#22d3ee", val: feedbackStats.durFeedback.passend },
-                            { key: "zu_lang", label: "▷ Zu lang", color: "#a855f7", val: feedbackStats.durFeedback.zu_lang },
-                        ].map(b => (
-                            <span key={b.key} style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, background: b.color + "15", color: b.color, fontFamily: "'JetBrains Mono',monospace", border: `1px solid ${b.color}22` }}>
-                                {b.label}: {b.val}
-                            </span>
-                        ))}
-                    </div>
-
-                    {/* Wrong category warning */}
-                    {feedbackStats.wrongCategory > 0 && (
-                        <div style={{ marginTop: 10, fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", background: "#f59e0b0f", padding: "6px 10px", borderRadius: 6, border: "1px solid #f59e0b22" }}>
-                            ⚠ {feedbackStats.wrongCategory} Quest{feedbackStats.wrongCategory > 1 ? "s" : ""} als „Falsche Kategorie" markiert
-                        </div>
-                    )}
-
-                    {/* Top 3 favorites */}
-                    {feedbackStats.favorites.length > 0 && (
-                        <>
-                            <div style={{ fontSize: 9, letterSpacing: 2, color: "#475569", fontFamily: "'JetBrains Mono',monospace", margin: "12px 0 6px" }}>LIEBLINGS-QUESTS</div>
-                            {feedbackStats.favorites.map((q, i) => {
-                                const cat = CATEGORIES.find(c => c.key === q.category) || CATEGORIES[0];
-                                return (
-                                    <div key={q.id + i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                                        <span style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace", width: 14 }}>{i + 1}.</span>
-                                        <span style={{ fontSize: 9, color: cat.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, width: 28 }}>{cat.stat}</span>
-                                        <span style={{ fontSize: 11, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.title}</span>
-                                        <span style={{ fontSize: 10, color: "#fbbf24", flexShrink: 0 }}>{"★".repeat(q.rating || 0)}</span>
-                                    </div>
-                                );
-                            })}
-                        </>
-                    )}
-                </div>
-            )}
 
             {/* ── SEKTION 7: HUNTER'S CHRONICLE (Completion History) ── */}
             {completedQuests.length > 0 && (
@@ -529,7 +417,6 @@ export default function AnalyticsDashboard({ state, theme }) {
                         <div style={{ flex: 1 }} />
                         {[
                             { key: "newest", label: "NEUESTE ▼" },
-                            { key: "highest_rated", label: "BESTE ▼" },
                         ].map(s => (
                             <button key={s.key} onClick={() => setHistorySort(s.key)} style={{
                                 padding: "3px 8px", borderRadius: 6, fontSize: 8, fontWeight: 700,
@@ -567,12 +454,7 @@ export default function AnalyticsDashboard({ state, theme }) {
                                             <span style={{ fontSize: 9, color: diff.color, fontFamily: "'JetBrains Mono',monospace" }}>{diff.icon} {diff.label}</span>
                                             {q.isSystem && <span style={{ fontSize: 7, color: "#06b6d4", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>⚙ SYS</span>}
                                         </div>
-                                        {q.rating != null && (
-                                            <span style={{ fontSize: 10, color: "#fbbf24", flexShrink: 0 }}>
-                                                {"★".repeat(q.rating)}{"☆".repeat(5 - q.rating)}
-                                            </span>
-                                        )}
-                                    </div>
+                                        </div>
                                     {/* Row 2: title */}
                                     <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.title}</div>
                                     {/* Row 3: date + rewards */}

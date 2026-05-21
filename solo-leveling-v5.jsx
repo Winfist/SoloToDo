@@ -42,7 +42,7 @@ import DashboardView from "./components/views/DashboardView.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
 const QuestCompletionCinematic = React.lazy(() => import("./components/QuestCompletionCinematic.jsx"));
 import UnifiedResultModal from "./components/UnifiedResultModal.jsx";
-import QuestRatingModal from "./components/QuestRatingModal.jsx";
+
 import { buildStoryChapterRewardFlow, buildStoryBossRewardFlow } from "./hooks/rewardFlowBuilders.js";
 import CompletionFX from "./components/ui/CompletionFX.jsx";
 import LetterboxOverlay, { triggerLetterbox } from "./components/ui/LetterboxOverlay.jsx";
@@ -70,7 +70,7 @@ import {
   CSS, ParticleField, MusicPlayer, SystemNotification, AchievementToast, XpFloat, LevelUpCinematic, AriseCinematic,
   ShadowCard, ShadowDetailModal, FormationEditor, StatRadar, QuestTimer, QuestTypeBadge,
   EmergencyQuestCard, ChainedQuestProgress, QuestCard, DungeonGate, FloorProgressBar, BossPhaseUI, DungeonBattle,
-  JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI
+  JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI, DUNGEON_ENTRY_FEES
 } from './data/constants';
 import { useGameState } from './hooks/useGameState.jsx';
 import { useFeatureUnlocks } from './hooks/useFeatureUnlocks.js';
@@ -279,10 +279,6 @@ function App({ initialHunterName, onLogout }) {
     questCreationStatus,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
-    // Rating system
-    rateCompletedQuest,
-    pendingRatingQuest,
-    setPendingRatingQuest,
     handleNotificationClick,
     updateGoalProgress,
     setGoalStepCompleted,
@@ -895,16 +891,6 @@ function App({ initialHunterName, onLogout }) {
           {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
           {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && <DeferredSystemMessage key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
 
-          {/* ── Quest Rating Modal – appears after all reward animations finish ── */}
-          {pendingRatingQuest && !rewardFlowActive && !showingModal && (
-            <QuestRatingModal
-              quest={pendingRatingQuest}
-              theme={theme}
-              onSubmit={(ratingData) => rateCompletedQuest(pendingRatingQuest.id, ratingData)}
-              onSkip={() => setPendingRatingQuest(null)}
-            />
-          )}
-
           {activeDungeon && (
             <div style={{ display: preview3DDungeon ? "none" : "block" }}>
               <DungeonBattle dungeon={activeDungeon} playerStats={state.stats} theme={theme} onResult={r => finishDungeon(activeDungeon, r)} onClose={() => setActiveDungeon(null)} skillBonuses={getSkillBonuses(null, state.stats)} modifier={modifier} formationBonus={formationBonus} state={state} persist={persist} notify={notify} onTrigger3D={() => setPreview3DDungeon(activeDungeon)} startAutomatically={battlePendingStart} onClearStartAuto={() => setBattlePendingStart(false)} />
@@ -913,7 +899,7 @@ function App({ initialHunterName, onLogout }) {
           {preview3DDungeon && (
             <DungeonGatesPage
               dungeon={preview3DDungeon}
-              onEnterGate={(dungeon) => { setPreview3DDungeon(null); setActiveDungeon(dungeon); setBattlePendingStart(true); }}
+              onEnterGate={(dungeon) => { setPreview3DDungeon(null); const fee = DUNGEON_ENTRY_FEES[dungeon.rank] || 0; if (fee > 0) persist({ ...state, gold: state.gold - fee }); setActiveDungeon(dungeon); setBattlePendingStart(true); }}
               onClose={() => setPreview3DDungeon(null)}
             />
           )}
@@ -1438,11 +1424,11 @@ function App({ initialHunterName, onLogout }) {
                       </div>
                     </div>
                     {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ marginBottom: 10 }}><GameIcon src={GATE_ICONS.normal} fallback="🚪" size={48} glow glowColor={theme.primary} animate="float" /></div><div style={{ fontSize: 14, color: "#475569" }}>{tr("systemHub.noActiveGates")}</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>{tr("systemHub.gatesReturnTomorrow")}</div></div>}
-                    {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={setActiveDungeon} modifier={modifier} /></div>)}
+                    {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={(dungeon) => { const fee = DUNGEON_ENTRY_FEES[dungeon.rank] || 0; if (fee > 0) persist({ ...state, gold: state.gold - fee }); setActiveDungeon(dungeon); }} modifier={modifier} playerGold={state.gold} /></div>)}
                     {(state.dungeons || []).filter(d => d.cleared).length > 0 && (
                       <div style={{ marginTop: 20 }}>
                         <div style={{ fontSize: 10, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>HEUTE ABSOLVIERT</div>
-                        {(state.dungeons || []).filter(d => d.cleared).map((d, i) => <div key={d.instanceId} style={{ marginBottom: 8, opacity: 0.4 }}><DungeonGate dungeon={d} playerStats={state.stats} theme={theme} onEnter={() => { }} modifier={modifier} /></div>)}
+                        {(state.dungeons || []).filter(d => d.cleared).map((d, i) => <div key={d.instanceId} style={{ marginBottom: 8, opacity: 0.4 }}><DungeonGate dungeon={d} playerStats={state.stats} theme={theme} onEnter={() => { }} modifier={modifier} playerGold={state.gold} /></div>)}
                       </div>
                     )}
                   </div>

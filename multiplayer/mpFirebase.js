@@ -1,7 +1,7 @@
 // ─── MULTIPLAYER FIREBASE HELPERS ─────────────────────────────
 import { db, auth } from "../firebase.js";
 import {
-  collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
+  collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, runTransaction,
   query, where, orderBy, limit, onSnapshot, serverTimestamp, arrayUnion, arrayRemove, deleteField, documentId
 } from "firebase/firestore";
 
@@ -46,28 +46,43 @@ export async function joinGuild(guildId) {
   if (!user) throw new Error("Not authenticated");
 
   const guildRef = doc(db, "guilds", guildId);
-  const guildSnap = await getDoc(guildRef);
-  if (!guildSnap.exists()) throw new Error("Guild not found");
-
-  const guildData = guildSnap.data();
-  if (guildData.memberIds.length >= guildData.maxMembers) throw new Error("Guild is full");
-  if (guildData.memberIds.includes(user.uid)) throw new Error("Already in guild");
-
-  await updateDoc(guildRef, {
-    memberIds: arrayUnion(user.uid),
-  });
-
   const userRef = doc(db, "users", user.uid);
-  await updateDoc(userRef, {
-    "multiplayer.guild": {
-      id: guildId,
-      name: guildData.name,
-      role: "member",
-      joinedAt: new Date().toISOString(),
-    },
+  const publicProfileRef = doc(db, "publicProfiles", user.uid);
+
+  let joinedGuildData = null;
+
+  await runTransaction(db, async (transaction) => {
+    const guildSnap = await transaction.get(guildRef);
+    if (!guildSnap.exists()) throw new Error("Guild not found");
+
+    const guildData = guildSnap.data();
+    if (guildData.memberIds.length >= guildData.maxMembers) throw new Error("Guild is full");
+    if (guildData.memberIds.includes(user.uid)) throw new Error("Already in guild");
+
+    transaction.update(guildRef, {
+      memberIds: arrayUnion(user.uid),
+    });
+
+    transaction.update(userRef, {
+      "multiplayer.guild": {
+        id: guildId,
+        name: guildData.name,
+        role: "member",
+        joinedAt: new Date().toISOString(),
+      },
+    });
+
+    // Try to update publicProfile, but don't fail transaction if it doesn't exist
+    // Public profile is written lazily on saveState, so it might not exist yet
+    // To be safe in a transaction, we can just set with merge
+    transaction.set(publicProfileRef, {
+      guildId: guildId
+    }, { merge: true });
+
+    joinedGuildData = guildData;
   });
 
-  return guildData;
+  return joinedGuildData;
 }
 
 export async function leaveGuild(guildId) {
@@ -193,7 +208,7 @@ export function subscribeToGlobalChat(callback) {
 
 export async function fetchLeaderboard(sortField = "totalXpEarned", maxResults = 20) {
   const q = query(
-    collection(db, "users"),
+    collection(db, "publicProfiles"),
     orderBy(sortField, "desc"),
     limit(maxResults)
   );
@@ -207,8 +222,8 @@ export async function fetchLeaderboard(sortField = "totalXpEarned", maxResults =
       totalXpEarned: data.totalXpEarned || 0,
       totalQuestsCompleted: data.totalQuestsCompleted || 0,
       streak: data.streak || 0,
-      shadowCount: data.shadowArmy?.shadows?.length || 0,
-      dungeonsCleared: (data.dungeonHistory || []).filter(d => d.won).length,
+      shadowCount: data.shadowCount || 0,
+      dungeonsCleared: data.dungeonsCleared || 0,
       rank: getRankForLevel(data.level || 1),
       place: idx + 1,
     };
@@ -224,7 +239,7 @@ export async function fetchGuildLeaderboard(memberIds) {
     chunks.push(memberIds.slice(i, i + 10));
   }
   for (const chunk of chunks) {
-    const q = query(collection(db, "users"), where(documentId(), "in", chunk));
+    const q = query(collection(db, "publicProfiles"), where(documentId(), "in", chunk));
     const snap = await getDocs(q);
     snap.docs.forEach(d => {
       const data = d.data();

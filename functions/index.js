@@ -4,6 +4,7 @@
 
 const admin = require("firebase-admin");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { checkAndIncrementRateLimit } = require("./rateLimiter");
 const { callGemini, callGeminiWithImage, callGeminiWithImages, parseJSON } = require("./geminiService");
 const {
@@ -377,3 +378,31 @@ exports.adminDeleteUser = onCall(CALL_OPTIONS, async (request) => {
   }
 });
 
+// ─── Feature H: Anti-Cheat Sanity Check ────────────────────────────────────────
+
+exports.onUserWrite = onDocumentWritten({
+  document: "users/{userId}",
+  region: "europe-west1",
+}, async (event) => {
+  const before = event.data?.before?.data();
+  const after = event.data?.after?.data();
+  if (!before || !after) return;
+
+  // Skip if this write was our own flag update (prevent re-trigger loop)
+  if (!before.flaggedCheater && after.flaggedCheater) return;
+  // Skip if already flagged
+  if (after.flaggedCheater) return;
+
+  const xpDiff = (after.totalXpEarned || 0) - (before.totalXpEarned || 0);
+  const goldDiff = (after.gold || 0) - (before.gold || 0);
+
+  // Flag if unrealistic: >50,000 XP or >100,000 Gold in a single write
+  if (xpDiff > 50000 || goldDiff > 100000) {
+    console.warn(`Anti-Cheat: Suspicious delta for user ${event.params.userId}`, { xpDiff, goldDiff });
+    await event.data.after.ref.update({
+      flaggedCheater: true,
+      flaggedAt: admin.firestore.FieldValue.serverTimestamp(),
+      flagReason: `Suspicious delta: XP+${xpDiff}, Gold+${goldDiff}`,
+    });
+  }
+});

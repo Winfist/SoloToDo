@@ -2,7 +2,7 @@
 import { db } from "../firebase.js";
 import {
   doc, getDoc, setDoc, updateDoc, deleteField,
-  onSnapshot, serverTimestamp
+  onSnapshot, serverTimestamp, increment
 } from "firebase/firestore";
 
 // Generate a random 6-char alphanumeric code
@@ -33,7 +33,7 @@ export async function createSoulLink(userState, currentUser) {
         hunterName: userState.hunterName || "Hunter",
         streak: userState.streak || 0,
         level: userState.level || 1,
-        questsCompletedToday: userState.dailyUserQuestsCreated || 0,
+        questsCompletedToday: userState.dailyQuestCompletionCount || 0,
         lastActiveDate: userState.lastActiveDate || null,
         lastUpdated: serverTimestamp()
       }
@@ -66,7 +66,7 @@ export async function joinSoulLink(linkCode, userState, currentUser) {
       hunterName: userState.hunterName || "Hunter",
       streak: userState.streak || 0,
       level: userState.level || 1,
-      questsCompletedToday: userState.dailyUserQuestsCreated || 0,
+      questsCompletedToday: userState.dailyQuestCompletionCount || 0,
       lastActiveDate: userState.lastActiveDate || null,
       lastUpdated: serverTimestamp()
     }
@@ -108,6 +108,7 @@ export function subscribeSoulLink(linkCode, myUid, callback) {
     const data = snap.data();
     const users = data.users || {};
     const partner = Object.values(users).find(u => u.uid !== myUid);
+    const me = Object.values(users).find(u => u.uid === myUid);
     if (!partner) return;
     callback({
       partnerUid: partner.uid,
@@ -115,7 +116,10 @@ export function subscribeSoulLink(linkCode, myUid, callback) {
       partnerStreak: partner.streak || 0,
       partnerLevel: partner.level || 1,
       partnerQuestsToday: partner.questsCompletedToday || 0,
-      partnerLastActive: partner.lastActiveDate || null
+      partnerLastActive: partner.lastActiveDate || null,
+      myStreakInDb: me?.streak || 0,
+      reviveSentBy: data.reviveSentBy,
+      reviveSentAt: data.reviveSentAt ? (data.reviveSentAt.toMillis ? data.reviveSentAt.toMillis() : Date.now()) : null
     });
   });
 }
@@ -124,13 +128,8 @@ export function subscribeSoulLink(linkCode, myUid, callback) {
 export async function sendRevive(linkCode, fromUid, toUid) {
   if (!linkCode || !fromUid || !toUid) return;
   const ref = doc(db, "soulLinks", linkCode);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return;
-  const data = snap.data();
-  const target = data.users?.[toUid];
-  if (!target) return;
   await updateDoc(ref, {
-    [`users.${toUid}.streak`]: (target.streak || 0) + 1,
+    [`users.${toUid}.streak`]: increment(1),
     [`users.${toUid}.lastUpdated`]: serverTimestamp(),
     [`reviveSentBy`]: fromUid,
     [`reviveSentAt`]: serverTimestamp()

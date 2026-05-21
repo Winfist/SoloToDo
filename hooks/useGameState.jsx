@@ -1,7 +1,9 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { db, auth } from "../firebase";
+import { db, auth, analytics } from "../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
+import { logEvent } from "firebase/analytics";
+import { onAuthStateChanged } from "firebase/auth";
 import { QUEST_POOL } from "../data/questPool.js";
 import {
   RANKS, DIFFICULTIES, CATEGORIES, STRATEGIES,
@@ -39,6 +41,13 @@ function ltState(state, key, params = {}) {
 
 function cloneDefaultState() {
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+
+// ── Analytics helper (fails silently if analytics is null) ──
+function trackEvent(eventName, params = {}) {
+  try {
+    if (analytics) logEvent(analytics, eventName, params);
+  } catch (_) { /* Analytics may not be available */ }
 }
 
 function normalizeHunterName(name) {
@@ -179,7 +188,6 @@ export function useGameState(initialHunterName, onLogout) {
   const [rewardFlowActive, setRewardFlowActive] = useState(false);
   const [rewardFlowQueue, setRewardFlowQueue] = useState([]);
   const [showingModal, setShowingModal] = useState(false);
-  const [pendingRatingQuest, setPendingRatingQuest] = useState(null);
 
   const enqueueRewardFlow = useCallback((flow) => {
     setRewardFlowQueue(prev => [...prev, flow]);
@@ -219,6 +227,10 @@ export function useGameState(initialHunterName, onLogout) {
     }
     setState(next);
     stateRef.current = next;
+    // Track level-ups from any source
+    if (previous && next.level > (previous.level || 1)) {
+      trackEvent('level_up', { level: next.level, previousLevel: previous.level || 1 });
+    }
     saveState(next);
     // Widget Sync: push state snapshot to iOS WidgetKit via shared App Group
     import('../services/widgetDataService.js').then(({ syncWidgetData }) => {
@@ -229,7 +241,7 @@ export function useGameState(initialHunterName, onLogout) {
       import('../multiplayer/soulLinkFirebase.js').then(({ updateSoulLinkStatus }) => {
         updateSoulLinkStatus(next.soulLink.linkCode, auth.currentUser.uid, {
           streak: next.streak || 0,
-          questsCompletedToday: next.dailyUserQuestsCreated || 0,
+          questsCompletedToday: next.dailyQuestCompletionCount || 0,
           lastActiveDate: next.lastActiveDate || null,
           hunterName: next.hunterName || "Hunter",
           level: next.level || 1
@@ -237,15 +249,6 @@ export function useGameState(initialHunterName, onLogout) {
       }).catch(() => { });
     }
   }, []);
-
-  const rateCompletedQuest = useCallback((questId, ratingData) => {
-    if (!state) return;
-    const updatedCompleted = (state.completedQuests || []).map(q =>
-      q.id === questId ? { ...q, ...ratingData } : q
-    );
-    persist({ ...state, completedQuests: updatedCompleted });
-    setPendingRatingQuest(null);
-  }, [state, persist]);
 
   // Real-time Cloud Sync — BUG FIX #1: Timestamp-based conflict resolution
   // Instead of ignoring cloud data entirely when local state exists, we compare
@@ -313,20 +316,40 @@ export function useGameState(initialHunterName, onLogout) {
   // Soul Link real-time partner subscription
   useEffect(() => {
     const linkCode = stateRef.current?.soulLink?.linkCode;
-    const user = auth.currentUser;
-    if (!linkCode || !user) return;
+    if (!linkCode) return;
     let unsub = () => { };
-    import('../multiplayer/soulLinkFirebase.js').then(({ subscribeSoulLink }) => {
-      unsub = subscribeSoulLink(linkCode, user.uid, (partnerData) => {
-        setState(prev => {
-          if (!prev) return prev;
-          const today = getToday();
-          const bothActive = partnerData.partnerLastActive === today && prev.lastActiveDate === today;
-          return { ...prev, soulLink: { ...(prev.soulLink || {}), ...partnerData, bothActive } };
+    let unsubAuth = () => { };
+    let started = false;
+
+    const startSubscription = (user) => {
+      if (!user || started) return;
+      started = true;
+      import('../multiplayer/soulLinkFirebase.js').then(({ subscribeSoulLink }) => {
+        unsub = subscribeSoulLink(linkCode, user.uid, (partnerData) => {
+          setState(prev => {
+            if (!prev) return prev;
+            const today = getToday();
+            const bothActive = partnerData.partnerLastActive === today && prev.lastActiveDate === today;
+            const updatedSoulLink = { ...(prev.soulLink || {}), ...partnerData, bothActive };
+            // Persist partner data so it survives reload
+            const next = { ...prev, soulLink: updatedSoulLink };
+            cacheStateLocally(next);
+            return next;
+          });
         });
-      });
-    }).catch(() => { });
-    return () => unsub();
+      }).catch(() => { });
+    };
+
+    // If auth is already ready, start immediately
+    if (auth.currentUser) {
+      startSubscription(auth.currentUser);
+    }
+    // Also listen for auth changes (handles case where auth loads after mount)
+    unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (user) startSubscription(user);
+    });
+
+    return () => { unsub(); unsubAuth(); };
   }, [state?.soulLink?.linkCode]);
 
   // BUG FIX #10: Check entire queue for duplicates, not just the last item
@@ -723,9 +746,9 @@ export function useGameState(initialHunterName, onLogout) {
     if (!result) return;
 
     persist(result.nextState);
+    trackEvent('quest_completed', { category: quest.category, difficulty: quest.difficulty, isSystem: !!quest.isSystem });
     const flow = buildQuestRewardFlow(result, state.level, rect, getStateLocale(state));
     enqueueRewardFlow(flow);
-    setPendingRatingQuest(quest);
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);
 
 
@@ -1520,6 +1543,7 @@ export function useGameState(initialHunterName, onLogout) {
     const didLevelUp = next._didLevelUp;
     const earnedPoints = next._levelsGained;
     const newLevel = next.level;
+    trackEvent('dungeon_entered', { rank: dungeon.rank, floors: dungeon.floors, won: result.won });
 
     let newInventory = [...(next.equipment?.inventory || [])];
     if (result.drop) newInventory.push(result.drop);
@@ -1689,6 +1713,7 @@ export function useGameState(initialHunterName, onLogout) {
     };
     next = processAchievements(next);
     persist(next);
+    trackEvent('shop_purchase', { itemId: item.id, cost: finalCost, currency: 'gold' });
     notify(ltState(state, "shop.notifications.purchased", { name: item.name }), item.id === "potion_heal" ? "success" : "gold");
   };
 
@@ -2103,6 +2128,7 @@ export function useGameState(initialHunterName, onLogout) {
     };
     next = processAchievements(next);
     persist(next);
+    trackEvent('shop_purchase', { itemId: item.id, cost: item.cost, currency: 'gems' });
     if (item.type !== "consumable" || !item.id.startsWith("gem_stat_reset")) {
       notify(ltState(state, "shop.notifications.purchased", { name: item.name }), item.type === "booster" ? "success" : "named");
     }
@@ -2265,10 +2291,6 @@ export function useGameState(initialHunterName, onLogout) {
     updateScreenTimeData,
     claimScreenTimeReward,
     GEM_SHOP_ITEMS,
-    // Rating system
-    rateCompletedQuest,
-    pendingRatingQuest,
-    setPendingRatingQuest,
   };
 }
 

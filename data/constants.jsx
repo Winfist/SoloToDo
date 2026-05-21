@@ -1463,11 +1463,16 @@ function getGateImage(dungeon) {
   return "/Gates/spring_gate.png";
 }
 
+// ═══ DUNGEON ENTRY FEES ═══════════════════════════════════════
+const DUNGEON_ENTRY_FEES = { E: 0, D: 0, C: 0, B: 50, A: 100, S: 200, SSS: 200 };
+
 // ═══ DUNGEON GATE ═════════════════════════════════════════════
-function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview }) {
+function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview, playerGold = 0 }) {
   const [hover, setHover] = useState(false);
   const rankData = RANKS.find(r => r.name === dungeon.rank) || RANKS[0];
   const reqs = Object.entries(dungeon.requirements);
+  const entryFee = DUNGEON_ENTRY_FEES[dungeon.rank] || 0;
+  const canAfford = playerGold >= entryFee || entryFee === 0;
   const timeLeft = Math.max(0, new Date(dungeon.expiresAt) - new Date());
   const hoursLeft = Math.floor(timeLeft / 3600000);
   const minsLeft = Math.floor((timeLeft % 3600000) / 60000);
@@ -1589,22 +1594,32 @@ function DungeonGate({ dungeon, playerStats, theme, onEnter, modifier, onPreview
         </div>
         {dungeon.cleared
           ? <div style={{ fontSize: 11, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, fontWeight: 700 }}>CLEARED ✓</div>
-          : <button
-            onClick={() => onPreview ? onPreview(dungeon) : onEnter(dungeon)}
-            style={{
-              padding: "10px 26px",
-              fontSize: 12, fontWeight: 900,
-              background: hover ? `linear-gradient(135deg,${rc}45,${rc}22)` : `linear-gradient(135deg,${rc}28,${rc}12)`,
-              color: rc,
-              border: `1px solid ${rc}${hover ? "88" : "44"}`,
-              borderRadius: 12,
-              fontFamily: "'Cinzel',serif", letterSpacing: 3,
-              transition: "all 0.22s ease",
-              boxShadow: hover ? `0 0 22px ${rc}44, 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 ${rc}25` : `inset 0 1px 0 ${rc}12`,
-              cursor: "pointer",
-              textShadow: hover ? `0 0 12px ${rc}` : "none",
-            }}
-          >ENTER ▶</button>
+          : <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {entryFee > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 10px", background: canAfford ? "rgba(251,191,36,0.08)" : "rgba(239,68,68,0.08)", border: `1px solid ${canAfford ? "#fcd34d33" : "#ef444433"}`, borderRadius: 10, fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", color: canAfford ? "#fbbf24" : "#ef4444" }}>
+                <img src="/icon/coin.png" alt="G" style={{ width: 12, height: 12, opacity: 0.85 }} /> {entryFee}
+              </div>
+            )}
+            <button
+              onClick={() => onPreview ? onPreview(dungeon) : onEnter(dungeon)}
+              disabled={!canAfford}
+              title={!canAfford ? `Nicht genug Gold (${playerGold}/${entryFee})` : ""}
+              style={{
+                padding: "10px 26px",
+                fontSize: 12, fontWeight: 900,
+                background: !canAfford ? "rgba(100,100,100,0.15)" : hover ? `linear-gradient(135deg,${rc}45,${rc}22)` : `linear-gradient(135deg,${rc}28,${rc}12)`,
+                color: !canAfford ? "#475569" : rc,
+                border: `1px solid ${!canAfford ? "#334155" : rc + (hover ? "88" : "44")}`,
+                borderRadius: 12,
+                fontFamily: "'Cinzel',serif", letterSpacing: 3,
+                transition: "all 0.22s ease",
+                boxShadow: !canAfford ? "none" : hover ? `0 0 22px ${rc}44, 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 ${rc}25` : `inset 0 1px 0 ${rc}12`,
+                cursor: !canAfford ? "not-allowed" : "pointer",
+                textShadow: !canAfford ? "none" : hover ? `0 0 12px ${rc}` : "none",
+                opacity: !canAfford ? 0.6 : 1,
+              }}
+            >ENTER ▶</button>
+          </div>
         }
       </div>
     </div>
@@ -2458,7 +2473,8 @@ export {
   LevelUpCinematic, AriseCinematic,
   ShadowCard, ShadowDetailModal, FormationEditor, StatRadar, QuestTimer, QuestTypeBadge,
   EmergencyQuestCard, ChainedQuestProgress, QuestCard, DungeonGate, FloorProgressBar, BossPhaseUI, DungeonBattle,
-  JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI
+  JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI,
+  DUNGEON_ENTRY_FEES
 };
 
 

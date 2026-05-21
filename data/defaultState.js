@@ -2,6 +2,7 @@
 // Extracted from data/constants.jsx
 
 export const DEFAULT_STATE = {
+  stateVersion: 1,
   hunterName: "", level: 1, xp: 0, gold: 0, totalGoldEarned: 0,
   premium: {
     tier: "free",

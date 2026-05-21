@@ -1,7 +1,7 @@
 // Storage, migration, and cloud/local conflict handling.
 
 import { db, auth } from "../firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { DEFAULT_STATE } from "./defaultState.js";
 import { calcShadowXpToNext, genId, getToday, getXpForLevel, recalculateLevelFromTotalXp } from "./helpers.js";
 import { normalizeQuestForStorage } from "./questUtils.js";
@@ -724,6 +724,26 @@ function shouldSkipCloudWrite(candidate, cloudState) {
 export function migrateState(oldState) {
   if (!oldState) return null;
 
+  // ── Version-based migrations ──────────────────────────────────
+  // Each migration block converts from version N-1 → N.
+  // States without a stateVersion are treated as v0 (legacy).
+  const version = oldState.stateVersion || 0;
+
+  if (version < 1) {
+    // v0 → v1: Establish baseline. Remove any leftover quest rating fields.
+    if (Array.isArray(oldState.completedQuests)) {
+      oldState.completedQuests = oldState.completedQuests.map(q => {
+        if (!q) return q;
+        const { rating, ratingComment, ...rest } = q;
+        return rest;
+      });
+    }
+    oldState.stateVersion = 1;
+  }
+
+  // Future migrations go here:
+  // if (version < 2) { ... oldState.stateVersion = 2; }
+
   const s = { ...DEFAULT_STATE, ...oldState };
   s.level = Math.max(1, s.level || 1);
   s.xp = s.xp || 0;
@@ -886,6 +906,68 @@ export async function loadState() {
   return resolved;
 }
 
+function trimStateForPersistence(state) {
+  if (!state) return state;
+  const s = { ...state };
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0];
+
+  if (Array.isArray(s.completedQuests) && s.completedQuests.length > 200) {
+    s.completedQuests = s.completedQuests
+      .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''))
+      .slice(0, 200);
+  }
+
+  if (Array.isArray(s.dungeonHistory) && s.dungeonHistory.length > 100) {
+    s.dungeonHistory = s.dungeonHistory.slice(-100);
+  }
+
+  for (const mapKey of ['healthDailyHistory', 'screenTimeDailyHistory']) {
+    if (s[mapKey] && typeof s[mapKey] === 'object') {
+      s[mapKey] = Object.fromEntries(
+        Object.entries(s[mapKey]).filter(([date]) => date >= ninetyDaysAgo)
+      );
+    }
+  }
+
+  if (s.focus?.daily && typeof s.focus.daily === 'object') {
+    s.focus = {
+      ...s.focus,
+      daily: Object.fromEntries(Object.entries(s.focus.daily).filter(([date]) => date >= ninetyDaysAgo)),
+    };
+  }
+
+  if (s.microHabits?.daily && typeof s.microHabits.daily === 'object') {
+    s.microHabits = {
+      ...s.microHabits,
+      daily: Object.fromEntries(Object.entries(s.microHabits.daily).filter(([date]) => date >= ninetyDaysAgo)),
+    };
+  }
+
+  if (Array.isArray(s.habits)) {
+    s.habits = s.habits.map(habit => {
+      if (!habit?.history || typeof habit.history !== 'object') return habit;
+      return {
+        ...habit,
+        history: Object.fromEntries(Object.entries(habit.history).filter(([date]) => date >= ninetyDaysAgo)),
+      };
+    });
+  }
+
+  if (Array.isArray(s.dawnDusk?.runHistory) && s.dawnDusk.runHistory.length > 60) {
+    s.dawnDusk = { ...s.dawnDusk, runHistory: s.dawnDusk.runHistory.slice(-60) };
+  }
+
+  if (Array.isArray(s.charismaDungeons?.stepHistory) && s.charismaDungeons.stepHistory.length > 100) {
+    s.charismaDungeons = { ...s.charismaDungeons, stepHistory: s.charismaDungeons.stepHistory.slice(-100) };
+  }
+
+  if (Array.isArray(s.syncEvents) && s.syncEvents.length > 500) {
+    s.syncEvents = s.syncEvents.slice(-500);
+  }
+
+  return s;
+}
+
 export async function saveState(s) {
   if (!s) return;
 
@@ -941,7 +1023,21 @@ export async function saveState(s) {
         }
       }
 
-      await setDoc(docRef, cleanState, { merge: true });
+      await setDoc(docRef, trimStateForPersistence(cleanState), { merge: true });
+      
+      const publicProfileRef = doc(db, "publicProfiles", user.uid);
+      await setDoc(publicProfileRef, {
+        displayName: cleanState.displayName || "Hunter",
+        level: cleanState.level || 1,
+        totalXpEarned: cleanState.totalXpEarned || 0,
+        totalQuestsCompleted: cleanState.totalQuestsCompleted || 0,
+        streak: cleanState.streak || 0,
+        shadowCount: cleanState.shadowArmy?.shadows?.length || 0,
+        dungeonsCleared: (cleanState.dungeonHistory || []).filter(h => h.won).length || 0,
+        guildId: cleanState.multiplayer?.guild?.id || null,
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(err => console.warn("Could not write publicProfile:", err));
+
       await markCloudSyncPending(false, user);
     }
   } catch (e) {
