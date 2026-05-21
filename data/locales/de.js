@@ -756,6 +756,14 @@ export const de = {
       systemAnalysisTitle: "SYSTEM ANALYSE",
       systemAnalysisText: "Deine {stat} (Level {level}) ist überlegen. Diese Aufgabe sollte ein Leichtes für dich sein.",
     },
+    questCreate: {
+      priorityHigh: "HOCH",
+      priorityMedium: "MITTEL",
+      priorityLow: "NIEDRIG",
+      energyQuick: "5 MIN",
+      energyMedium: "30 MIN",
+      energyDeep: "DEEP",
+    },
   },
   tutorial: {
     steps: {

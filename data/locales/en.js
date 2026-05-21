@@ -756,6 +756,14 @@ export const en = {
       systemAnalysisTitle: "SYSTEM ANALYSIS",
       systemAnalysisText: "Your {stat} (Level {level}) is superior. This task should be an easy feat for you.",
     },
+    questCreate: {
+      priorityHigh: "HIGH",
+      priorityMedium: "MEDIUM",
+      priorityLow: "LOW",
+      energyQuick: "5 MIN",
+      energyMedium: "30 MIN",
+      energyDeep: "DEEP",
+    },
   },
   tutorial: {
     steps: {

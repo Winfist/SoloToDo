@@ -586,20 +586,20 @@ export function resolveStateConflict(localState, cloudState) {
 
   // ── Admin reset override ──
   // If an admin has reset the user via the dashboard, the cloud state will
-  // carry an `_adminResetAt` timestamp.  When that timestamp is newer than
-  // the local state's last save, we MUST honour the admin reset – otherwise
-  // the stale local cache would win through the normal progress-protection
-  // checks and undo the admin's work.
-  const adminResetAtMs = parseTime(cloudState._adminResetAt);
-  if (adminResetAtMs > 0) {
-    const localTime = getStateTimestamp(localState);
-    if (adminResetAtMs >= localTime) {
-      console.log("System: Admin-Reset erkannt – Cloud-State wird erzwungen.", {
-        adminResetAt: cloudState._adminResetAt,
-        resetType: cloudState._adminResetType,
-      });
-      return { data: mergeLocalOnlyCaches(cloudState, localState), source: "cloud", reason: "admin-reset" };
-    }
+  // carry an `_adminResetAt` timestamp.  We compare this marker against the
+  // local copy's marker: if they differ (or local has none), the admin reset
+  // has not yet been applied locally, so we MUST force the cloud state.
+  // This approach is immune to clock-skew and local timestamp bumps that
+  // previously caused the stale local cache to override the reset.
+  const cloudAdminResetAt = cloudState._adminResetAt || null;
+  const localAdminResetAt = localState._adminResetAt || null;
+  if (cloudAdminResetAt && cloudAdminResetAt !== localAdminResetAt) {
+    console.log("System: Admin-Reset erkannt – Cloud-State wird erzwungen.", {
+      adminResetAt: cloudAdminResetAt,
+      resetType: cloudState._adminResetType,
+      localHad: localAdminResetAt,
+    });
+    return { data: mergeLocalOnlyCaches(cloudState, localState), source: "cloud", reason: "admin-reset" };
   }
 
   const localScore = getStateProgressScore(localState);

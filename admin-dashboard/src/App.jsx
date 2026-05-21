@@ -401,6 +401,18 @@ function UserDetail({ user, onBack, onUpdate }) {
         payload.manifestations = [];
         payload.sanctum = { level: 1, willpower: 0, totalMeditationMinutes: 0 };
         
+        // --- Premium reset: allow reuse of promo/beta codes ---
+        payload.premium = {
+          tier: 'free',
+          planId: null,
+          status: 'inactive',
+          source: null,
+          startedAt: null,
+          activeUntil: null,
+          lastActivatedAt: null,
+          betaCodesRedeemed: [],
+        };
+
         // --- Added for TRUE FULL RESET ---
         payload.goals = [];
         payload.habits = [];
@@ -430,6 +442,14 @@ function UserDetail({ user, onBack, onUpdate }) {
         payload.dailyQuestCompletionCount = 0;
         payload.todayModifier = null;
         payload.weeklyQuestReset = null;
+        payload.gems = 0;
+        payload.totalGemsEarned = 0;
+        payload.gemStreak = { current: 0, lastClaimDate: null };
+        payload.activeGemBoosters = [];
+        payload.gemPurchases = [];
+        payload.syncEvents = [];
+        payload.adsWatchedToday = 0;
+        payload.lastAdWatchDate = null;
       }
 
       await updateDoc(userRef, payload);
