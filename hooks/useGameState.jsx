@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { db, auth, analytics } from "../firebase";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, collection } from "firebase/firestore";
 import { logEvent } from "firebase/analytics";
 import { onAuthStateChanged } from "firebase/auth";
 import { QUEST_POOL } from "../data/questPool.js";
@@ -747,6 +747,17 @@ export function useGameState(initialHunterName, onLogout) {
 
     persist(result.nextState);
     trackEvent('quest_completed', { category: quest.category, difficulty: quest.difficulty, isSystem: !!quest.isSystem });
+
+    // ── Hybrid Storage: archive completed quest to subcollection ──
+    if (auth.currentUser && result.newlyCompletedQuests) {
+      result.newlyCompletedQuests.forEach(cq => {
+        const histRef = doc(collection(db, 'users', auth.currentUser.uid, 'questHistory'), cq.id);
+        setDoc(histRef, { ...cq, archivedAt: new Date().toISOString() }).catch(err =>
+          console.warn('questHistory write failed:', err)
+        );
+      });
+    }
+
     const flow = buildQuestRewardFlow(result, state.level, rect, getStateLocale(state));
     enqueueRewardFlow(flow);
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);

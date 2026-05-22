@@ -911,10 +911,12 @@ function trimStateForPersistence(state) {
   const s = { ...state };
   const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0];
 
-  if (Array.isArray(s.completedQuests) && s.completedQuests.length > 200) {
+  // Hybrid Storage: keep only the 50 most recent quests in the main doc.
+  // Older quests are preserved in the users/{uid}/questHistory subcollection.
+  if (Array.isArray(s.completedQuests) && s.completedQuests.length > 50) {
     s.completedQuests = s.completedQuests
       .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''))
-      .slice(0, 200);
+      .slice(0, 50);
   }
 
   if (Array.isArray(s.dungeonHistory) && s.dungeonHistory.length > 100) {

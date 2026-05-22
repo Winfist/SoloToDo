@@ -453,6 +453,20 @@ function UserDetail({ user, onBack, onUpdate }) {
       }
 
       await updateDoc(userRef, payload);
+
+      // ── Hybrid Storage: wipe questHistory subcollection on hard reset ──
+      if (wipeQuests) {
+        try {
+          const histCol = collection(db, 'users', user.id, 'questHistory');
+          const histSnap = await getDocs(histCol);
+          const deleteBatch = histSnap.docs.map(d => deleteDoc(d.ref));
+          await Promise.all(deleteBatch);
+          console.log(`Deleted ${histSnap.size} questHistory docs for ${user.id}`);
+        } catch (histErr) {
+          console.warn('questHistory cleanup failed:', histErr);
+        }
+      }
+
       alert('Spieler erfolgreich zurückgesetzt!');
       setShowResetModal(false);
       onUpdate();

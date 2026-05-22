@@ -291,25 +291,27 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     newStats.cha = (newStats.cha || 0) + charismaChaBonus;
   }
 
+  const newlyCompletedQuest = {
+    ...quest,
+    completedAt: today,
+    completedAtMs: Date.now(),
+    actualDurationMs: quest.createdAtMs ? Date.now() - quest.createdAtMs : null,
+    xpEarned: xpGain,
+    goldEarned: goldGain,
+    rating: null,
+    feltDifficulty: null,
+    durationFeedback: null,
+    notes: null,
+    categoryFeedback: null,
+    wasVerified: verificationBonus,
+  };
+
   next = {
     ...next,
     stats: newStats,
     quests: updatedQuests,
     reminders: (state.reminders || []).filter(r => r.questId !== questId),
-    completedQuests: [...(state.completedQuests || []), {
-      ...quest,
-      completedAt: today,
-      completedAtMs: Date.now(),
-      actualDurationMs: quest.createdAtMs ? Date.now() - quest.createdAtMs : null,
-      xpEarned: xpGain,
-      goldEarned: goldGain,
-      rating: null,
-      feltDifficulty: null,
-      durationFeedback: null,
-      notes: null,
-      categoryFeedback: null,
-      wasVerified: verificationBonus,
-    }],
+    completedQuests: [...(state.completedQuests || []), newlyCompletedQuest],
     habits: newHabits,
     streak: finalStreak, lastActiveDate: today, shadowArmy: newShadowArmy,
     totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1,
@@ -398,6 +400,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     quest,
     oldLevel: state.level,
     newAchievements,
+    newlyCompletedQuests: [newlyCompletedQuest],
   };
 }
 

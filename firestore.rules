@@ -15,6 +15,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+
+      // Quest history subcollection (Hybrid Storage)
+      match /questHistory/{questId} {
+        allow read, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
     }
 
     // Public Profiles
