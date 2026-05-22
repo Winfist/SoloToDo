@@ -1,7 +1,7 @@
 /**
  * AuthTunnelWalls – Dark stone tunnel with purple energy veins
  *
- * Solo Leveling color palette: deep purple (#7c3aed) veins on dark stone.
+ * Abyssal Sovereign color palette: deep purple (#7c3aed) veins on dark stone.
  * TubeGeometry with a subtle CatmullRom curve so the portal emerges
  * dramatically around the bend rather than being visible from the start.
  */

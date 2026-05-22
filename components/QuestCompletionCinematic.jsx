@@ -1,9 +1,9 @@
 // ═══ QUEST COMPLETION CINEMATIC ═══════════════════════════════
-// Premium Solo-Leveling-style System Window for quest completion.
+// Premium Abyssal Sovereign-style Nexus Window for quest completion.
 //
-// The design replicates the iconic floating System panels from
-// Solo Leveling: rectangular blue-bordered windows with header,
-// reward lines that appear one-by-one, and typewriter system text.
+// The design replicates the iconic floating Nexus panels from
+// Abyssal Sovereign: rectangular bordered windows with header,
+// reward lines that appear one-by-one, and typewriter nexus text.
 //
 // KEY CHANGE: The system window STAYS on screen long enough to READ.
 // Timing is generous — easy: 3s, normal: 4s, hard: 5s, boss: 7s.
@@ -14,9 +14,9 @@ import { CATEGORIES } from "../data/gameData.js";
 // ─── SYSTEM MESSAGE GENERATOR ─────────────────────────────────
 const MSG = {
   boss: [
-    ["S-Rang Quest bezwungen.", "Außergewöhnliche Leistung registriert.", "Die Macht des Monarchen wächst."],
-    ["Boss eliminiert.", "Du hast das Unmögliche vollbracht.", "Die Schatten flüstern deinen Namen."],
-    ["Ein Gegner weniger.", "Deine Stärke kennt keine Grenzen.", "Respekt, Hunter."],
+    ["S-Rang Quest bezwungen.", "Außergewöhnliche Leistung registriert.", "Die Macht des Sovereign wächst."],
+    ["Boss eliminiert.", "Du hast das Unmögliche vollbracht.", "Die Phantome flüstern deinen Namen."],
+    ["Ein Gegner weniger.", "Deine Stärke kennt keine Grenzen.", "Respekt, Vanguard."],
   ],
   hard: [
     ["Schwere Herausforderung gemeistert.", "Das System erkennt wahre Stärke."],
@@ -27,16 +27,16 @@ const MSG = {
   streak_high: [["${n}-Tage-Streak.", "Unaufhaltsam. Legendär."]],
   streak_mid: [["${n}-Tage-Streak.", "Disziplin formt Macht."]],
   streak_low: [["${n}-Tage-Streak aufgebaut.", "Beständigkeit wird belohnt."]],
-  first: [["Tägliche Jagd beginnt.", "Zeige keine Schwäche, Hunter."]],
-  penalty: [["Der Hunter kehrt zurück.", "Die Schatten warteten."]],
+  first: [["Tägliche Jagd beginnt.", "Zeige keine Schwäche, Vanguard."]],
+  penalty: [["Der Vanguard kehrt zurück.", "Die Phantome warteten."]],
   levelup: [["Level ${lvl} erreicht.", "Neue Fähigkeiten freigeschaltet."]],
   emergency: [
     ["Notfallmission abgeschlossen.", "Unter Druck zeigt sich wahre Stärke.", "Doppelte Belohnungen gewährt."],
     ["Notfall neutralisiert.", "Das System erhöht deine Bewertung.", "Hervorragende Reaktionszeit."],
-    ["Krisensituation gemeistert.", "Der Hunter beweist seine Klasse.", "Bonus-Belohnungen freigeschaltet."],
+    ["Krisensituation gemeistert.", "Der Vanguard beweist seine Klasse.", "Bonus-Belohnungen freigeschaltet."],
   ],
   normal: [
-    ["Quest abgeschlossen.", "Weitermachen, Hunter."],
+    ["Quest abgeschlossen.", "Weitermachen, Vanguard."],
     ["Auftrag erfüllt.", "Jede Quest zählt."],
     ["Erledigt.", "Stärke wächst durch Beständigkeit."],
     ["Fortschritt registriert.", "Der nächste Schritt wartet."],
@@ -73,7 +73,7 @@ const TM = {
   boss:   { flash: 500, windowDelay: 400,  rewardStagger: 400, windowDuration: 5500, fadeStart: 6200,  total: 7000 },
 };
 
-// ─── SOLO LEVELING BLUE PALETTE ────────────────────────────────
+// ─── ABYSSAL SOVEREIGN PALETTE ────────────────────────────────
 const SL = {
   border: "#4f8bf9",       // the iconic system window border
   borderGlow: "#3b82f6",
@@ -354,7 +354,7 @@ export default function QuestCompletionCinematic({ data, onDone }) {
                   color: SL.headerText,
                   fontFamily: "'JetBrains Mono', monospace",
                 }}>
-                  SYSTEM
+                  NEXUS
                 </span>
               </div>
 
@@ -512,7 +512,7 @@ export default function QuestCompletionCinematic({ data, onDone }) {
                       boxShadow: `0 0 6px ${SL.accent}`,
                       animation: "pulse 1s infinite",
                     }} />
-                    SYSTEM NACHRICHT
+                    NEXUS NACHRICHT
                   </div>
 
                   {typedLines.map((line, i) => (

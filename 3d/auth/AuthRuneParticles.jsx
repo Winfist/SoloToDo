@@ -2,7 +2,7 @@
  * AuthRuneParticles – Purple Futhark runes drifting through the auth tunnel
  *
  * Runes drift forward toward the camera (from Z=-16 to Z=2, then wrap).
- * Color matches the Solo Leveling purple palette.
+ * Color matches the Abyssal Sovereign purple palette.
  */
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";

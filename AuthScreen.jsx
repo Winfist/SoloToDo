@@ -1,4 +1,4 @@
-// AuthScreen.jsx - Premium Solo Leveling Login/Register (Firebase Integrated)
+// AuthScreen.jsx - Premium Abyssal Sovereign Login/Register (Firebase Integrated)
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Capacitor } from "@capacitor/core";
 import { SYSTEM_ICONS, SKILL_ICONS } from "./data/icons.js";
@@ -123,7 +123,7 @@ async function signInWithNativeCredential(startNativeSignIn, createCredential) {
 
   return {
     userCredential,
-    displayName: userCredential.user.displayName || nativeDisplayName || "Hunter",
+    displayName: userCredential.user.displayName || nativeDisplayName || "Vanguard",
   };
 }
 
@@ -437,7 +437,7 @@ function SuccessAnimation({ hunterName, onComplete }) {
       {phase >= 2 && <div style={{ animation: "successPulse 0.6s cubic-bezier(0.34,1.56,0.64,1)", marginBottom: 20, zIndex: 1 }}><img src={SYSTEM_ICONS.logo} alt="System" style={{ width: 96, height: 96, objectFit: "contain", filter: "drop-shadow(0 0 40px #7c3aed)" }} /></div>}
       {phase >= 3 && <div style={{ fontSize: 11, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, animation: "fadeIn 0.6s ease" }}>{t("auth.successActivated")}</div>}
       {phase >= 4 && <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel', serif", letterSpacing: 4, textShadow: "0 0 40px #7c3aed", marginBottom: 8, animation: "slideUp 0.6s ease" }}>{hunterName.toUpperCase()}</div>}
-      {phase >= 4 && <div style={{ fontSize: 14, color: "#6b7280", fontFamily: "'Cinzel', serif", letterSpacing: 3, animation: "fadeIn 0.6s ease 0.2s both" }}>E-RANK HUNTER</div>}
+      {phase >= 4 && <div style={{ fontSize: 14, color: "#6b7280", fontFamily: "'Cinzel', serif", letterSpacing: 3, animation: "fadeIn 0.6s ease 0.2s both" }}>E-RANK VANGUARD</div>}
       {phase >= 5 && (
         <div style={{ marginTop: 30, display: "flex", gap: 20, animation: "fadeIn 0.6s ease" }}>
           {[{ stat: "STR", val: 0, color: "#ef4444" }, { stat: "INT", val: 0, color: "#3b82f6" }, { stat: "VIT", val: 0, color: "#22c55e" }, { stat: "AGI", val: 0, color: "#f59e0b" }, { stat: "CHA", val: 0, color: "#a855f7" }].map((s, i) => (
@@ -534,7 +534,7 @@ export default function AuthScreen({ onAuthSuccess }) {
     try {
       if (mode === "login") {
         const userCredential = await runAuthRequest(() => signInWithEmailAndPassword(auth, email.trim(), password));
-        const name = userCredential.user.displayName || "Hunter";
+        const name = userCredential.user.displayName || "Vanguard";
         setHunterName(name);
         setShowSuccess(true);
       } else if (mode === "register") {
@@ -601,7 +601,7 @@ export default function AuthScreen({ onAuthSuccess }) {
         provider.addScope("email");
         provider.addScope("profile");
         const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
-        setHunterName(result.user.displayName || "Hunter");
+        setHunterName(result.user.displayName || "Vanguard");
         setShowSuccess(true);
       }
     } catch (err) {
@@ -636,7 +636,7 @@ export default function AuthScreen({ onAuthSuccess }) {
         provider.addScope("email");
         provider.addScope("name");
         const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
-        setHunterName(result.user.displayName || "Hunter");
+        setHunterName(result.user.displayName || "Vanguard");
         setShowSuccess(true);
       }
     } catch (err) {
@@ -653,7 +653,7 @@ export default function AuthScreen({ onAuthSuccess }) {
   const switchMode = (newMode) => { setMode(newMode); setErrors({}); };
 
   if (showSuccess) {
-    return <SuccessAnimation hunterName={hunterName || "Hunter"} onComplete={() => onAuthSuccess(auth.currentUser, hunterName || "Hunter")} />;
+    return <SuccessAnimation hunterName={hunterName || "Vanguard"} onComplete={() => onAuthSuccess(auth.currentUser, hunterName || "Vanguard")} />;
   }
 
   // ── Form card (pure HTML — rendered as fixed overlay, NOT in 3D) ─────────────
@@ -811,12 +811,69 @@ export default function AuthScreen({ onAuthSuccess }) {
             borderTop: isBottom ? "none" : "1px solid #7c3aed44",
             borderBottom: isBottom ? "1px solid #7c3aed44" : "none",
             borderLeft: isRight ? "none" : "1px solid #7c3aed44",
+        </p>
+      </div>
+    </div>
+  );
+
+  const SL_MSG = {
+    fontFamily: "'JetBrains Mono', monospace",
+    letterSpacing: isMobile ? 2 : 5,
+    fontSize: isMobile ? 9 : 11,
+    pointerEvents: "none",
+    transition: "opacity 0.9s ease",
+    padding: isMobile ? "0 16px" : 0,
+  };
+
+  return (
+    <div ref={authScrollRef} style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#030009" }}>
+      <style>{AUTH_CSS}</style>
+
+      {/* ── 3D Tunnel scene ──────────────────────────────────────── */}
+      {HAS_WEBGL ? (
+        <Suspense fallback={<><AnimatedBackground /><ParticleField /></>}>
+          <AuthTunnelScene
+            scrollContainerRef={authScrollRef}
+            onProgress={handleProgress}
+            autoApproachRef={autoApproachRef}
+          />
+        </Suspense>
+      ) : (
+        <>
+          <AnimatedBackground />
+          <ParticleField />
+        </>
+      )}
+
+      {/* ── Scanlines — SL terminal aesthetic ────────────────────── */}
+      <div style={{
+        position: "fixed", inset: 0, zIndex: 2, pointerEvents: "none",
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)"
+      }} />
+
+      {/* ── Vignette ──────────────────────────────────────────────── */}
+      <div ref={vignetteRef} style={{
+        position: "fixed", inset: 0, zIndex: 3, pointerEvents: "none", opacity: 0.7,
+        background: "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 20%, rgba(2,0,12,0.85) 100%)"
+      }} />
+
+      {/* ── Corner brackets (SL UI accent) ───────────────────────── */}
+      {["top:12px;left:12px", "top:12px;right:12px", "bottom:12px;left:12px", "bottom:12px;right:12px"].map((pos, i) => {
+        const style = Object.fromEntries(pos.split(";").map(s => s.split(":")));
+        const isRight = pos.includes("right");
+        const isBottom = pos.includes("bottom");
+        return (
+          <div key={i} style={{
+            position: "fixed", ...style, zIndex: 6, pointerEvents: "none", width: 20, height: 20,
+            borderTop: isBottom ? "none" : "1px solid #7c3aed44",
+            borderBottom: isBottom ? "1px solid #7c3aed44" : "none",
+            borderLeft: isRight ? "none" : "1px solid #7c3aed44",
             borderRight: isRight ? "1px solid #7c3aed44" : "none"
           }} />
         );
       })}
 
-      {/* ── Solo Leveling narrative overlays ──────────────────────── */}
+      {/* ── Abyssal Sovereign narrative overlays ──────────────────────── */}
       <div style={{ position: "fixed", bottom: isMobile ? 80 : 120, left: 0, right: 0, zIndex: 8, textAlign: "center", pointerEvents: "none" }}>
         {/* msg1: 12%–40% — gate detected */}
         <div ref={msg1Ref} style={{ ...SL_MSG, opacity: 0, color: "#a78bfa", textShadow: "0 0 18px #7c3aed" }}>
@@ -829,7 +886,6 @@ export default function AuthScreen({ onAuthSuccess }) {
         {/* msg3: 76%–87% — auth required (pulses) */}
         <div ref={msg3Ref} style={{ ...SL_MSG, opacity: 0, color: "#e2d9ff", letterSpacing: 6, animation: "pulse 1.2s ease-in-out infinite", textShadow: "0 0 28px #a78bfa" }}>
           ⚔ {t("auth.overlay.authRequired")}
-        </div>
       </div>
 
       {/* ── Header — fades out as user approaches portal ──────────── */}
@@ -886,7 +942,7 @@ export default function AuthScreen({ onAuthSuccess }) {
 
       {/* Version watermark */}
       <div style={{ position: "fixed", bottom: isMobile ? 10 : 20, left: "50%", transform: "translateX(-50%)", fontSize: isMobile ? 7 : 9, color: "#1e2a3a", fontFamily: "'JetBrains Mono', monospace", letterSpacing: isMobile ? 1 : 2, zIndex: 5 }}>
-        SOLO LEVELING v5.0 • ARISE
+        ABYSSAL SOVEREIGN v5.0 • MANIFEST
       </div>
     </div>
   );

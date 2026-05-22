@@ -1,5 +1,5 @@
 // ═══ UNIFIED RESULT MODAL — ULTIMATE CINEMATIC ════════════════════════════════
-// AAA Solo Leveling-style "System Window" — maximum dopamine reward screen.
+// AAA Abyssal Sovereign-style "Nexus Window" — maximum dopamine reward screen.
 //
 // 10 Effect Layers (bottom to top):
 //   L1:  Void Dimension (cosmic nebula + depth lighting)

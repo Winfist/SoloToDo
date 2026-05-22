@@ -1997,7 +1997,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
         {/* Version */}
         <div style={{ textAlign: "center", marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.03)" }}>
-          <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>SOLO LEVELING v5.0</div>
+          <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>ABYSSAL SOVEREIGN v5.0</div>
           <div style={{ fontSize: 8, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", marginTop: 4 }}>SYSTEM BUILD {new Date().toISOString().slice(0, 10)}</div>
         </div>
       </SettingsSection>

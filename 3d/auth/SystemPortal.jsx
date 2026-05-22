@@ -1,7 +1,7 @@
 /**
- * SystemPortal – Solo Leveling purple system gate at tunnel end
+ * SystemPortal – Abyssal Sovereign purple system gate at tunnel end
  *
- * Reuses portalGlow.js shader with Solo Leveling purple (#7c3aed).
+ * Reuses portalGlow.js shader with Abyssal Sovereign purple (#7c3aed).
  * Holographic scanlines blend in near the form reveal point.
  */
 import { useRef, useMemo } from "react";
@@ -10,7 +10,7 @@ import { shaderMaterial } from "@react-three/drei";
 import * as THREE from "three";
 import { portalGlowVert, portalGlowFrag } from "../shaders/portalGlow";
 
-// Solo Leveling purple — matches the auth form exactly
+// Abyssal Sovereign purple — matches the auth form exactly
 const PORTAL_COLOR = new THREE.Color("#7c3aed");
 const PULSE_SPEED = 2.4;
 

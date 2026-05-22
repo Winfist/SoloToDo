@@ -1,4 +1,4 @@
-// AIChatWidget.jsx — Floating AI Coach widget in Solo Leveling "System" persona
+// AIChatWidget.jsx — Floating AI Coach widget in Abyssal Sovereign "Nexus" persona
 // Always-visible floating button (bottom-right) that expands to a terminal-style chat panel.
 // The System answers as an authoritative, cold RPG entity.
 

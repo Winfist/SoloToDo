@@ -2,12 +2,12 @@ import React, { useState, useCallback, useRef } from "react";
 import { STAT_ICONS, SHADOW_ICONS, STORY_ICONS, NAV_ICONS, QUEST_ICONS, DUNGEON_ICONS, GATE_ICONS, BOSS_ICONS } from "../data/icons.js";
 
 /**
- * DoubleDungeonTutorial – Thematisches Onboarding nach Solo Leveling.
+ * DoubleDungeonTutorial – Thematisches Onboarding nach Abyssal Sovereign.
  *
  * Ablauf:
- *  1. Der Nutzer "erwacht" im Double Dungeon.
- *  2. Step-by-step lernt er: Quests, Stat-Kategorien, Shadow Army, Dungeons, Shop.
- *  3. Am Ende: "ARISE" → Tutorial wird als abgeschlossen markiert.
+ *  1. Der Nutzer "erwacht" im Prime Rift.
+ *  2. Step-by-step lernt er: Quests, Stat-Kategorien, Phantom Legion, Dungeons, Shop.
+ *  3. Am Ende: "MANIFEST" → Tutorial wird als abgeschlossen markiert.
  *
  * Props:
  *  - hunterName: String  (wird vorher abgefragt)
@@ -18,14 +18,14 @@ const STEPS = [
     {
         id: "awakening",
         iconSrc: STORY_ICONS.skull,
-        title: "DER DOUBLE DUNGEON",
+        title: "DER PRIME RIFT",
         lines: [
             "Du öffnest die Augen.",
             "Das Letzte, woran du dich erinnerst, ist blendendes Licht.",
-            "Du bist in einem Dungeon – allein.",
+            "Du bist in einem Rift – allein.",
             "Doch eine Stimme hallt durch die Kammer…",
         ],
-        systemLine: "SYSTEM: Neuer Spieler erkannt. Initialisierung beginnt.",
+        systemLine: "NEXUS: Neue Anomalie erkannt. Initialisierung beginnt.",
         bg: "radial-gradient(ellipse at 50% 80%, #1a0a2e 0%, #06060e 70%)",
     },
     {
@@ -37,7 +37,7 @@ const STEPS = [
             "Es verfolgt deine Fortschritte, gibt dir Aufgaben und belohnt Disziplin.",
             "Jede erledigte Quest bringt XP, Gold und steigert deine Stats.",
         ],
-        systemLine: "SYSTEM: Interface kalibriert. Bereit zur Einweisung.",
+        systemLine: "NEXUS: Interface kalibriert. Bereit zur Einweisung.",
         bg: "radial-gradient(ellipse at 50% 30%, #0a1628 0%, #06060e 70%)",
     },
     {
@@ -48,7 +48,7 @@ const STEPS = [
             "Quests sind echte Aufgaben aus deinem Alltag.",
             "Erstelle eigene oder wähle aus der Ideen-Bibliothek.",
             "Es gibt 4 Schwierigkeitsstufen: Easy ◇, Normal ◆, Hard ★, Boss ♛.",
-            "Boss-Quests beschwören Schatten für deine Armee!",
+            "Boss-Quests binden Phantome für deine Legion!",
         ],
         highlight: [
             { iconSrc: QUEST_ICONS.easy, label: "Easy", desc: "+5 XP", color: "#6b7280" },
@@ -56,7 +56,7 @@ const STEPS = [
             { iconSrc: QUEST_ICONS.hard, label: "Hard", desc: "+40 XP", color: "#a78bfa" },
             { iconSrc: QUEST_ICONS.boss, label: "Boss", desc: "+100 XP + Shadow", color: "#ef4444" },
         ],
-        systemLine: "SYSTEM: Täglich werden 3 System-Quests generiert. Eigene Quests jederzeit erstellbar.",
+        systemLine: "NEXUS: Täglich werden 3 System-Quests generiert. Eigene Quests jederzeit erstellbar.",
         bg: "radial-gradient(ellipse at 30% 50%, #0e1a0e 0%, #06060e 70%)",
     },
     {
@@ -74,43 +74,43 @@ const STEPS = [
             { iconSrc: STAT_ICONS.agi, label: "AGI", desc: "Produktivität", color: "#f59e0b" },
             { iconSrc: STAT_ICONS.cha, label: "CHA", desc: "Soziales", color: "#a855f7" },
         ],
-        systemLine: "SYSTEM: Hohe Stats schalten Skills und Named Shadows frei.",
+        systemLine: "NEXUS: Hohe Stats schalten Skills und Named Phantoms frei.",
         bg: "radial-gradient(ellipse at 70% 40%, #1a0e0e 0%, #06060e 70%)",
     },
     {
         id: "shadows",
         iconSrc: DUNGEON_ICONS.bloodmoon,
-        title: "DIE SHADOW ARMY",
+        title: "DIE PHANTOM LEGION",
         lines: [
-            "Boss-Quests beschwören Schatten-Soldaten.",
+            "Boss-Quests binden Phantome.",
             "Stelle sie in Formationen auf, um Dungeon-Boni zu erhalten.",
-            "Legendäre Named Shadows haben einzigartige Fähigkeiten!",
+            "Legendäre Named Phantoms haben einzigartige Fähigkeiten!",
         ],
-        systemLine: "SYSTEM: Shadow Army Modul aktiviert. Kapazität: 20 Einheiten.",
+        systemLine: "NEXUS: Phantom Legion Modul aktiviert. Kapazität: 20 Einheiten.",
         bg: "radial-gradient(ellipse at 50% 60%, #0e0e1a 0%, #06060e 70%)",
     },
     {
         id: "dungeons",
         iconSrc: GATE_ICONS.red,
-        title: "DUNGEON GATES",
+        title: "ABYSSAL RIFTS",
         lines: [
-            "Täglich öffnen sich 3 Gates mit verschiedenen Rängen.",
+            "Täglich öffnen sich 3 Rifts mit verschiedenen Rängen.",
             "Wähle eine Strategie und kämpfe dich durch die Böden.",
             "Siege bringen XP, Gold und seltenes Equipment!",
         ],
-        systemLine: "SYSTEM: Gates werden täglich regeneriert. Stärkere Gates bei höherem Rang.",
+        systemLine: "NEXUS: Rifts werden täglich regeneriert. Stärkere Rifts bei höherer Klassifizierung.",
         bg: "radial-gradient(ellipse at 50% 20%, #1a1a0e 0%, #06060e 70%)",
     },
     {
         id: "arise",
         iconSrc: BOSS_ICONS.unleashed,
-        title: "A R I S E",
+        title: "M A N I F E S T",
         lines: [
-            "Du hast das Tutorial des Double Dungeon überlebt.",
-            "Von nun an bist du ein Hunter.",
-            "Dein System ist aktiv. Deine Reise beginnt jetzt.",
+            "Du hast das Tutorial des Prime Rift überlebt.",
+            "Von nun an bist du ein Vanguard.",
+            "Dein Nexus ist aktiv. Deine Reise beginnt jetzt.",
         ],
-        systemLine: "SYSTEM: Tutorial abgeschlossen. Hunter-Status: AKTIV.",
+        systemLine: "NEXUS: Tutorial abgeschlossen. Vanguard-Status: AKTIV.",
         isFinale: true,
         bg: "radial-gradient(ellipse at 50% 50%, #1a0a2e 0%, #0a0a1a 40%, #06060e 80%)",
     },
@@ -332,7 +332,7 @@ export default function DoubleDungeonTutorial({ hunterName, onComplete }) {
                 fontSize: 9, color: "#1e293b",
                 fontFamily: "'JetBrains Mono',monospace", letterSpacing: 4,
             }}>
-                HUNTER: {(hunterName || "UNBEKANNT").toUpperCase()}
+                VANGUARD: {(hunterName || "UNBEKANNT").toUpperCase()}
             </div>
         </div>
     );

@@ -467,7 +467,7 @@ export default function ScreenTimeDashboard({ state, persist, updateScreenTimeDa
     <div style={{ color: '#e2e8f0', fontFamily: "'Outfit',sans-serif" }}>
       <style>{SCREEN_TIME_CSS}</style>
 
-      {/* ── SOLO LEVELING OVERWRITE MODAL ── */}
+      {/* ── ABYSSAL SOVEREIGN OVERWRITE MODAL ── */}
       {overwritePending && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 99999,

@@ -11,15 +11,15 @@ export const STAT_ICONS = {
 };
 
 export const SHADOW_ICONS = {
-    soldier:   "/icons/shadow_soldier.webp",
-    mage:      "/icons/shadow_mage.webp",
-    commander: "/icons/shadow_commander.webp",
-    igris:     "/icons/shadow_igris.webp",
-    beru:      "/icons/shadow_beru.webp",
-    bellion:   "/icons/shadow_bellion.webp",
-    assassin:  "/icons/shadow_assassin.webp",
-    knight:    "/icons/shadow_knight.webp",
-    healer:    "/icons/shadow_healer.webp",
+    soldier:   "/icons/phantom_soldier.webp",
+    mage:      "/icons/phantom_mage.webp",
+    commander: "/icons/phantom_commander.webp",
+    igris:     "/icons/phantom_vaelin.webp",
+    beru:      "/icons/phantom_xerath.webp",
+    bellion:   "/icons/phantom_kaelen.webp",
+    assassin:  "/icons/phantom_assassin.webp",
+    knight:    "/icons/phantom_knight.webp",
+    healer:    "/icons/phantom_healer.webp",
 };
 
 export const GATE_ICONS = {
@@ -176,19 +176,19 @@ export const SOCIAL_ICONS = {
 };
 
 export const STORY_ICONS = {
-    arise:       "/icons/story_arise.webp",
+    arise:       "/icons/story_awaken.webp",
     scroll:      "/icons/story_scroll.webp",
     helmet:      "/icons/story_helmet.webp",
     blackheart:  "/icons/story_blackheart.webp",
     butterfly:   "/icons/story_butterfly.webp",
-    cerberus:    "/icons/story_cerberus.webp",
+    cerberus:    "/icons/story_voidhound.webp",
     dawn:        "/icons/story_dawn.webp",
     dragon:      "/icons/story_dragon.webp",
     association: "/icons/story_association.webp",
     mountain:    "/icons/story_mountain.webp",
     door:        "/icons/story_door.webp",
     scales:      "/icons/story_scales.webp",
-    statue:      "/icons/story_statue.webp",
+    statue:      "/icons/story_sentinel.webp",
     systeminit:  "/icons/story_systeminit.webp",
 };
 

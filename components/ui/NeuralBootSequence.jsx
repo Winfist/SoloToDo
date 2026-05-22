@@ -397,7 +397,7 @@ export default function NeuralBootSequence({ hunterName = "HUNTER", rankName = "
           }}
         >
           <div style={{ fontSize: 8, color: "rgba(34,211,238,0.3)", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 3 }}>
-            SOLO LEVELING OS v5.0 · BUILD {new Date().toISOString().slice(0, 10).replace(/-/g, "")}
+            ABYSSAL SOVEREIGN OS v5.0 · BUILD {new Date().toISOString().slice(0, 10).replace(/-/g, "")}
           </div>
         </div>
       )}
