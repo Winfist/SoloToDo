@@ -1,7 +1,7 @@
 import React from "react";
-import { CATEGORIES, ACHIEVEMENTS, SHADOW_TIERS, NAMED_SHADOWS, SHADOW_CLASSES, FORMATION_SLOTS, SKILLS } from "../../data/gameData.js";
+import { CATEGORIES, SHADOW_TIERS, NAMED_SHADOWS, SHADOW_CLASSES, FORMATION_SLOTS, SKILLS } from "../../data/gameData.js";
 import { ARTIFACT_POOL } from "../../data/artifactHelpers.js";
-import { STAT_ICONS, GATE_ICONS, STORY_ICONS, SHADOW_ICONS, SKILL_ICONS } from "../../data/icons.js";
+import { STAT_ICONS, SHADOW_ICONS, SKILL_ICONS } from "../../data/icons.js";
 import { StatRadar, ShadowCard, FormationEditor, ShadowDetailModal } from "../../data/constants";
 import { checkSkillUnlocks } from "../../data/helpers.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
@@ -12,9 +12,8 @@ import { getLocalizedCatalog } from "../../data/localizedGameData.js";
  */
 export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat }) {
   const { t, locale } = useI18n();
-  const { categories, achievements, skills } = React.useMemo(() => getLocalizedCatalog(locale), [locale]);
+  const { categories, skills } = React.useMemo(() => getLocalizedCatalog(locale), [locale]);
   const unlockedSkills = skills.filter(sk => (state?.stats?.[sk.stat] || 0) >= sk.threshold);
-  const achUnlocked = state?.achievements?.unlocked || [];
   const discoveredArtifacts = state?.artifacts?.discovered || [];
   return (
     <div data-tutorial="stats-view" style={{ animation: "fadeIn 0.35s ease" }}>
@@ -112,40 +111,6 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
           </div>
         </div>
       )}
-
-      {/* ═══ ACHIEVEMENT BROWSER ═══ */}
-      <div style={{ marginTop: 28, animation: "fadeIn 0.6s ease 0.2s both" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>{t("stats.hall")}</div>
-            <div style={{ fontSize: 13, color: "#e2e8f0", fontFamily: "'Cinzel',serif", fontWeight: 700 }}>{t("stats.achievements")}</div>
-          </div>
-          <div style={{ fontSize: 9, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", padding: "4px 8px", background: theme.primary + "15", borderRadius: 8, border: `1px solid ${theme.primary}33` }}>
-            {achUnlocked.length} / {achievements.length} {t("stats.unlocked")}
-          </div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-          {achievements.map((ach) => {
-            const isUnlocked = achUnlocked.includes(ach.id);
-            return (
-              <div key={ach.id} style={{ background: isUnlocked ? theme.card : "rgba(10,10,20,0.4)", border: `1px solid ${isUnlocked ? theme.primary + "44" : "#1e2940"}`, borderRadius: 14, padding: "12px 16px", opacity: isUnlocked ? 1 : 0.45, display: "flex", alignItems: "center", gap: 14, boxShadow: isUnlocked ? `0 0 15px ${theme.primary}11` : "none", transition: "all 0.3s" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: isUnlocked ? theme.primary + "15" : "rgba(255,255,255,0.02)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: `1px solid ${isUnlocked ? theme.primary + "44" : "rgba(255,255,255,0.05)"}` }}>
-                  {isUnlocked ? (ach.iconSrc ? <img src={ach.iconSrc} alt={ach.name} style={{ width: 24, height: 24, objectFit: "contain", filter: `drop-shadow(0 0 6px ${theme.primary}88)` }} /> : ach.icon) : <img src={GATE_ICONS.normal} alt="locked" style={{ width: 22, height: 22, objectFit: "contain", filter: "grayscale(100%) brightness(0.4)" }} />}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: isUnlocked ? theme.primary : "#94a3b8", fontFamily: "'Cinzel',serif", marginBottom: 2 }}>{ach.name}</div>
-                  <div style={{ fontSize: 10, color: isUnlocked ? "#cbd5e1" : "#475569", lineHeight: 1.4 }}>{ach.desc}</div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                    {ach.reward.xp && <span style={{ fontSize: 8, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: "#a78bfa15" }}>+{ach.reward.xp} XP</span>}
-                    {ach.reward.gold && <span style={{ fontSize: 8, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: "#fbbf2415" }}>+{ach.reward.gold} Gold</span>}
-                    {ach.reward.title && <span style={{ fontSize: 8, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", borderRadius: 4, background: theme.accent + "15", display: "inline-flex", alignItems: "center", gap: 3 }}><img src={STORY_ICONS.arise} alt="title" style={{ width: 8, height: 8, objectFit: "contain" }} /> {ach.reward.title}</span>}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

@@ -167,7 +167,7 @@ export const TUTORIAL_SEQUENCES = {
         contextTarget: "[data-tutorial='system-hunter-intel']",
         contextPadding: 14,
         title: "HUNTER STATS",
-        text: "\u00d6ffne Hunter Stats. Das ist dein Charakterbogen: Attribute, Power Level, Skills und Erfolge.",
+        text: "\u00d6ffne Hunter Stats. Das ist dein Charakterbogen: Attribute, Power Level, Skills und Artefakte.",
         action: "click",
         position: "bottom",
         scrollTo: true,

@@ -53,6 +53,7 @@ import ScreenShake from "./components/ui/ScreenShake.jsx";
 import MotionBlurTransition from "./components/ui/MotionBlurTransition.jsx";
 import HUDOverlay from "./components/ui/HUDOverlay.jsx";
 import SystemLoadingScreen from "./components/ui/SystemLoadingScreen.jsx";
+import SystemUnlockSequence from "./components/ui/SystemUnlockSequence.jsx";
 import { useStickyHeader } from "./hooks/useStickyHeader.js";
 import { useTimeOfDay } from "./hooks/useTimeOfDay.js";
 import { useI18n } from "./components/i18n/I18nProvider.jsx";
@@ -74,7 +75,7 @@ import {
 } from './data/constants';
 import { useGameState } from './hooks/useGameState.jsx';
 import { useFeatureUnlocks } from './hooks/useFeatureUnlocks.js';
-import { getNextUnlockLevel, getUnlocksAtLevel } from './data/featureUnlocks.js';
+import { getNextUnlockLevel, getUnlocksAtLevel, getLevelCrossingUnlock } from './data/featureUnlocks.js';
 import { useGeminiAI } from './hooks/useGeminiAI.js';
 import { QuestVerifyModal } from './components/QuestVerifyModal.jsx';
 import { TaskScanModal } from './components/TaskScanModal.jsx';
@@ -303,11 +304,19 @@ function App({ initialHunterName, onLogout }) {
   // ── v3.0 Sticky Header (must be before any early returns) ──
   const headerState = useStickyHeader({ compactThreshold: 60 });
   const headerRef = useRef(null);
-  const [headerHeight, setHeaderHeight] = useState(156);
+  const [headerMetrics, setHeaderMetrics] = useState({ expanded: 156, compact: 72 });
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
-    const measure = () => setHeaderHeight(Math.ceil(el.getBoundingClientRect().height));
+    const measure = () => {
+      const measuredHeight = Math.ceil(el.getBoundingClientRect().height);
+      setHeaderMetrics(prev => {
+        const next = headerState.isCompact
+          ? { ...prev, compact: measuredHeight }
+          : { ...prev, expanded: Math.max(prev.expanded, measuredHeight) };
+        return next.expanded === prev.expanded && next.compact === prev.compact ? prev : next;
+      });
+    };
     measure();
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
     observer?.observe(el);
@@ -317,8 +326,11 @@ function App({ initialHunterName, onLogout }) {
       window.removeEventListener("resize", measure);
     };
   }, [headerState.isCompact, state?.hunterName, state?.level, state?.gold, state?.gems]);
+  const headerOffset = Math.max(headerMetrics.expanded + 16, 132);
   // ── Animation Controller (Phase 5) ───────────────────────────────────────────
   const animationControllerRef = useRef({ queue: [], index: 0, flow: null, active: false });
+  const [systemUnlock, setSystemUnlock] = useState(null);
+  const pendingTierTutorialRef = useRef(null);
 
   // Phase 6 — release deferred UI after all animations finish
   const releaseDeferredUi = useCallback((flow) => {
@@ -345,6 +357,22 @@ function App({ initialHunterName, onLogout }) {
     }
   }, [notify, triggerSystemMessage, setXpFloats, setAchQueue, setShowHiddenQuestModal]);
 
+  const addUnlockSequencesToQueue = useCallback((queue = []) => {
+    const expandedQueue = [];
+    (queue || []).forEach(item => {
+      expandedQueue.push(item);
+      if (item?.type !== "levelup") return;
+
+      const oldLevel = Number(item.payload?.oldLevel ?? 0);
+      const newLevel = Number(item.payload?.level ?? 0);
+      const unlock = getLevelCrossingUnlock(oldLevel, newLevel);
+      if (unlock) {
+        expandedQueue.push({ type: "system_unlock", payload: unlock, skippable: false });
+      }
+    });
+    return expandedQueue;
+  }, []);
+
   const advanceAnimationQueue = useCallback(() => {
     const ctrl = animationControllerRef.current;
     if (!ctrl.active) return;
@@ -364,6 +392,10 @@ function App({ initialHunterName, onLogout }) {
       case 'arise':
         setAriseTarget(item.payload);
         break;
+      case 'system_unlock':
+        pendingTierTutorialRef.current = item.payload?.tier || null;
+        setSystemUnlock(item.payload || null);
+        break;
       case 'system_message':
         triggerSystemMessage(item.payload.title, item.payload.lines, advanceAnimationQueue);
         // triggerSystemMessage doesn't auto-advance — SystemCLI onClose will call setSystemMessage(null)
@@ -378,15 +410,16 @@ function App({ initialHunterName, onLogout }) {
   }, [dismissRewardFlow, releaseDeferredUi, triggerSystemMessage, setPrevRank, setLevelUp, setAriseTarget]);
 
   const startAnimationController = useCallback((flow) => {
-    animationControllerRef.current = { queue: flow.animationQueue || [], index: 0, flow, active: true };
-    if (flow.animationQueue?.length === 0) {
+    const queue = addUnlockSequencesToQueue(flow.animationQueue || []);
+    animationControllerRef.current = { queue, index: 0, flow, active: true };
+    if (queue.length === 0) {
       // No animations — release deferred UI immediately and dismiss
       releaseDeferredUi(flow);
       dismissRewardFlow();
     } else {
       advanceAnimationQueue();
     }
-  }, [advanceAnimationQueue, dismissRewardFlow, releaseDeferredUi]);
+  }, [addUnlockSequencesToQueue, advanceAnimationQueue, dismissRewardFlow, releaseDeferredUi]);
 
   const [showSoulLink, setShowSoulLink] = React.useState(false);
   const [showSeasonView, setShowSeasonView] = React.useState(false);
@@ -589,8 +622,7 @@ function App({ initialHunterName, onLogout }) {
   const lifeDomainsReady = Boolean(state?.hunterName && (state.lifeDomains || []).length >= 3);
   const bootReady = state?.settings?.bootSequence === false || bootComplete;
 
-  // Detect tier-level crossings and trigger tutorials
-  const TIER_LEVELS = [3, 5, 8, 11, 15, 21, 30, 36];
+  // Detect tier-level crossings and gate tutorials behind the unlock sequence.
   useEffect(() => {
     if (!state || loading) return;
     const newLevel = state.level;
@@ -605,20 +637,15 @@ function App({ initialHunterName, onLogout }) {
     prevLevelRef.current = newLevel;
 
     if (newLevel > prevLevel) {
-      // Check if we crossed any tier boundary
-      for (let i = 0; i < TIER_LEVELS.length; i++) {
-        const tierLevel = TIER_LEVELS[i];
-        if (prevLevel < tierLevel && newLevel >= tierLevel) {
-          const tierNum = i + 1;
-          // Delay to let level-up animation play first
-          setTimeout(() => {
-            tutorialRef.current?.triggerTierTutorial(tierNum);
-          }, 3000);
-          break; // Only trigger one per level-up
+      const unlock = getLevelCrossingUnlock(prevLevel, newLevel);
+      if (unlock) {
+        pendingTierTutorialRef.current = unlock.tier;
+        if (!rewardFlowActive && !rewardFlowQueue?.length && !animationControllerRef.current.active) {
+          setSystemUnlock(unlock);
         }
       }
     }
-  }, [state?.level, loading]);
+  }, [state?.level, loading, rewardFlowActive, rewardFlowQueue]);
 
   // Trigger onboarding for new users (replaces DoubleDungeonTutorial)
   useEffect(() => {
@@ -655,6 +682,14 @@ function App({ initialHunterName, onLogout }) {
       ...(tutorialId === 'onboarding' ? { tutorialCompleted: true } : {}),
     });
   }, [state, persist]);
+
+  const handleSystemUnlockComplete = useCallback(() => {
+    const tier = systemUnlock?.tier || pendingTierTutorialRef.current;
+    setSystemUnlock(null);
+    if (tier) tutorialRef.current?.triggerTierTutorial(tier);
+    pendingTierTutorialRef.current = null;
+    if (animationControllerRef.current.active) advanceAnimationQueue();
+  }, [advanceAnimationQueue, systemUnlock]);
 
   // Reset tutorial (from Settings)
   const handleResetTutorial = useCallback(() => {
@@ -860,7 +895,15 @@ function App({ initialHunterName, onLogout }) {
               }}
             />
           )}
-          {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && state._jobLevelUp && (
+          {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && systemUnlock && (
+            <SystemUnlockSequence
+              tier={systemUnlock.tier}
+              features={systemUnlock.features}
+              message={systemUnlock.message}
+              onComplete={handleSystemUnlockComplete}
+            />
+          )}
+          {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && !systemUnlock && state._jobLevelUp && (
             <JobLevelUpCinematic
               job={JOBS[state._jobLevelUp.job]}
               newLevel={state._jobLevelUp.newLevel}
@@ -870,7 +913,7 @@ function App({ initialHunterName, onLogout }) {
               }}
             />
           )}
-          {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && (
+          {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && !systemUnlock && !state._jobLevelUp && state._abilityActivated && (
             <AbilityActivationCinematic
               ability={state._abilityActivated.ability}
               job={state._abilityActivated.job}
@@ -880,16 +923,17 @@ function App({ initialHunterName, onLogout }) {
               }}
             />
           )}
-          {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && (
+          {rewardFlowActive && !showingModal && !levelUp && !ariseTarget && !systemUnlock && !state._jobLevelUp && !state._abilityActivated && systemMessage && (
             <DeferredSystemMessage key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />
           )}
 
           {/* ── Non-flow cinematics (standalone arise from evolveShadow etc.) ── */}
           {!rewardFlowActive && levelUp && <LevelUpCinematic levelData={levelUp} rank={getRank(levelUp.level || levelUp)} oldRank={prevRank} onClose={() => setLevelUp(null)} />}
           {!rewardFlowActive && !levelUp && ariseTarget && <AriseCinematic shadow={ariseTarget} onClose={() => setAriseTarget(null)} />}
-          {!rewardFlowActive && !levelUp && !ariseTarget && state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
-          {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
-          {!rewardFlowActive && !levelUp && !ariseTarget && !state._jobLevelUp && !state._abilityActivated && systemMessage && <DeferredSystemMessage key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
+          {!rewardFlowActive && !levelUp && !ariseTarget && systemUnlock && <SystemUnlockSequence tier={systemUnlock.tier} features={systemUnlock.features} message={systemUnlock.message} onComplete={handleSystemUnlockComplete} />}
+          {!rewardFlowActive && !levelUp && !ariseTarget && !systemUnlock && state._jobLevelUp && <JobLevelUpCinematic job={JOBS[state._jobLevelUp.job]} newLevel={state._jobLevelUp.newLevel} onClose={() => { const next = { ...state }; delete next._jobLevelUp; persist(next); }} />}
+          {!rewardFlowActive && !levelUp && !ariseTarget && !systemUnlock && !state._jobLevelUp && state._abilityActivated && <AbilityActivationCinematic ability={state._abilityActivated.ability} job={state._abilityActivated.job} onClose={() => { const next = { ...state }; delete next._abilityActivated; persist(next); }} />}
+          {!rewardFlowActive && !levelUp && !ariseTarget && !systemUnlock && !state._jobLevelUp && !state._abilityActivated && systemMessage && <DeferredSystemMessage key={systemMessage.id || systemMessage.title} message={systemMessage} onClose={() => setSystemMessage(null)} />}
 
           {activeDungeon && (
             <div style={{ display: preview3DDungeon ? "none" : "block" }}>
@@ -1268,7 +1312,7 @@ function App({ initialHunterName, onLogout }) {
           {/* Safe area filler removed */}
 
           {/* MAIN */}
-          <main style={{ position: "relative", zIndex: 1, padding: "16px", paddingTop: Math.max(headerHeight + 16, headerState.isCompact ? 72 : 132), maxWidth: 480, margin: "0 auto", paddingBottom: 92, transition: "padding-top 0.35s cubic-bezier(0.22,1,0.36,1)" }}>
+          <main style={{ position: "relative", zIndex: 1, padding: "16px", paddingTop: headerOffset, maxWidth: 480, margin: "0 auto", paddingBottom: 92 }}>
 
             {/* SHADOW REGRESSION BANNER (replaces plain penalty banner) */}
             {penaltyActive && state.shadowRegression?.active && (state.shadowRegression.previousStreak || 0) > 0 ? (
@@ -1783,7 +1827,7 @@ function App({ initialHunterName, onLogout }) {
           {/* TRAINING HUB — unified view for habits/goals/calendar */}
           {
             view === "training" && (
-              <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: Math.max(headerHeight + 16, 132), paddingBottom: 110, overflowY: "auto" }}>
+              <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: headerOffset, paddingBottom: 110, overflowY: "auto" }}>
                 <div style={{ maxWidth: 480, margin: "0 auto" }}>
                   {/* Training header */}
                   <div style={{ background: theme.card, border: `1px solid ${theme.primary}18`, borderRadius: 18, padding: "18px 20px", marginBottom: 16, backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
@@ -1844,7 +1888,7 @@ function App({ initialHunterName, onLogout }) {
           {/* SYSTEM MENU — themed module hub */}
           {
             view === "system" && (
-              <div data-tutorial="system-menu" style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: Math.max(headerHeight + 16, 132), paddingBottom: 110, overflowY: "auto" }}>
+              <div data-tutorial="system-menu" style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: headerOffset, paddingBottom: 110, overflowY: "auto" }}>
                 <div style={{ maxWidth: 480, margin: "0 auto" }}>
                   {/* System header */}
                   <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -2032,7 +2076,7 @@ function App({ initialHunterName, onLogout }) {
 
           {/* INNER SANCTUM VIEW */}
           {view === "sanctum" && (
-            <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: Math.max(headerHeight + 16, 132), paddingBottom: 110, overflowY: "auto" }}>
+            <div style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: headerOffset, paddingBottom: 110, overflowY: "auto" }}>
               <div style={{ maxWidth: 480, margin: "0 auto" }}>
                 <React.Suspense fallback={null}>
                   <InnerSanctum theme={theme} state={state} persist={persist} notify={notify} />

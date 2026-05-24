@@ -32,16 +32,18 @@ export function useStickyHeader({
   const lastScrollY = useRef(0);
   const lastDirectionChange = useRef(0);
   const ticking = useRef(false);
+  const directionRef = useRef("up");
 
   const update = useCallback(() => {
     if (!enabled) return;
 
-    const currentY = window.scrollY;
+    const currentY = Math.max(0, window.scrollY || window.pageYOffset || 0);
     const direction = currentY > lastScrollY.current ? "down" : "up";
 
     // Track direction changes for hide threshold
-    if (direction !== state.scrollDirection) {
+    if (direction !== directionRef.current) {
       lastDirectionChange.current = currentY;
+      directionRef.current = direction;
     }
 
     const isCompact = currentY > compactThreshold;
@@ -54,12 +56,24 @@ export function useStickyHeader({
       isHidden = downDistance > hideThreshold;
     }
 
-    setState({
-      isCompact,
-      isHidden,
-      scrollY: currentY,
-      scrollDirection: direction,
-      progress,
+    setState(prev => {
+      if (
+        prev.isCompact === isCompact &&
+        prev.isHidden === isHidden &&
+        prev.scrollY === currentY &&
+        prev.scrollDirection === direction &&
+        prev.progress === progress
+      ) {
+        return prev;
+      }
+
+      return {
+        isCompact,
+        isHidden,
+        scrollY: currentY,
+        scrollDirection: direction,
+        progress,
+      };
     });
 
     lastScrollY.current = currentY;

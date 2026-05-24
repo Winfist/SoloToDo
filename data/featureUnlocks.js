@@ -199,3 +199,30 @@ export function getNewlyUnlockedTier(oldLevel, newLevel) {
   }
   return highestNewTier;
 }
+
+/**
+ * Get the first feature unlock level crossed by a level-up.
+ * Used to gate the full unlock sequence before the tier tutorial starts.
+ */
+export function getLevelCrossingUnlock(oldLevel, newLevel) {
+  const from = Number(oldLevel) || 0;
+  const to = Number(newLevel) || 0;
+  if (to <= from) return null;
+
+  const unlockLevel = [...new Set(Object.values(FEATURE_UNLOCKS).map(f => f.level))]
+    .sort((a, b) => a - b)
+    .find(level => level > from && level <= to);
+
+  if (!unlockLevel) return null;
+
+  const features = getUnlocksAtLevel(unlockLevel);
+  const tier = features.find(feature => feature.tier > 0)?.tier || null;
+  if (!tier) return null;
+
+  return {
+    level: unlockLevel,
+    tier,
+    features,
+    message: TIER_UNLOCK_MESSAGES[tier] || null,
+  };
+}

@@ -19,6 +19,7 @@ import { ScreenTimeSummaryWidget } from "./ScreenTimeSummaryWidget.jsx";
 import ScreenTimeDashboard from "../ScreenTimeDashboard.jsx";
 import { ScreenTimeVerifyModal } from "../ScreenTimeVerifyModal.jsx";
 import QuestIntensityControl from "../QuestIntensityControl.jsx";
+import SystemUpdatePreviewModal from "./SystemUpdatePreviewModal.jsx";
 import { isPremiumDashboardWidget } from "../../data/premium.js";
 import {
   getQuestDescription,
@@ -260,6 +261,7 @@ export default function DashboardView({
   // --- Screen Time OCR Modal State ---
   const [showScreenTimeScanner, setShowScreenTimeScanner] = useState(false);
   const [activeScreenTimeQuest, setActiveScreenTimeQuest] = useState(null);
+  const [showSystemUpdatePreview, setShowSystemUpdatePreview] = useState(false);
 
   const handleInterceptComplete = useCallback((questId, rect) => {
     const allQuests = [...(filteredQuests || []), ...(state?.quests || [])];
@@ -1187,17 +1189,28 @@ export default function DashboardView({
 
       case "next_unlock": {
         if (isCollapsed) return { content: null, isEmpty: false };
+        const unlockButtonStyle = {
+          width: "100%",
+          padding: "14px 18px",
+          borderRadius: 14,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          textAlign: "left",
+          cursor: "pointer",
+          fontFamily: "inherit",
+        };
         if (state.level >= 36) {
           return {
             isEmpty: false,
             content: (
-              <div style={{ padding: "14px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(34,211,153,0.06), rgba(34,211,153,0.02))", border: "1px solid rgba(34,211,153,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+              <button type="button" onClick={() => setShowSystemUpdatePreview(true)} style={{ ...unlockButtonStyle, background: "linear-gradient(135deg, rgba(34,211,153,0.06), rgba(34,211,153,0.02))", border: "1px solid rgba(34,211,153,0.2)", color: "inherit" }}>
                 <div><img src={GATE_ICONS.normal} alt="all unlocked" style={{ width: 28, height: 28, objectFit: "contain", filter: "drop-shadow(0 0 6px #34d39988) hue-rotate(90deg)" }} /></div>
                 <div>
                   <div style={{ fontSize: 9, letterSpacing: 3, color: "#34d399", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{t("dashboard.unlock.allOnline")}</div>
                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{t("dashboard.unlock.allUnlocked")}</div>
                 </div>
-              </div>
+              </button>
             )
           };
         }
@@ -1205,7 +1218,7 @@ export default function DashboardView({
         return {
           isEmpty: false,
           content: (
-            <div style={{ padding: "14px 18px", borderRadius: 14, background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(99,102,241,0.02))", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+            <button type="button" onClick={() => setShowSystemUpdatePreview(true)} style={{ ...unlockButtonStyle, background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(99,102,241,0.02))", border: "1px solid rgba(99,102,241,0.2)", color: "inherit" }}>
               <div style={{ animation: "pulse 2s infinite" }}><img src={GATE_ICONS.normal} alt="locked" style={{ width: 28, height: 28, objectFit: "contain", filter: "grayscale(80%) brightness(0.5)" }} /></div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 9, letterSpacing: 3, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{t("dashboard.unlock.nextUpdate")}</div>
@@ -1219,7 +1232,7 @@ export default function DashboardView({
                   <div style={{ height: "100%", borderRadius: 2, background: "#6366f1", width: `${Math.min(100, (state.level / nextLevel) * 100)}%`, transition: "width 0.5s" }} />
                 </div>
               </div>
-            </div>
+            </button>
           )
         };
       }
@@ -1568,6 +1581,16 @@ export default function DashboardView({
       )}
 
       {/* ── Health & Steps Details Modal ── */}
+      {showSystemUpdatePreview && (
+        <SystemUpdatePreviewModal
+          state={state}
+          theme={theme}
+          nextLevel={nextLevel}
+          unlocks={nextLevel ? getUnlocks(nextLevel) : []}
+          onClose={() => setShowSystemUpdatePreview(false)}
+        />
+      )}
+
       {showHealthModal && typeof document !== "undefined" && createPortal(
         <div
           onTouchMove={e => e.stopPropagation()}

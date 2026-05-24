@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { STAT_ICONS, MICRO_ICONS } from "../data/icons.js";
+import { STAT_ICONS, MICRO_ICONS, HEALTH_ICONS, NAV_ICONS } from "../data/icons.js";
 import { CATEGORIES, DIFFICULTIES } from "../data/gameData.js";
 import { getToday, getLocalDateKey } from "../data/dateUtils.js";
 import QuestDetailModal from "./QuestDetailModal.jsx";
@@ -39,6 +39,139 @@ const pol = (cx,cy,r,deg) => { const a=(deg-90)*Math.PI/180; return {x:cx+r*Math
 const rpoly = (d,cx,cy,mr) => d.length ? d.map((v,i)=>{const p=pol(cx,cy,v*mr,(360/d.length)*i);return `${p.x},${p.y}`;}).join(" ") : "";
 const fmtMin = m => { if(!m) return "0m"; const h=Math.floor(m/60); return h>0?`${h}h ${m%60}m`:`${m}m`; };
 
+const HEALTH_STEP_GOAL = 10000;
+const HEALTH_SLEEP_GOAL = 7;
+const SCREEN_LIMIT_DEFAULT = 180;
+const INSIGHT_RANGES = [
+    { key: "7d", label: "7D", days: 7 },
+    { key: "14d", label: "14D", days: 14 },
+    { key: "30d", label: "30D", days: 30 },
+];
+const DAY_LABELS = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"];
+
+const getInsightRange = key => INSIGHT_RANGES.find(r => r.key === key) || INSIGHT_RANGES[0];
+const fmtNum = value => Math.max(0, Math.round(Number(value) || 0)).toLocaleString("de-DE");
+const fmtHours = value => `${Math.max(0, Number(value) || 0).toFixed(1)}h`;
+const fmtTrend = (current, previous, suffix = "%") => {
+    if (!previous) return current > 0 ? "NEU" : `0${suffix}`;
+    const delta = ((current - previous) / previous) * 100;
+    return `${delta >= 0 ? "+" : ""}${delta.toFixed(0)}${suffix}`;
+};
+const fmtHourTrend = (current, previous) => {
+    if (!previous) return current > 0 ? "NEU" : "0.0h";
+    const delta = current - previous;
+    return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}h`;
+};
+const formatInsightLabel = (date, daysBack, rangeDays) => {
+    if (daysBack === 0) return "HEUTE";
+    if (rangeDays <= 14) return DAY_LABELS[date.getDay()];
+    return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.`;
+};
+const getScreenLimit = state => Math.max(1, Math.floor(Number(state?.screenTimePreferences?.dailyLimitMinutes) || SCREEN_LIMIT_DEFAULT));
+
+function buildHealthRows(state, rangeDays, offsetDays = 0) {
+    const history = { ...(state?.healthDailyHistory || {}) };
+    const todayKey = getToday();
+    const today = { ...(history[todayKey] || {}) };
+    if (today.steps === undefined && Number(state?.dailySteps) > 0) today.steps = state.dailySteps;
+    if (today.sleepHours === undefined && Number(state?.dailySleepHours) > 0) today.sleepHours = state.dailySleepHours;
+    if (today.steps !== undefined || today.sleepHours !== undefined) history[todayKey] = today;
+
+    const sleepMode = state?.healthPreferences?.sleepMode || "auto";
+    const manualSleepLog = state?.healthPreferences?.manualSleepLog || {};
+    const manualSleepToday = state?.healthPreferences?.manualSleepToday || 0;
+    const rows = [];
+
+    for (let i = rangeDays - 1 + offsetDays; i >= offsetDays; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateKey = getLocalDateKey(date);
+        const saved = history[dateKey] || {};
+        let sleepHours = Math.max(0, Number(saved.sleepHours) || 0);
+        if (sleepMode === "manual") {
+            const manualValue = manualSleepLog[dateKey] ?? (dateKey === todayKey ? manualSleepToday : null);
+            if (manualValue !== null && manualValue !== undefined) sleepHours = Math.max(0, Number(manualValue) || 0);
+        }
+        if (sleepMode === "off") sleepHours = 0;
+        rows.push({
+            date: dateKey,
+            label: formatInsightLabel(date, i - offsetDays, rangeDays),
+            steps: Math.max(0, Math.floor(Number(saved.steps) || 0)),
+            sleepHours,
+        });
+    }
+
+    return rows;
+}
+
+function summarizeHealthRows(rows = []) {
+    const totalSteps = rows.reduce((sum, row) => sum + row.steps, 0);
+    const avgSteps = rows.length ? Math.round(totalSteps / rows.length) : 0;
+    const stepGoalDays = rows.filter(row => row.steps >= HEALTH_STEP_GOAL).length;
+    const sleepRows = rows.filter(row => row.sleepHours > 0);
+    const avgSleep = sleepRows.length ? sleepRows.reduce((sum, row) => sum + row.sleepHours, 0) / sleepRows.length : 0;
+    const sleepGoalDays = rows.filter(row => row.sleepHours >= HEALTH_SLEEP_GOAL).length;
+    const bestSteps = rows.reduce((best, row) => row.steps > (best?.steps || 0) ? row : best, null);
+    const bestSleep = rows.reduce((best, row) => row.sleepHours > (best?.sleepHours || 0) ? row : best, null);
+    return { totalSteps, avgSteps, stepGoalDays, avgSleep, sleepGoalDays, bestSteps, bestSleep, hasData: totalSteps > 0 || sleepRows.length > 0 };
+}
+
+function buildScreenRows(state, rangeDays, offsetDays = 0) {
+    const history = state?.screenTimeDailyHistory || {};
+    const limit = getScreenLimit(state);
+    const todayKey = getToday();
+    const rows = [];
+
+    for (let i = rangeDays - 1 + offsetDays; i >= offsetDays; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateKey = getLocalDateKey(date);
+        const saved = history[dateKey] || {};
+        const fallbackToday = dateKey === todayKey ? state?.dailyScreenTimeMinutes : 0;
+        const hasData = saved.totalMinutes !== undefined || (dateKey === todayKey && state?.dailyScreenTimeMinutes !== undefined);
+        const totalMinutes = Math.max(0, Math.floor(Number(saved.totalMinutes ?? fallbackToday) || 0));
+        const limitMinutes = Math.max(1, Math.floor(Number(saved.limitMinutes) || limit));
+        rows.push({
+            date: dateKey,
+            label: formatInsightLabel(date, i - offsetDays, rangeDays),
+            totalMinutes,
+            limitMinutes,
+            underLimit: hasData ? (saved.underLimit ?? totalMinutes <= limitMinutes) : false,
+            hasData,
+        });
+    }
+
+    return rows;
+}
+
+function summarizeScreenRows(rows = []) {
+    const totalMinutes = rows.reduce((sum, row) => sum + row.totalMinutes, 0);
+    const avgMinutes = rows.length ? Math.round(totalMinutes / rows.length) : 0;
+    const underLimitDays = rows.filter(row => row.hasData && row.underLimit).length;
+    const limitAvg = rows.length ? Math.round(rows.reduce((sum, row) => sum + row.limitMinutes, 0) / rows.length) : SCREEN_LIMIT_DEFAULT;
+    const worstDay = rows.reduce((worst, row) => row.totalMinutes > (worst?.totalMinutes || 0) ? row : worst, null);
+    return { totalMinutes, avgMinutes, underLimitDays, limitAvg, worstDay, hasData: rows.some(row => row.hasData) };
+}
+
+function MiniInsightBars({ rows = [], valueKey, goal = 1, color = "#38bdf8", formatter = value => value }) {
+    const max = Math.max(goal, ...rows.map(row => Number(row[valueKey]) || 0), 1);
+    return (
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 58, padding: "8px 2px 0" }}>
+            {rows.map((row, index) => {
+                const value = Number(row[valueKey]) || 0;
+                const height = Math.max(5, Math.round((value / max) * 100));
+                const showLabel = rows.length <= 14 || index === 0 || index === rows.length - 1 || index % 5 === 0;
+                return (
+                    <div key={`${row.date}-${index}`} title={`${row.label}: ${formatter(value)}`} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
+                        <div style={{ width: "100%", minWidth: 4, maxWidth: 14, height: `${height}%`, borderRadius: "6px 6px 2px 2px", background: value > 0 ? `linear-gradient(180deg, ${color}, ${color}77)` : "rgba(255,255,255,0.04)", boxShadow: value > 0 ? `0 0 10px ${color}33` : "none", transition: "height .45s ease" }} />
+                        {showLabel && <span style={{ color: "#334155", fontSize: 7, fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>{row.label}</span>}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 const DEFAULT_MICRO = [
     {id:"water",iconSrc:MICRO_ICONS.water,label:"Wasser",dailyTarget:8,color:"#3b82f6"},
     {id:"posture",iconSrc:MICRO_ICONS.posture,label:"Haltung",dailyTarget:5,color:"#22c55e"},
@@ -53,6 +186,7 @@ export default function AnalyticsDashboard({ state, theme, gameState }) {
     const [historyTime, setHistoryTime] = useState("all");
     const [historyCat, setHistoryCat] = useState("all");
     const [selectedQuest, setSelectedQuest] = useState(null);
+    const [insightRange, setInsightRange] = useState(state?.healthPreferences?.healthHistoryRange || state?.screenTimePreferences?.screenTimeHistoryRange || "7d");
 
     // ── DATA ──
     const level = state?.level||1, streak = state?.streak||0, totalQ = state?.totalQuestsCompleted||0, focusMin = state?.focus?.totalMinutes||0;
@@ -127,6 +261,45 @@ export default function AnalyticsDashboard({ state, theme, gameState }) {
         cq.forEach(q=>{if(!q.completedAtMs)return;const d=(Date.now()-q.completedAtMs)/864e5;if(d<=7)txp+=(q.xpEarned||0);else if(d<=14)lxp+=(q.xpEarned||0);});
         return {q:{cur:conData.rec,prev:conData.prev,chg:qc},xp:{cur:txp,prev:lxp,chg:lxp>0?Math.round(((txp-lxp)/lxp)*100):(txp>0?100:0)}};
     }, [cq,conData]);
+
+    const healthUsage = useMemo(() => {
+        const range = getInsightRange(insightRange);
+        const healthRows = buildHealthRows(state, range.days, 0);
+        const previousHealthRows = buildHealthRows(state, range.days, range.days);
+        const screenRows = buildScreenRows(state, range.days, 0);
+        const previousScreenRows = buildScreenRows(state, range.days, range.days);
+        const health = summarizeHealthRows(healthRows);
+        const previousHealth = summarizeHealthRows(previousHealthRows);
+        const screen = summarizeScreenRows(screenRows);
+        const previousScreen = summarizeScreenRows(previousScreenRows);
+        const focusScore = Math.round(
+            ((health.stepGoalDays / range.days) * 32) +
+            ((health.sleepGoalDays / range.days) * 34) +
+            ((screen.underLimitDays / range.days) * 34)
+        );
+        let signal = "Noch zu wenig Health- und Fokusdaten fuer ein klares Muster.";
+        let signalColor = "#64748b";
+        if (health.hasData || screen.hasData) {
+            if (focusScore >= 78) { signal = "Regeneration und Fokus sind im Gleichgewicht. Der Tagesrhythmus traegt."; signalColor = "#22c55e"; }
+            else if (health.avgSleep > 0 && health.avgSleep < 6) { signal = "Schlaf ist der Engpass. Mehr Erholung wuerde deine Quest-Leistung stabilisieren."; signalColor = "#a78bfa"; }
+            else if (screen.hasData && screen.avgMinutes > screen.limitAvg) { signal = "Bildschirmzeit drueckt auf den Fokus. Setze den Limit-Streak als Tagesziel."; signalColor = "#f59e0b"; }
+            else if (health.avgSteps < 5500 && health.hasData) { signal = "Bewegung ist niedrig. Ein kurzer Spaziergang hebt deine Grundenergie."; signalColor = "#38bdf8"; }
+            else { signal = "Basis stabil. Kleine Verbesserungen bei Schlaf, Schritten oder Screen-Time bringen jetzt Wirkung."; signalColor = primary; }
+        }
+        return {
+            range,
+            healthRows,
+            screenRows,
+            health,
+            screen,
+            focusScore: Math.min(100, focusScore),
+            signal,
+            signalColor,
+            stepsTrend: fmtTrend(health.totalSteps, previousHealth.totalSteps),
+            sleepTrend: fmtHourTrend(health.avgSleep, previousHealth.avgSleep),
+            screenTrend: fmtTrend(screen.totalMinutes, previousScreen.totalMinutes),
+        };
+    }, [state, insightRange, primary]);
 
     const hist = useMemo(() => {
         let l=[...cq]; const td=getToday(), wa=new Date(), ma=new Date(); wa.setDate(wa.getDate()-7); ma.setDate(ma.getDate()-30);
@@ -465,6 +638,86 @@ export default function AnalyticsDashboard({ state, theme, gameState }) {
             {/* ═══════════════════════════════════════════════
                 DIFFICULTY BREAKDOWN
             ═══════════════════════════════════════════════ */}
+            <div style={mkCard(340)}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+                    <div style={{marginBottom:0,flex:"1 1 220px"}}>
+                        {secT(<img src={HEALTH_ICONS.steps} alt="" style={{width:13,height:13,objectFit:"contain",filter:"drop-shadow(0 0 5px rgba(56,189,248,.55))"}}/>, "HEALTH + USAGE", "#38bdf8")}
+                    </div>
+                    <div style={{display:"flex",gap:5,padding:3,borderRadius:10,background:"rgba(255,255,255,0.035)",border:"1px solid rgba(255,255,255,0.06)"}}>
+                        {INSIGHT_RANGES.map(range => (
+                            <button key={range.key} type="button" onClick={()=>setInsightRange(range.key)} style={{
+                                minWidth:38,minHeight:28,borderRadius:8,border:`1px solid ${insightRange===range.key?"rgba(56,189,248,.44)":"transparent"}`,
+                                background:insightRange===range.key?"rgba(56,189,248,.13)":"transparent",
+                                color:insightRange===range.key?"#7dd3fc":"#64748b",
+                                fontSize:8,fontWeight:900,fontFamily:mono,letterSpacing:1,cursor:"pointer"
+                            }}>{range.label}</button>
+                        ))}
+                    </div>
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(128px, 1fr))",gap:8,marginBottom:12}}>
+                    {[
+                        { label:"AVG SCHRITTE", value:fmtNum(healthUsage.health.avgSteps), detail:`${healthUsage.health.stepGoalDays}/${healthUsage.range.days} Zieltage`, color:"#38bdf8", icon:HEALTH_ICONS.steps },
+                        { label:"AVG SCHLAF", value:fmtHours(healthUsage.health.avgSleep), detail:`Trend ${healthUsage.sleepTrend}`, color:"#a78bfa", icon:HEALTH_ICONS.sleep },
+                        { label:"SCREEN AVG", value:fmtMin(healthUsage.screen.avgMinutes), detail:`Limit ${fmtMin(healthUsage.screen.limitAvg)}`, color:"#f59e0b", icon:NAV_ICONS.timer },
+                        { label:"FOKUS-TAGE", value:`${healthUsage.screen.underLimitDays}/${healthUsage.range.days}`, detail:`Trend ${healthUsage.screenTrend}`, color:"#22c55e", icon:NAV_ICONS.analytics },
+                    ].map(item => (
+                        <div key={item.label} style={{padding:"12px 10px",borderRadius:12,background:"linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01))",border:`1px solid ${item.color}1f`,minWidth:0}}>
+                            <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8}}>
+                                <img src={item.icon} alt="" style={{width:16,height:16,objectFit:"contain",filter:`drop-shadow(0 0 5px ${item.color}66)`}}/>
+                                <div style={{fontSize:8,color:"#64748b",fontFamily:mono,fontWeight:900,letterSpacing:1.1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</div>
+                            </div>
+                            <div style={{fontSize:19,fontWeight:900,color:item.color,fontFamily:"'Cinzel',serif",lineHeight:1,marginBottom:5,textShadow:`0 0 12px ${item.color}33`}}>{item.value}</div>
+                            <div style={{fontSize:8,color:"#475569",fontFamily:mono,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.detail}</div>
+                        </div>
+                    ))}
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(230px, 1fr))",gap:10}}>
+                    <div style={{padding:"13px",borderRadius:14,background:"rgba(56,189,248,0.045)",border:"1px solid rgba(56,189,248,0.12)"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:9}}>
+                            <div style={{fontSize:9,color:"#7dd3fc",fontFamily:mono,fontWeight:900,letterSpacing:2}}>BODY SIGNALS</div>
+                            <span style={{fontSize:8,color:"#475569",fontFamily:mono}}>{healthUsage.stepsTrend}</span>
+                        </div>
+                        <MiniInsightBars rows={healthUsage.healthRows} valueKey="steps" goal={HEALTH_STEP_GOAL} color="#38bdf8" formatter={fmtNum}/>
+                        <div style={{height:1,background:"rgba(255,255,255,.05)",margin:"10px 0"}}/>
+                        <MiniInsightBars rows={healthUsage.healthRows} valueKey="sleepHours" goal={HEALTH_SLEEP_GOAL} color="#a78bfa" formatter={fmtHours}/>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:8,color:"#475569",fontFamily:mono,marginTop:8}}>
+                            <span>Best steps {fmtNum(healthUsage.health.bestSteps?.steps || 0)}</span>
+                            <span>Best sleep {fmtHours(healthUsage.health.bestSleep?.sleepHours || 0)}</span>
+                        </div>
+                    </div>
+
+                    <div style={{padding:"13px",borderRadius:14,background:"rgba(245,158,11,0.045)",border:"1px solid rgba(245,158,11,0.12)"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:9}}>
+                            <div style={{fontSize:9,color:"#fbbf24",fontFamily:mono,fontWeight:900,letterSpacing:2}}>FOCUS GUARD</div>
+                            <span style={{fontSize:8,color:healthUsage.screen.avgMinutes>healthUsage.screen.limitAvg?"#f59e0b":"#22c55e",fontFamily:mono}}>{healthUsage.screen.avgMinutes>healthUsage.screen.limitAvg?"OVER LIMIT":"UNDER LIMIT"}</span>
+                        </div>
+                        <MiniInsightBars rows={healthUsage.screenRows} valueKey="totalMinutes" goal={healthUsage.screen.limitAvg} color="#f59e0b" formatter={fmtMin}/>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
+                            <div style={{padding:"9px",borderRadius:10,background:"rgba(0,0,0,.18)",border:"1px solid rgba(255,255,255,.04)"}}>
+                                <div style={{fontSize:8,color:"#475569",fontFamily:mono,marginBottom:4}}>TOTAL</div>
+                                <div style={{fontSize:15,color:"#fbbf24",fontWeight:900,fontFamily:"'Cinzel',serif"}}>{fmtMin(healthUsage.screen.totalMinutes)}</div>
+                            </div>
+                            <div style={{padding:"9px",borderRadius:10,background:"rgba(0,0,0,.18)",border:"1px solid rgba(255,255,255,.04)"}}>
+                                <div style={{fontSize:8,color:"#475569",fontFamily:mono,marginBottom:4}}>PEAK</div>
+                                <div style={{fontSize:15,color:"#fbbf24",fontWeight:900,fontFamily:"'Cinzel',serif"}}>{fmtMin(healthUsage.screen.worstDay?.totalMinutes || 0)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{marginTop:10,padding:"12px 13px",borderRadius:14,background:`linear-gradient(135deg, ${healthUsage.signalColor}12, rgba(255,255,255,.025))`,border:`1px solid ${healthUsage.signalColor}24`,display:"flex",gap:12,alignItems:"center"}}>
+                    <div style={{width:48,height:48,borderRadius:"50%",display:"grid",placeItems:"center",background:`${healthUsage.signalColor}16`,border:`1px solid ${healthUsage.signalColor}35`,flexShrink:0}}>
+                        <span style={{fontSize:16,fontWeight:900,color:healthUsage.signalColor,fontFamily:"'Cinzel',serif"}}>{healthUsage.focusScore}</span>
+                    </div>
+                    <div style={{minWidth:0}}>
+                        <div style={{fontSize:9,color:healthUsage.signalColor,fontFamily:mono,fontWeight:900,letterSpacing:2,marginBottom:4}}>RECOVERY / FOCUS SIGNAL</div>
+                        <div style={{fontSize:11,color:"#cbd5e1",lineHeight:1.45}}>{healthUsage.signal}</div>
+                    </div>
+                </div>
+            </div>
+
             {cq.length > 0 && (
                 <div style={mkCard(360)}>
                     {secT(<SwordIcon s={11} c={primary}/>, "SCHWIERIGKEITSGRAD")}
