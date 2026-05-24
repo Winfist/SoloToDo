@@ -46,6 +46,7 @@ export const DEFAULT_DASHBOARD_LAYOUT = [
   "daily_progress",
   "health_summary",
   "screen_time_summary",
+  "quick_access",
   "vision_board",
   "gem_booster",
   "artifact_showcase",
@@ -54,7 +55,7 @@ export const DEFAULT_DASHBOARD_LAYOUT = [
   "next_unlock",
 ];
 
-export const DEFAULT_HIDDEN_WIDGETS = ["quick_access"];
+export const DEFAULT_HIDDEN_WIDGETS = [];
 
 const LEGACY_CLEANUP_LAYOUT = [
   "today_command",

@@ -1,0 +1,88 @@
+{/* SYSTEM — app launcher of module pages */}
+          {view === "system" && (
+            <div data-tutorial="system-menu" style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: headerOffset, paddingBottom: 110, overflowY: "auto" }}>
+              <div style={{ maxWidth: 480, margin: "0 auto" }}>
+                {/* Header */}
+                <div style={{ textAlign: "center", marginBottom: 22 }}>
+                  <div style={{ fontSize: 25, fontWeight: 800, color: "#f1f5f9", fontFamily: "var(--font-display)", letterSpacing: 4 }}>{tr("systemHub.title")}</div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, marginTop: 11 }}>
+                    <div style={{ width: 40, height: 1, background: `linear-gradient(90deg, transparent, ${theme.primary}88)` }} />
+                    <div style={{ width: 5, height: 5, transform: "rotate(45deg)", background: theme.primary, boxShadow: `0 0 8px ${theme.glow}` }} />
+                    <div style={{ width: 40, height: 1, background: `linear-gradient(90deg, ${theme.primary}88, transparent)` }} />
+                  </div>
+                </div>
+
+                {[{
+                  title: tr("systemHub.hunterIntel"),
+                  items: [
+                    { key: "stats", iconSrc: STAT_ICONS.str, label: tr("systemHub.stats.label"), color: "#f87171", badge: state.statPoints > 0 ? state.statPoints : 0 },
+                    ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, label: tr("systemHub.analytics.label"), color: "#22d3ee" }] : [{ key: "analytics_locked", iconSrc: NAV_ICONS.analytics, label: tr("systemHub.analytics.label"), color: "#22d3ee", locked: true, unlockLevel: 8 }]),
+                    ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, label: tr("systemHub.achievements.label"), color: "#fbbf24", badge: catalogAchievements.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, label: tr("systemHub.achievements.label"), color: "#fbbf24", locked: true, unlockLevel: 8 }]),
+                    ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, label: tr("systemHub.challenges.label"), color: "#fb923c" }] : [{ key: "challenges_locked", iconSrc: NAV_ICONS.events, label: tr("systemHub.challenges.label"), color: "#fb923c", locked: true, unlockLevel: 21 }]),
+                  ]
+                }, {
+                  title: tr("systemHub.arsenal"),
+                  items: [
+                    ...(can('shadow_army') ? [{ key: "shadows", iconSrc: SHADOW_ICONS.soldier, label: tr("systemHub.shadows.label"), color: "#a78bfa", badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", iconSrc: SHADOW_ICONS.soldier, label: tr("systemHub.shadows.label"), color: "#a78bfa", locked: true, unlockLevel: 15 }]),
+                    ...(can('equipment') ? [{ key: "equipment", iconSrc: ITEM_ICONS.blade, label: tr("systemHub.equipment.label"), color: "#60a5fa", badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", iconSrc: ITEM_ICONS.blade, label: tr("systemHub.equipment.label"), color: "#60a5fa", locked: true, unlockLevel: 11 }]),
+                    ...(can('jobs') ? [{ key: "jobs", iconSrc: NAV_ICONS.jobs, label: tr("systemHub.jobs.label"), color: "#818cf8" }] : [{ key: "jobs_locked", iconSrc: NAV_ICONS.jobs, label: tr("systemHub.jobs.label"), color: "#818cf8", locked: true, unlockLevel: 21 }]),
+                    ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, label: tr("systemHub.shop.label"), color: "#f59e0b" }] : [{ key: "shop_locked", iconSrc: NAV_ICONS.shop, label: tr("systemHub.shop.label"), color: "#f59e0b", locked: true, unlockLevel: 11 }]),
+                    ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", iconSrc: CHA_ICONS.conversation, label: tr("systemHub.charisma.label"), color: "#f472b6", isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", iconSrc: CHA_ICONS.conversation, label: tr("systemHub.charisma.label"), color: "#f472b6", locked: true, unlockLevel: 30 }]),
+                  ]
+                }].map((section, si) => (
+                  <div key={section.title} style={{ marginBottom: 16, animation: `slideUp 0.35s ease ${si * 0.08}s both` }}>
+                    <div style={{ borderRadius: 20, padding: "13px 13px 16px", background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012))", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 12px 30px rgba(0,0,0,0.35)", backdropFilter: "blur(10px)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 13, paddingLeft: 4 }}>
+                        <div style={{ width: 3, height: 13, borderRadius: 2, background: theme.primary, boxShadow: `0 0 8px ${theme.glow}` }} />
+                        <span style={{ fontSize: 10, letterSpacing: 2.5, color: "#8b95a7", fontFamily: "var(--font-sans)", fontWeight: 700, textTransform: "uppercase" }}>{section.title}</span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                        {section.items.map((item, ii) => {
+                          const premiumFeature = getPremiumFeatureForRoute(item.key);
+                          const premiumLocked = !!premiumFeature && !premiumStatus?.active;
+                          const disabled = !!item.locked;
+                          return (
+                            <button
+                              key={item.key}
+                              data-tutorial={`system-${item.key}`}
+                              disabled={disabled}
+                              onClick={() => {
+                                if (disabled) return;
+                                if (premiumLocked) { openPremiumModal(premiumFeature); return; }
+                                item.isOverlay ? item.action?.() : navigateToWithAccess(item.key);
+                              }}
+                              className="sys-tile"
+                              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "transparent", border: "none", padding: "2px 0", cursor: disabled ? "default" : "pointer", animation: `cardEnter 0.3s ease ${(si * 0.08) + (ii * 0.04)}s both` }}
+                            >
+                              <div className="sys-squircle" style={{ ['--tile']: disabled ? "rgba(255,255,255,0.1)" : item.color, ['--tileGlow']: disabled ? "transparent" : item.color + "66", position: "relative", width: "100%", maxWidth: 84, aspectRatio: "1 / 1", margin: "0 auto", borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", background: disabled ? "linear-gradient(160deg, rgba(255,255,255,0.03), rgba(255,255,255,0.008))" : `radial-gradient(115% 115% at 50% 16%, ${item.color}26, rgba(255,255,255,0.022) 56%), linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.012))`, border: `1px solid ${disabled ? "rgba(255,255,255,0.06)" : item.color + "3a"}`, boxShadow: disabled ? "inset 0 1px 0 rgba(255,255,255,0.04)" : "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -10px 18px rgba(0,0,0,0.28), 0 8px 20px rgba(0,0,0,0.40)", opacity: disabled ? 0.6 : 1 }}>
+                                <div aria-hidden="true" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "46%", borderRadius: "22px 22px 50% 50%", background: "linear-gradient(180deg, rgba(255,255,255,0.12), transparent)", pointerEvents: "none" }} />
+                                <img src={item.iconSrc} alt="" aria-hidden="true" style={{ width: 40, height: 40, objectFit: "contain", filter: disabled ? "grayscale(1) brightness(0.7)" : `drop-shadow(0 2px 8px ${item.color}66)`, opacity: (disabled || premiumLocked) ? 0.55 : 1, position: "relative", zIndex: 1 }} />
+                                {disabled && <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.85))", zIndex: 2 }}>🔒</span>}
+                                {premiumLocked && !disabled && <span style={{ position: "absolute", top: 6, right: 6, padding: "2px 6px", borderRadius: 999, background: "rgba(251,191,36,0.16)", border: "1px solid rgba(251,191,36,0.4)", color: "#fde68a", fontSize: 7, fontWeight: 800, fontFamily: "var(--font-sans)", letterSpacing: 0.8, zIndex: 2 }}>PRO</span>}
+                                {!disabled && item.badge > 0 && <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 999, background: "#ef4444", fontSize: 9, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(8,9,14,0.95)", fontFamily: "var(--font-mono)", boxShadow: "0 2px 6px rgba(239,68,68,0.4)", zIndex: 2 }}>{item.badge}</span>}
+                              </div>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: disabled ? "#475569" : "#cbd5e1", fontFamily: "var(--font-sans)", textAlign: "center", lineHeight: 1.2 }}>{item.label}</span>
+                              {disabled && <span style={{ fontSize: 9, color: "#3a4252", fontFamily: "var(--font-mono)", marginTop: -4 }}>{tr("systemHub.levelLocked", { level: item.unlockLevel })}</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Version footer */}
+                <div style={{ textAlign: "center", padding: "10px 0 4px", fontSize: 9, color: "#2a3340", fontFamily: "var(--font-mono)", letterSpacing: 3 }}>
+                  ARISE SYSTEM v1.3.7
+                </div>
+              </div>
+
+              <style>{`
+                .sys-squircle { transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), border-color 0.22s ease, box-shadow 0.22s ease; }
+                .sys-tile:not(:disabled):hover .sys-squircle { transform: translateY(-4px); border-color: var(--tile); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 16px 30px rgba(0,0,0,0.45), 0 0 22px var(--tileGlow); }
+                .sys-tile:not(:disabled):active .sys-squircle { transform: scale(0.94); }
+                .sys-tile span { transition: color 0.2s ease; }
+                .sys-tile:not(:disabled):hover span { color: #fff; }
+              `}</style>
+            </div>
+          )}

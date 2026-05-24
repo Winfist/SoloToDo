@@ -168,6 +168,12 @@ function unionValues(...arrays) {
   return [...new Set(arrays.flatMap(arrayOf).filter(value => value !== undefined && value !== null))];
 }
 
+function sameOrder(a, b) {
+  const arrA = Array.isArray(a) ? a : [];
+  const arrB = Array.isArray(b) ? b : [];
+  return arrA.length === arrB.length && arrA.every((key, index) => key === arrB[index]);
+}
+
 function mergeDateMaps(primary = {}, fallback = {}) {
   const merged = { ...(fallback || {}) };
   for (const [key, value] of Object.entries(primary || {})) {
@@ -741,8 +747,17 @@ export function migrateState(oldState) {
     oldState.stateVersion = 1;
   }
 
-  // Future migrations go here:
-  // if (version < 2) { ... oldState.stateVersion = 2; }
+  if (version < 2) {
+    const oldDefaultNav = ["dashboard", "training", "dungeon", "story", "system"];
+    const newDefaultNav = ["dashboard", "training", "dungeon", "analytics", "system"];
+    if (sameOrder(oldState.navbarConfig?.tabs, oldDefaultNav)) {
+      oldState.navbarConfig = {
+        ...(oldState.navbarConfig || {}),
+        tabs: newDefaultNav,
+      };
+    }
+    oldState.stateVersion = 2;
+  }
 
   const s = { ...DEFAULT_STATE, ...oldState };
   s.level = Math.max(1, s.level || 1);

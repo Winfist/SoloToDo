@@ -103,7 +103,7 @@ export const de = {
       training: { label: "Ziele", desc: "Ziele, Habits & Training" },
       dungeon: { label: "Gates", desc: "Dungeon Gates betreten" },
       story: { label: "Story", desc: "Deine Heldenreise" },
-      system: { label: "System", desc: "Alle Module & Menues" },
+      system: { label: "Hunter-Insel", desc: "Alle Module & Menues" },
       stats: { label: "Stats", desc: "Vanguard Stats & Skills" },
       analytics: { label: "Analytics", desc: "Fortschritts-Auswertung" },
       achievements: { label: "Erfolge", desc: "Meilensteine & Belohnungen" },
@@ -129,7 +129,7 @@ export const de = {
       achievements: "ACHIEVEMENTS",
       analytics: "ANALYTICS",
       training: "TRAINING",
-      system: "SYSTEM",
+      system: "HUNTER-INSEL",
       goals: "ZIELE",
       calendar: "KALENDER",
       challenges: "EVENTS",
@@ -820,8 +820,8 @@ export const de = {
         text: "Unten wechselst du zwischen den Modulen. Neue Tabs erscheinen, sobald dein Level hoch genug ist.",
       },
       open_system_hub: {
-        title: "SYSTEM-HUB OEFFNEN",
-        text: "Tippe auf System. Dort findest du Hunter Stats, Einstellungen und spaeter viele freigeschaltete Module.",
+        title: "HUNTER-INSEL OEFFNEN",
+        text: "Tippe auf Hunter-Insel. Dort findest du Hunter Stats, Einstellungen und spaeter viele freigeschaltete Module.",
       },
       open_hunter_stats: {
         title: "VANGUARD STATS",
@@ -1252,7 +1252,7 @@ export const de = {
   },
   systemHub: {
     active: "> SYSTEM INTERFACE ACTIVE",
-    title: "System",
+    title: "Hunter-Insel",
     hunterIntel: "HUNTER INTEL",
     arsenal: "ARSENAL",
     socialSpecial: "SOCIAL & SPECIAL",

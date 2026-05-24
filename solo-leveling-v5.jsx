@@ -20,6 +20,7 @@ import FocusMode from "./components/FocusMode.jsx";
 import ChallengesSystem from "./components/ChallengesSystem.jsx";
 import SettingsView, { ALL_NAV_TABS, DEFAULT_NAV_KEYS } from "./components/SettingsView.jsx";
 import BottomNav from "./components/layout/BottomNav.jsx";
+import TopBar from "./components/layout/TopBar.jsx";
 import AuroraBackground from "./components/AuroraBackground.jsx";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
@@ -39,6 +40,7 @@ import GameIcon from "./components/GameIcon.jsx";
 const RewardedAdModal = React.lazy(() => import("./components/RewardedAdModal.jsx"));
 import GemBoosterBanner from "./components/GemBoosterBanner.jsx";
 import DashboardView from "./components/views/DashboardView.jsx";
+import HunterIslandHub from "./components/views/HunterIslandHub.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
 const QuestCompletionCinematic = React.lazy(() => import("./components/QuestCompletionCinematic.jsx"));
 import UnifiedResultModal from "./components/UnifiedResultModal.jsx";
@@ -304,7 +306,7 @@ function App({ initialHunterName, onLogout }) {
   // ── v3.0 Sticky Header (must be before any early returns) ──
   const headerState = useStickyHeader({ compactThreshold: 60 });
   const headerRef = useRef(null);
-  const [headerMetrics, setHeaderMetrics] = useState({ expanded: 156, compact: 72 });
+  const [headerMetrics, setHeaderMetrics] = useState({ expanded: 72, compact: 56 });
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
@@ -326,7 +328,7 @@ function App({ initialHunterName, onLogout }) {
       window.removeEventListener("resize", measure);
     };
   }, [headerState.isCompact, state?.hunterName, state?.level, state?.gold, state?.gems]);
-  const headerOffset = Math.max(headerMetrics.expanded + 16, 132);
+  const headerOffset = Math.max(headerMetrics.expanded + 14, 64);
   // ── Animation Controller (Phase 5) ───────────────────────────────────────────
   const animationControllerRef = useRef({ queue: [], index: 0, flow: null, active: false });
   const [systemUnlock, setSystemUnlock] = useState(null);
@@ -1107,207 +1109,73 @@ function App({ initialHunterName, onLogout }) {
           {/* ── SCREEN VIGNETTE (Design 2.0) ── */}
           <div className="vignette" aria-hidden="true" />
 
-          {/* HEADER 3.0 — Futuristic HUD with Compact Scroll */}
-          <header data-tutorial="header-stats" ref={headerRef} className={`header-v3 ${headerState.isCompact ? 'header-v3-compact' : ''}`} style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, paddingTop: headerState.isCompact ? "max(env(safe-area-inset-top, 0px), 8px)" : "calc(max(env(safe-area-inset-top, 0px), 8px) + 6px)", paddingLeft: 16, paddingRight: 16, paddingBottom: headerState.isCompact ? 4 : 10, background: `${theme.card}, ${theme.bg}`, backdropFilter: "blur(28px) saturate(1.5)", WebkitBackdropFilter: "blur(28px) saturate(1.5)", opacity: isCreatingEntry ? 0 : 1, pointerEvents: isCreatingEntry ? "none" : "auto", transition: "padding 0.35s cubic-bezier(0.22,1,0.36,1), background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease, opacity 0.35s ease", borderBottom: headerState.isCompact ? `1px solid ${theme.primary}22` : '1px solid transparent', boxShadow: headerState.isCompact ? `0 4px 24px rgba(0,0,0,0.3), 0 1px 0 ${theme.primary}15` : 'none' }}>
-            {/* HUD corner brackets */}
-            <div style={{ position: "absolute", top: 0, left: 0, width: 18, height: 18, borderTop: `2px solid ${theme.primary}44`, borderLeft: `2px solid ${theme.primary}44`, pointerEvents: "none", zIndex: 2, opacity: 0.6 }} />
-            <div style={{ position: "absolute", top: 0, right: 0, width: 18, height: 18, borderTop: `2px solid ${theme.primary}44`, borderRight: `2px solid ${theme.primary}44`, pointerEvents: "none", zIndex: 2, opacity: 0.6 }} />
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 480, margin: "0 auto", width: "100%" }}>
-              {/* TOP ROW: Rank + Name + Exit */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  {/* Rank Hexagon with animated ring glow */}
-                  <div style={{ position: "relative", flexShrink: 0 }}>
-                    {/* Outer glow ring */}
-                    <div style={{ position: "absolute", inset: headerState.isCompact ? -3 : -4, clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: `linear-gradient(135deg, ${rank.color}20, ${rank.color}08)`, animation: "borderGlow 3s ease-in-out infinite", zIndex: 0, "--glow-color": `${rank.color}44`, transition: "inset 0.35s cubic-bezier(0.34,1.56,0.64,1)" }} />
-                    <div className="header-v3-rank" style={{ width: headerState.isCompact ? 32 : 48, height: headerState.isCompact ? 32 : 48, display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg,${rank.color}28,${rank.color}0a)`, border: `2px solid ${rank.color}66`, position: "relative", overflow: "hidden", clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", animation: "hexPulse 3s infinite", zIndex: 1 }}>
-                      <span style={{ fontSize: headerState.isCompact ? 12 : 18, fontWeight: 900, color: rank.color, fontFamily: "'Cinzel',serif", position: "relative", zIndex: 1, textShadow: `0 0 12px ${rank.color}88, 0 0 24px ${rank.color}44`, transition: "font-size 0.35s ease" }}>{rank.name}</span>
-                      {/* Scan line inside hexagon */}
-                      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "100%", background: `linear-gradient(180deg, transparent 30%, ${rank.color}0a 50%, transparent 70%)`, animation: "rankShine 3s ease-in-out infinite", pointerEvents: "none" }} />
-                    </div>
-                  </div>
-                  <div style={{ minWidth: 0, overflow: "hidden" }}>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: penaltyActive ? "#ef4444" : "#fff", fontFamily: "'Outfit',sans-serif", letterSpacing: 0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: penaltyActive ? "0 0 12px #ef444488" : "none" }}>{state.hunterName}</div>
-                    <div style={{ fontSize: 10, color: rank.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginTop: 1, opacity: 0.9, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: `0 0 8px ${rank.color}44` }}>{state.selectedTitle || rank.label}</div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                  <button onClick={onLogout} className="press-feedback" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, color: "#ef4444", fontSize: 10, cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", padding: "6px 12px", fontWeight: 800, letterSpacing: 1, transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)" }} title="System beenden" onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.22)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(239,68,68,0.15)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"; e.currentTarget.style.boxShadow = "none"; }}>
-                    EXIT
-                  </button>
-                  {/* Music mute — always visible in top row */}
-                  {can('music') && <button
-                    onClick={() => setIsMusicPlaying(prev => {
-                      const next = !prev;
-                      localStorage.setItem("soloMusicPlaying", next ? "true" : "false");
-                      return next;
-                    })}
-                    className="press-feedback"
-                    title={isMusicPlaying ? "Musik pausieren" : "Musik starten"}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      width: 32, height: 32, borderRadius: 8,
-                      background: isMusicPlaying ? `${theme.primary}22` : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${isMusicPlaying ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
-                      color: isMusicPlaying ? theme.accent : "#475569",
-                      cursor: "pointer", fontSize: 16, transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)"
-                    }}
-                  >
-                    {isMusicPlaying ? "\u266B" : "\u266A"}
-                  </button>}
-                  <button
-                    onClick={() => navigateTo("settings")}
-                    className="press-feedback"
-                    title={tr("settings.title")}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      width: 32, height: 32, borderRadius: 8,
-                      background: view === "settings" ? `${theme.primary}24` : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${view === "settings" ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`,
-                      color: view === "settings" ? theme.accent : "#64748b",
-                      cursor: "pointer",
-                      transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-                      boxShadow: view === "settings" ? `0 0 14px ${theme.primary}24` : "none",
-                    }}
-                  >
-                    <GameIcon src={NAV_ICONS.settings} fallback="⚙" size={17} glow={view === "settings"} glowColor={theme.glow} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Energy Line Separator */}
-              <div className="energy-line" style={{ margin: "0 -16px", opacity: headerState.isCompact ? 0.3 : 1, transition: "opacity 0.3s" }} />
-
-              {/* BOTTOM ROW: Stats + Icons */}
-              <div className={`header-v3-stats-row ${headerState.isCompact ? 'compact' : ''}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", paddingTop: 2, maxHeight: headerState.isCompact ? 0 : 50, overflowX: "auto", WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div id="header-xp-target" className="stat-mini" style={{ background: `${theme.primary}08`, borderColor: `${theme.primary}15` }}>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", fontVariantNumeric: "tabular-nums" }}>{powerLevel.toLocaleString()}</div>
-                    <div style={{ fontSize: 7, color: "#475569", letterSpacing: 1, fontFamily: "'JetBrains Mono',monospace", marginTop: 1 }}>PWR</div>
-                  </div>
-                  <div id="header-gold-target" className="stat-mini press-feedback" onClick={() => { window.__SHOP_START_TAB = "gold"; navigateTo("shop"); }} style={{ cursor: "pointer", background: "rgba(251,191,36,0.06)", borderColor: "rgba(251,191,36,0.1)", minWidth: 60 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3, fontVariantNumeric: "tabular-nums" }}>
-                      <img src="/icon/coin.png" style={{ width: 14, height: 14 }} alt="G" />{state.gold.toLocaleString()}
-                    </div>
-                  </div>
-                  {can('gem_shop') && (
-                    <button className="stat-mini press-feedback" onClick={() => { window.__SHOP_START_TAB = "gems"; navigateTo("shop"); }} style={{ cursor: "pointer", background: "rgba(124,58,237,0.08)", borderColor: "rgba(124,58,237,0.15)", minWidth: 50 }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: "#c084fc", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 3, fontVariantNumeric: "tabular-nums" }}>
-                        <img src={GEM_ICONS.gem} style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 3px #a855f788)" }} alt="💎" />{(state.gems || 0).toLocaleString()}
-                      </div>
-                    </button>
-                  )}
-                  <div className="stat-mini" style={{ background: state.streak >= 3 ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.03)", borderColor: state.streak >= 3 ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.06)", minWidth: 40 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: state.streak >= 5 ? "#f97316" : state.streak >= 3 ? "#fb923c" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 2, fontVariantNumeric: "tabular-nums" }}>
-                      <span style={{ animation: state.streak >= 3 ? "pulse 1.5s infinite" : "none", display: "inline-flex", alignItems: "center" }}><img src={STAT_ICONS.str} alt="Streak" style={{ width: 14, height: 14, objectFit: "contain", filter: "drop-shadow(0 0 4px #f9731688)" }} /></span>{state.streak}
-                    </div>
-                  </div>
-                  {/* Soul Link Pill */}
-                  {can('soul_link') && state.soulLink?.linkCode && (
-                    <button className="stat-mini press-feedback" onClick={() => requirePremium("soul_link", () => setShowSoulLink(true))} style={{
-                      display: "flex", alignItems: "center", gap: 4,
-                      background: state.soulLink.bothActive ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
-                      borderColor: state.soulLink.bothActive ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.1)",
-                      color: state.soulLink.bothActive ? "#22d3ee" : "#6b7280",
-                      cursor: "pointer", fontSize: 10, fontWeight: 700,
-                      animation: state.soulLink.bothActive ? "pulse 2s infinite" : "none"
-                    }}>
-                      <img src={SHADOW_ICONS.knight} alt="Link" style={{ width: 12, height: 12, objectFit: "contain", filter: "brightness(1.3)" }} /> {state.soulLink.partnerName ? state.soulLink.partnerName.slice(0, 6) : "—"}
-                      {state.soulLink.partnerStreak > 0 && <span><img src={STAT_ICONS.str} alt="fire" style={{ width: 10, height: 10, objectFit: "contain" }} />{state.soulLink.partnerStreak}</span>}
-                    </button>
-                  )}
-                  {/* Season Indicator */}
-                  {can('seasons') && state.seasons?.currentSeason && (
-                    <button className="stat-mini press-feedback" onClick={() => requirePremium("seasons", () => setShowSeasonView(true))} style={{
-                      cursor: "pointer", fontSize: 12,
-                      background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "#9ca3af"
-                    }} title={SEASONS[state.seasons.currentSeason]?.name}>
-                      {SEASONS[state.seasons.currentSeason]?.iconSrc
-                        ? <img src={SEASONS[state.seasons.currentSeason].iconSrc} alt={SEASONS[state.seasons.currentSeason].name} style={{ width: 18, height: 18, objectFit: "contain" }} />
-                        : (SEASONS[state.seasons.currentSeason]?.icon || "📋")}
-                    </button>
-                  )}
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {can('sanctum') && <button
-                    onClick={() => navigateTo("sanctum")}
-                    className="press-feedback"
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
-                      height: 32, borderRadius: 10, background: "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))",
-                      border: "1px solid rgba(34,211,153,0.3)", color: "#34d399",
-                      cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
-                      transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", letterSpacing: 1, boxShadow: "0 0 10px rgba(34,211,153,0.05)",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(34,211,153,0.2)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.7)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.2), rgba(34,211,153,0.05))"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(34,211,153,0.05)"; e.currentTarget.style.borderColor = "rgba(34,211,153,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(34,211,153,0.02))"; }}
-                    title="Inner Sanctum Base"
-                  >
-                    <GameIcon src={NAV_ICONS.timer} fallback="⏰" size={16} glow glowColor="rgba(34,211,153,0.5)" /> <span className="hide-on-mobile">SANCTUM</span>
-                  </button>}
-                  {can('focus_mode') && <button
-                    onClick={() => setShowFocusMode(true)}
-                    className="press-feedback"
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
-                      height: 32, borderRadius: 10, background: "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))",
-                      border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc",
-                      cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
-                      transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", letterSpacing: 1, boxShadow: "0 0 10px rgba(168,85,247,0.05)",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 15px rgba(168,85,247,0.2)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.7)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(168,85,247,0.05))"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 10px rgba(168,85,247,0.05)"; e.currentTarget.style.borderColor = "rgba(168,85,247,0.3)"; e.currentTarget.style.background = "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.02))"; }}
-                    title="Focus Mode starten"
-                  >
-                    <GameIcon src={NAV_ICONS.timer} fallback="⚡" size={16} glow glowColor="rgba(168,85,247,0.5)" /> <span className="hide-on-mobile">FOCUS</span>
-                  </button>}
-                  {can('dawn_dusk') && <button
-                    onClick={() => requirePremium("dawn_dusk", () => setShowDawnDusk(true))}
-                    className="press-feedback"
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "0 8px",
-                      height: 32, borderRadius: 10,
-                      background: state?.dawnDusk?.currentRun
-                        ? "linear-gradient(135deg, rgba(251,191,36,0.25), rgba(251,191,36,0.05))"
-                        : "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.02))",
-                      border: `1px solid ${state?.dawnDusk?.currentRun ? "rgba(251,191,36,0.7)" : "rgba(251,191,36,0.25)"}`,
-                      color: state?.dawnDusk?.currentRun ? "#fbbf24" : "#78716c",
-                      cursor: "pointer", fontSize: 10, fontWeight: 800, fontFamily: "'Cinzel',serif",
-                      transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", letterSpacing: 1,
-                      animation: state?.dawnDusk?.currentRun ? "pulse 2s infinite" : "none"
-                    }}
-                    title="Dawn/Dusk Protocol"
-                  >
-                    <span style={{ fontSize: 13 }}>
-                      <img src={NAV_ICONS.timer} alt="Protocol" style={{ width: 14, height: 14, objectFit: "contain", filter: new Date().getHours() >= 5 && new Date().getHours() < 11 ? "drop-shadow(0 0 4px #fbbf2488) brightness(1.3)" : "drop-shadow(0 0 4px #6366f188)" }} />
-                    </span>
-                    <span className="hide-on-mobile">PROTOCOL</span>
-                  </button>}
-
-
-                  {can('multiplayer') && <button
-                    onClick={enterPortal}
-                    className="press-feedback"
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      width: 34, height: 34, borderRadius: 10,
-                      background: `linear-gradient(135deg, #f59e0b15, #f59e0b25)`,
-                      border: `1px solid #f59e0b55`,
-                      color: '#fcd34d', fontSize: 18, cursor: "pointer", transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-                      boxShadow: `0 0 10px rgba(245,158,11,0.1)`,
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)'; e.currentTarget.style.borderColor = '#f59e0b'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(245,158,11,0.2)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = '#f59e0b55'; e.currentTarget.style.boxShadow = '0 0 10px rgba(245,158,11,0.1)'; }}
-                    title="Hunter Association"
-                  >
-                    <GameIcon src={NAV_ICONS.guild} fallback="🚪" size={20} glow glowColor="rgba(245,158,11,0.5)" />
-                  </button>}
-                </div>
-              </div>
-            </div>
-          </header>
+          {/* TOP BAR — minimal/luxe header with bundled action menu */}
+          <TopBar
+            innerRef={headerRef}
+            rank={rank}
+            theme={theme}
+            isCompact={headerState.isCompact}
+            isCreatingEntry={isCreatingEntry}
+            penaltyActive={penaltyActive}
+            hunterName={state.hunterName}
+            title={state.selectedTitle || rank.label}
+            level={state.level}
+            gold={state.gold}
+            gems={state.gems}
+            streak={state.streak}
+            powerLevel={powerLevel}
+            isMusicPlaying={isMusicPlaying}
+            icons={{
+              coin: "/icon/coin.png",
+              gem: GEM_ICONS.gem,
+              settings: NAV_ICONS.settings,
+              timer: NAV_ICONS.timer,
+              sanctum: "/icons/habit_mindfulness.webp",
+              focus: NAV_ICONS.timer,
+              protocol: NAV_ICONS.events,
+              hunterIsland: NAV_ICONS.settings,
+              arsenal: ITEM_ICONS.blade,
+              guild: NAV_ICONS.guild,
+              streak: STAT_ICONS.str,
+              soulLink: SHADOW_ICONS.knight,
+              season: SEASONS[state.seasons?.currentSeason]?.iconSrc,
+            }}
+            available={{
+              gems: can("gem_shop"),
+              sanctum: can("sanctum"),
+              focus: can("focus_mode"),
+              protocol: can("dawn_dusk"),
+              hunterIsland: true,
+              arsenal: can("equipment"),
+              guild: can("multiplayer"),
+              soulLink: can("soul_link") && !!state.soulLink?.linkCode,
+              season: can("seasons") && !!state.seasons?.currentSeason,
+              music: can("music"),
+            }}
+            status={{
+              protocolActive: !!state?.dawnDusk?.currentRun,
+              soulLinkPartner: state.soulLink?.partnerName ? state.soulLink.partnerName.slice(0, 12) : "",
+              seasonName: SEASONS[state.seasons?.currentSeason]?.name || "",
+            }}
+            onAction={(key) => {
+              switch (key) {
+                case "gold": window.__SHOP_START_TAB = "gold"; navigateTo("shop"); break;
+                case "gems": window.__SHOP_START_TAB = "gems"; navigateTo("shop"); break;
+                case "sanctum": navigateTo("sanctum"); break;
+                case "focus": setShowFocusMode(true); break;
+                case "protocol": requirePremium("dawn_dusk", () => setShowDawnDusk(true)); break;
+                case "hunterIsland": navigateTo("system"); break;
+                case "arsenal": navigateToWithAccess("equipment"); break;
+                case "guild": enterPortal(); break;
+                case "soulLink": requirePremium("soul_link", () => setShowSoulLink(true)); break;
+                case "season": requirePremium("seasons", () => setShowSeasonView(true)); break;
+                case "music": setIsMusicPlaying((prev) => { const next = !prev; localStorage.setItem("soloMusicPlaying", next ? "true" : "false"); return next; }); break;
+                case "settings": navigateTo("settings"); break;
+                case "logout": onLogout(); break;
+                default: break;
+              }
+            }}
+          />
 
           {/* Safe area filler removed */}
 
@@ -1885,194 +1753,29 @@ function App({ initialHunterName, onLogout }) {
             )
           }
 
-          {/* SYSTEM MENU — themed module hub */}
-          {
-            view === "system" && (
-              <div data-tutorial="system-menu" style={{ position: "absolute", inset: 0, zIndex: 45, background: theme.bg, animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: "16px", paddingTop: headerOffset, paddingBottom: 110, overflowY: "auto" }}>
-                <div style={{ maxWidth: 480, margin: "0 auto" }}>
-                  {/* System header */}
-                  <div style={{ textAlign: "center", marginBottom: 20 }}>
-                    <div style={{ fontSize: 9, letterSpacing: 5, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, animation: "pulse 3s infinite" }}>{tr("systemHub.active")}</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{tr("systemHub.title")}</div>
-                    <div style={{ width: 60, height: 2, background: `linear-gradient(90deg, transparent, ${theme.primary}, transparent)`, margin: "10px auto 0" }} />
-                  </div>
-
-                  {/* HUNTER PROFILE SECTION */}
-                  {[{
-                    title: tr("systemHub.hunterIntel"), iconSrc: NAV_ICONS.analytics, icon: "📋", color: theme.accent,
-                    items: [
-                      { key: "stats", iconSrc: STAT_ICONS.str, icon: "📋", label: tr("systemHub.stats.label"), desc: tr("systemHub.stats.desc"), badge: state.statPoints > 0 ? state.statPoints : 0 },
-                      ...(can('analytics') ? [{ key: "analytics", iconSrc: NAV_ICONS.analytics, icon: "📋", label: tr("systemHub.analytics.label"), desc: tr("systemHub.analytics.desc") }] : [{ key: "analytics_locked", iconSrc: NAV_ICONS.analytics, icon: "📋", label: tr("systemHub.analytics.label"), locked: true, unlockLevel: 8 }]),
-                      ...(can('achievements') ? [{ key: "achievements", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: tr("systemHub.achievements.label"), desc: tr("systemHub.achievements.desc", { unlocked: achUnlocked.length, total: catalogAchievements.length }), badge: catalogAchievements.filter(a => !achUnlocked.includes(a.id) && a.check(state)).length }] : [{ key: "achievements_locked", iconSrc: NAV_ICONS.achievements, icon: "🏆", label: tr("systemHub.achievements.label"), locked: true, unlockLevel: 8 }]),
-                      ...(can('challenges') ? [{ key: "challenges", iconSrc: NAV_ICONS.events, icon: "⚔️", label: tr("systemHub.challenges.label"), desc: tr("systemHub.challenges.desc") }] : [{ key: "challenges_locked", iconSrc: NAV_ICONS.events, icon: "⚔️", label: tr("systemHub.challenges.label"), locked: true, unlockLevel: 21 }]),
-                    ]
-                  }, {
-                    title: tr("systemHub.arsenal"), iconSrc: NAV_ICONS.shop, icon: "📋", color: "#f59e0b",
-                    items: [
-                      ...(can('shadow_army') ? [{ key: "shadows", iconSrc: SHADOW_ICONS.soldier, icon: "👤", label: tr("systemHub.shadows.label"), desc: tr("systemHub.shadows.desc"), badge: namedShadows.length > 0 ? namedShadows.length : 0 }] : [{ key: "shadows_locked", iconSrc: SHADOW_ICONS.soldier, icon: "👤", label: tr("systemHub.shadows.label"), locked: true, unlockLevel: 15 }]),
-                      ...(can('equipment') ? [{ key: "equipment", iconSrc: ITEM_ICONS.blade, icon: "📋", label: tr("systemHub.equipment.label"), desc: tr("systemHub.equipment.desc"), badge: (state.equipment?.inventory || []).length > 0 && !Object.values(state.equipment?.slots || {}).every(Boolean) ? 1 : 0 }] : [{ key: "equipment_locked", iconSrc: ITEM_ICONS.blade, icon: "📋", label: tr("systemHub.equipment.label"), locked: true, unlockLevel: 11 }]),
-                      ...(can('jobs') ? [{ key: "jobs", iconSrc: NAV_ICONS.jobs, icon: "📋", label: tr("systemHub.jobs.label"), desc: tr("systemHub.jobs.desc") }] : [{ key: "jobs_locked", iconSrc: NAV_ICONS.jobs, icon: "📋", label: tr("systemHub.jobs.label"), locked: true, unlockLevel: 21 }]),
-                      ...(can('shop') ? [{ key: "shop", iconSrc: NAV_ICONS.shop, icon: "📋", label: tr("systemHub.shop.label"), desc: tr("systemHub.shop.desc", { gold: state.gold.toLocaleString() }) }] : [{ key: "shop_locked", iconSrc: NAV_ICONS.shop, icon: "📋", label: tr("systemHub.shop.label"), locked: true, unlockLevel: 11 }]),
-
-                    ]
-                  }, {
-                    title: tr("systemHub.socialSpecial"), iconSrc: NAV_ICONS.guild, icon: "📋", color: "#a855f7",
-                    items: [
-                      ...(can('sanctum') ? [{ key: "sanctum", icon: "🧘‍♂️", label: tr("systemHub.sanctum.label"), desc: tr("systemHub.sanctum.desc"), isOverlay: false }] : [{ key: "sanctum_locked", icon: "🧘‍♂️", label: tr("systemHub.sanctum.label"), locked: true, unlockLevel: 11 }]),
-                      ...(can('dawn_dusk') ? [{ key: "protocol_overlay", iconSrc: NAV_ICONS.timer, icon: "⏰", label: tr("systemHub.protocol.label"), desc: tr("systemHub.protocol.desc"), isOverlay: true, action: () => setShowDawnDusk(true) }] : [{ key: "protocol_locked", iconSrc: NAV_ICONS.timer, icon: "⏰", label: tr("systemHub.protocol.label"), locked: true, unlockLevel: 8 }]),
-                      ...(can('soul_link') ? [{ key: "soullink_overlay", icon: "📋", label: tr("systemHub.soulLink.label"), desc: state.soulLink?.linkCode ? tr("systemHub.soulLink.descLinked", { name: state.soulLink.partnerName || "Partner" }) : tr("systemHub.soulLink.descEmpty"), isOverlay: true, action: () => setShowSoulLink(true) }] : [{ key: "soullink_locked", icon: "📋", label: tr("systemHub.soulLink.label"), locked: true, unlockLevel: 30 }]),
-                      ...(can('charisma_dungeons') ? [{ key: "charisma_overlay", iconSrc: CHA_ICONS.conversation, icon: "📋", label: tr("systemHub.charisma.label"), desc: tr("systemHub.charisma.desc", { done: (state.charismaDungeons?.completedChains || []).length, total: 5, cha: state.stats?.cha || 0 }), isOverlay: true, action: () => setShowCharismaView(true) }] : [{ key: "charisma_locked", iconSrc: CHA_ICONS.conversation, icon: "📋", label: tr("systemHub.charisma.label"), locked: true, unlockLevel: 30 }]),
-                    ]
-                  }, {
-                    title: tr("systemHub.system"), iconSrc: NAV_ICONS.settings, icon: "⚙️", color: "#64748b",
-                    items: [
-                      { key: "settings", iconSrc: NAV_ICONS.settings, icon: "⚙️", label: tr("systemHub.settings.label"), desc: tr("systemHub.settings.desc") },
-                    ]
-                  }].map((section, si) => (
-                    <div key={section.title} data-tutorial={section.title === "HUNTER INTEL" ? "system-hunter-intel" : undefined} style={{ marginBottom: 20, animation: `slideUp 0.3s ease ${si * 0.08}s both` }}>
-                      {/* Section header */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingLeft: 4 }}>
-                        <div style={{ width: 3, height: 16, borderRadius: 2, background: section.color, boxShadow: `0 0 8px ${section.color}44` }} />
-                        {section.iconSrc ? <img src={section.iconSrc} alt="" style={{ width: 14, height: 14, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 4px ${section.color}55)` }} /> : null}
-                        <span style={{ fontSize: 10, letterSpacing: 3, color: section.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{!section.iconSrc ? section.icon + " " : ""}{section.title}</span>
-                      </div>
-                      {/* Section items */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        {section.items.map((item, ii) => {
-                          const premiumFeature = getPremiumFeatureForRoute(item.key);
-                          const premiumLocked = !!premiumFeature && !premiumStatus?.active;
-                          return (
-                            <button key={item.key} data-tutorial={`system-${item.key}`} onClick={() => {
-                              if (item.locked) return;
-                              if (premiumLocked) {
-                                openPremiumModal(premiumFeature);
-                                return;
-                              }
-                              item.isOverlay ? item.action?.() : navigateToWithAccess(item.key);
-                            }} style={{
-                              position: "relative",
-                              overflow: "hidden",
-                              width: "100%", padding: "14px 16px", borderRadius: 14,
-                              background: premiumLocked ? "linear-gradient(135deg, rgba(251,191,36,0.09), rgba(168,85,247,0.08), rgba(255,255,255,0.025))" : item.locked ? "rgba(10,10,22,0.4)" : theme.card,
-                              border: `1px solid ${premiumLocked ? "rgba(251,191,36,0.24)" : item.locked ? "rgba(100,116,139,0.08)" : section.color + "15"}`,
-                              display: "flex", alignItems: "center", gap: 12, textAlign: "left",
-                              transition: "all 0.2s", cursor: item.locked ? "default" : "pointer",
-                              backdropFilter: "blur(8px)",
-                              opacity: item.locked ? 0.45 : 1,
-                              filter: item.locked ? "grayscale(0.7)" : "none",
-                              boxShadow: premiumLocked ? `inset 0 1px 0 rgba(255,255,255,0.09), 0 10px 26px ${theme.primary}12` : "none",
-                              animation: `cardEnter 0.3s ease ${(si * 0.08) + (ii * 0.04)}s both`
-                            }}
-                              onMouseEnter={e => {
-                                if (premiumLocked) {
-                                  e.currentTarget.style.borderColor = "rgba(251,191,36,0.45)";
-                                  e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.13), 0 14px 32px ${theme.primary}18`;
-                                  e.currentTarget.style.transform = "translateX(4px)";
-                                } else if (!item.locked) {
-                                  e.currentTarget.style.borderColor = section.color + "44";
-                                  e.currentTarget.style.transform = "translateX(4px)";
-                                }
-                              }}
-                              onMouseLeave={e => {
-                                if (premiumLocked) {
-                                  e.currentTarget.style.borderColor = "rgba(251,191,36,0.24)";
-                                  e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.09), 0 10px 26px ${theme.primary}12`;
-                                  e.currentTarget.style.transform = "none";
-                                } else if (!item.locked) {
-                                  e.currentTarget.style.borderColor = section.color + "15";
-                                  e.currentTarget.style.transform = "none";
-                                }
-                              }}
-                            >
-                              {premiumLocked && (
-                                <>
-                                  <div style={{
-                                    position: "absolute",
-                                    inset: 0,
-                                    background: "linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.08) 42%, transparent 56%)",
-                                    transform: "translateX(-45%) skewX(-18deg)",
-                                    pointerEvents: "none",
-                                  }} />
-                                  <span style={{
-                                    position: "absolute",
-                                    top: 8,
-                                    right: 10,
-                                    padding: "3px 7px",
-                                    borderRadius: 999,
-                                    background: "rgba(251,191,36,0.13)",
-                                    border: "1px solid rgba(251,191,36,0.28)",
-                                    color: "#fde68a",
-                                    fontSize: 7,
-                                    fontWeight: 900,
-                                    fontFamily: "'JetBrains Mono',monospace",
-                                    letterSpacing: 1.2,
-                                  }}>
-                                    PRO
-                                  </span>
-                                </>
-                              )}
-                              <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: premiumLocked ? "linear-gradient(135deg, rgba(251,191,36,0.14), rgba(168,85,247,0.13))" : item.locked ? "rgba(30,34,48,0.4)" : `${section.color}12`, border: `1px solid ${premiumLocked ? "rgba(251,191,36,0.28)" : item.locked ? "rgba(100,116,139,0.1)" : section.color + "22"}`, position: "relative", flexShrink: 0, transition: "all 0.2s", boxShadow: premiumLocked ? "0 0 18px rgba(251,191,36,0.12)" : "none" }}>
-                                {item.iconSrc ? (
-                                  <img src={item.iconSrc} alt={item.label} style={{ width: 24, height: 24, objectFit: "contain", filter: `brightness(1.1) drop-shadow(0 0 6px ${section.color}55)`, opacity: (premiumLocked || item.locked) ? 0.35 : 1 }} />
-                                ) : (
-                                  <span style={{ fontSize: 18, opacity: (premiumLocked || item.locked) ? 0.35 : 1 }}>{item.icon}</span>
-                                )}
-                                {(premiumLocked || item.locked) && (
-                                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5 }}>
-                                    {premiumLocked ? (
-                                      <span style={{ fontSize: 9, color: "#fde68a", fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textShadow: "0 0 8px rgba(0,0,0,0.8)" }}>PRO</span>
-                                    ) : (
-                                      <span style={{ fontSize: 16, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.8))" }}>🔒</span>
-                                    )}
-                                  </div>
-                                )}
-                                {!item.locked && item.badge > 0 && <div style={{ position: "absolute", top: -4, right: -5, width: 14, height: 14, borderRadius: "50%", background: "#ef4444", fontSize: 8, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border: "1.5px solid #000" }}>{item.badge}</div>}
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: premiumLocked ? "#fde68a" : item.locked ? "#475569" : "#e2e8f0", fontFamily: "'Cinzel',serif", paddingRight: premiumLocked ? 42 : 0 }}>{item.label}</div>
-                                <div style={{ fontSize: 9, color: premiumLocked ? "#a78bfa" : item.locked ? "#334155" : "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>
-                                  {premiumLocked ? tr("systemHub.freeLocked") : item.locked ? tr("systemHub.levelLocked", { level: item.unlockLevel }) : item.desc}
-                                </div>
-                              </div>
-                              <div style={{ fontSize: premiumLocked ? 9 : 12, color: premiumLocked ? "#fde68a" : "#334155", opacity: premiumLocked ? 1 : 0.5, fontFamily: premiumLocked ? "'JetBrains Mono',monospace" : "inherit", fontWeight: premiumLocked ? 900 : 400 }}>{item.locked ? "" : premiumLocked ? tr("systemHub.open") : "›"}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Multiplayer Portal */}
-                  {can('multiplayer') && (
-                    <div style={{ marginBottom: 20, animation: `slideUp 0.3s ease 0.4s both` }}>
-                      <button onClick={enterPortal} style={{
-                        width: "100%", padding: "16px 20px", borderRadius: 16,
-                        background: `linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03))`,
-                        border: `1px solid #f59e0b33`, borderLeft: `3px solid #f59e0b66`,
-                        display: "flex", alignItems: "center", gap: 14, textAlign: "left",
-                        transition: "all 0.3s", cursor: "pointer"
-                      }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b88"; e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(245,158,11,0.1)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = "#f59e0b33"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
-                      >
-                        <div style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,158,11,0.12)", border: "1px solid #f59e0b44", flexShrink: 0 }}><GameIcon src={NAV_ICONS.guild} fallback="📋" size={28} glow glowColor="rgba(245,158,11,0.5)" /></div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "#fcd34d", fontFamily: "'Cinzel',serif" }}>Hunter Association</div>
-                          <div style={{ fontSize: 9, color: "#92400e", fontFamily: "'JetBrains Mono',monospace", marginTop: 3 }}>Multiplayer Portal betreten</div>
-                        </div>
-                        <div style={{ fontSize: 14, color: "#f59e0b", animation: "pulse 2s infinite" }}>➤</div>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Version footer */}
-                  <div style={{ textAlign: "center", padding: "12px 0", fontSize: 9, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 3 }}>
-                    ARISE SYSTEM v1.3.7
-                  </div>
-                </div>
-              </div>
-            )
-          }
+          {/* SYSTEM — app launcher of module pages */}
+          {view === "system" && (
+            <div data-tutorial="system-menu" style={{ position: "fixed", inset: 0, zIndex: 45, height: "100dvh", background: "#04030a", animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both", padding: 0, overflow: "hidden" }}>
+              <HunterIslandHub
+                state={state}
+                can={can}
+                tr={tr}
+                theme={theme}
+                rank={rank}
+                activeDungeons={activeDungeons}
+                filteredQuests={filteredQuests}
+                namedShadows={namedShadows}
+                catalogAchievements={catalogAchievements}
+                achUnlocked={achUnlocked}
+                premiumStatus={premiumStatus}
+                navigateToWithAccess={navigateToWithAccess}
+                openPremiumModal={openPremiumModal}
+                onOpenCharisma={() => setShowCharismaView(true)}
+                shellTopOffset={headerOffset}
+                shellBottomOffset="60px"
+              />
+            </div>
+          )}
 
           {/* INNER SANCTUM VIEW */}
           {view === "sanctum" && (

@@ -19,7 +19,7 @@ const NAV_TAB_BASE = [
   { key: "training", iconSrc: "/icons/nav_goals.webp", label: "Ziele", desc: "Ziele, Habits & Training", requires: "training_tab" },
   { key: "dungeon", iconSrc: "/icons/gate_normal.webp", label: "Gates", desc: "Dungeon Gates betreten", requires: "dungeons", isGate: true },
   { key: "story", iconSrc: "/icons/story_scroll.webp", label: "Story", desc: "Deine Heldenreise", requires: "story" },
-  { key: "system", iconSrc: "/icons/nav_settings.webp", label: "System", desc: "Alle Module & Menüs" },
+  { key: "system", iconSrc: "/icons/nav_settings.webp", label: "Hunter-Insel", desc: "Alle Module & Menüs" },
   { key: "stats", iconSrc: "/icons/stat_str.webp", label: "Stats", desc: "Hunter Stats & Skills", requires: "stats_view" },
   { key: "analytics", iconSrc: "/icons/nav_analytics.webp", label: "Analytics", desc: "Fortschritts-Auswertung", requires: "analytics" },
   { key: "achievements", iconSrc: "/icons/nav_achievements.webp", label: "Erfolge", desc: "Meilensteine & Belohnungen", requires: "achievements" },
@@ -41,7 +41,7 @@ export const getAllNavTabs = (locale) => NAV_TAB_BASE.map((tab) => ({
   desc: translate(locale, `nav.tabs.${tab.key}.desc`),
 }));
 
-export const DEFAULT_NAV_KEYS = ["dashboard", "training", "dungeon", "story", "system"];
+export const DEFAULT_NAV_KEYS = ["dashboard", "training", "dungeon", "analytics", "system"];
 
 // ─── CONSTANTS ────────────────────────────────────────────────
 const MAX_NAV_TABS = 5;
@@ -1997,6 +1997,30 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
         {/* Version */}
         <div style={{ textAlign: "center", marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.03)" }}>
+          <button onClick={async () => {
+            if (window.confirm("ACCOUNT LÖSCHEN: Willst du deinen Account wirklich unwiderruflich löschen? Alle Daten gehen verloren!")) {
+              try {
+                if (auth.currentUser) {
+                  await auth.currentUser.delete();
+                  alert("Konto erfolgreich gelöscht.");
+                  if (onLogout) onLogout();
+                }
+              } catch (err) {
+                console.error(err);
+                if (err.code === "auth/requires-recent-login") {
+                  alert("Bitte logge dich einmal aus und wieder ein, um das Konto zu löschen.");
+                } else {
+                  alert("Fehler beim Löschen des Kontos.");
+                }
+              }
+            }
+          }} style={{
+            background: "transparent", border: "1px solid rgba(239,68,68,0.5)", color: "#ef4444", padding: "10px 12px",
+            borderRadius: 8, fontSize: 11, cursor: "pointer", marginBottom: 16, fontFamily: "'Cinzel',serif", fontWeight: 700,
+            width: "100%", letterSpacing: 2
+          }}>
+            KONTO LÖSCHEN
+          </button>
           <div style={{ fontSize: 9, color: "#334155", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>ABYSSAL SOVEREIGN v5.0</div>
           <div style={{ fontSize: 8, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", marginTop: 4 }}>SYSTEM BUILD {new Date().toISOString().slice(0, 10)}</div>
         </div>

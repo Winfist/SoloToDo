@@ -3,9 +3,9 @@ import { Capacitor } from '@capacitor/core';
 
 let isInitialized = false;
 
-// Google Test Ad Unit IDs
-const REWARDED_AD_ID_ANDROID = 'ca-app-pub-3940256099942544/5224354917';
-const REWARDED_AD_ID_IOS = 'ca-app-pub-3940256099942544/1712485313';
+// Replace with your real Google Ad Unit IDs
+const REWARDED_AD_ID_ANDROID = 'YOUR_ADMOB_ANDROID_ID';
+const REWARDED_AD_ID_IOS = 'YOUR_ADMOB_IOS_ID';
 
 export const AdService = {
   async initialize() {
@@ -39,7 +39,7 @@ export const AdService = {
       console.log('Preparing rewarded video ad...');
       await AdMob.prepareRewardVideoAd({
         adId,
-        isTesting: true, // TODO: Set to false in production
+        isTesting: false, // Set to true only during development
         margin: 0,
       });
 
