@@ -76,8 +76,6 @@
 	<string>Nutze Siri um Quests zu erstellen und deinen Fortschritt abzufragen.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
-	<!-- Replace with your real Google AdMob App ID -->
-	<key>GADApplicationIdentifier</key>
-	<string>YOUR_ADMOB_IOS_APP_ID</string>
+
 </dict>
 </plist>
