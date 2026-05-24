@@ -3,9 +3,9 @@ import { Capacitor } from '@capacitor/core';
 
 let isInitialized = false;
 
-// Replace with your real Google Ad Unit IDs
-const REWARDED_AD_ID_ANDROID = 'YOUR_ADMOB_ANDROID_ID';
-const REWARDED_AD_ID_IOS = 'YOUR_ADMOB_IOS_ID';
+// Google AdMob Rewarded Ad Unit IDs
+const REWARDED_AD_ID_ANDROID = 'ca-app-pub-2350642592248441/2131783438';
+const REWARDED_AD_ID_IOS = 'ca-app-pub-2350642592248441/3444865106';
 
 export const AdService = {
   async initialize() {

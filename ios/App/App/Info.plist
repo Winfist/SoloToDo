@@ -76,6 +76,7 @@
 	<string>Nutze Siri um Quests zu erstellen und deinen Fortschritt abzufragen.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
-
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-2350642592248441~2983727882</string>
 </dict>
 </plist>
