@@ -992,7 +992,12 @@ export default function HunterIslandHub({
     ],
     [sections, tr]
   );
-  const [selectedPortalIndex, setSelectedPortalIndexRaw] = useState(0);
+  // Default to the always-unlocked Stats portal so the carousel never opens on a
+  // level-locked portal (e.g. Equipment at Lv1, whose "enter" button is disabled).
+  const [selectedPortalIndex, setSelectedPortalIndexRaw] = useState(() => {
+    const statsIndex = allModules.findIndex((mod) => mod.key === "stats");
+    return statsIndex >= 0 ? statsIndex : 0;
+  });
   const [enteringPortal, setEnteringPortal] = useState(null);
   const [transitionDirection, setTransitionDirection] = useState(0);
   const dragStartRef = useRef(null);

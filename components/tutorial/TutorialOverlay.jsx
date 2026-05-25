@@ -62,15 +62,15 @@ function updateRectState(setter, nextRect) {
   setter((prev) => (rectChanged(prev, nextRect) ? nextRect : prev));
 }
 
-function getChromeLayout(targetRect, revealRect) {
-  const rect = revealRect || targetRect;
-  const nearTop = Boolean(rect && rect.top < 120);
-  const nearBottom = Boolean(rect && rect.bottom > window.innerHeight - 145);
+function frameRadius(rect, max = 18, divisor = 4.5) {
+  if (!rect) return 12;
+  return Math.min(max, Math.max(9, Math.min(rect.width, rect.height) / divisor));
+}
 
-  return {
-    hudPlacement: nearTop ? "bottom" : "top",
-    skipPlacement: nearBottom ? "top-left" : "bottom-left",
-  };
+function getSkipPlacement(targetRect, revealRect) {
+  const rect = revealRect || targetRect;
+  const nearBottom = Boolean(rect && rect.bottom > window.innerHeight - 145);
+  return nearBottom ? "top-left" : "bottom-left";
 }
 
 function getRevealRect(step, targetElement, targetRect) {
@@ -136,18 +136,22 @@ function ConfettiEffect({ active }) {
   );
 }
 
-function TypewriterText({ text = "", speed = 24, onComplete }) {
+function TypewriterText({ text = "", speed = 24, skipSignal = 0, onComplete }) {
   const [displayed, setDisplayed] = useState("");
   const [done, setDone] = useState(false);
   const onCompleteRef = useRef(onComplete);
+  const finishRef = useRef(null);
+  const lastSkipSignalRef = useRef(skipSignal);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
   useEffect(() => {
+    lastSkipSignalRef.current = skipSignal;
     setDisplayed("");
     setDone(false);
+    finishRef.current = null;
 
     if (!text) {
       setDone(true);
@@ -156,20 +160,41 @@ function TypewriterText({ text = "", speed = 24, onComplete }) {
     }
 
     let index = 0;
-    const interval = window.setInterval(() => {
+    let completed = false;
+    let interval = null;
+
+    const finish = () => {
+      if (completed) return;
+      completed = true;
+      if (interval) window.clearInterval(interval);
+      setDisplayed(text);
+      setDone(true);
+      onCompleteRef.current?.();
+    };
+
+    finishRef.current = finish;
+
+    interval = window.setInterval(() => {
       index += 1;
       if (index >= text.length) {
-        setDisplayed(text);
-        setDone(true);
         window.clearInterval(interval);
-        onCompleteRef.current?.();
+        finish();
       } else {
         setDisplayed(text.slice(0, index));
       }
     }, speed);
 
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      finishRef.current = null;
+    };
   }, [text, speed]);
+
+  useEffect(() => {
+    if (skipSignal === lastSkipSignalRef.current) return;
+    lastSkipSignalRef.current = skipSignal;
+    finishRef.current?.();
+  }, [skipSignal]);
 
   return (
     <span>
@@ -194,13 +219,13 @@ function SpotlightMask({ revealRect }) {
           <rect width="100%" height="100%" fill="white" />
           <rect x={rect.left} y={rect.top} width={rect.width} height={rect.height} rx={radius} ry={radius} fill="black" />
         </mask>
-        <radialGradient id="tutorial-vignette" cx="50%" cy="50%" r="74%">
-          <stop offset="0%" stopColor="rgba(5,8,20,0.12)" />
-          <stop offset="76%" stopColor="rgba(2,4,12,0.58)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0.9)" />
+        <radialGradient id="tutorial-vignette" cx="50%" cy="50%" r="78%">
+          <stop offset="0%" stopColor="rgba(6,9,20,0.06)" />
+          <stop offset="74%" stopColor="rgba(3,5,14,0.44)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.74)" />
         </radialGradient>
       </defs>
-      <rect width="100%" height="100%" fill="rgba(2, 4, 12, 0.76)" mask="url(#tutorial-spotlight-mask)" />
+      <rect width="100%" height="100%" fill="rgba(3, 6, 16, 0.64)" mask="url(#tutorial-spotlight-mask)" />
       <rect width="100%" height="100%" fill="url(#tutorial-vignette)" mask="url(#tutorial-spotlight-mask)" />
     </svg>
   );
@@ -234,63 +259,45 @@ function TutorialClickCage({ targetRect, padding = SPOTLIGHT_PADDING, onBlockedC
   );
 }
 
-function TutorialSystemHud({ sequence, stepIndex, totalSteps, placement = "top" }) {
-  const { t } = useI18n();
-  const percent = totalSteps ? ((stepIndex + 1) / totalSteps) * 100 : 0;
-  const protocol = sequence?.id === "onboarding" ? t("tutorial.hud.awakeningProtocol") : t("tutorial.hud.unlockProtocol");
-
-  return (
-    <div className={`tutorial-system-hud tutorial-system-hud--${placement}`} aria-hidden="true">
-      <div className="tutorial-system-hud__signal" />
-      <div className="tutorial-system-hud__content">
-        <span className="tutorial-system-hud__label">{t("tutorial.hud.systemGuidance")}</span>
-        <span className="tutorial-system-hud__protocol">{protocol}</span>
-      </div>
-      <div className="tutorial-system-hud__meta">
-        <span>{String(stepIndex + 1).padStart(2, "0")}</span>
-        <span>/</span>
-        <span>{String(totalSteps).padStart(2, "0")}</span>
-      </div>
-      <div className="tutorial-system-hud__bar">
-        <span style={{ width: `${percent}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function ContextFrame({ rect, blockedPulse }) {
-  const { t } = useI18n();
+function FocusRing({ rect, action, strong, blockedPulse }) {
   if (!rect) return null;
+
+  const padding = action ? SPOTLIGHT_PADDING : 8;
+  const top = rect.top - padding;
+  const left = rect.left - padding;
+  const width = rect.width + padding * 2;
+  const height = rect.height + padding * 2;
+  const radius = frameRadius({ width, height });
+
+  const className = action
+    ? [
+        "tutorial-target",
+        strong ? "tutorial-target--strong" : "",
+        blockedPulse ? "tutorial-target--blocked" : "",
+      ]
+    : ["tutorial-highlight", blockedPulse ? "tutorial-highlight--blocked" : ""];
 
   return (
     <div
-      className={`tutorial-context-frame ${blockedPulse ? "tutorial-context-frame--blocked" : ""}`}
-      style={{
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      }}
+      className={className.filter(Boolean).join(" ")}
+      style={{ top, left, width, height, borderRadius: radius }}
       aria-hidden="true"
-    >
-      <span className="tutorial-context-frame__label">{t("tutorial.hud.contextLock")}</span>
-      <span className="tutorial-context-frame__scan" />
-    </div>
+    />
   );
 }
 
-function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
+function CinematicStep({ step, stepIndex, totalSteps, typingSkipSignal, onTypingComplete, onContinue, onRequestFinishTyping }) {
   const { t } = useI18n();
   const [textDone, setTextDone] = useState(false);
   const particles = useMemo(() => {
-    return Array.from({ length: 16 }, (_, id) => ({
+    return Array.from({ length: 14 }, (_, id) => ({
       id,
       width: 2 + Math.random() * 3,
       left: 8 + Math.random() * 84,
       top: 10 + Math.random() * 78,
       delay: Math.random() * 2,
       duration: 3 + Math.random() * 4,
-      opacity: 0.18 + Math.random() * 0.34,
+      opacity: 0.14 + Math.random() * 0.3,
     }));
   }, [step.id]);
 
@@ -298,8 +305,21 @@ function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
     setTextDone(false);
   }, [step.id]);
 
+  const completeText = useCallback(() => {
+    setTextDone(true);
+    onTypingComplete?.();
+  }, [onTypingComplete]);
+
+  const handleClick = useCallback(() => {
+    if (!textDone) {
+      onRequestFinishTyping?.();
+      return;
+    }
+    onContinue();
+  }, [onContinue, onRequestFinishTyping, textDone]);
+
   return (
-    <div className="tutorial-cinematic" onClick={() => textDone && onContinue()} role="dialog" aria-modal="true">
+    <div className="tutorial-cinematic" onClick={handleClick} role="dialog" aria-modal="true">
       <div className="tutorial-cinematic__ambient" aria-hidden="true" />
 
       {particles.map((particle) => (
@@ -319,10 +339,10 @@ function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
         />
       ))}
 
-      <div className="tutorial-cinematic__sigil" aria-hidden="true">
-        <span className="tutorial-cinematic__sigil-ring tutorial-cinematic__sigil-ring--outer" />
-        <span className="tutorial-cinematic__sigil-ring tutorial-cinematic__sigil-ring--inner" />
-        <span className="tutorial-cinematic__sigil-ring tutorial-cinematic__sigil-ring--core" />
+      <div className="tutorial-cinematic__emblem" aria-hidden="true">
+        <span className="tutorial-cinematic__emblem-ring tutorial-cinematic__emblem-ring--outer" />
+        <span className="tutorial-cinematic__emblem-ring tutorial-cinematic__emblem-ring--inner" />
+        <span className="tutorial-cinematic__emblem-ring tutorial-cinematic__emblem-ring--core" />
         <span className="tutorial-cinematic__icon">{step.icon}</span>
       </div>
       <div className="tutorial-cinematic__eyebrow">{t("tutorial.hud.systemWindow")}</div>
@@ -330,7 +350,13 @@ function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
         {step.title}
       </div>
       <div className="tutorial-cinematic__text">
-        <TypewriterText key={step.id} text={step.text} speed={step.isFinale ? 34 : 22} onComplete={() => setTextDone(true)} />
+        <TypewriterText
+          key={step.id}
+          text={step.text}
+          speed={step.isFinale ? 34 : 22}
+          skipSignal={typingSkipSignal}
+          onComplete={completeText}
+        />
       </div>
       {textDone && (
         <div className="tutorial-cinematic__continue">
@@ -360,7 +386,7 @@ function clampValue(value, min, max) {
 }
 
 function getTooltipPosition(step, targetRect, tooltipSize) {
-  const tooltipWidth = Math.min(420, window.innerWidth - 36);
+  const tooltipWidth = Math.min(408, window.innerWidth - 36);
   const width = Math.min(tooltipSize?.width || tooltipWidth, window.innerWidth - 36);
   const height = Math.max(tooltipSize?.height || (step.type === "action" ? 214 : 198), 150);
   const safeTop = 18;
@@ -431,7 +457,17 @@ function getTooltipPosition(step, targetRect, tooltipSize) {
   return valid || candidates[0] || center;
 }
 
-function TooltipStep({ step, stepIndex, totalSteps, targetRect, onContinue }) {
+function TooltipStep({
+  step,
+  stepIndex,
+  totalSteps,
+  targetRect,
+  sequence,
+  typingSkipSignal,
+  onTypingComplete,
+  onRequestFinishTyping,
+  onContinue,
+}) {
   const { t } = useI18n();
   const [textDone, setTextDone] = useState(false);
   const tooltipRef = useRef(null);
@@ -441,6 +477,18 @@ function TooltipStep({ step, stepIndex, totalSteps, targetRect, onContinue }) {
   useEffect(() => {
     setTextDone(false);
   }, [step.id]);
+
+  const completeText = useCallback(() => {
+    setTextDone(true);
+    onTypingComplete?.();
+  }, [onTypingComplete]);
+
+  const handleTooltipClick = useCallback((event) => {
+    if (textDone) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onRequestFinishTyping?.();
+  }, [onRequestFinishTyping, textDone]);
 
   useEffect(() => {
     const update = () => setTooltipPos(getTooltipPosition(step, targetRect, tooltipSize));
@@ -474,18 +522,28 @@ function TooltipStep({ step, stepIndex, totalSteps, targetRect, onContinue }) {
       ? t("tutorial.actions.inputHint")
       : t("tutorial.actions.actionLocked");
 
+  const percent = totalSteps ? ((stepIndex + 1) / totalSteps) * 100 : 0;
+  const protocol = sequence?.id === "onboarding"
+    ? t("tutorial.hud.awakeningProtocol")
+    : t("tutorial.hud.unlockProtocol");
+
   return (
-    <div ref={tooltipRef} className="tutorial-tooltip" style={{ top: tooltipPos.top, left: tooltipPos.left }} key={step.id}>
+    <div ref={tooltipRef} className="tutorial-tooltip" style={{ top: tooltipPos.top, left: tooltipPos.left }} key={step.id} onClick={handleTooltipClick}>
       {tooltipPos.arrowDir && <div className={`tutorial-arrow tutorial-arrow--${tooltipPos.arrowDir}`} aria-hidden="true" />}
       <div className="tutorial-tooltip__card" role="dialog" aria-live="polite">
         <div className="tutorial-tooltip__eyebrow">
           <span className="tutorial-tooltip__system-tag">SYSTEM</span>
-          <span className="tutorial-tooltip__mode">{isActionStep ? t("tutorial.hud.actionLock") : t("tutorial.hud.guidance")}</span>
-          <span className="tutorial-tooltip__step-counter">{stepIndex + 1}/{totalSteps}</span>
+          <span className="tutorial-tooltip__protocol">{protocol}</span>
+          <span className="tutorial-tooltip__step-counter">
+            <b>{String(stepIndex + 1).padStart(2, "0")}</b> / {String(totalSteps).padStart(2, "0")}
+          </span>
         </div>
         <div className="tutorial-tooltip__title">{step.title}</div>
         <div className="tutorial-tooltip__text">
-          <TypewriterText key={step.id} text={step.text} speed={18} onComplete={() => setTextDone(true)} />
+          <TypewriterText key={step.id} text={step.text} speed={18} skipSignal={typingSkipSignal} onComplete={completeText} />
+        </div>
+        <div className="tutorial-tooltip__progress" aria-hidden="true">
+          <span style={{ width: `${percent}%` }} />
         </div>
         <div className="tutorial-tooltip__actions">
           {isActionStep ? (
@@ -517,16 +575,30 @@ export default function TutorialOverlay({
   const [showConfetti, setShowConfetti] = useState(false);
   const [phase, setPhase] = useState("entering");
   const [blockedPulse, setBlockedPulse] = useState(false);
+  const [textDone, setTextDone] = useState(false);
+  const [typingSkipSignal, setTypingSkipSignal] = useState(0);
   const observerRef = useRef(null);
   const rectIntervalRef = useRef(null);
   const actionCleanupRef = useRef(null);
+  const blockedPointerAtRef = useRef(0);
 
   const step = sequence?.steps?.[currentStep];
   const totalSteps = sequence?.steps?.length || 0;
   const isCinematic = step?.type === "cinematic";
   const isActionStep = step?.type === "action";
-  const actionCanPassThrough = isActionStep && Boolean(targetRect);
-  const chromeLayout = getChromeLayout(targetRect, revealRect);
+  const actionTargetUnlocked = isActionStep && textDone && Boolean(targetRect);
+  const actionCanPassThrough = actionTargetUnlocked;
+  const skipPlacement = getSkipPlacement(targetRect, revealRect);
+
+  useEffect(() => {
+    setTextDone(false);
+  }, [step?.id]);
+
+  const requestFinishTyping = useCallback(() => {
+    if (textDone) return false;
+    setTypingSkipSignal((value) => value + 1);
+    return true;
+  }, [textDone]);
 
   useEffect(() => {
     if (isActive) {
@@ -675,71 +747,74 @@ export default function TutorialOverlay({
     return () => window.clearTimeout(timer);
   }, [step?.id, step?.confetti]);
 
+  const handleBackdropClick = useCallback((event) => {
+    if (!requestFinishTyping()) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, [requestFinishTyping]);
+
   const handleBlockedClick = useCallback((event) => {
     event.preventDefault();
     event.stopPropagation();
+    const now = Date.now();
+    if (event.type === "click" && now - blockedPointerAtRef.current < 450) return;
+    if (event.type === "pointerdown") blockedPointerAtRef.current = now;
+    if (requestFinishTyping()) return;
     setBlockedPulse(true);
-    window.setTimeout(() => setBlockedPulse(false), 280);
-  }, []);
+    window.setTimeout(() => setBlockedPulse(false), 300);
+  }, [requestFinishTyping]);
 
   if (!isActive || !step) return null;
 
   return (
     <>
-      <div className={`tutorial-backdrop tutorial-backdrop--${phase} ${actionCanPassThrough ? "tutorial-backdrop--pass-through" : ""}`}>
+      <div
+        className={`tutorial-backdrop tutorial-backdrop--${phase} ${actionCanPassThrough ? "tutorial-backdrop--pass-through" : ""}`}
+        onClick={handleBackdropClick}
+      >
         <SpotlightMask revealRect={isCinematic ? null : revealRect} />
       </div>
 
       {isActionStep && (
-        <TutorialClickCage targetRect={targetRect} onBlockedClick={handleBlockedClick} />
-      )}
-
-      {!isCinematic && (
-        <TutorialSystemHud sequence={sequence} stepIndex={currentStep} totalSteps={totalSteps} placement={chromeLayout.hudPlacement} />
-      )}
-
-      {!isCinematic && revealRect && (
-        <ContextFrame rect={revealRect} blockedPulse={blockedPulse} />
+        <TutorialClickCage targetRect={actionTargetUnlocked ? targetRect : null} onBlockedClick={handleBlockedClick} />
       )}
 
       {!isCinematic && targetRect && (
-        <div
-          className={[
-            "tutorial-spotlight-ring",
-            step.pulseIntensity === "strong" ? "tutorial-spotlight-ring--strong" : "",
-            blockedPulse ? "tutorial-spotlight-ring--blocked" : "",
-          ].filter(Boolean).join(" ")}
-          style={{
-            top: targetRect.top - SPOTLIGHT_PADDING,
-            left: targetRect.left - SPOTLIGHT_PADDING,
-            width: targetRect.width + SPOTLIGHT_PADDING * 2,
-            height: targetRect.height + SPOTLIGHT_PADDING * 2,
-          }}
+        <FocusRing
+          rect={targetRect}
+          action={isActionStep}
+          strong={step.pulseIntensity === "strong"}
+          blockedPulse={blockedPulse}
         />
       )}
 
       {isCinematic ? (
-        <CinematicStep step={step} stepIndex={currentStep} totalSteps={totalSteps} onContinue={onAdvance} />
+        <CinematicStep
+          step={step}
+          stepIndex={currentStep}
+          totalSteps={totalSteps}
+          typingSkipSignal={typingSkipSignal}
+          onTypingComplete={() => setTextDone(true)}
+          onRequestFinishTyping={requestFinishTyping}
+          onContinue={onAdvance}
+        />
       ) : (
-        <TooltipStep step={step} stepIndex={currentStep} totalSteps={totalSteps} targetRect={targetRect} onContinue={onAdvance} />
+        <TooltipStep
+          step={step}
+          stepIndex={currentStep}
+          totalSteps={totalSteps}
+          targetRect={targetRect}
+          sequence={sequence}
+          typingSkipSignal={typingSkipSignal}
+          onTypingComplete={() => setTextDone(true)}
+          onRequestFinishTyping={requestFinishTyping}
+          onContinue={onAdvance}
+        />
       )}
 
-      <button className={`tutorial-skip-btn tutorial-skip-btn--${chromeLayout.skipPlacement}`} onClick={(event) => { event.stopPropagation(); onSkip(); }}>
+      <button className={`tutorial-skip-btn tutorial-skip-btn--${skipPlacement}`} onClick={(event) => { event.stopPropagation(); onSkip(); }}>
         {t("tutorial.actions.skip")}
       </button>
-
-      <div className="tutorial-progress" aria-hidden="true">
-        {sequence.steps.map((sequenceStep, index) => (
-          <div
-            key={sequenceStep.id}
-            className={[
-              "tutorial-progress__dot",
-              index === currentStep ? "tutorial-progress__dot--active" : "",
-              index < currentStep ? "tutorial-progress__dot--done" : "",
-            ].filter(Boolean).join(" ")}
-          />
-        ))}
-      </div>
 
       <ConfettiEffect active={showConfetti} />
     </>
