@@ -70,11 +70,27 @@ jobs:
           node patch-widget-extension.cjs
 
       - name: Clean SPM cache
-        run: rm -rf ~/Library/Caches/org.swift.swiftpm
+        run: |
+          rm -rf ~/Library/Caches/org.swift.swiftpm
+          rm -rf ~/Library/org.swift.swiftpm
+          rm -rf ios/App/SPM
 
       - name: Resolve Xcode SPM Dependencies
         working-directory: ios/App
-        run: xcodebuild -resolvePackageDependencies -project App.xcodeproj -scheme App -clonedSourcePackagesDirPath SPM
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project App.xcodeproj \
+            -scheme App \
+            -clonedSourcePackagesDirPath SPM \
+            2>&1 || {
+              echo "::warning::First SPM resolve failed, retrying after full cache purge..."
+              rm -rf ~/Library/Caches/org.swift.swiftpm
+              rm -rf SPM
+              xcodebuild -resolvePackageDependencies \
+                -project App.xcodeproj \
+                -scheme App \
+                -clonedSourcePackagesDirPath SPM
+            }
 
       - name: Deploy to TestFlight
         working-directory: ios/App
