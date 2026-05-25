@@ -204,6 +204,25 @@ export function subscribeToGlobalChat(callback) {
   });
 }
 
+// ─── MODERATION ───────────────────────────────────────────────
+
+// Flag a chat message for review. `context` is "global" or "guild:<guildId>".
+export async function reportMessage({ messageId, text, authorId, authorName, context }) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not authenticated");
+
+  await addDoc(collection(db, "reports"), {
+    reporterId: user.uid,
+    messageId: messageId || null,
+    text: (text || "").slice(0, 200),
+    authorId: authorId || null,
+    authorName: authorName || null,
+    context: context || "global",
+    status: "open",
+    createdAt: serverTimestamp(),
+  });
+}
+
 // ─── LEADERBOARD ──────────────────────────────────────────────
 
 export async function fetchLeaderboard(sortField = "totalXpEarned", maxResults = 20) {

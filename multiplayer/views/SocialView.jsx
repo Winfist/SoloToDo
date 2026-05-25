@@ -70,6 +70,7 @@ export default function SocialView({ playerState, onStateUpdate }) {
             playerLevel={playerState?.level}
             playerRank={getRankName(playerState?.level)}
             placeholder="Nachricht an alle Hunter..."
+            context="global"
           />
         </div>
       )}

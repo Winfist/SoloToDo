@@ -1,17 +1,64 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MP_THEME, RANK_COLORS, CHAT_CONFIG } from '../data/mpConstants';
 import { STORY_ICONS, STAT_ICONS } from '../../data/icons';
+import { reportMessage } from '../mpFirebase';
 
-export default function ChatPanel({ messages, onSend, playerName, playerLevel, playerRank, placeholder }) {
+const menuItemStyle = {
+  display: "block", width: "100%", textAlign: "left",
+  background: "transparent", border: "none", color: "#cbd5e1",
+  padding: "8px 10px", borderRadius: 6, cursor: "pointer",
+  fontSize: 11, fontFamily: "'JetBrains Mono',monospace",
+};
+
+export default function ChatPanel({ messages, onSend, playerName, playerLevel, playerRank, placeholder, context = "global" }) {
   const [text, setText] = useState("");
   const [lastSent, setLastSent] = useState(0);
+  const [menuFor, setMenuFor] = useState(null);
+  const [reportedIds, setReportedIds] = useState([]);
   const scrollRef = useRef(null);
+
+  const myUid = window.__currentUid || "";
+  const blockKey = `sl-blocked-${myUid || "anon"}`;
+  const [blocked, setBlocked] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(blockKey) || "[]"); } catch { return []; }
+  });
+
+  const visibleMessages = messages.filter(m => !blocked.includes(m.userId));
+
+  const blockUser = (uid) => {
+    if (!uid || uid === myUid) return;
+    const next = Array.from(new Set([...blocked, uid]));
+    setBlocked(next);
+    try { localStorage.setItem(blockKey, JSON.stringify(next)); } catch {}
+    setMenuFor(null);
+  };
+
+  const handleReport = async (msg) => {
+    setReportedIds(ids => ids.includes(msg.id) ? ids : [...ids, msg.id]);
+    setMenuFor(null);
+    try {
+      await reportMessage({
+        messageId: msg.id, text: msg.text,
+        authorId: msg.userId, authorName: msg.displayName, context,
+      });
+    } catch (e) {
+      console.error("Failed to report message", e);
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, blocked]);
+
+  // Close the per-message menu on any outside click
+  useEffect(() => {
+    if (!menuFor) return;
+    const close = () => setMenuFor(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [menuFor]);
 
   const handleSend = () => {
     const now = Date.now();
@@ -52,20 +99,21 @@ export default function ChatPanel({ messages, onSend, playerName, playerLevel, p
         display: "flex", flexDirection: "column", gap: 12,
         minHeight: 200, maxHeight: 400,
       }}>
-        {messages.length === 0 ? (
+        {visibleMessages.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40 }}>
             <div style={{ marginBottom: 8, opacity: 0.5, display: "flex", justifyContent: "center" }}><img src={STORY_ICONS.scroll} alt="" style={{ width: 28, height: 28, objectFit: "contain" }} /></div>
             <div style={{ fontSize: 11, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
               Noch keine Nachrichten. Sei der Erste!
             </div>
           </div>
-        ) : messages.map((msg, idx) => {
-          const isMe = msg.userId === (window.__currentUid || "");
+        ) : visibleMessages.map((msg, idx) => {
+          const isMe = msg.userId === myUid;
           const rankColor = RANK_COLORS[msg.rank] || "#6b7280";
+          const isReported = reportedIds.includes(msg.id);
           return (
             <div key={msg.id || idx} style={{
-              display: "flex", gap: 10,
-              animation: idx === messages.length - 1 ? "mpFadeIn 0.3s ease" : "none",
+              display: "flex", gap: 10, position: "relative",
+              animation: idx === visibleMessages.length - 1 ? "mpFadeIn 0.3s ease" : "none",
             }}>
               <div style={{
                 width: 32, height: 32, borderRadius: 10, flexShrink: 0,
@@ -94,6 +142,11 @@ export default function ChatPanel({ messages, onSend, playerName, playerLevel, p
                   <span style={{ fontSize: 8, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
                     {getTimeStr(msg.timestamp)}
                   </span>
+                  {isReported && (
+                    <span style={{ fontSize: 8, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
+                      GEMELDET
+                    </span>
+                  )}
                 </div>
                 <div style={{
                   fontSize: 12, color: "#cbd5e1", marginTop: 3,
@@ -102,6 +155,39 @@ export default function ChatPanel({ messages, onSend, playerName, playerLevel, p
                   {msg.text}
                 </div>
               </div>
+
+              {!isMe && msg.userId && (
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setMenuFor(menuFor === msg.id ? null : msg.id); }}
+                    aria-label="Nachrichtenoptionen"
+                    style={{
+                      background: "transparent", border: "none", color: "#475569",
+                      cursor: "pointer", padding: "0 4px", fontSize: 16, lineHeight: 1,
+                    }}
+                  >
+                    ⋯
+                  </button>
+                  {menuFor === msg.id && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: "absolute", right: 0, top: "100%", marginTop: 4, zIndex: 20,
+                        background: "#0b0f1a", border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 10, padding: 4, minWidth: 132,
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                      }}
+                    >
+                      <button onClick={() => handleReport(msg)} style={menuItemStyle}>
+                        Melden
+                      </button>
+                      <button onClick={() => blockUser(msg.userId)} style={{ ...menuItemStyle, color: "#ef4444" }}>
+                        Blockieren
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

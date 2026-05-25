@@ -8,6 +8,8 @@ import { onAuthStateChanged } from "firebase/auth"
 import SystemLoadingScreen from "./components/ui/SystemLoadingScreen.jsx"
 import { I18nProvider, useI18n } from "./components/i18n/I18nProvider.jsx"
 import { LANGUAGE_CHANGE_EVENT, readBootstrapLanguage } from "./data/i18n.js"
+import ErrorBoundary from "./components/ErrorBoundary.jsx"
+import { initErrorReporting, logError } from "./services/errorReporting.js"
 
 const PENDING_HUNTER_NAME_KEY = "sl-pending-hunter-name";
 
@@ -152,41 +154,11 @@ document.addEventListener('gestureend', function(e) {
   e.preventDefault();
 }, { passive: false });
 
-// ── GLOBAL ERROR CATCHER FOR NATIVE WEBVIEWS ──
-// Enhanced: captures error.stack when available to bypass cross-origin masking
-window.mobileErrors = [];
-window.onerror = function (msg, url, lineNo, columnNo, error) {
-  const stack = (error && error.stack) ? error.stack : '(no stack)';
-  const detail = `${msg}\nLine: ${lineNo}\nURL: ${url}\nStack: ${stack}`;
-  window.mobileErrors.push(detail);
-  try { alert('CRITICAL ERROR:\n' + detail); } catch (_) { /* alert might fail */ }
-  return false;
-};
-window.addEventListener('unhandledrejection', function (event) {
-  const reason = event.reason;
-  const msg = String(reason?.message || reason || '');
-  const stack = (reason && reason.stack) ? reason.stack : msg;
-
-  // Suppress known Capacitor plugin errors — these are NOT bugs, just
-  // native plugins that aren't available in every environment.
-  const isCapacitorPlugin = msg.includes('not implemented') ||
-    msg.includes('unimplemented') ||
-    msg.includes('plugin') ||
-    msg.includes('Capacitor') ||
-    msg.includes('capacitor') ||
-    msg.includes('Health') ||
-    msg.includes('Geolocation');
-
-  if (isCapacitorPlugin) {
-    console.warn('[SoloToDo] Suppressed Capacitor plugin rejection:', msg);
-    event.preventDefault(); // Prevents the browser from logging it as an error
-    return;
-  }
-
-  const detail = `Unhandled Promise Rejection:\n${stack}`;
-  window.mobileErrors.push(detail);
-  try { alert('PROMISE REJECTION:\n' + detail); } catch (_) { /* alert might fail */ }
-});
+// ── GLOBAL ERROR / CRASH REPORTING ──
+// Captures uncaught errors + unhandled promise rejections, logs them to the
+// console and a throttled, production-only Firestore sink. No user-facing
+// alerts; Capacitor "plugin not implemented" rejections are filtered as noise.
+initErrorReporting();
 
 // Polyfill window.storage with localStorage
 if (!window.storage) {
@@ -323,10 +295,20 @@ function Root() {
 try {
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-      <Root />
+      <ErrorBoundary>
+        <Root />
+      </ErrorBoundary>
     </React.StrictMode>
   );
 } catch (e) {
-  const msg = e && e.stack ? e.stack : String(e);
-  alert('FATAL RENDER ERROR:\n' + msg);
+  logError(e, "mount");
+  const root = document.getElementById('root');
+  if (root) {
+    root.innerHTML =
+      '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#06060e;color:#e2e8f0;font-family:system-ui,sans-serif;text-align:center;padding:24px">'
+      + '<div style="font-size:18px;font-weight:800">Etwas ist schiefgelaufen</div>'
+      + '<div style="font-size:13px;color:#94a3b8;max-width:320px">Bitte starte die App neu.</div>'
+      + '<button onclick="window.location.reload()" style="margin-top:8px;padding:12px 28px;border-radius:12px;background:#3b82f6;color:#fff;border:none;font-weight:700;cursor:pointer">Neu laden</button>'
+      + '</div>';
+  }
 }

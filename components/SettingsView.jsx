@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import NativeStatsDashboard from "./NativeStatsDashboard";
 import ScreenTimeDashboard from "./ScreenTimeDashboard.jsx";
 import { Capacitor } from "@capacitor/core";
+import { AdService } from "../services/adService.js";
 import QuestIntensityControl from "./QuestIntensityControl.jsx";
 import { getPremiumFeatureForRoute, getPremiumStatus, isPremiumWidgetModule, PREMIUM_PRODUCT } from "../data/premium.js";
 import { LANGUAGE_OPTIONS, getLocaleLabel, normalizeLanguageMode, translate, writeBootstrapLanguage } from "../data/i18n.js";
@@ -1021,6 +1022,12 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
     }).catch(() => { });
   }, []);
 
+  // ── Ad consent (GDPR/UMP): only surface the "manage consent" entry where required ──
+  const [adConsentRequired, setAdConsentRequired] = useState(false);
+  useEffect(() => {
+    AdService.getPrivacyOptionsRequired().then(setAdConsentRequired).catch(() => {});
+  }, []);
+
   // ── Settings helpers ──
   const getSetting = (key, defaultVal = true) => state.settings?.[key] ?? defaultVal;
   const toggleSetting = (key, defaultVal = true) => {
@@ -1993,6 +2000,21 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.15)"}
             onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.08)"}
           >{t("settings.data.logout").toUpperCase()}</button>
+        )}
+
+        {/* Ad consent (EU/GDPR) — only shown where a consent entry point is required */}
+        {adConsentRequired && (
+          <button onClick={() => AdService.showPrivacyOptions()} style={{
+            width: "100%", padding: 12, borderRadius: 10, marginBottom: 10,
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+            color: "#e2e8f0", fontWeight: 700, fontSize: 11, fontFamily: "'Cinzel',serif",
+            cursor: "pointer", transition: "all 0.2s", letterSpacing: 1,
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+          >
+            AD-EINWILLIGUNG VERWALTEN
+          </button>
         )}
 
         {/* Version */}

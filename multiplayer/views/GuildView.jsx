@@ -286,6 +286,7 @@ export default function GuildView({ playerState }) {
           playerLevel={playerState?.level}
           playerRank={getRankName(playerState?.level)}
           placeholder="Guild Chat..."
+          context={`guild:${myGuild?.id || ""}`}
         />
       )}
 
