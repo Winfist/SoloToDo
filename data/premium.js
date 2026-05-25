@@ -9,6 +9,10 @@ export const PREMIUM_PRODUCT = {
   badge: "MONARCH PASS",
   monthlyPrice: "4,99 EUR / Monat",
   yearlyPrice: "39,99 EUR / Jahr",
+  monthlyAmount: "4,99 EUR",
+  yearlyAmount: "39,99 EUR",
+  yearlyPerMonth: "3,33 EUR",
+  yearlySavings: "-33%",
   betaDurationDays: 30,
   benefits: [
     {

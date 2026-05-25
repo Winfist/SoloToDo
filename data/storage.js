@@ -341,24 +341,36 @@ function hasNonStarterProgress(state, completedQuests = []) {
   );
 }
 
+function withoutStarterQuestProgress(state) {
+  if (!state) return state;
+  return {
+    ...state,
+    quests: arrayOf(state.quests).filter(q => !isStarterQuest(q)),
+    completedQuests: arrayOf(state.completedQuests).filter(q => !isStarterQuest(q)),
+  };
+}
+
 function mergeStateProgress(primary, fallback) {
   if (!primary || !fallback) return primary || fallback;
 
-  let completedQuests = mergeArrayByKey(primary.completedQuests, fallback.completedQuests, completedQuestKey);
-  const dungeonHistory = mergeArrayByKey(primary.dungeonHistory, fallback.dungeonHistory, dungeonHistoryKey);
-  const achievementsUnlocked = unionValues(primary.achievements?.unlocked, fallback.achievements?.unlocked);
-  const achievementsNotified = unionValues(primary.achievements?.notified, fallback.achievements?.notified);
-  let quests = mergeQuests(primary.quests, fallback.quests, completedQuests);
-  const inventory = mergeArrayByKey(primary.equipment?.inventory, fallback.equipment?.inventory, inventoryKey);
-  const shadows = mergeArrayByKey(primary.shadowArmy?.shadows, fallback.shadowArmy?.shadows, shadowKey);
-  const today = getToday();
   const primaryHasEstablishedProgress = hasNonStarterProgress(primary, primary.completedQuests);
   const fallbackHasEstablishedProgress = hasNonStarterProgress(fallback, fallback.completedQuests);
   const hasEstablishedProgress = primaryHasEstablishedProgress || fallbackHasEstablishedProgress;
-  if (hasEstablishedProgress) {
-    completedQuests = completedQuests.filter(q => !isStarterQuest(q));
-    quests = quests.filter(q => !isStarterQuest(q));
-  }
+  const primaryProgress = !primaryHasEstablishedProgress && fallbackHasEstablishedProgress
+    ? withoutStarterQuestProgress(primary)
+    : primary;
+  const fallbackProgress = !fallbackHasEstablishedProgress && primaryHasEstablishedProgress
+    ? withoutStarterQuestProgress(fallback)
+    : fallback;
+
+  let completedQuests = mergeArrayByKey(primaryProgress.completedQuests, fallbackProgress.completedQuests, completedQuestKey);
+  const dungeonHistory = mergeArrayByKey(primaryProgress.dungeonHistory, fallbackProgress.dungeonHistory, dungeonHistoryKey);
+  const achievementsUnlocked = unionValues(primary.achievements?.unlocked, fallback.achievements?.unlocked);
+  const achievementsNotified = unionValues(primary.achievements?.notified, fallback.achievements?.notified);
+  let quests = mergeQuests(primaryProgress.quests, fallbackProgress.quests, completedQuests);
+  const inventory = mergeArrayByKey(primaryProgress.equipment?.inventory, fallbackProgress.equipment?.inventory, inventoryKey);
+  const shadows = mergeArrayByKey(primaryProgress.shadowArmy?.shadows, fallbackProgress.shadowArmy?.shadows, shadowKey);
+  const today = getToday();
   const completedQuestXp = completedQuests.reduce((sum, quest) => sum + toFiniteNumber(quest?.xpEarned), 0);
   const completedQuestGold = completedQuests.reduce((sum, quest) => sum + toFiniteNumber(quest?.goldEarned), 0);
   const dungeonXp = dungeonHistory.reduce((sum, entry) => sum + toFiniteNumber(entry?.xp), 0);

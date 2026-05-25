@@ -34,6 +34,7 @@ const SIGNATURE_VIOLET = "#7c3aed";
 const SIGNATURE_VIOLET_LIGHT = "#a78bfa";
 const PORTAL_VOID_COLOR = new THREE.Color(SIGNATURE_VIOLET);
 const LOCKED_GATE_COLOR = "#3b4658";
+const PREMIUM_GATE_COLOR = "#c98a2b";
 const HUNTER_ISLAND_MODE_KEY = "sl-hunter-island-mode";
 const ONBOARDING_PORTAL_MODE_STEPS = new Set([
   "explain_portal_mode",
@@ -66,6 +67,15 @@ const wrapIndex = (index, length) => {
   if (!length) return 0;
   return (index + length) % length;
 };
+
+function LockGlyph({ size = 9 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function usePrefersReducedMotion() {
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -189,7 +199,7 @@ function CosmicBackground({ count, reducedMotion, portalColor }) {
 }
 
 // ── Soft additive glow discs behind a gate (fake bloom under ACES) ──────────
-function GateGlow({ selected, locked, color }) {
+function GateGlow({ selected, dim, color }) {
   const radii = selected ? [2.0, 1.4, 1.0] : [1.3, 0.95];
   const ops = selected ? [0.05, 0.07, 0.11] : [0.02, 0.03];
   return (
@@ -198,9 +208,9 @@ function GateGlow({ selected, locked, color }) {
         <mesh key={i} position={[0, 0, -i * 0.05]}>
           <circleGeometry args={[r, 64]} />
           <meshBasicMaterial
-            color={locked ? LOCKED_GATE_COLOR : (color || SIGNATURE_VIOLET)}
+            color={color || SIGNATURE_VIOLET}
             transparent
-            opacity={locked ? ops[i] * 0.4 : ops[i]}
+            opacity={dim ? ops[i] * 0.4 : ops[i]}
             blending={THREE.AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
@@ -239,7 +249,7 @@ function PortalVoid({ reducedMotion, portal }) {
 }
 
 // ── Cheap void for off-centre gates (dark well + faint violet bloom) ────────
-function PortalVoidCheap({ locked, portal }) {
+function PortalVoidCheap({ dim, color }) {
   return (
     <group>
       <mesh position={[0, 0, -0.01]}>
@@ -249,9 +259,9 @@ function PortalVoidCheap({ locked, portal }) {
       <mesh position={[0, 0, 0.012]}>
         <circleGeometry args={[0.9, 48]} />
         <meshBasicMaterial
-          color={locked ? LOCKED_GATE_COLOR : (portal?.color || SIGNATURE_VIOLET)}
+          color={color || SIGNATURE_VIOLET}
           transparent
-          opacity={locked ? 0.06 : 0.2}
+          opacity={dim ? 0.06 : 0.2}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
           toneMapped={false}
@@ -261,10 +271,11 @@ function PortalVoidCheap({ locked, portal }) {
   );
 }
 
-function PortalGate({ offset, index, selected, locked, reducedMotion, onSelect, portal }) {
+function PortalGate({ offset, index, selected, locked, premiumLocked, reducedMotion, onSelect, portal }) {
   const groupRef = useRef(null);
   const lightRef = useRef(null);
-  const emissive = locked ? "#11151f" : (portal?.color || SIGNATURE_VIOLET);
+  const gated = locked || premiumLocked;
+  const gateColor = locked ? LOCKED_GATE_COLOR : premiumLocked ? PREMIUM_GATE_COLOR : (portal?.color || SIGNATURE_VIOLET);
   const side = Math.sign(offset);
   const distance = Math.abs(offset);
   const target = useMemo(() => {
@@ -308,8 +319,8 @@ function PortalGate({ offset, index, selected, locked, reducedMotion, onSelect, 
       }
     }
     if (lightRef.current) {
-      const base = locked ? 0.35 : selected ? 5.2 : 1.5;
-      const flicker = reducedMotion || locked ? 0 : Math.sin(t * 1.7 + index) * (selected ? 1.0 : 0.25);
+      const base = gated ? (locked ? 0.35 : 0.7) : selected ? 5.2 : 1.5;
+      const flicker = reducedMotion || gated ? 0 : Math.sin(t * 1.7 + index) * (selected ? 1.0 : 0.25);
       lightRef.current.intensity = base + flicker;
     }
   });
@@ -324,11 +335,11 @@ function PortalGate({ offset, index, selected, locked, reducedMotion, onSelect, 
         onSelect(index);
       }}
     >
-      <GateGlow selected={selected} locked={locked} color={portal?.color} />
-      {(!locked && distance <= 1) ? <PortalVoid reducedMotion={reducedMotion} portal={portal} /> : <PortalVoidCheap locked={locked} portal={portal} />}
+      <GateGlow selected={selected} dim={gated} color={gateColor} />
+      {(!gated && distance <= 1) ? <PortalVoid reducedMotion={reducedMotion} portal={portal} /> : <PortalVoidCheap dim={gated} color={gateColor} />}
 
       {/* Gate light */}
-      <pointLight ref={lightRef} color={SIGNATURE_VIOLET} intensity={1.5} distance={6} decay={2} position={[0, 0, 0.6]} />
+      <pointLight ref={lightRef} color={gated ? gateColor : SIGNATURE_VIOLET} intensity={1.5} distance={6} decay={2} position={[0, 0, 0.6]} />
     </group>
   );
 }
@@ -418,6 +429,7 @@ function PortalScene({ portals, selectedIndex, onSelect, direction, entering, re
             offset={offset}
             selected={offset === 0}
             locked={!!portal.locked}
+            premiumLocked={!!portal.premiumLocked}
             reducedMotion={reducedMotion}
             portal={portal}
             onSelect={onSelect}
@@ -510,6 +522,15 @@ function PortalHud({
             <strong>{selectedPortal?.label}</strong>
             <span>{selectedPortalLockedText}</span>
           </div>
+          {selectedPortal?.locked ? (
+            <span className="hi-portal-tag hi-portal-tag--locked">
+              <LockGlyph size={9} /> Lv. {selectedPortal.unlockLevel}
+            </span>
+          ) : selectedPortal?.premiumLocked ? (
+            <span className="hi-portal-tag hi-portal-tag--pro">
+              <LockGlyph size={9} /> PRO
+            </span>
+          ) : null}
         </div>
 
         <div className="hi-portal-controls" aria-label="Portal-Steuerung">
@@ -518,12 +539,19 @@ function PortalHud({
           </button>
           <button
             type="button"
-            className="hi-portal-enter"
+            className={[
+              "hi-portal-enter",
+              (selectedPortal?.premiumLocked && !selectedPortal?.locked) ? "hi-portal-enter--pro" : "",
+            ].filter(Boolean).join(" ")}
             data-tutorial="portal-enter-btn"
             disabled={selectedPortal?.locked || !!enteringPortal}
             onClick={handlePortalEnter}
           >
-            {selectedPortal?.locked ? selectedPortalLockedText : selectedPortal?.premiumLocked ? "PRO Access" : "Portal betreten"}
+            {selectedPortal?.locked
+              ? selectedPortalLockedText
+              : selectedPortal?.premiumLocked
+                ? "Mit PRO freischalten"
+                : "Portal betreten"}
           </button>
           <button type="button" className="hi-portal-arrow hi-portal-arrow--right" data-tutorial="portal-arrow-right" aria-label="Naechstes Portal" onClick={() => movePortal(1)}>
             <span aria-hidden="true" />
@@ -533,6 +561,7 @@ function PortalHud({
         <div className="hi-portal-rail" role="tablist" aria-label="Portale" ref={railRef}>
           {allModules.map((portal, index) => {
             const selected = index === normalizedIndex;
+            const premium = portal.premiumLocked && !portal.locked;
             return (
               <button
                 key={`${portal.key}-${index}`}
@@ -543,11 +572,18 @@ function PortalHud({
                   "hi-portal-dot",
                   selected ? "hi-portal-dot--active" : "",
                   portal.locked ? "hi-portal-dot--locked" : "",
+                  premium ? "hi-portal-dot--premium" : "",
                 ].filter(Boolean).join(" ")}
                 onClick={() => setSelectedPortalIndex(index)}
               >
                 <img src={portal.iconSrc} alt="" aria-hidden="true" />
                 <span>{portal.label}</span>
+                {portal.locked && (
+                  <i className="hi-portal-dot__flag hi-portal-dot__flag--locked" aria-hidden="true"><LockGlyph size={7} /></i>
+                )}
+                {premium && (
+                  <i className="hi-portal-dot__flag hi-portal-dot__flag--pro" aria-hidden="true">PRO</i>
+                )}
               </button>
             );
           })}
@@ -633,13 +669,15 @@ function AppLauncherView({
                     >
                       <span className="hi-app-tile__icon">
                         <img src={item.iconSrc} alt="" aria-hidden="true" />
-                        {disabled && <span className="hi-app-tile__lock" aria-hidden="true">LOCK</span>}
-                        {premiumLocked && !disabled && <span className="hi-app-tile__pro">PRO</span>}
-                        {!disabled && item.badge > 0 && <span className="hi-app-tile__badge">{item.badge}</span>}
+                        {disabled && <span className="hi-app-tile__iconflag" aria-hidden="true"><LockGlyph size={9} /></span>}
+                        {!disabled && !premiumLocked && item.badge > 0 && <span className="hi-app-tile__badge">{item.badge}</span>}
                       </span>
+                      {premiumLocked && !disabled && (
+                        <span className="hi-app-tile__pro" aria-hidden="true"><LockGlyph size={8} /> PRO</span>
+                      )}
                       <span className="hi-app-tile__label">{item.label}</span>
                       <span className="hi-app-tile__meta">
-                        {disabled ? `Lv. ${item.unlockLevel}` : premiumLocked ? "Access" : item.meta || "Online"}
+                        {disabled ? `Lv. ${item.unlockLevel}` : premiumLocked ? "Pro-Zugang" : item.meta || "Online"}
                       </span>
                     </button>
                   );
@@ -1024,7 +1062,7 @@ export default function HunterIslandHub({
   const selectedPortalLockedText = selectedPortal?.locked
     ? levelLockedText(selectedPortal.unlockLevel)
     : selectedPortal?.premiumLocked
-      ? "PRO ACCESS REQUIRED"
+      ? "Nur mit Hunter Pro"
       : selectedPortal?.meta;
   const shellTopInset = typeof shellTopOffset === "number" ? `${shellTopOffset}px` : shellTopOffset || "0px";
   const shellBottomInset = typeof shellBottomOffset === "number" ? `${shellBottomOffset}px` : shellBottomOffset || "0px";
@@ -1656,6 +1694,7 @@ const HUNTER_ISLAND_CSS = `
 }
 .hi-portal-dot {
   flex: 0 0 auto;
+  position: relative;
   width: 84px;
   min-height: 48px;
   display: grid;
@@ -1697,6 +1736,72 @@ const HUNTER_ISLAND_CSS = `
 }
 .hi-portal-dot--locked {
   opacity: 0.55;
+}
+.hi-portal-dot--premium {
+  border-color: rgba(245,158,11,0.34);
+}
+.hi-portal-dot--premium img {
+  filter: drop-shadow(0 0 7px rgba(245,158,11,0.4));
+}
+.hi-portal-dot__flag {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  border-radius: 999px;
+}
+.hi-portal-dot__flag--locked {
+  width: 14px;
+  height: 14px;
+  color: #c2cadb;
+  background: rgba(2,4,10,0.85);
+  border: 1px solid rgba(148,163,184,0.32);
+}
+.hi-portal-dot__flag--pro {
+  padding: 1px 4px;
+  color: #fde68a;
+  background: rgba(245,158,11,0.2);
+  border: 1px solid rgba(245,158,11,0.52);
+  font: 900 7px/1 var(--font-sans);
+  letter-spacing: 0.4px;
+}
+.hi-portal-tag {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font: 900 9px/1 var(--font-sans);
+  letter-spacing: 0.6px;
+}
+.hi-portal-tag--pro {
+  color: #fde68a;
+  background: linear-gradient(180deg, rgba(245,158,11,0.3), rgba(245,158,11,0.14));
+  border: 1px solid rgba(245,158,11,0.55);
+  box-shadow: 0 2px 10px rgba(245,158,11,0.2);
+}
+.hi-portal-tag--locked {
+  color: #c2cadb;
+  background: rgba(2,4,10,0.7);
+  border: 1px solid rgba(148,163,184,0.3);
+}
+.hi-portal-enter--pro {
+  border-color: rgba(245,158,11,0.6);
+  background:
+    linear-gradient(135deg, rgba(245,158,11,0.42), rgba(18,12,4,0.92) 72%),
+    rgba(18,12,4,0.9);
+  color: #fde68a;
+}
+.hi-portal-enter--pro:not(:disabled):hover {
+  border-color: #f59e0b;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 26px rgba(245,158,11,0.42);
 }
 .hi-apps-view {
   position: absolute;
@@ -1898,7 +2003,7 @@ const HUNTER_ISLAND_CSS = `
 }
 .hi-app-tile__badge,
 .hi-app-tile__pro,
-.hi-app-tile__lock {
+.hi-app-tile__iconflag {
   position: absolute;
   z-index: 2;
   display: grid;
@@ -1919,32 +2024,46 @@ const HUNTER_ISLAND_CSS = `
   font-weight: 900;
 }
 .hi-app-tile__pro {
-  top: -5px;
-  right: -7px;
-  padding: 2px 5px;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px 2px 5px;
   border-radius: 999px;
   color: #fde68a;
-  background: rgba(245,158,11,0.18);
-  border: 1px solid rgba(245,158,11,0.42);
-  font-size: 7px;
+  background: linear-gradient(180deg, rgba(245,158,11,0.3), rgba(245,158,11,0.14));
+  border: 1px solid rgba(245,158,11,0.55);
+  box-shadow: 0 2px 8px rgba(245,158,11,0.2);
+  font-size: 8px;
   font-weight: 900;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
 }
-.hi-app-tile__lock {
-  inset: auto 50% -5px auto;
-  transform: translateX(50%);
-  padding: 2px 5px;
-  border-radius: 999px;
-  color: #a8b0c2;
-  background: rgba(2,4,10,0.86);
-  border: 1px solid rgba(148,163,184,0.18);
-  font-size: 7px;
-  font-weight: 900;
-  letter-spacing: 0.55px;
+.hi-app-tile__iconflag {
+  top: -5px;
+  right: -5px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  color: #c2cadb;
+  background: rgba(2,4,10,0.92);
+  border: 1px solid rgba(148,163,184,0.32);
 }
 .hi-app-tile--locked {
-  opacity: 0.58;
-  filter: grayscale(0.35);
+  opacity: 0.6;
+  filter: grayscale(0.4);
+}
+.hi-app-tile--premium {
+  border-color: rgba(245,158,11,0.32);
+  background:
+    radial-gradient(circle at 50% 8%, rgba(245,158,11,0.13), transparent 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.042), rgba(255,255,255,0.012));
+}
+.hi-app-tile--premium .hi-app-tile__icon {
+  border-color: rgba(245,158,11,0.42);
+}
+.hi-app-tile--premium .hi-app-tile__meta {
+  color: #d8a84e;
 }
 .hi-app-launch {
   position: absolute;

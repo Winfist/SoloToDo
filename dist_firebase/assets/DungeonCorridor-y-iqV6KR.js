@@ -1,4 +1,4 @@
-import{aW as k,r as d,aK as A,aI as R,aF as w,aG as Y,aX as ee,aY as te,aD as Z,j as e,aZ as se,aE as ae,aH as _,aL as K,aM as X,a_ as Q,a$ as re,b0 as ne,b1 as oe,b2 as J,aN as ie,aO as ce,aP as le,aQ as $}from"./index-B-lxa0t6.js";import{p as he,a as ue,g as O,P as me}from"./index-BVIfj9h5.js";const pe=()=>parseInt(k.replace(/\D+/g,"")),de=pe();class fe extends te{constructor(){super({uniforms:{time:{value:0},fade:{value:1}},vertexShader:`
+import{aW as k,r as d,aK as A,aI as R,aF as w,aG as Y,aX as ee,aY as te,aD as Z,j as e,aZ as se,aE as ae,aH as _,aL as K,aM as X,a_ as Q,a$ as re,b0 as ne,b1 as oe,b2 as J,aN as ie,aO as ce,aP as le,aQ as $}from"./index-DWRWslP-.js";import{p as he,a as ue,g as O,P as me}from"./index-VqT4Xwpv.js";const pe=()=>parseInt(k.replace(/\D+/g,"")),de=pe();class fe extends te{constructor(){super({uniforms:{time:{value:0},fade:{value:1}},vertexShader:`
       uniform float time;
       attribute float size;
       varying vec3 vColor;
