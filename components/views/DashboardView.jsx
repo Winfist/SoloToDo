@@ -41,7 +41,7 @@ const EDIT_MODE_CSS = `
 const CAROUSEL_CSS = `
 .dash-carousel {
   display: flex;
-  gap: 8px;
+  gap: 18px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
@@ -57,18 +57,13 @@ const CAROUSEL_CSS = `
 }
 @media (min-width: 520px) {
   .dash-carousel-card {
-    flex: 0 0 calc(50% - 4px);
+    flex: 0 0 calc(50% - 9px);
     max-width: none;
   }
 }
-@keyframes premiumModuleScan {
-  0% { transform: translateX(-130%) skewX(-18deg); opacity: 0; }
-  30% { opacity: .78; }
-  100% { transform: translateX(520%) skewX(-18deg); opacity: 0; }
-}
 @keyframes premiumModuleBreath {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.055); }
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 `;
 
@@ -104,9 +99,6 @@ function PremiumDashboardLockCard({ widgetKey, def, theme, onOpenPremium, compac
   copy.iconSrc = staticCopy.iconSrc || copy.iconSrc;
   copy.feature = staticCopy.feature || copy.feature;
   const accent = def?.color || theme?.primary || "#a855f7";
-  const glow = theme?.accent || accent;
-  const minHeight = compact ? 152 : 188;
-
   const open = () => onOpenPremium?.(copy.feature || "advanced_widgets");
 
   return (
@@ -122,82 +114,75 @@ function PremiumDashboardLockCard({ widgetKey, def, theme, onOpenPremium, compac
       }}
       style={{
         width: "100%",
-        minHeight,
-        padding: compact ? 14 : 16,
-        borderRadius: compact ? 14 : 16,
+        minHeight: compact ? 120 : 140,
+        padding: compact ? "14px" : "18px 16px",
+        borderRadius: 20,
         textAlign: "left",
-        background: `linear-gradient(135deg, rgba(255,255,255,0.052), ${accent}12, rgba(251,191,36,0.065))`,
-        border: "1px solid rgba(251,191,36,0.22)",
+        background: "rgba(10,12,22,0.55)",
+        backdropFilter: "blur(20px) saturate(1.3)",
+        WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+        border: "1px solid rgba(251,191,36,0.10)",
         color: "#e2e8f0",
         cursor: "pointer",
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px ${accent}12`,
+        boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 4px 20px rgba(0,0,0,0.12)",
         position: "relative",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        gap: compact ? 11 : 14,
+        gap: compact ? 10 : 14,
         outline: "none",
+        transition: "border-color 0.25s ease",
       }}
     >
-      <div style={{ position: "absolute", inset: 0, background: "rgba(3,5,15,0.48)", backdropFilter: "blur(2px) saturate(0.86)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 78, background: `linear-gradient(90deg, transparent, ${accent}28, transparent)`, animation: "premiumModuleScan 4.4s ease-in-out infinite", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", top: 0, left: 18, right: 18, height: 1, background: `linear-gradient(90deg, transparent, ${glow}77, rgba(251,191,36,0.55), transparent)`, boxShadow: `0 0 18px ${accent}44`, pointerEvents: "none" }} />
-
-      <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", gap: 13, alignItems: "flex-start" }}>
+      {/* Content */}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 13, alignItems: "flex-start" }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ color: "#fbbf24", fontSize: 8, fontWeight: 900, letterSpacing: 2.4, fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>
+          <div style={{ color: "#fbbf24", fontSize: 9, fontWeight: 700, letterSpacing: 1.8, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>
             {copy.eyebrow}
           </div>
-          <div style={{ color: "#fff", fontSize: compact ? 15 : 17, fontWeight: 900, fontFamily: "'Cinzel',serif", marginBottom: 6, lineHeight: 1.15, textShadow: `0 0 20px ${accent}44` }}>
+          <div style={{ color: "#fff", fontSize: compact ? 15 : 17, fontWeight: 800, fontFamily: "'Outfit',sans-serif", marginBottom: 5, lineHeight: 1.15 }}>
             {copy.title}
           </div>
-          <div style={{ color: "#94a3b8", fontSize: compact ? 10 : 11, lineHeight: 1.45, maxWidth: 285 }}>
+          <div style={{ color: "#7b8494", fontSize: compact ? 11 : 12, lineHeight: 1.45, fontFamily: "'Outfit',sans-serif" }}>
             {copy.desc}
           </div>
         </div>
         <div style={{
-          width: compact ? 42 : 48,
-          height: compact ? 42 : 48,
-          borderRadius: "50%",
+          width: compact ? 40 : 44,
+          height: compact ? 40 : 44,
+          borderRadius: 14,
           display: "grid",
           placeItems: "center",
-          background: `radial-gradient(circle, ${accent}1d, ${accent}08)`,
-          border: `1.5px solid ${accent}44`,
-          boxShadow: `0 0 30px ${accent}24, inset 0 0 18px ${accent}12`,
-          animation: "premiumModuleBreath 2.7s ease-in-out infinite",
+          background: "rgba(251,191,36,0.06)",
+          border: "1px solid rgba(251,191,36,0.12)",
           flexShrink: 0,
+          animation: "premiumModuleBreath 3s ease-in-out infinite",
         }}>
           {copy.iconSrc ? (
-            <img src={copy.iconSrc} alt="" style={{ width: compact ? 22 : 25, height: compact ? 22 : 25, objectFit: "contain", filter: `brightness(1.25) drop-shadow(0 0 8px ${accent}88)` }} />
+            <img src={copy.iconSrc} alt="" style={{ width: compact ? 20 : 22, height: compact ? 20 : 22, objectFit: "contain", opacity: 0.7 }} />
           ) : (
-            <span style={{ color: glow, fontSize: 11, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>PRO</span>
+            <span style={{ color: "#fbbf24", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>PRO</span>
           )}
         </div>
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 5 }}>
-          {[accent, "#fbbf24", glow].map((color, index) => (
-            <span key={`${color}-${index}`} style={{ width: 7, height: 7, borderRadius: 999, background: color, opacity: 0.72, boxShadow: `0 0 8px ${color}66` }} />
-          ))}
-        </div>
+      {/* CTA */}
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <span style={{
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: 32,
+          height: 30,
           padding: "0 14px",
-          borderRadius: 11,
-          border: `1px solid ${accent}55`,
-          background: `linear-gradient(135deg, ${accent}28, rgba(168,85,247,0.14))`,
-          color: "#fff",
-          fontSize: 9,
-          fontWeight: 900,
+          borderRadius: 999,
+          background: "rgba(251,191,36,0.08)",
+          border: "1px solid rgba(251,191,36,0.18)",
+          color: "#fbbf24",
+          fontSize: 10,
+          fontWeight: 700,
           fontFamily: "'JetBrains Mono',monospace",
-          letterSpacing: 1.4,
-          boxShadow: `0 8px 22px ${accent}20, inset 0 1px 0 rgba(255,255,255,0.12)`,
-          whiteSpace: "nowrap",
+          letterSpacing: 0.8,
         }}>
           {t("dashboard.premiumLock.cta")}
         </span>
@@ -286,6 +271,32 @@ export default function DashboardView({
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
   const [showScreenTimeModal, setShowScreenTimeModal] = useState(false);
+  const [showEditHeader, setShowEditHeader] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY < lastScrollY.current - 10) {
+        setShowEditHeader(true);
+      } else if (currentY > lastScrollY.current + 10) {
+        setShowEditHeader(false);
+      }
+      
+      // Allow iOS pull-to-reveal (negative scrollY)
+      if (currentY < 0) {
+        setShowEditHeader(true);
+      } else if (currentY === 0 && lastScrollY.current > 0) {
+        // If we hit exactly 0 after scrolling down, hide it so it only appears on explicit overscroll
+        setShowEditHeader(false);
+      }
+      
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
 
   // Lock body scroll when detail modals are open
   useEffect(() => {
@@ -675,53 +686,54 @@ export default function DashboardView({
           isEmpty: false,
           content: (
             <>
-              {/* ── COMPACT HUNTER STATUS ── */}
               <div
                 data-tutorial="hunter-status"
                 style={{
-                  width: "100%", background: "rgba(8,12,24,0.82)", border: "1px solid rgba(148,163,184,0.12)",
-                  borderRadius: 14, padding: "13px 14px",
+                  width: "100%",
+                  background: "rgba(10,12,22,0.55)",
+                  backdropFilter: "blur(20px) saturate(1.3)",
+                  WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                  borderRadius: 20,
+                  padding: "16px 16px",
                   display: "flex", alignItems: "center", gap: 14,
-                  boxShadow: "0 8px 22px rgba(0,0,0,0.18)",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 4px 20px rgba(0,0,0,0.12)",
                 }}
               >
-                {/* Level badge */}
+                {/* Level badge — round */}
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12, display: "flex", flexDirection: "column",
+                  width: 46, height: 46, borderRadius: 999, display: "flex", flexDirection: "column",
                   alignItems: "center", justifyContent: "center", flexShrink: 0,
-                  background: `${theme.primary}12`,
-                  border: `1px solid ${theme.primary}30`,
+                  background: `${theme.primary}0a`,
+                  border: `1.5px solid ${theme.primary}20`,
                 }}>
-                  <div style={{ fontSize: 8, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, lineHeight: 1 }}>LVL</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1 }}>{state.level}</div>
+                  <div style={{ fontSize: 7, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, lineHeight: 1 }}>LVL</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>{state.level}</div>
                 </div>
 
                 {/* XP bar + info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                    <span style={{ fontSize: 10, fontWeight: 900, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>{t("dashboard.widgets.hunter_status.label")}</span>
-                    <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{t("dashboard.widgets.hunter_status.label")}</span>
+                    <span style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>
                       {Math.round(xpPercent || 0)}%
                     </span>
                   </div>
-                  <div style={{ height: 6, background: "rgba(15,15,30,0.9)", borderRadius: 3, overflow: "hidden", border: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
                     <div style={{
-                      width: `${Math.max(0, Math.min(100, xpPercent || 0))}%`, height: "100%", borderRadius: 3,
+                      width: `${Math.max(0, Math.min(100, xpPercent || 0))}%`, height: "100%", borderRadius: 999,
                       background: `linear-gradient(90deg,${theme.primary},${theme.accent})`,
                       transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
-                      position: "relative", overflow: "hidden",
-                    }}>
-                    </div>
+                    }} />
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 7, color: "#94a3b8", fontSize: 10, fontFamily: "'Outfit',sans-serif" }}>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>XP bis zum naechsten Level</span>
-                    <span style={{ color: "#cbd5e1", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 7, color: "#64748b", fontSize: 11, fontFamily: "'Outfit',sans-serif" }}>
+                    <span>Nächstes Level</span>
+                    <span style={{ color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}>
                       {(state.xp || 0).toLocaleString()} / {(xpNeeded || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
               </div>
-
             </>
           )
         };
@@ -754,12 +766,13 @@ export default function DashboardView({
           isEmpty: false,
           content: (
             <div data-tutorial="quest-board" style={{
-              background: "linear-gradient(180deg, rgba(8,12,24,0.94), rgba(4,6,14,0.98))",
-              border: "1px solid rgba(148,163,184,0.13)",
-              borderTop: `1px solid ${theme.primary}38`,
-              borderRadius: 16,
-              padding: 14,
-              boxShadow: "0 14px 32px rgba(0,0,0,0.26)",
+              background: "rgba(10,12,22,0.55)",
+              backdropFilter: "blur(20px) saturate(1.3)",
+              WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+              border: "1px solid rgba(255,255,255,0.05)",
+              borderRadius: 22,
+              padding: "18px 16px",
+              boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 4px 24px rgba(0,0,0,0.15)",
             }}>
               {/* ── EMERGENCY QUEST ── */}
               {can('emergency_quests') && state.emergencyQuest && (
@@ -768,42 +781,31 @@ export default function DashboardView({
                 </div>
               )}
 
-              {/* ── COMPACT QUEST BAR: Filters + Actions in one row ── */}
-              <div style={{
-                display: "flex",
-                alignItems: "flex-end",
-                justifyContent: "space-between",
-                gap: 12,
-                margin: "2px 0 12px",
-              }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 10, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.4 }}>{t("dashboard.board.eyebrow")}</div>
-                  <div style={{ fontSize: 24, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 900, lineHeight: 1.05 }}>{t("dashboard.board.title")}</div>
-                  <div style={{ marginTop: 5, color: "#94a3b8", fontSize: 12, lineHeight: 1.35 }}>
-                    {t("dashboard.board.desc")}
-                  </div>
+              {/* ── Quest Board Header ── */}
+              <div style={{ margin: "0 0 14px" }}>
+                <div style={{ fontSize: 28, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", fontWeight: 800, lineHeight: 1.05 }}>{t("dashboard.board.title")}</div>
+                <div style={{ marginTop: 5, color: "#7b8494", fontSize: 13, lineHeight: 1.4, fontFamily: "'Outfit',sans-serif" }}>
+                  {t("dashboard.board.desc")}
                 </div>
               </div>
 
-              <div style={{ marginBottom: 12, padding: 11, borderRadius: 14, background: "rgba(2,6,23,0.52)", border: "1px solid rgba(148,163,184,0.12)" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 10, alignItems: "center", marginBottom: can('quest_filters') ? 10 : 0 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>{t("dashboard.board.control")}</div>
-                    <div style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{questFilterSummary}</div>
-                  </div>
+              <div style={{ marginBottom: 14 }}>
+                {/* Filter summary + toggle */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+                  <span style={{ color: "#64748b", fontSize: 12, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{questFilterSummary}</span>
                   {can('quest_filters') && (
                     <button
                       onClick={() => setFiltersOpen(open => !open)}
                       aria-expanded={filtersOpen || hasActiveQuestFilters}
                       style={{
-                        minHeight: 32,
+                        minHeight: 30,
                         padding: "0 10px",
                         borderRadius: 999,
-                        background: hasActiveQuestFilters ? `${theme.primary}16` : "rgba(255,255,255,0.035)",
-                        color: hasActiveQuestFilters ? (theme.accent || theme.primary) : "#94a3b8",
-                        border: `1px solid ${hasActiveQuestFilters ? theme.primary + "36" : "rgba(255,255,255,0.08)"}`,
-                        fontSize: 9,
-                        fontWeight: 900,
+                        background: hasActiveQuestFilters ? `${theme.primary}10` : "rgba(255,255,255,0.03)",
+                        color: hasActiveQuestFilters ? (theme.accent || theme.primary) : "#64748b",
+                        border: "none",
+                        fontSize: 10,
+                        fontWeight: 700,
                         fontFamily: "'JetBrains Mono',monospace",
                         cursor: "pointer",
                       }}
@@ -813,13 +815,14 @@ export default function DashboardView({
                   )}
                 </div>
 
+                {/* Action buttons */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 6 }}>
-                  <button data-tutorial="create-quest-btn" onClick={() => setShowCreate(true)} style={{ minHeight: 36, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}24, ${theme.primary}10)`, color: theme.accent || theme.primary, border: `1px solid ${theme.primary}36`, fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>{t("dashboard.board.create")}</button>
+                  <button data-tutorial="create-quest-btn" onClick={() => setShowCreate(true)} style={{ minHeight: 36, borderRadius: 12, background: `${theme.primary}0c`, color: theme.accent || theme.primary, border: "none", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", transition: "background 0.2s" }}>{t("dashboard.board.create")}</button>
                   {createQuest && (
-                    <button onClick={() => quickAddMode ? setQuickAddMode(false) : (requireQuestSlot ? requireQuestSlot(() => setQuickAddMode(true)) : setQuickAddMode(true))} style={{ minHeight: 36, borderRadius: 10, background: quickAddMode ? `${theme.primary}18` : "rgba(255,255,255,0.032)", color: quickAddMode ? theme.primary : "#94a3b8", border: `1px solid ${quickAddMode ? theme.primary + "40" : "rgba(255,255,255,0.08)"}`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>QUICK +</button>
+                    <button onClick={() => quickAddMode ? setQuickAddMode(false) : (requireQuestSlot ? requireQuestSlot(() => setQuickAddMode(true)) : setQuickAddMode(true))} style={{ minHeight: 36, borderRadius: 12, background: quickAddMode ? `${theme.primary}10` : "rgba(255,255,255,0.025)", color: quickAddMode ? theme.primary : "#64748b", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>QUICK +</button>
                   )}
                   {can('ai_task_scan') && setShowTaskScan && (
-                    <button onClick={() => requirePremium?.("ai_task_scan", () => setShowTaskScan(true))} style={{ minHeight: 36, borderRadius: 10, background: premiumStatus?.active ? "rgba(34,211,238,0.07)" : "linear-gradient(135deg, rgba(168,85,247,0.16), rgba(34,211,238,0.06))", color: premiumStatus?.active ? theme.primary : "#c084fc", border: `1px solid ${premiumStatus?.active ? theme.primary + "28" : "rgba(168,85,247,0.38)"}`, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{premiumStatus?.active ? "SCAN" : "PRO SCAN"}</button>
+                    <button onClick={() => requirePremium?.("ai_task_scan", () => setShowTaskScan(true))} style={{ minHeight: 36, borderRadius: 12, background: premiumStatus?.active ? "rgba(34,211,238,0.06)" : "rgba(168,85,247,0.08)", color: premiumStatus?.active ? theme.primary : "#c084fc", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>{premiumStatus?.active ? "SCAN" : "PRO SCAN"}</button>
                   )}
                 </div>
 
@@ -891,13 +894,10 @@ export default function DashboardView({
                 )}
               </div>
 
-              <div style={{ marginBottom: 12, padding: 11, borderRadius: 14, background: "rgba(15,23,42,0.34)", border: "1px dashed rgba(148,163,184,0.18)" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ color: "#94a3b8", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>{t("dashboard.board.systemSetting")}</div>
-                    <div style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4 }}>{t("dashboard.board.systemSettingDesc")}</div>
-                  </div>
-                  <span style={{ padding: "5px 8px", borderRadius: 999, background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.13)", color: "#94a3b8", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{t("dashboard.board.noQuest")}</span>
+              <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 16, background: "rgba(255,255,255,0.02)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                  <span style={{ color: "#7b8494", fontSize: 12, fontFamily: "'Outfit',sans-serif" }}>{t("dashboard.board.systemSettingDesc")}</span>
+                  <span style={{ padding: "3px 8px", borderRadius: 999, background: "rgba(255,255,255,0.03)", color: "#475569", fontSize: 9, fontWeight: 600, fontFamily: "'Outfit',sans-serif" }}>{t("dashboard.board.noQuest")}</span>
                 </div>
                 <QuestIntensityControl state={state} persist={persist} theme={theme} compact surface="embedded" premiumStatus={premiumStatus} onOpenPremium={openPremiumModal} />
               </div>
@@ -1045,7 +1045,7 @@ export default function DashboardView({
                       )}
                     </>
                   ) : (
-                    null && sortedVisibleQuests.map((q, i) => (
+                    sortedVisibleQuests.map((q, i) => (
                       <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
                     ))
                   )}
@@ -1077,16 +1077,15 @@ export default function DashboardView({
         return {
           isEmpty: false,
           content: (
-            <div style={{ padding: "18px", borderRadius: 16, background: "linear-gradient(135deg,rgba(168,85,247,0.05),rgba(124,58,237,0.08))", border: "1px solid #7c3aed33", position: "relative", overflow: "hidden", backdropFilter: "blur(4px)" }}>
-              <div style={{ position: "absolute", right: -20, top: -20, opacity: 0.05, pointerEvents: "none", animation: "float 4s ease-in-out infinite" }}><img src={STAT_ICONS.int} alt="vision" style={{ width: 80, height: 80, objectFit: "contain" }} /></div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <img src={STAT_ICONS.int} alt="Vision Board" style={{ width: 24, height: 24, objectFit: "contain", filter: "drop-shadow(0 0 6px #a855f788)" }} />
+            <div style={{ padding: "18px 16px", borderRadius: 20, background: "rgba(10,12,22,0.55)", backdropFilter: "blur(20px) saturate(1.3)", WebkitBackdropFilter: "blur(20px) saturate(1.3)", border: "1px solid rgba(255,255,255,0.05)", position: "relative", overflow: "hidden", boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 4px 20px rgba(0,0,0,0.12)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <img src={STAT_ICONS.int} alt="Vision Board" style={{ width: 22, height: 22, objectFit: "contain", opacity: 0.8 }} />
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: "#a855f7", fontFamily: "'Cinzel',serif", letterSpacing: 2 }}>{t("dashboard.widgets.vision_board.label").toUpperCase()}</div>
-                  <div style={{ fontSize: 9, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{t("dashboard.vision.subtitle")}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#a855f7", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.6 }}>{t("dashboard.widgets.vision_board.label").toUpperCase()}</div>
+                  <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'Outfit',sans-serif" }}>{t("dashboard.vision.subtitle")}</div>
                 </div>
               </div>
-              <ul style={{ margin: 0, padding: "0 0 0 20px", color: "#e2e8f0", fontSize: 13, lineHeight: 1.8, fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
+              <ul style={{ margin: 0, padding: "0 0 0 18px", color: "#e2e8f0", fontSize: 13, lineHeight: 1.8, fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
                 {["0", "1", "2", "3", "4"].map((_, index) => (
                   <li key={index} style={{ paddingBottom: index < 4 ? 4 : 0 }}>{t(`dashboard.vision.lines.${index}`)}</li>
                 ))}
@@ -1211,7 +1210,7 @@ export default function DashboardView({
   };
 
   return (
-    <div style={{ animation: "pageEmerge 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
+    <div style={{ animation: "pageEmerge 0.4s cubic-bezier(0.22,1,0.36,1) both" }}>
       <style>{CAROUSEL_CSS}</style>
       {editMode && <style>{EDIT_MODE_CSS}</style>}
 
@@ -1247,19 +1246,33 @@ export default function DashboardView({
           <div style={{ display: "flex", width: "100%", justifyContent: "flex-end" }}>
             <button
               onClick={() => setEditMode(true)}
+              aria-label={t("dashboard.edit.layout")}
               style={{
-                display: "flex", alignItems: "center", gap: 5,
-                padding: "5px 10px", borderRadius: 9,
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                color: "#64748b", fontSize: 10, fontWeight: 600,
-                fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
-                transition: "all 0.25s",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                padding: "6px 12px", borderRadius: 20,
+                background: "rgba(255,255,255,0.03)",
+                backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.05)",
+                color: "#64748b", fontSize: 11, fontWeight: 600, fontFamily: "'Outfit',sans-serif",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = theme.primary + "44"; e.currentTarget.style.color = theme.accent; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#64748b"; }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.color = theme.accent || "#e2e8f0"; 
+                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.color = "#64748b"; 
+                e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+              }}
             >
-              {t("dashboard.edit.layout")}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+              </svg>
+              <span>{t("dashboard.edit.layout")}</span>
             </button>
           </div>
         )}
@@ -1285,7 +1298,7 @@ export default function DashboardView({
               key={def.key}
               data-widget-item
               style={{
-                marginBottom: editMode ? 10 : 24,
+                marginBottom: editMode ? 10 : 16,
                 position: "relative",
                 ...(editMode ? {
                   border: `1.5px dashed ${isDragged ? theme.primary + "88" : theme.primary + "30"}`,

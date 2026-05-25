@@ -5,18 +5,24 @@ import StreakFlame from "../ui/StreakFlame.jsx";
 import { getToday, formatLocalDateTime } from "../../data/dateUtils.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 
-const summaryShell = (accent) => ({
-  background: "linear-gradient(180deg, rgba(8,12,24,0.94), rgba(5,7,15,0.98))",
-  border: "1px solid rgba(148,163,184,0.14)",
-  borderTop: `1px solid ${accent}38`,
-  borderRadius: 14,
-  padding: 14,
+// ── Premium glass card base ──────────────────────────────────
+// Single shared surface style: frosted glass on dark, no accent
+// borderTop, no heavy shadows. Let the content speak.
+const glassCard = {
+  background: "rgba(10,12,22,0.55)",
+  backdropFilter: "blur(20px) saturate(1.3)",
+  WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+  border: "1px solid rgba(255,255,255,0.05)",
+  borderRadius: 20,
+  padding: "18px 16px",
   position: "relative",
   overflow: "hidden",
-  minHeight: 138,
-  boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
-});
+  boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 4px 20px rgba(0,0,0,0.12)",
+};
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  STREAK DISPLAY
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export function StreakDisplayWidget({ state, theme }) {
   const { t } = useI18n();
   const streak = state.streak || 0;
@@ -26,44 +32,50 @@ export function StreakDisplayWidget({ state, theme }) {
   const milestones = [3, 7, 14, 30];
 
   return (
-    <div style={summaryShell(flameColor)}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
-        <div>
-          <div style={{ fontSize: 10, color: flameColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.4 }}>{t("dashboard.streak.kicker")}</div>
-          <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>{t("dashboard.streak.subtitle")}</div>
-        </div>
-        <div style={{ padding: "4px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#94a3b8", fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>
+    <div style={{ ...glassCard }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <span style={{ fontSize: 11, color: flameColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1.6 }}>
+          {t("dashboard.streak.kicker")}
+        </span>
+        <span style={{ color: "#64748b", fontSize: 11, fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
           {t("dashboard.streak.best", { count: maxStreak })}
-        </div>
+        </span>
       </div>
 
+      {/* Big number + flame */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
-          <span style={{ fontSize: 42, fontWeight: 900, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", lineHeight: 0.95 }}>{streak}</span>
-          <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace" }}>{streak === 1 ? t("dashboard.streak.day_one") : t("dashboard.streak.day_other")}</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontSize: 44, fontWeight: 800, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", lineHeight: 0.9 }}>{streak}</span>
+          <span style={{ fontSize: 13, color: "#64748b", fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>
+            {streak === 1 ? t("dashboard.streak.day_one") : t("dashboard.streak.day_other")}
+          </span>
         </div>
         <StreakFlame streak={streak} size={26} disabled={state.settings?.streakFlame === false} />
       </div>
 
-      <div style={{ marginTop: 12 }}>
-        <div style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 999, overflow: "hidden" }}>
-          <div style={{ width: `${streakPercent}%`, height: "100%", background: flameColor, borderRadius: 999, transition: "width 0.7s ease" }} />
+      {/* Progress bar + milestones */}
+      <div style={{ marginTop: 16 }}>
+        <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
+          <div style={{
+            width: `${streakPercent}%`, height: "100%",
+            background: `linear-gradient(90deg, ${flameColor}, ${flameColor}aa)`,
+            borderRadius: 999,
+            transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
+          }} />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 5, marginTop: 10 }}>
-          {milestones.map(milestone => {
-            const reached = streak >= milestone;
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, padding: "0 2px" }}>
+          {milestones.map(m => {
+            const reached = streak >= m;
             return (
-              <div key={milestone} style={{
-                textAlign: "center",
-                padding: "4px 0",
-                borderRadius: 7,
-                background: reached ? `${flameColor}16` : "rgba(255,255,255,0.025)",
-                border: `1px solid ${reached ? flameColor + "35" : "rgba(255,255,255,0.05)"}`,
-                color: reached ? flameColor : "#475569",
-                fontSize: 9,
-                fontWeight: 800,
-                fontFamily: "'JetBrains Mono',monospace",
-              }}>{milestone}d</div>
+              <div key={m} style={{
+                width: 30, height: 30, borderRadius: 999,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: reached ? `${flameColor}14` : "rgba(255,255,255,0.025)",
+                color: reached ? flameColor : "#334155",
+                fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace",
+                transition: "all 0.3s ease",
+              }}>{m}d</div>
             );
           })}
         </div>
@@ -72,6 +84,9 @@ export function StreakDisplayWidget({ state, theme }) {
   );
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  DAILY PROGRESS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export function DailyProgressWidget({ state, theme }) {
   const { t } = useI18n();
   const allQuests = (state.quests || []);
@@ -84,35 +99,43 @@ export function DailyProgressWidget({ state, theme }) {
   const statusText = percent >= 100 ? t("dashboard.progress.statusDone") : percent >= 60 ? t("dashboard.progress.statusRunning") : t("dashboard.progress.statusOpen");
 
   return (
-    <div style={summaryShell(statusColor)}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 16 }}>
-        <div>
-          <div style={{ fontSize: 10, color: statusColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: 1.4 }}>{t("dashboard.progress.kicker")}</div>
-          <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 3 }}>{t("dashboard.progress.title")}</div>
-        </div>
-        <div style={{ padding: "4px 8px", borderRadius: 8, background: `${statusColor}12`, border: `1px solid ${statusColor}2c`, color: statusColor, fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
-          {statusText}
-        </div>
+    <div style={{ ...glassCard }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <span style={{ fontSize: 11, color: statusColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1.6 }}>
+          {t("dashboard.progress.kicker")}
+        </span>
+        <span style={{
+          padding: "3px 10px", borderRadius: 999,
+          background: `${statusColor}0c`,
+          color: statusColor, fontSize: 11, fontWeight: 600, fontFamily: "'Outfit',sans-serif",
+        }}>{statusText}</span>
       </div>
 
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-          <span style={{ fontSize: 42, fontWeight: 900, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", lineHeight: 0.95 }}>{percent}</span>
-          <span style={{ fontSize: 14, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace" }}>%</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+          <span style={{ fontSize: 44, fontWeight: 800, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", lineHeight: 0.9 }}>{percent}</span>
+          <span style={{ fontSize: 16, color: "#475569", fontFamily: "'Outfit',sans-serif", fontWeight: 500 }}>%</span>
         </div>
-        <div style={{ color: "#94a3b8", fontSize: 11, textAlign: "right" }}>
-          <strong style={{ color: "#e2e8f0", fontSize: 14 }}>{completedToday}</strong> {t("dashboard.progress.completed")}<br />
-          <strong style={{ color: "#e2e8f0", fontSize: 14 }}>{todayQuests.length}</strong> {t("dashboard.progress.open")}
+        <div style={{ color: "#7b8494", fontSize: 12, textAlign: "right", fontFamily: "'Outfit',sans-serif", lineHeight: 1.7 }}>
+          <strong style={{ color: "#e2e8f0", fontWeight: 700 }}>{completedToday}</strong> {t("dashboard.progress.completed")}<br />
+          <strong style={{ color: "#e2e8f0", fontWeight: 700 }}>{todayQuests.length}</strong> {t("dashboard.progress.open")}
         </div>
       </div>
 
-      <div style={{ marginTop: 13, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-        <div style={{ width: `${percent}%`, height: "100%", borderRadius: 999, background: statusColor, transition: "width 0.7s ease" }} />
+      <div style={{ marginTop: 16, height: 3, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        <div style={{
+          width: `${percent}%`, height: "100%", borderRadius: 999,
+          background: `linear-gradient(90deg, ${statusColor}, ${statusColor}aa)`,
+          transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
+        }} />
       </div>
     </div>
   );
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  TODAY COMMAND CENTER — Hero widget
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeReminder, setShowTaskScan, setShowCreate }) {
   const { t } = useI18n();
   const today = getToday();
@@ -128,71 +151,107 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
     .filter(r => !r.fired && r.reminderAt && new Date(r.reminderAt).getTime() > Date.now())
     .sort((a, b) => new Date(a.reminderAt) - new Date(b.reminderAt))[0];
   const statusColor = overdueCount > 0 ? "#ef4444" : progressPct >= 100 ? "#22c55e" : theme.primary;
+  const isDone = progressPct >= 100;
+
+  // SVG progress ring
+  const ringSize = 72;
+  const sw = 4.5;
+  const r = (ringSize - sw * 2) / 2;
+  const circ = 2 * Math.PI * r;
+  const dashOffset = circ - (progressPct / 100) * circ;
 
   return (
     <section data-tutorial="today-command" style={{
-      background: "linear-gradient(180deg, rgba(8,12,24,0.9), rgba(5,7,15,0.96))",
-      border: "1px solid rgba(148,163,184,0.12)",
-      borderTop: `1px solid ${statusColor}38`,
-      borderRadius: 16,
-      padding: 14,
-      boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
+      background: "rgba(10,12,22,0.55)",
+      backdropFilter: "blur(20px) saturate(1.3)",
+      WebkitBackdropFilter: "blur(20px) saturate(1.3)",
+      border: "1px solid rgba(255,255,255,0.05)",
+      borderRadius: 22,
+      padding: "20px 18px",
+      boxShadow: "0 1px 0 rgba(255,255,255,0.03) inset, 0 4px 24px rgba(0,0,0,0.15)",
       overflow: "hidden",
     }}>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 12, alignItems: "center" }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 10, letterSpacing: 1.4, color: statusColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{t("dashboard.command.kicker")}</div>
-          <h2 style={{ margin: "3px 0 0", color: "#f8fafc", fontSize: 21, lineHeight: 1.05, fontFamily: "'Outfit',sans-serif", fontWeight: 900 }}>{t("dashboard.command.title")}</h2>
-          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5, lineHeight: 1.35 }}>
-            {overdueCount > 0 ? t("dashboard.command.overdue", { count: overdueCount }) : t("dashboard.command.noDebt")} / {t("dashboard.command.openQuests", { count: dueNowCount })}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 12, letterSpacing: 1.6, color: statusColor, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+            {t("dashboard.command.kicker")}
+          </div>
+          <h2 style={{ margin: "5px 0 0", color: "#f8fafc", fontSize: 24, lineHeight: 1.05, fontFamily: "'Outfit',sans-serif", fontWeight: 800 }}>
+            {t("dashboard.command.title")}
+          </h2>
+          <div style={{ color: "#7b8494", fontSize: 13, marginTop: 6, lineHeight: 1.4, fontFamily: "'Outfit',sans-serif" }}>
+            {overdueCount > 0 ? t("dashboard.command.overdue", { count: overdueCount }) : t("dashboard.command.noDebt")} · {t("dashboard.command.openQuests", { count: dueNowCount })}
           </div>
         </div>
-        <div style={{
-          width: 54,
-          height: 54,
-          borderRadius: 16,
-          display: "grid",
-          placeItems: "center",
-          background: `conic-gradient(${statusColor} ${progressPct * 3.6}deg, rgba(255,255,255,0.08) 0deg)`,
-          boxShadow: `0 0 22px ${statusColor}18`,
-        }}>
-          <div style={{ width: 43, height: 43, borderRadius: 13, background: "rgba(5,7,15,0.97)", display: "grid", placeItems: "center", textAlign: "center" }}>
-            <div>
-              <div style={{ fontSize: 15, color: "#f8fafc", fontWeight: 900, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>{progressPct}%</div>
-              <div style={{ color: "#64748b", fontSize: 8, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{t("dashboard.command.doneBadge")}</div>
-            </div>
+
+        {/* SVG Progress Ring */}
+        <div style={{ position: "relative", flexShrink: 0, width: ringSize, height: ringSize }}>
+          <svg width={ringSize} height={ringSize} style={{ transform: "rotate(-90deg)", display: "block" }}>
+            <circle cx={ringSize / 2} cy={ringSize / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={sw} />
+            <circle
+              cx={ringSize / 2} cy={ringSize / 2} r={r} fill="none"
+              stroke={statusColor}
+              strokeWidth={sw}
+              strokeDasharray={circ}
+              strokeDashoffset={dashOffset}
+              strokeLinecap="round"
+              style={{
+                transition: "stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)",
+                filter: isDone ? `drop-shadow(0 0 8px ${statusColor}66)` : "none",
+              }}
+            />
+          </svg>
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ fontSize: 18, color: "#f8fafc", fontWeight: 800, fontFamily: "'Outfit',sans-serif", lineHeight: 1 }}>
+              {progressPct}%
+            </span>
+            <span style={{ color: "#475569", fontSize: 8, fontFamily: "'JetBrains Mono',monospace", marginTop: 2, letterSpacing: 0.5 }}>
+              {t("dashboard.command.doneBadge")}
+            </span>
           </div>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 13 }}>
+      {/* Stats row */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginTop: 16 }}>
         {[
           { label: t("dashboard.command.completed"), value: completedTodayCount, color: progressPct >= 100 ? "#22c55e" : theme.primary },
           { label: t("dashboard.command.streak"), value: streakRisk ? t("dashboard.command.streakOpen") : t("dashboard.command.streakStable"), color: streakRisk ? "#f59e0b" : "#f97316" },
-          { label: t("dashboard.command.habits"), value: habitsOpen, color: habitsOpen > 0 ? "#22c55e" : "#64748b" },
+          { label: t("dashboard.command.habits"), value: habitsOpen, color: habitsOpen > 0 ? "#22c55e" : "#475569" },
         ].map(item => (
           <div key={item.label} style={{
-            padding: "9px 10px",
-            borderRadius: 11,
-            background: "rgba(255,255,255,0.026)",
-            border: `1px solid ${item.color}22`,
-            minWidth: 0,
+            padding: "10px 10px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.025)",
           }}>
-            <div style={{ color: item.color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{item.label}</div>
-            <div style={{ color: "#e2e8f0", fontSize: 13, marginTop: 4, fontWeight: 800, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis" }}>{item.value}</div>
+            <div style={{ color: item.color, fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.3 }}>
+              {item.label}
+            </div>
+            <div style={{ color: "#e2e8f0", fontSize: 15, marginTop: 5, fontWeight: 700, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {item.value}
+            </div>
           </div>
         ))}
       </div>
 
+      {/* Reminder */}
       {nextReminder && (
-        <div style={{ marginTop: 10, padding: "9px 10px", borderRadius: 11, background: "rgba(255,255,255,0.024)", border: `1px solid ${theme.primary}22`, display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 8, alignItems: "center" }}>
+        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 14, background: "rgba(255,255,255,0.025)", display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 8, alignItems: "center" }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ color: theme.primary, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{t("dashboard.command.reminder")}</div>
-            <div style={{ color: "#e2e8f0", fontSize: 11, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis" }}>{formatLocalDateTime(nextReminder.reminderAt)}</div>
+            <div style={{ color: theme.primary, fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>
+              {t("dashboard.command.reminder")}
+            </div>
+            <div style={{ color: "#e2e8f0", fontSize: 12, marginTop: 4, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {formatLocalDateTime(nextReminder.reminderAt)}
+            </div>
           </div>
           <div style={{ display: "flex", gap: 5 }}>
-            <button onClick={() => snoozeReminder?.(nextReminder.id, 15)} style={{ padding: "5px 7px", borderRadius: 7, background: `${theme.primary}14`, border: `1px solid ${theme.primary}24`, color: theme.primary, fontSize: 9, fontWeight: 800 }}>+15</button>
-            <button onClick={() => snoozeReminder?.(nextReminder.id, 60)} style={{ padding: "5px 7px", borderRadius: 7, background: `${theme.primary}14`, border: `1px solid ${theme.primary}24`, color: theme.primary, fontSize: 9, fontWeight: 800 }}>+60</button>
+            <button onClick={() => snoozeReminder?.(nextReminder.id, 15)} style={{ padding: "5px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "none", color: theme.primary, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>+15m</button>
+            <button onClick={() => snoozeReminder?.(nextReminder.id, 60)} style={{ padding: "5px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "none", color: theme.primary, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>+1h</button>
           </div>
         </div>
       )}
@@ -216,20 +275,10 @@ export function QuickAccessWidget({ navigateTo, can, theme, setShowFocusMode }) 
   if (shortcuts.length === 0) return null;
 
   return (
-    <div style={{
-      background: "linear-gradient(180deg, rgba(8,12,24,0.94), rgba(5,7,15,0.98))",
-      border: "1px solid rgba(148,163,184,0.14)",
-      borderRadius: 14,
-      padding: "14px 12px 12px",
-      boxShadow: "0 10px 28px rgba(0,0,0,0.24)",
-    }}>
+    <div style={{ ...glassCard, padding: "16px 14px 14px" }}>
       <div style={{
-        fontSize: 10,
-        letterSpacing: 1.4,
-        color: theme.accent,
-        fontFamily: "'JetBrains Mono',monospace",
-        fontWeight: 800,
-        marginBottom: 12,
+        fontSize: 11, letterSpacing: 1.6, color: theme.accent,
+        fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginBottom: 14,
       }}>{t("dashboard.quickAccess.title")}</div>
       <div style={{
         display: "grid",
@@ -241,44 +290,24 @@ export function QuickAccessWidget({ navigateTo, can, theme, setShowFocusMode }) 
             key={s.key}
             onClick={s.action}
             style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 6,
-              padding: "11px 4px 9px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.025)",
-              border: `1px solid ${s.color}24`,
-              cursor: "pointer",
-              transition: "border-color 0.2s ease, background 0.2s ease",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+              padding: "12px 4px 10px", borderRadius: 14,
+              background: "rgba(255,255,255,0.025)", border: "none",
+              cursor: "pointer", transition: "background 0.2s ease, transform 0.15s ease",
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = s.color + "55";
-              e.currentTarget.style.background = `${s.color}0c`;
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = s.color + "24";
-              e.currentTarget.style.background = "rgba(255,255,255,0.025)";
-            }}
+            onMouseEnter={e => { e.currentTarget.style.background = `${s.color}0c`; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; e.currentTarget.style.transform = "none"; }}
           >
             <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: 9,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: `${s.color}10`,
-              border: `1px solid ${s.color}2c`,
+              width: 34, height: 34, borderRadius: 10,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: `${s.color}0c`,
             }}>
-              <img src={s.iconSrc} alt={s.label} style={{ width: 19, height: 19, objectFit: "contain", filter: "brightness(1.12)" }} />
+              <img src={s.iconSrc} alt={s.label} style={{ width: 19, height: 19, objectFit: "contain", opacity: 0.9 }} />
             </div>
-            <span style={{
-              fontSize: 9,
-              fontWeight: 800,
-              color: "#94a3b8",
-              fontFamily: "'JetBrains Mono',monospace",
-            }}>{s.label}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "#7b8494", fontFamily: "'Outfit',sans-serif" }}>
+              {s.label}
+            </span>
           </button>
         ))}
       </div>
@@ -299,48 +328,28 @@ export function ArtifactShowcaseWidget({ state, theme }) {
   };
 
   return (
-    <div style={{
-      background: "linear-gradient(180deg, rgba(8,12,24,0.94), rgba(5,7,15,0.98))",
-      border: "1px solid rgba(148,163,184,0.14)",
-      borderRadius: 14,
-      padding: "14px 12px 12px",
-      boxShadow: "0 10px 28px rgba(0,0,0,0.24)",
-      borderTop: `1px solid ${theme.primary}38`,
-    }}>
+    <div style={{ ...glassCard, padding: "16px 14px 14px" }}>
       <div style={{
-        fontSize: 10,
-        letterSpacing: 1.4,
-        color: theme.primary,
-        fontFamily: "'JetBrains Mono',monospace",
-        fontWeight: 800,
-        marginBottom: 12,
+        fontSize: 11, letterSpacing: 1.6, color: theme.primary,
+        fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginBottom: 14,
       }}>{t("dashboard.artifacts.title")}</div>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 8,
-      }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {discoveredIds.map(id => {
           const info = artifactDetails[id] || { label: id, color: "#94a3b8", icon: "?", desc: t("dashboard.artifacts.unknown") };
           return (
             <div key={id} style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.025)",
-              border: `1px solid ${info.color}24`,
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "9px", borderRadius: 12, background: "rgba(255,255,255,0.025)",
             }}>
               <div style={{
-                width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                background: `${info.color}14`, border: `1px solid ${info.color}35`, color: info.color, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace"
-              }}>
-                {info.icon}
-              </div>
+                width: 28, height: 28, borderRadius: 999,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: `${info.color}10`, color: info.color,
+                fontWeight: 700, fontSize: 12, fontFamily: "'JetBrains Mono',monospace",
+              }}>{info.icon}</div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{info.label}</div>
-                <div style={{ fontSize: 9, color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{info.desc}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{info.label}</div>
+                <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'Outfit',sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{info.desc}</div>
               </div>
             </div>
           );

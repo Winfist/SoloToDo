@@ -1,4 +1,4 @@
-import{r as D,g as U,b as O,e as P,M as N,j as e,H as K,N as se,C as _,D as le,Q as ke}from"./index-CIR8qb4f.js";const ae="analytics-dash-fx";if(typeof document<"u"&&!document.getElementById(ae)){const i=document.createElement("style");i.id=ae,i.textContent=`
+import{r as D,g as U,b as O,e as P,M as N,j as e,H as K,N as se,C as _,D as le,Q as ke}from"./index-DdZA1xK_.js";const ae="analytics-dash-fx";if(typeof document<"u"&&!document.getElementById(ae)){const i=document.createElement("style");i.id=ae,i.textContent=`
 @keyframes adShimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
 @keyframes adPulse { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
 @keyframes adGlow { 0%,100%{box-shadow:0 0 8px var(--glow)} 50%{box-shadow:0 0 20px var(--glow),0 0 40px var(--glow2)} }
