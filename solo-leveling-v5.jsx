@@ -85,6 +85,20 @@ import { AIChatWidget } from './components/AIChatWidget.jsx';
 import QuestDetailModal from './components/QuestDetailModal.jsx';
 import PremiumAccessModal from './components/PremiumAccessModal.jsx';
 import { getDailyQuestCreationStatus, getPremiumFeatureForRoute } from './data/premium.js';
+const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
+  "click_create_quest",
+  "quest_title_input",
+  "quest_difficulty",
+  "quest_category",
+  "submit_quest",
+]);
+const ONBOARDING_QUEST_FORM_STEP_IDS = new Set([
+  "quest_title_input",
+  "quest_difficulty",
+  "quest_category",
+  "submit_quest",
+]);
+
 function hoursUntilMidnight() {
   const now = new Date();
   const midnight = new Date(now);
@@ -429,6 +443,36 @@ function App({ initialHunterName, onLogout }) {
   const [showAdModal, setShowAdModal] = React.useState(false);
   const [showPremiumModal, setShowPremiumModal] = React.useState(false);
   const [premiumModalFeature, setPremiumModalFeature] = React.useState("premium_store");
+  const [tutorialRuntimeState, setTutorialRuntimeState] = useState({
+    isActive: false,
+    activeTutorialId: null,
+    currentStepIndex: 0,
+    stepId: null,
+  });
+  const handleTutorialStateChange = useCallback((nextState) => {
+    setTutorialRuntimeState((prev) => (
+      prev.isActive === nextState.isActive &&
+      prev.activeTutorialId === nextState.activeTutorialId &&
+      prev.currentStepIndex === nextState.currentStepIndex &&
+      prev.stepId === nextState.stepId
+        ? prev
+        : nextState
+    ));
+  }, []);
+  const tutorialBypassesQuestLimit = tutorialRuntimeState.isActive &&
+    tutorialRuntimeState.activeTutorialId === "onboarding" &&
+    ONBOARDING_QUEST_FORGE_STEP_IDS.has(tutorialRuntimeState.stepId);
+  const tutorialNeedsQuestForge = tutorialRuntimeState.isActive &&
+    tutorialRuntimeState.activeTutorialId === "onboarding" &&
+    ONBOARDING_QUEST_FORM_STEP_IDS.has(tutorialRuntimeState.stepId);
+
+  useEffect(() => {
+    if (!tutorialNeedsQuestForge) return;
+    if (showPremiumModal && premiumModalFeature === "unlimited_quests") setShowPremiumModal(false);
+    setForgeTab("create");
+    setShowCreate(true);
+  }, [premiumModalFeature, setShowCreate, showPremiumModal, tutorialNeedsQuestForge]);
+
   const [detailQuest, setDetailQuest] = React.useState(null);
   const liveDetailQuest = useMemo(() => {
     if (!detailQuest) return null;
@@ -524,8 +568,8 @@ function App({ initialHunterName, onLogout }) {
     [questCreationStatus, state?.premium, state?.dailyUserQuestsCreated]
   );
 
-  const requireQuestSlot = useCallback((onAllowed) => {
-    if (currentQuestCreationStatus.canCreate) {
+  const requireQuestSlot = useCallback((onAllowed, options = {}) => {
+    if (options.bypassDailyLimit || currentQuestCreationStatus.canCreate) {
       onAllowed?.();
       return true;
     }
@@ -534,8 +578,11 @@ function App({ initialHunterName, onLogout }) {
   }, [currentQuestCreationStatus.canCreate, openPremiumModal]);
 
   const openQuestCreate = useCallback(() => {
-    requireQuestSlot(() => setShowCreate(true));
-  }, [requireQuestSlot, setShowCreate]);
+    requireQuestSlot(() => {
+      setForgeTab("create");
+      setShowCreate(true);
+    }, { bypassDailyLimit: tutorialBypassesQuestLimit });
+  }, [requireQuestSlot, setShowCreate, tutorialBypassesQuestLimit]);
 
   const requestShowCreate = useCallback((next = true) => {
     if (next) openQuestCreate();
@@ -859,6 +906,7 @@ function App({ initialHunterName, onLogout }) {
       completedTutorials={state?.completedTutorials || []}
       onComplete={handleTutorialComplete}
       onSkip={handleTutorialSkip}
+      onStateChange={handleTutorialStateChange}
     >
       <ScreenShake disabled={!premiumStatus?.active || state.settings?.screenShake === false}>
         <div className={[
@@ -2299,9 +2347,9 @@ function App({ initialHunterName, onLogout }) {
                   {!showTemplates && (
                     <div style={{ padding: "14px 24px 20px", flexShrink: 0, borderTop: `1px solid ${theme.primary}1a` }}>
                       <button data-tutorial="quest-submit-btn" onClick={() => {
-                        if (!editingQuestId && !requireQuestSlot()) return;
-                        if (qType === "chained") addChainedQuest(qTitle, qCat, qDiff);
-                        else createQuest();
+                        if (!editingQuestId && !requireQuestSlot(null, { bypassDailyLimit: tutorialBypassesQuestLimit })) return;
+                        if (qType === "chained") addChainedQuest(qTitle, qCat, qDiff, { bypassDailyLimit: tutorialBypassesQuestLimit });
+                        else createQuest(null, { bypassDailyLimit: tutorialBypassesQuestLimit });
                         setForgeTab("create");
                       }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(10,10,24,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 6px 30px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.3)` : "inset 0 2px 4px rgba(0,0,0,0.5)", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid rgba(255,255,255,0.04)" }}
                         onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-3px) scale(1.01)"; e.currentTarget.style.boxShadow = `0 12px 40px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.4)`; } }}

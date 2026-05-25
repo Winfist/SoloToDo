@@ -1250,11 +1250,12 @@ export function useGameState(initialHunterName, onLogout) {
     setShowCreate(true);
   }, []);
 
-  const createQuest = (input = null) => {
+  const createQuest = (input = null, options = {}) => {
     if (Array.isArray(input)) return createQuestsFromInputs(input);
 
     const data = getQuestInputData(input);
     if (!data.title) return;
+    const bypassDailyLimit = options.bypassDailyLimit === true;
 
     if (editingQuestId && !input) {
       const updatedQuests = state.quests.map(q =>
@@ -1294,7 +1295,7 @@ export function useGameState(initialHunterName, onLogout) {
 
     const questLimit = getDailyQuestCreationStatus(state);
     const createdCount = questLimit.createdCount;
-    if (!questLimit.canCreate) {
+    if (!questLimit.canCreate && !bypassDailyLimit) {
       notify(ltState(state, "quests.freeLimit"), "warning");
       return;
     }
@@ -1337,7 +1338,7 @@ export function useGameState(initialHunterName, onLogout) {
       ...state,
       quests: [...state.quests, questWithReminder],
       reminders: reminder ? [...(state.reminders || []), reminder] : (state.reminders || []),
-      dailyUserQuestsCreated: createdCount + 1
+      dailyUserQuestsCreated: bypassDailyLimit ? createdCount : createdCount + 1
     };
 
     // Save to custom pool if requested
@@ -1424,16 +1425,17 @@ export function useGameState(initialHunterName, onLogout) {
     } catch (e) { /* Graceful fallback */ }
   }, [state, persist, processAchievementsPure, enqueueRewardFlow]);
 
-  const addChainedQuest = useCallback((title, category, difficulty) => {
+  const addChainedQuest = useCallback((title, category, difficulty, options = {}) => {
     if (!title.trim()) return;
     const questLimit = getDailyQuestCreationStatus(state);
-    if (!questLimit.canCreate) {
+    const bypassDailyLimit = options.bypassDailyLimit === true;
+    if (!questLimit.canCreate && !bypassDailyLimit) {
       notify(ltState(state, "quests.freeLimit"), "warning");
       return;
     }
     const totalSteps = 3;
     const firstQuest = normalizeQuestForStorage(generateChainedQuest(title, category, difficulty, 1, totalSteps));
-    persist({ ...state, quests: [...state.quests, firstQuest], dailyUserQuestsCreated: questLimit.createdCount + 1 });
+    persist({ ...state, quests: [...state.quests, firstQuest], dailyUserQuestsCreated: bypassDailyLimit ? questLimit.createdCount : questLimit.createdCount + 1 });
     notify(ltState(state, "quests.chainStarted", { steps: totalSteps }), "info");
   }, [state, persist, notify]);
 

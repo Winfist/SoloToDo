@@ -3,6 +3,7 @@ import React, {
   forwardRef,
   useCallback,
   useContext,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -18,7 +19,7 @@ export function useTutorial() {
   return useContext(TutorialContext);
 }
 
-const TutorialProvider = forwardRef(function TutorialProvider({ children, completedTutorials = [], onComplete, onSkip }, ref) {
+const TutorialProvider = forwardRef(function TutorialProvider({ children, completedTutorials = [], onComplete, onSkip, onStateChange }, ref) {
   const { locale } = useI18n();
   const [activeTutorialId, setActiveTutorialId] = useState(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -27,6 +28,16 @@ const TutorialProvider = forwardRef(function TutorialProvider({ children, comple
 
   const activeSequence = activeTutorialId ? tutorialSequences[activeTutorialId] : null;
   const isActive = Boolean(activeSequence);
+  const activeStep = activeSequence?.steps?.[currentStepIndex] || null;
+
+  useEffect(() => {
+    onStateChange?.({
+      isActive,
+      activeTutorialId,
+      currentStepIndex,
+      stepId: activeStep?.id || null,
+    });
+  }, [activeStep?.id, activeTutorialId, currentStepIndex, isActive, onStateChange]);
 
   const isCompleted = useCallback(
     (sequenceId) => completedTutorials.includes(sequenceId),
