@@ -34,6 +34,10 @@ import {
   normalizeQuestForStorage
 } from '../data/questUtils.js';
 import { getSystemQuestPoolForLocale } from '../data/localizedQuestPool.js';
+import {
+  cleanupQuestAttachmentBlobsForState,
+  getQuestAttachmentReferenceSignature
+} from '../services/questAttachmentStore.js';
 
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
@@ -131,8 +135,19 @@ export function useGameState(initialHunterName, onLogout) {
   const stateRef = useRef(null);
   const initDoneRef = useRef(false);
   const bootTimestampRef = useRef(Date.now());
+  const lastAttachmentCleanupSignatureRef = useRef(null);
   useEffect(() => {
     stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    if (!state) return;
+    const signature = getQuestAttachmentReferenceSignature(state);
+    if (signature === lastAttachmentCleanupSignatureRef.current) return;
+    lastAttachmentCleanupSignatureRef.current = signature;
+    cleanupQuestAttachmentBlobsForState(state).catch(error => {
+      console.warn("[SoloToDo] Quest attachment cleanup failed.", error);
+    });
   }, [state]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("dashboard");

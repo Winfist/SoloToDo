@@ -430,6 +430,36 @@ function App({ initialHunterName, onLogout }) {
   const [showPremiumModal, setShowPremiumModal] = React.useState(false);
   const [premiumModalFeature, setPremiumModalFeature] = React.useState("premium_store");
   const [detailQuest, setDetailQuest] = React.useState(null);
+  const liveDetailQuest = useMemo(() => {
+    if (!detailQuest) return null;
+    return (state?.quests || []).find(q => q.id === detailQuest.id) || detailQuest;
+  }, [detailQuest, state?.quests]);
+  const addQuestAttachment = useCallback((questId, attachment) => {
+    if (!state || !attachment) return;
+    const updated = {
+      ...state,
+      quests: (state.quests || []).map(q =>
+        q.id === questId
+          ? { ...q, attachments: [...(q.attachments || []), attachment] }
+          : q
+      ),
+    };
+    setState(updated);
+    persist(updated);
+  }, [state, setState, persist]);
+  const removeQuestAttachment = useCallback((questId, attachmentId) => {
+    if (!state || !attachmentId) return;
+    const updated = {
+      ...state,
+      quests: (state.quests || []).map(q =>
+        q.id === questId
+          ? { ...q, attachments: (q.attachments || []).filter(item => item.id !== attachmentId) }
+          : q
+      ),
+    };
+    setState(updated);
+    persist(updated);
+  }, [state, setState, persist]);
   const modifier = useMemo(() => getDailyModifier(), []);
   const [showFocusMode, setShowFocusMode] = React.useState(false);
   const [isCreatingEntry, setIsCreatingEntry] = React.useState(false);
@@ -1035,9 +1065,9 @@ function App({ initialHunterName, onLogout }) {
             )}
 
             {/* QUEST DETAIL MODAL */}
-            {detailQuest && (
+            {liveDetailQuest && (
               <QuestDetailModal
-                quest={detailQuest}
+                quest={liveDetailQuest}
                 theme={theme}
                 gameState={state}
                 onClose={() => setDetailQuest(null)}
@@ -1045,6 +1075,8 @@ function App({ initialHunterName, onLogout }) {
                 onEdit={(quest) => { setDetailQuest(null); startEditingQuest(quest); }}
                 onDelete={deleteQuest}
                 onCompleteSubQuest={completeSubQuest}
+                onAddAttachment={addQuestAttachment}
+                onDeleteAttachment={removeQuestAttachment}
                 onSaveNotes={(id, notes) => {
                   const updated = {
                     ...state,

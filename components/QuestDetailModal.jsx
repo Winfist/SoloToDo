@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom";
 import { DIFFICULTIES, CATEGORIES, QUEST_TYPES_CONFIG } from "../data/gameData.js";
 import { getToday as getLocalToday, formatLocalDateTime } from "../data/dateUtils.js";
 import GlitchText from "./ui/GlitchText.jsx";
 import { useI18n } from "./i18n/I18nProvider.jsx";
 import { getQuestDescription } from "../data/questUtils.js";
+import {
+  MAX_QUEST_ATTACHMENTS,
+  deleteQuestAttachmentBlobs,
+  getQuestAttachmentBlob,
+  saveQuestAttachmentFile
+} from "../services/questAttachmentStore.js";
 
 const CornerBracket = ({ pos }) => {
   const styles = {
@@ -18,6 +24,13 @@ const CornerBracket = ({ pos }) => {
   );
 };
 
+function formatAttachmentSize(size) {
+  const bytes = Number(size || 0);
+  if (!Number.isFinite(bytes) || bytes <= 0) return "";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function QuestDetailModal({
   quest,
   theme,
@@ -26,6 +39,8 @@ export default function QuestDetailModal({
   onEdit,
   onDelete,
   onCompleteSubQuest,
+  onAddAttachment,
+  onDeleteAttachment,
   onSaveNotes,
   completedQuests = [], // Pass from parent for history
   gameState, // NEW: for tactical hints
@@ -34,10 +49,60 @@ export default function QuestDetailModal({
   const { t } = useI18n();
   const [notes, setNotes] = useState(quest.notes || "");
   const [activeTab, setActiveTab] = useState("details"); // details, history
+  const [attachmentPreviews, setAttachmentPreviews] = useState({});
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const [attachmentError, setAttachmentError] = useState("");
+  const attachmentInputRef = useRef(null);
+  const questAttachments = useMemo(
+    () => Array.isArray(quest?.attachments) ? quest.attachments : [],
+    [quest?.attachments]
+  );
+  const attachmentSignature = useMemo(
+    () => questAttachments.map(item => `${item.id}:${item.thumbnailKey || item.localKey}`).join("|"),
+    [questAttachments]
+  );
 
   useEffect(() => {
     setNotes(quest.notes || "");
   }, [quest]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const objectUrls = [];
+
+    async function loadAttachmentPreviews() {
+      if (questAttachments.length === 0) {
+        setAttachmentPreviews({});
+        return;
+      }
+
+      const entries = await Promise.all(questAttachments.map(async attachment => {
+        try {
+          const blob = await getQuestAttachmentBlob(attachment.thumbnailKey || attachment.localKey);
+          if (!blob) return [attachment.id, { missing: true, url: null }];
+          const url = URL.createObjectURL(blob);
+          objectUrls.push(url);
+          return [attachment.id, { missing: false, url }];
+        } catch (error) {
+          console.warn("[SoloToDo] Quest attachment preview failed.", error);
+          return [attachment.id, { missing: true, url: null }];
+        }
+      }));
+
+      if (cancelled) {
+        objectUrls.forEach(url => URL.revokeObjectURL(url));
+        return;
+      }
+
+      setAttachmentPreviews(Object.fromEntries(entries));
+    }
+
+    loadAttachmentPreviews();
+    return () => {
+      cancelled = true;
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [attachmentSignature, questAttachments]);
 
   if (!quest) return null;
 
@@ -116,6 +181,76 @@ export default function QuestDetailModal({
     if (subQuests.length > 0 && !allSubsDone) return;
     onComplete(quest.id, null);
     onClose();
+  };
+
+  const handleAttachmentSelect = async (event) => {
+    const files = Array.from(event.target.files || []).filter(file => String(file.type || "").startsWith("image/"));
+    event.target.value = "";
+    if (readOnly || !onAddAttachment || files.length === 0) return;
+
+    const remainingSlots = MAX_QUEST_ATTACHMENTS - questAttachments.length;
+    if (remainingSlots <= 0) {
+      setAttachmentError(t("modals.questDetail.imagesMax", { count: MAX_QUEST_ATTACHMENTS }));
+      return;
+    }
+
+    const selectedFiles = files.slice(0, remainingSlots);
+    setAttachmentBusy(true);
+    setAttachmentError(files.length > remainingSlots ? t("modals.questDetail.imagesMax", { count: MAX_QUEST_ATTACHMENTS }) : "");
+
+    try {
+      for (const file of selectedFiles) {
+        const attachment = await saveQuestAttachmentFile(quest.id, file);
+        onAddAttachment(quest.id, attachment);
+      }
+    } catch (error) {
+      console.warn("[SoloToDo] Quest attachment upload failed.", error);
+      setAttachmentError(t("modals.questDetail.imageUploadFailed"));
+    } finally {
+      setAttachmentBusy(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    try {
+      const blob = await getQuestAttachmentBlob(attachment.localKey);
+      if (!blob) {
+        setAttachmentPreviews(prev => ({
+          ...prev,
+          [attachment.id]: { ...(prev[attachment.id] || {}), missing: true, url: null },
+        }));
+        setAttachmentError(t("modals.questDetail.imageMissing"));
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = attachment.name || "quest-image.jpg";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setAttachmentError("");
+    } catch (error) {
+      console.warn("[SoloToDo] Quest attachment download failed.", error);
+      setAttachmentError(t("modals.questDetail.imageMissing"));
+    }
+  };
+
+  const handleDeleteAttachment = async (attachment) => {
+    if (readOnly || !onDeleteAttachment) return;
+    setAttachmentBusy(true);
+    setAttachmentError("");
+    try {
+      await deleteQuestAttachmentBlobs(attachment);
+      onDeleteAttachment(quest.id, attachment.id);
+    } catch (error) {
+      console.warn("[SoloToDo] Quest attachment delete failed.", error);
+      setAttachmentError(t("modals.questDetail.imageDeleteFailed"));
+    } finally {
+      setAttachmentBusy(false);
+    }
   };
 
   const primary = diff.color || theme.primary;
@@ -245,6 +380,112 @@ export default function QuestDetailModal({
                   </div>
                 </div>
               )}
+
+              {/* Quest Images */}
+              <div>
+                <div style={{ fontSize: 9, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                  <span>{t("modals.questDetail.images")}</span>
+                  <span style={{ color: questAttachments.length >= MAX_QUEST_ATTACHMENTS ? "#f59e0b" : "#64748b" }}>{questAttachments.length}/{MAX_QUEST_ATTACHMENTS}</span>
+                </div>
+
+                <input
+                  ref={attachmentInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={handleAttachmentSelect}
+                />
+
+                {!readOnly && onAddAttachment && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (questAttachments.length >= MAX_QUEST_ATTACHMENTS) {
+                        setAttachmentError(t("modals.questDetail.imagesMax", { count: MAX_QUEST_ATTACHMENTS }));
+                        return;
+                      }
+                      setAttachmentError("");
+                      attachmentInputRef.current?.click();
+                    }}
+                    disabled={attachmentBusy}
+                    style={{
+                      width: "100%",
+                      marginBottom: questAttachments.length > 0 || attachmentError ? 10 : 0,
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      background: attachmentBusy ? "rgba(255,255,255,0.04)" : `linear-gradient(135deg, ${primary}18, rgba(255,255,255,0.02))`,
+                      border: `1px dashed ${primary}55`,
+                      color: attachmentBusy ? "#64748b" : primary,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: 1.5,
+                      fontFamily: "'JetBrains Mono',monospace",
+                      cursor: attachmentBusy ? "default" : "pointer",
+                    }}
+                  >
+                    {attachmentBusy ? t("modals.questDetail.imageSaving") : t("modals.questDetail.imageUpload")}
+                  </button>
+                )}
+
+                {attachmentError && (
+                  <div style={{ marginBottom: 10, color: "#f59e0b", fontSize: 11, lineHeight: 1.4, fontFamily: "'Outfit',sans-serif" }}>
+                    {attachmentError}
+                  </div>
+                )}
+
+                {questAttachments.length === 0 ? (
+                  <div style={{ color: "#64748b", fontSize: 12, lineHeight: 1.4, fontFamily: "'Outfit',sans-serif", padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    {readOnly ? t("modals.questDetail.imagesEmptyReadonly") : t("modals.questDetail.imagesEmpty")}
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(116px, 1fr))", gap: 10 }}>
+                    {questAttachments.map((attachment) => {
+                      const preview = attachmentPreviews[attachment.id] || {};
+                      const sizeLabel = formatAttachmentSize(attachment.size);
+                      return (
+                        <div key={attachment.id} style={{ minWidth: 0, overflow: "hidden", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: `1px solid ${preview.missing ? "#f59e0b44" : "rgba(255,255,255,0.08)"}` }}>
+                          <div style={{ height: 88, background: "rgba(0,0,0,0.28)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                            {preview.url ? (
+                              <img src={preview.url} alt={attachment.name || t("modals.questDetail.imageAlt")} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            ) : (
+                              <div style={{ padding: 10, textAlign: "center", color: preview.missing ? "#f59e0b" : "#64748b", fontSize: 10, lineHeight: 1.35, fontFamily: "'JetBrains Mono',monospace" }}>
+                                {preview.missing ? t("modals.questDetail.imageMissingShort") : t("modals.questDetail.imageLoading")}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ padding: "8px 9px" }}>
+                            <div title={attachment.name} style={{ color: "#cbd5e1", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "'Outfit',sans-serif" }}>
+                              {attachment.name || t("modals.questDetail.imageFallbackName")}
+                            </div>
+                            {sizeLabel && <div style={{ color: "#64748b", fontSize: 9, marginTop: 2, fontFamily: "'JetBrains Mono',monospace" }}>{sizeLabel}</div>}
+                            <div style={{ display: "grid", gridTemplateColumns: readOnly || !onDeleteAttachment ? "1fr" : "1fr 32px", gap: 6, marginTop: 8 }}>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadAttachment(attachment)}
+                                style={{ padding: "7px 8px", borderRadius: 6, background: `${primary}14`, border: `1px solid ${primary}44`, color: primary, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}
+                              >
+                                {t("modals.questDetail.imageDownload")}
+                              </button>
+                              {!readOnly && onDeleteAttachment && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAttachment(attachment)}
+                                  disabled={attachmentBusy}
+                                  title={t("modals.questDetail.imageDelete")}
+                                  style={{ padding: "7px 0", borderRadius: 6, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: attachmentBusy ? "default" : "pointer" }}
+                                >
+                                  X
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
               {/* Stack Info */}
               {(quest.stackCount > 1 || quest.stackItems?.length > 1) && (
