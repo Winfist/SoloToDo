@@ -79,7 +79,7 @@ function getRevealRect(step, targetElement, targetRect) {
   const explicitContext = step?.contextTarget ? document.querySelector(step.contextTarget) : null;
   const fallbackContext = step?.contextTarget
     ? null
-    : targetElement?.closest?.("[data-tutorial='quest-board'], [data-tutorial='quest-form'], [data-tutorial='bottom-nav'], [data-tutorial='system-menu'], [data-tutorial='stats-view']");
+    : targetElement?.closest?.("[data-tutorial='quest-board'], [data-tutorial='quest-form'], [data-tutorial='bottom-nav'], [data-tutorial='system-menu'], [data-tutorial='stats-view'], [data-tutorial='portal-hud'], [data-tutorial='island-topbar'], [data-tutorial='apps-grid']");
 
   const baseRect = readRect(explicitContext) || readRect(fallbackContext) || targetRect;
   const defaultPadding = step?.type === "action" ? 22 : 16;
@@ -283,7 +283,7 @@ function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
   const { t } = useI18n();
   const [textDone, setTextDone] = useState(false);
   const particles = useMemo(() => {
-    return Array.from({ length: 9 }, (_, id) => ({
+    return Array.from({ length: 16 }, (_, id) => ({
       id,
       width: 2 + Math.random() * 3,
       left: 8 + Math.random() * 84,
@@ -322,6 +322,7 @@ function CinematicStep({ step, stepIndex, totalSteps, onContinue }) {
       <div className="tutorial-cinematic__sigil" aria-hidden="true">
         <span className="tutorial-cinematic__sigil-ring tutorial-cinematic__sigil-ring--outer" />
         <span className="tutorial-cinematic__sigil-ring tutorial-cinematic__sigil-ring--inner" />
+        <span className="tutorial-cinematic__sigil-ring tutorial-cinematic__sigil-ring--core" />
         <span className="tutorial-cinematic__icon">{step.icon}</span>
       </div>
       <div className="tutorial-cinematic__eyebrow">{t("tutorial.hud.systemWindow")}</div>

@@ -823,9 +823,37 @@ export const en = {
         title: "OPEN HUNTER ISLAND",
         text: "Tap Hunter Island. There you will find Hunter Stats, Settings, and later many unlocked modules.",
       },
+      hub_welcome: {
+        title: "HUNTER ISLAND ONLINE",
+        text: "The Island is your headquarters. Access all modules here — through magical portals or as a quick app overview.",
+      },
+      explain_portal_mode: {
+        title: "THE PORTALS",
+        text: "Before you stand your System's portals. Use the arrows or swipe to browse them. Each portal leads to a different module.",
+      },
+      try_swipe_portal: {
+        title: "SWITCH PORTAL",
+        text: "Tap the right arrow to switch to the next portal.",
+      },
+      try_swipe_portal_back: {
+        title: "BACK TO START",
+        text: "Great. Now tap the left arrow to return to the Stats Portal.",
+      },
+      switch_to_apps: {
+        title: "APP MODE",
+        text: "There is also a quick overview. Tap 'Apps' at the top to see all modules as a grid.",
+      },
+      explain_app_grid: {
+        title: "QUICK ACCESS",
+        text: "Here you see all modules at a glance — sorted by category. Tap a module to open it directly. Locked modules show the required level.",
+      },
+      switch_to_portal: {
+        title: "BACK TO PORTAL",
+        text: "Switch back to the Portal view now. We will enter your first portal there.",
+      },
       open_hunter_stats: {
-        title: "VANGUARD STATS",
-        text: "Open Hunter Stats. This is your character sheet: attributes, Power Level, Skills, and achievements.",
+        title: "ENTER PORTAL",
+        text: "Tap on 'Enter Portal'. The first portal leads you to your Hunter Stats: attributes, Power Level, Skills, and achievements.",
       },
       stats_overview: {
         title: "STATUS ANALYSIS",

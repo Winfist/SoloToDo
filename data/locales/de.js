@@ -823,9 +823,37 @@ export const de = {
         title: "HUNTER-INSEL OEFFNEN",
         text: "Tippe auf Hunter-Insel. Dort findest du Hunter Stats, Einstellungen und spaeter viele freigeschaltete Module.",
       },
+      hub_welcome: {
+        title: "HUNTER ISLAND ONLINE",
+        text: "Die Insel ist dein Hauptquartier. Hier erreichst du alle Module — über magische Portale oder als schnelle App-Übersicht.",
+      },
+      explain_portal_mode: {
+        title: "DIE PORTALE",
+        text: "Vor dir stehen die Portale deines Systems. Nutze die Pfeile oder swipe, um zwischen ihnen zu wechseln. Jedes Portal führt zu einem anderen Modul.",
+      },
+      try_swipe_portal: {
+        title: "PORTAL WECHSELN",
+        text: "Tippe auf den rechten Pfeil, um zum nächsten Portal zu wechseln.",
+      },
+      try_swipe_portal_back: {
+        title: "ZURÜCK ZUM START",
+        text: "Sehr gut. Jetzt tippe auf den linken Pfeil, um zum Stats-Portal zurückzukehren.",
+      },
+      switch_to_apps: {
+        title: "APP-MODUS",
+        text: "Es gibt auch eine schnelle Übersicht. Tippe oben auf 'Apps', um alle Module als Grid zu sehen.",
+      },
+      explain_app_grid: {
+        title: "SCHNELLZUGRIFF",
+        text: "Hier siehst du alle Module auf einen Blick — sortiert nach Kategorie. Tippe auf ein Modul, um es direkt zu öffnen. Gesperrte Module zeigen das benötigte Level.",
+      },
+      switch_to_portal: {
+        title: "ZURÜCK ZUM PORTAL",
+        text: "Wechsle jetzt zurück zur Portal-Ansicht. Dort betreten wir gleich dein erstes Portal.",
+      },
       open_hunter_stats: {
-        title: "VANGUARD STATS",
-        text: "Oeffne Hunter Stats. Das ist dein Charakterbogen: Attribute, Power Level, Skills und Erfolge.",
+        title: "PORTAL BETRETEN",
+        text: "Tippe auf 'Portal betreten'. Das erste Portal führt dich zu deinen Hunter Stats: Attribute, Power Level, Skills und Erfolge.",
       },
       stats_overview: {
         title: "STATUS-ANALYSE",

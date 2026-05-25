@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, extend } from "@react-three/fiber";
-import { shaderMaterial } from "@react-three/drei";
+import { shaderMaterial, Html } from "@react-three/drei";
 import * as THREE from "three";
-import { portalGlowVert, portalGlowFrag } from "../../3d/shaders/portalGlow.js";
+import { islandVoidVert, islandVoidFrag } from "../../3d/shaders/islandPortalVoid.js";
 import {
   CHA_ICONS,
   GATE_ICONS,
@@ -40,9 +40,9 @@ const HUNTER_ISLAND_MODE_KEY = "sl-hunter-island-mode";
 // dungeon gates). Registered under a unique name so it does not collide with
 // the `portalMaterial` registered by DungeonGate3D.
 const IslandPortalMaterial = shaderMaterial(
-  { rankColor: new THREE.Color(SIGNATURE_VIOLET), time: 0, pulseSpeed: 2.4, progress: 0.34 },
-  portalGlowVert,
-  portalGlowFrag
+  { primaryColor: new THREE.Color(SIGNATURE_VIOLET), secondaryColor: new THREE.Color(SIGNATURE_VIOLET_LIGHT), time: 0, pulseSpeed: 2.4, progress: 0.34, portalStyle: 0.0 },
+  islandVoidVert,
+  islandVoidFrag
 );
 extend({ IslandPortalMaterial });
 
@@ -99,51 +99,81 @@ function useHunterIslandMode() {
   return [mode, updateMode];
 }
 
-// ── Slow, soft atmospheric dust (replaces the hard additive point cloud) ────
-function FloatingParticles({ count, reducedMotion }) {
-  const pointsRef = useRef(null);
-  const geometry = useMemo(() => {
-    const positions = new Float32Array(count * 3);
-    for (let index = 0; index < count; index += 1) {
-      const angle = (index / count) * Math.PI * 2;
-      const lane = 1.45 + (index % 9) * 0.26;
-      const depth = -2.4 - (index % 11) * 0.24;
-      positions[index * 3] = Math.cos(angle * 2.7) * lane;
-      positions[index * 3 + 1] = -1.6 + ((index * 17) % 41) * 0.078;
-      positions[index * 3 + 2] = depth + Math.sin(angle) * 0.6;
-    }
-    const buffer = new THREE.BufferGeometry();
-    buffer.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    return buffer;
-  }, [count]);
+// ── Cosmic Background (replaces FloatingParticles) ──────────────────────────
+function CosmicBackground({ count, reducedMotion, portalColor }) {
+  const pointsRef1 = useRef(null);
+  const pointsRef2 = useRef(null);
+  const pointsRef3 = useRef(null);
+
+  const { geo1, geo2, geo3 } = useMemo(() => {
+    const makeLayer = (num, rMin, rMax) => {
+      const positions = new Float32Array(num * 3);
+      for (let i = 0; i < num; i++) {
+        // Spherical distribution
+        const u = Math.random();
+        const v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2 * v - 1);
+        const r = rMin + Math.random() * (rMax - rMin);
+        
+        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[i * 3 + 2] = r * Math.cos(phi);
+      }
+      const buffer = new THREE.BufferGeometry();
+      buffer.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      return buffer;
+    };
+    return {
+      geo1: makeLayer(200, 8, 15), // Distant stars
+      geo2: makeLayer(80, 4, 8),   // Mid nebula
+      geo3: makeLayer(40, 2, 4),   // Near particles
+    };
+  }, []);
 
   useFrame(({ clock }) => {
-    if (!pointsRef.current || reducedMotion) return;
+    if (reducedMotion) return;
     const t = clock.getElapsedTime();
-    pointsRef.current.rotation.y = t * 0.014;
-    if (pointsRef.current.material) {
-      pointsRef.current.material.opacity = 0.3 + Math.sin(t * 0.4) * 0.08;
+    if (pointsRef1.current) pointsRef1.current.rotation.y = t * 0.003;
+    if (pointsRef2.current) {
+      pointsRef2.current.rotation.y = t * 0.008;
+      pointsRef2.current.rotation.x = Math.sin(t * 0.2) * 0.1;
+    }
+    if (pointsRef3.current) {
+      pointsRef3.current.rotation.y = t * 0.015;
+      pointsRef3.current.rotation.z = Math.cos(t * 0.15) * 0.1;
+      if (pointsRef3.current.material) {
+        pointsRef3.current.material.opacity = 0.4 + Math.sin(t * 1.5) * 0.2;
+      }
     }
   });
 
   return (
-    <points ref={pointsRef} geometry={geometry}>
-      <pointsMaterial
-        color={SIGNATURE_VIOLET_LIGHT}
-        size={0.028}
-        sizeAttenuation
-        transparent
-        opacity={0.32}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        toneMapped={false}
-      />
-    </points>
+    <group>
+      {/* Distant stars */}
+      <points ref={pointsRef1} geometry={geo1}>
+        <pointsMaterial color="#ffffff" size={0.015} transparent opacity={0.6} depthWrite={false} toneMapped={false} />
+      </points>
+      {/* Mid nebula */}
+      <points ref={pointsRef2} geometry={geo2}>
+        <pointsMaterial color={portalColor || SIGNATURE_VIOLET_LIGHT} size={0.04} transparent opacity={0.3} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </points>
+      {/* Near particles */}
+      <points ref={pointsRef3} geometry={geo3}>
+        <pointsMaterial color={portalColor || SIGNATURE_VIOLET} size={0.06} transparent opacity={0.5} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </points>
+      
+      {/* Background Nebula Planes */}
+      <mesh position={[0, 0, -8]}>
+        <planeGeometry args={[20, 10]} />
+        <meshBasicMaterial color={portalColor || SIGNATURE_VIOLET} transparent opacity={0.05} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+    </group>
   );
 }
 
 // ── Soft additive glow discs behind a gate (fake bloom under ACES) ──────────
-function GateGlow({ selected, locked }) {
+function GateGlow({ selected, locked, color }) {
   const radii = selected ? [2.0, 1.4, 1.0] : [1.3, 0.95];
   const ops = selected ? [0.05, 0.07, 0.11] : [0.02, 0.03];
   return (
@@ -152,7 +182,7 @@ function GateGlow({ selected, locked }) {
         <mesh key={i} position={[0, 0, -i * 0.05]}>
           <circleGeometry args={[r, 64]} />
           <meshBasicMaterial
-            color={locked ? LOCKED_GATE_COLOR : SIGNATURE_VIOLET}
+            color={locked ? LOCKED_GATE_COLOR : (color || SIGNATURE_VIOLET)}
             transparent
             opacity={locked ? ops[i] * 0.4 : ops[i]}
             blending={THREE.AdditiveBlending}
@@ -166,7 +196,7 @@ function GateGlow({ selected, locked }) {
 }
 
 // ── Full AAA shader void — only the centred/selected gate pays for this ─────
-function PortalVoid({ reducedMotion }) {
+function PortalVoid({ reducedMotion, portal }) {
   const matRef = useRef(null);
   useFrame(({ clock }) => {
     if (!matRef.current) return;
@@ -177,7 +207,9 @@ function PortalVoid({ reducedMotion }) {
       <circleGeometry args={[0.98, 96]} />
       <islandPortalMaterial
         ref={matRef}
-        rankColor={PORTAL_VOID_COLOR}
+        primaryColor={new THREE.Color(portal?.color || SIGNATURE_VIOLET)}
+        secondaryColor={new THREE.Color(portal?.secondaryColor || portal?.color || SIGNATURE_VIOLET_LIGHT)}
+        portalStyle={portal?.styleIndex || 0}
         time={0}
         pulseSpeed={2.4}
         progress={0.34}
@@ -191,7 +223,7 @@ function PortalVoid({ reducedMotion }) {
 }
 
 // ── Cheap void for off-centre gates (dark well + faint violet bloom) ────────
-function PortalVoidCheap({ locked }) {
+function PortalVoidCheap({ locked, portal }) {
   return (
     <group>
       <mesh position={[0, 0, -0.01]}>
@@ -201,7 +233,7 @@ function PortalVoidCheap({ locked }) {
       <mesh position={[0, 0, 0.012]}>
         <circleGeometry args={[0.9, 48]} />
         <meshBasicMaterial
-          color={locked ? LOCKED_GATE_COLOR : SIGNATURE_VIOLET}
+          color={locked ? LOCKED_GATE_COLOR : (portal?.color || SIGNATURE_VIOLET)}
           transparent
           opacity={locked ? 0.06 : 0.2}
           blending={THREE.AdditiveBlending}
@@ -213,33 +245,51 @@ function PortalVoidCheap({ locked }) {
   );
 }
 
-function PortalGate({ offset, index, selected, locked, reducedMotion, onSelect }) {
+function PortalGate({ offset, index, selected, locked, reducedMotion, onSelect, portal }) {
   const groupRef = useRef(null);
-  const ring1Ref = useRef(null);
-  const ring2Ref = useRef(null);
   const lightRef = useRef(null);
-  const emissive = locked ? "#11151f" : SIGNATURE_VIOLET;
+  const emissive = locked ? "#11151f" : (portal?.color || SIGNATURE_VIOLET);
   const side = Math.sign(offset);
   const distance = Math.abs(offset);
-  const target = useMemo(() => ({
-    position: new THREE.Vector3(offset * 1.42, selected ? 0.06 : -0.08, -distance * 0.72),
-    scale: selected ? 1.08 : Math.max(0.48, 0.66 - distance * 0.085),
-    rotationY: -side * 0.5,
-  }), [distance, offset, selected, side]);
+  const target = useMemo(() => {
+    const angle = offset * 0.38; // 3D Circle spacing
+    const radius = 4.8;
+    
+    const x = Math.sin(angle) * radius;
+    const z = Math.cos(angle) * radius - radius;
+    const y = 0.25 - distance * 0.08;
+    
+    return {
+      position: new THREE.Vector3(x, selected ? y + 0.1 : y, z),
+      scale: selected ? 0.9 : Math.max(0.45, 0.75 - distance * 0.15),
+      rotationY: -angle,
+      rotationX: selected ? 0 : 0.05
+    };
+  }, [distance, offset, selected]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
     if (groupRef.current) {
-      groupRef.current.position.lerp(target.position, reducedMotion ? 1 : 0.16);
-      const breath = reducedMotion ? 0 : Math.sin(t * 1.5 + index) * (selected ? 0.012 : 0.005);
-      const nextScale = target.scale + breath;
-      groupRef.current.scale.lerp(new THREE.Vector3(nextScale, nextScale, nextScale), reducedMotion ? 1 : 0.13);
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, target.rotationY, reducedMotion ? 1 : 0.15);
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, selected ? 0 : 0.02, 0.12);
-    }
-    if (!reducedMotion) {
-      if (ring1Ref.current) ring1Ref.current.rotation.z = t * 0.12 + index;
-      if (ring2Ref.current) ring2Ref.current.rotation.z = -t * 0.22 - index * 0.2;
+      if (reducedMotion) {
+        groupRef.current.position.copy(target.position);
+        groupRef.current.scale.setScalar(target.scale);
+        groupRef.current.rotation.set(target.rotationX, target.rotationY, 0);
+      } else {
+        const g = groupRef.current;
+        const lambda = 5; // Smooth enough to see the arc movement clearly
+
+        g.position.x = THREE.MathUtils.damp(g.position.x, target.position.x, lambda, delta);
+        g.position.y = THREE.MathUtils.damp(g.position.y, target.position.y, lambda, delta);
+        g.position.z = THREE.MathUtils.damp(g.position.z, target.position.z, lambda, delta);
+
+        const breath = Math.sin(t * 1.5 + index) * (selected ? 0.012 : 0.005);
+        const targetScale = target.scale + breath;
+        const s = THREE.MathUtils.damp(g.scale.x, targetScale, lambda, delta);
+        g.scale.set(s, s, s);
+
+        g.rotation.y = THREE.MathUtils.damp(g.rotation.y, target.rotationY, lambda, delta);
+        g.rotation.x = THREE.MathUtils.damp(g.rotation.x, target.rotationX, lambda, delta);
+      }
     }
     if (lightRef.current) {
       const base = locked ? 0.35 : selected ? 5.2 : 1.5;
@@ -251,83 +301,15 @@ function PortalGate({ offset, index, selected, locked, reducedMotion, onSelect }
   return (
     <group
       ref={groupRef}
-      position={[offset * 1.42, selected ? 0.06 : -0.08, -distance * 0.72]}
-      scale={selected ? 1.08 : Math.max(0.48, 0.66 - distance * 0.085)}
+      position={[offset * 1.8, selected ? 0.35 : 0.15, -distance * 0.8]}
+      scale={selected ? 0.9 : Math.max(0.55, 0.7 - distance * 0.15)}
       onClick={(event) => {
         event.stopPropagation();
         onSelect(index);
       }}
     >
-      <GateGlow selected={selected} locked={locked} />
-      {selected && !locked ? <PortalVoid reducedMotion={reducedMotion} /> : <PortalVoidCheap locked={locked} />}
-
-      {/* Main metal frame — obsidian with violet emissive */}
-      <mesh ref={ring1Ref}>
-        <torusGeometry args={[1.02, selected ? 0.06 : 0.045, 20, 140]} />
-        <meshStandardMaterial
-          color="#0a0a12"
-          emissive={emissive}
-          emissiveIntensity={locked ? 0.18 : selected ? 1.5 : 0.7}
-          metalness={0.92}
-          roughness={0.18}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/* Thin counter-rotating accent ring */}
-      <mesh ref={ring2Ref}>
-        <torusGeometry args={[1.16, 0.01, 8, 120]} />
-        <meshStandardMaterial
-          color={locked ? LOCKED_GATE_COLOR : SIGNATURE_VIOLET_LIGHT}
-          emissive={locked ? LOCKED_GATE_COLOR : SIGNATURE_VIOLET_LIGHT}
-          emissiveIntensity={locked ? 0.1 : selected ? 1.3 : 0.5}
-          metalness={0.85}
-          roughness={0.22}
-          transparent
-          opacity={0.9}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/* Inner bezel ring */}
-      <mesh position={[0, 0, 0.02]}>
-        <torusGeometry args={[0.9, 0.02, 10, 120]} />
-        <meshStandardMaterial
-          color="#12101c"
-          emissive={emissive}
-          emissiveIntensity={locked ? 0.1 : selected ? 0.9 : 0.4}
-          metalness={0.9}
-          roughness={0.25}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/* Base pedestal */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, -1.2, 0.16]}>
-        <cylinderGeometry args={[0.58, 0.82, 0.06, 64]} />
-        <meshStandardMaterial
-          color="#070710"
-          emissive={emissive}
-          emissiveIntensity={selected && !locked ? 0.6 : 0.12}
-          roughness={0.32}
-          metalness={0.8}
-          toneMapped={false}
-        />
-      </mesh>
-      {selected && !locked && (
-        <mesh position={[0, -1.22, 0.2]} rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.42, 0.96, 96]} />
-          <meshBasicMaterial
-            color={SIGNATURE_VIOLET}
-            transparent
-            opacity={0.18}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-            side={THREE.DoubleSide}
-            toneMapped={false}
-          />
-        </mesh>
-      )}
+      <GateGlow selected={selected} locked={locked} color={portal?.color} />
+      {(!locked && distance <= 1) ? <PortalVoid reducedMotion={reducedMotion} portal={portal} /> : <PortalVoidCheap locked={locked} portal={portal} />}
 
       {/* Gate light */}
       <pointLight ref={lightRef} color={SIGNATURE_VIOLET} intensity={1.5} distance={6} decay={2} position={[0, 0, 0.6]} />
@@ -335,7 +317,7 @@ function PortalGate({ offset, index, selected, locked, reducedMotion, onSelect }
   );
 }
 
-function HallArchitecture({ reducedMotion }) {
+function HallArchitecture({ reducedMotion, portalColor }) {
   const floorRef = useRef(null);
   const haloRef = useRef(null);
 
@@ -347,34 +329,21 @@ function HallArchitecture({ reducedMotion }) {
   });
 
   return (
-    <group position={[0, -0.08, -0.7]}>
+    <group position={[0, -1.4, -0.7]}>
       {/* Dark reflective floor slab */}
       <mesh position={[0, -1.32, 0.4]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[7, 64]} />
-        <meshStandardMaterial color="#040408" metalness={0.7} roughness={0.42} />
+        <circleGeometry args={[12, 64]} />
+        <meshStandardMaterial color="#020204" metalness={0.8} roughness={0.5} />
       </mesh>
       {/* Floor accent rings */}
       <mesh ref={floorRef} position={[0, -1.28, 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.5, 3.4, 160]} />
-        <meshBasicMaterial color={SIGNATURE_VIOLET} transparent opacity={0.07} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+        <meshBasicMaterial color={portalColor || SIGNATURE_VIOLET} transparent opacity={0.05} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
       <mesh ref={haloRef} position={[0, -1.27, 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[3.5, 3.62, 120]} />
-        <meshBasicMaterial color={SIGNATURE_VIOLET_LIGHT} transparent opacity={0.1} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+        <meshBasicMaterial color={portalColor || SIGNATURE_VIOLET_LIGHT} transparent opacity={0.08} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
-      {/* Tall side pillars framing the hall */}
-      {[-1, 1].map((p) => (
-        <group key={p} position={[p * 2.7, -0.3, -0.9]}>
-          <mesh>
-            <boxGeometry args={[0.12, 2.6, 0.12]} />
-            <meshStandardMaterial color="#08080f" emissive={SIGNATURE_VIOLET} emissiveIntensity={0.14} roughness={0.3} metalness={0.85} toneMapped={false} />
-          </mesh>
-          <mesh position={[0, 0, 0.07]}>
-            <boxGeometry args={[0.02, 2.2, 0.02]} />
-            <meshBasicMaterial color={SIGNATURE_VIOLET_LIGHT} transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
-          </mesh>
-        </group>
-      ))}
     </group>
   );
 }
@@ -384,7 +353,7 @@ function PortalScene({ portals, selectedIndex, onSelect, direction, entering, re
   const cameraRigRef = useRef(null);
   const visiblePortals = useMemo(() => {
     if (!portals.length) return [];
-    return [-2, -1, 0, 1, 2].map((offset) => {
+    return [-3, -2, -1, 0, 1, 2, 3].map((offset) => {
       const index = wrapIndex(selectedIndex + offset, portals.length);
       return { portal: portals[index], index, offset };
     });
@@ -393,13 +362,15 @@ function PortalScene({ portals, selectedIndex, onSelect, direction, entering, re
   useFrame(({ clock, camera }) => {
     const t = clock.getElapsedTime();
     const enterPush = entering ? 0.9 : 0;
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, direction * 0.1, 0.04);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, entering ? 0.12 : 0.3 + Math.sin(t * 0.4) * (reducedMotion ? 0 : 0.02), 0.04);
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, entering ? 5.35 : 7.25 - enterPush, 0.05);
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0, 0.04); // No wobble!
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, entering ? 0.12 : 0.18 + Math.sin(t * 0.4) * (reducedMotion ? 0 : 0.02), 0.04);
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, entering ? 5.35 : 6.8 - enterPush, 0.05);
     camera.lookAt(0, -0.04, -0.85);
-    if (sceneRef.current && !reducedMotion) {
-      sceneRef.current.rotation.y = THREE.MathUtils.lerp(sceneRef.current.rotation.y, direction * -0.03, 0.08);
+    
+    if (sceneRef.current) {
+      sceneRef.current.rotation.y = THREE.MathUtils.lerp(sceneRef.current.rotation.y, 0, 0.08); // Ensure it's centered
     }
+    
     if (cameraRigRef.current && !reducedMotion) {
       cameraRigRef.current.position.y = Math.sin(t * 0.3) * 0.015;
     }
@@ -407,8 +378,8 @@ function PortalScene({ portals, selectedIndex, onSelect, direction, entering, re
 
   return (
     <group ref={cameraRigRef}>
-      <fog attach="fog" args={["#03030a", 4.8, 11]} />
-      <ambientLight intensity={0.13} color="#1a1330" />
+      <fog attach="fog" args={["#020205", 3.5, 9]} />
+      <ambientLight intensity={0.15} color="#1a1330" />
       {/* Key light (violet) */}
       <pointLight position={[0, 1.8, 3.0]} intensity={6.2} color={SIGNATURE_VIOLET_LIGHT} distance={22} decay={2} />
       {/* Cool rim from upper-left */}
@@ -417,8 +388,12 @@ function PortalScene({ portals, selectedIndex, onSelect, direction, entering, re
       <pointLight position={[2.8, 0.6, 1.0]} intensity={1.3} color="#c4b5fd" distance={14} decay={2} />
       {/* Deep fill behind camera */}
       <pointLight position={[0, -0.4, 6]} intensity={0.5} color="#1a0a3a" distance={16} decay={2} />
+      {/* Backlight for distant portals */}
+      <pointLight position={[0, -0.5, -6]} intensity={3.5} color={SIGNATURE_VIOLET} distance={15} decay={2} />
+      
       <spotLight position={[0, 3.1, 2.2]} angle={0.5} penumbra={0.9} intensity={5.0} color={SIGNATURE_VIOLET} target-position={[0, -0.6, -1]} />
-      <HallArchitecture reducedMotion={reducedMotion} />
+      
+      <HallArchitecture reducedMotion={reducedMotion} portalColor={portals[selectedIndex]?.color} />
       <group ref={sceneRef}>
         {visiblePortals.map(({ portal, index, offset }) => (
           <PortalGate
@@ -428,11 +403,12 @@ function PortalScene({ portals, selectedIndex, onSelect, direction, entering, re
             selected={offset === 0}
             locked={!!portal.locked}
             reducedMotion={reducedMotion}
+            portal={portal}
             onSelect={onSelect}
           />
         ))}
       </group>
-      <FloatingParticles count={lowPower ? 36 : 64} reducedMotion={reducedMotion} />
+      <CosmicBackground count={lowPower ? 36 : 64} reducedMotion={reducedMotion} portalColor={portals[selectedIndex]?.color} />
     </group>
   );
 }
@@ -444,6 +420,7 @@ function IslandModeButton({ mode, onModeChange }) {
     <button
       type="button"
       className={`hi-mode-toggle hi-mode-toggle--${nextMode}`}
+      data-tutorial="mode-toggle"
       aria-label={`Zur ${label}-Ansicht wechseln`}
       onClick={() => onModeChange(nextMode)}
     >
@@ -460,7 +437,7 @@ function IslandModeButton({ mode, onModeChange }) {
 
 function IslandTopBar({ briefing, level, mode, onModeChange, rank }) {
   return (
-    <div className="hi-topbar">
+    <div className="hi-topbar" data-tutorial="island-topbar">
       <IslandModeButton mode={mode} onModeChange={onModeChange} />
       <div className="hi-mobile-header">
         <div>
@@ -492,12 +469,22 @@ function PortalHud({
   handlePortalEnter,
 }) {
   const normalizedIndex = wrapIndex(selectedPortalIndex, allModules.length);
+  const railRef = useRef(null);
+
+  useEffect(() => {
+    if (railRef.current) {
+      const activeDot = railRef.current.children[normalizedIndex];
+      if (activeDot) {
+        activeDot.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }
+  }, [normalizedIndex]);
 
   return (
     <div className="hi-hero__hud hi-portal-hud">
       <IslandTopBar briefing={briefing} level={level} mode={mode} onModeChange={onModeChange} rank={rank} />
 
-      <div className="hi-portal-bottom">
+      <div className="hi-portal-bottom" data-tutorial="portal-hud">
         <div className="hi-selected-portal">
           <span className="hi-selected-portal__index">
             {String(normalizedIndex + 1).padStart(2, "0")} / {String(allModules.length).padStart(2, "0")}
@@ -510,23 +497,24 @@ function PortalHud({
         </div>
 
         <div className="hi-portal-controls" aria-label="Portal-Steuerung">
-          <button type="button" className="hi-portal-arrow hi-portal-arrow--left" aria-label="Vorheriges Portal" onClick={() => movePortal(-1)}>
+          <button type="button" className="hi-portal-arrow hi-portal-arrow--left" data-tutorial="portal-arrow-left" aria-label="Vorheriges Portal" onClick={() => movePortal(-1)}>
             <span aria-hidden="true" />
           </button>
           <button
             type="button"
             className="hi-portal-enter"
+            data-tutorial="portal-enter-btn"
             disabled={selectedPortal?.locked || !!enteringPortal}
             onClick={handlePortalEnter}
           >
             {selectedPortal?.locked ? selectedPortalLockedText : selectedPortal?.premiumLocked ? "PRO Access" : "Portal betreten"}
           </button>
-          <button type="button" className="hi-portal-arrow hi-portal-arrow--right" aria-label="Naechstes Portal" onClick={() => movePortal(1)}>
+          <button type="button" className="hi-portal-arrow hi-portal-arrow--right" data-tutorial="portal-arrow-right" aria-label="Naechstes Portal" onClick={() => movePortal(1)}>
             <span aria-hidden="true" />
           </button>
         </div>
 
-        <div className="hi-portal-rail" role="tablist" aria-label="Portale">
+        <div className="hi-portal-rail" role="tablist" aria-label="Portale" ref={railRef}>
           {allModules.map((portal, index) => {
             const selected = index === normalizedIndex;
             return (
@@ -577,7 +565,7 @@ function AppLauncherView({
     <div className="hi-apps-view">
       <IslandTopBar briefing={briefing} level={level} mode={mode} onModeChange={onModeChange} rank={rank} />
 
-      <div className="hi-apps-content">
+      <div className="hi-apps-content" data-tutorial="apps-grid">
         <div className="hi-apps-orbit" aria-hidden="true">
           <span />
           <span />
@@ -737,6 +725,8 @@ export default function HunterIslandHub({
       premiumLocked: !!premiumFeature && !premiumStatus?.active,
     };
   }, [premiumStatus?.active]);
+
+  const navKeys = state?.navbarConfig?.tabs || ["dashboard", "training", "dungeon", "analytics", "system"];
 
   const sections = useMemo(() => {
     const intel = [
@@ -951,7 +941,11 @@ export default function HunterIslandHub({
         },
     ].map(decorateItem);
 
-    return { intel, arsenal, transit };
+    return {
+      intel: intel.filter(item => !navKeys.includes(item.key) && !navKeys.includes(item.routeKey)),
+      arsenal: arsenal.filter(item => !navKeys.includes(item.key) && !navKeys.includes(item.routeKey)),
+      transit: transit.filter(item => !navKeys.includes(item.key) && !navKeys.includes(item.routeKey))
+    };
   }, [
     achUnlocked,
     activeDungeons.length,
@@ -967,12 +961,29 @@ export default function HunterIslandHub({
     readyAchievements,
     state,
     tr,
+    navKeys,
   ]);
 
-  const allModules = useMemo(
-    () => [...sections.arsenal, ...sections.transit, ...sections.intel],
-    [sections]
-  );
+  const allModules = useMemo(() => {
+    const raw = [...sections.arsenal, ...sections.transit, ...sections.intel];
+    return raw.map(mod => {
+       let styleIndex = 0;
+       let secondaryColor = mod.color;
+       if (mod.key === "equipment") { styleIndex = 0; secondaryColor = "#94a3b8"; }
+       else if (mod.key === "shadows") { styleIndex = 1; secondaryColor = "#312e81"; }
+       else if (mod.key === "jobs") { styleIndex = 2; secondaryColor = "#475569"; }
+       else if (mod.key === "shop") { styleIndex = 3; secondaryColor = "#fbbf24"; }
+       else if (mod.key === "charisma_overlay") { styleIndex = 4; secondaryColor = "#fda4af"; }
+       else if (mod.key === "dungeon") { styleIndex = 5; secondaryColor = "#991b1b"; }
+       else if (mod.key === "sanctum") { styleIndex = 6; secondaryColor = "#6d28d9"; }
+       else if (mod.key === "story") { styleIndex = 7; secondaryColor = "#0d9488"; }
+       else if (mod.key === "stats") { styleIndex = 8; secondaryColor = "#e11d48"; }
+       else if (mod.key === "analytics") { styleIndex = 9; secondaryColor = "#14b8a6"; }
+       else if (mod.key === "achievements") { styleIndex = 10; secondaryColor = "#d97706"; }
+       else if (mod.key === "challenges") { styleIndex = 11; secondaryColor = "#dc2626"; }
+       return { ...mod, styleIndex, secondaryColor };
+    });
+  }, [sections]);
   const appSections = useMemo(
     () => [
       { key: "arsenal", title: tr("systemHub.arsenal"), items: sections.arsenal },
@@ -984,7 +995,6 @@ export default function HunterIslandHub({
   const [selectedPortalIndex, setSelectedPortalIndexRaw] = useState(0);
   const [enteringPortal, setEnteringPortal] = useState(null);
   const [transitionDirection, setTransitionDirection] = useState(0);
-  const [riftSweep, setRiftSweep] = useState(null);
   const dragStartRef = useRef(null);
   const selectedPortal = allModules[wrapIndex(selectedPortalIndex, allModules.length)] || allModules[0];
   const normalizedSelectedIndex = wrapIndex(selectedPortalIndex, allModules.length);
@@ -1003,7 +1013,6 @@ export default function HunterIslandHub({
 
   const setSelectedPortalIndex = useCallback((nextIndex, direction = 0) => {
     setTransitionDirection(direction);
-    setRiftSweep({ id: `${Date.now()}-${Math.random()}`, direction });
     setSelectedPortalIndexRaw(wrapIndex(nextIndex, allModules.length));
     window.setTimeout(() => setTransitionDirection(0), reducedMotion ? 120 : 460);
   }, [allModules.length, reducedMotion]);
@@ -1140,8 +1149,6 @@ export default function HunterIslandHub({
             "hi-hero",
             "hi-hero--portal",
             enteringPortal ? "hi-hero--entering" : "",
-            transitionDirection < 0 ? "hi-hero--shift-left" : "",
-            transitionDirection > 0 ? "hi-hero--shift-right" : "",
             reducedMotion ? "hi-hero--reduced-motion" : "",
           ].filter(Boolean).join(" ")}
           aria-label="Hunter-Insel Portal-Navigation"
@@ -1156,7 +1163,7 @@ export default function HunterIslandHub({
           <div className="hi-canvas" data-testid="hunter-island-canvas-wrap">
             <Canvas
               dpr={lowPower ? [1, 1.35] : [1, 1.75]}
-              camera={{ position: [0, 0.3, 7.25], fov: 50 }}
+              camera={{ position: [0, 0.18, 6.8], fov: 50 }}
               gl={{
                 antialias: true,
                 alpha: true,
@@ -1178,13 +1185,6 @@ export default function HunterIslandHub({
           </div>
           <div className="hi-swipe-catcher" aria-hidden="true" />
           <div className="hi-hero__veil" aria-hidden="true" />
-          {riftSweep && !reducedMotion && (
-            <div
-              key={riftSweep.id}
-              className={`hi-rift-sweep ${riftSweep.direction < 0 ? "hi-rift-sweep--left" : "hi-rift-sweep--right"}`}
-              aria-hidden="true"
-            />
-          )}
           <PortalHud
             allModules={allModules}
             briefing={briefing}
@@ -1222,12 +1222,15 @@ export default function HunterIslandHub({
 
 const HUNTER_ISLAND_CSS = `
 .hunter-island {
-  position: relative;
+  position: fixed;
+  inset: 0;
   width: 100%;
   height: 100dvh;
   min-height: 0;
   max-height: 100dvh;
   overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
   color: #e5f4ff;
   isolation: isolate;
   background: #04030a;
@@ -1258,13 +1261,10 @@ const HUNTER_ISLAND_CSS = `
 .hi-hero--portal {
   touch-action: none;
   outline: none;
+  overscroll-behavior: none;
 }
 .hi-hero--portal:focus-visible {
   box-shadow: inset 0 0 0 2px var(--hi-accent);
-}
-.hi-hero--shift-left,
-.hi-hero--shift-right {
-  animation: hiPortalImpact 0.46s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .hi-canvas {
   position: absolute;
@@ -1289,22 +1289,7 @@ const HUNTER_ISLAND_CSS = `
   pointer-events: none;
   background:
     radial-gradient(circle at 50% 38%, transparent 0 21%, rgba(2,4,10,0.06) 42%, rgba(2,4,10,0.8) 87%),
-    linear-gradient(180deg, rgba(2,4,10,0.2), transparent 24%, rgba(2,4,10,0.9) 100%);
-}
-.hi-rift-sweep {
-  position: absolute;
-  inset: -12%;
-  z-index: 4;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, transparent 0 26%, color-mix(in srgb, var(--portal-color), transparent 58%) 47%, rgba(255,255,255,0.34) 50%, color-mix(in srgb, var(--portal-color), transparent 62%) 53%, transparent 76%),
-    radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--portal-color), transparent 52%), transparent 34%);
-  mix-blend-mode: screen;
-  filter: blur(0.5px);
-  animation: hiRiftSweep 0.46s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.hi-rift-sweep--left {
-  animation-name: hiRiftSweepLeft;
+    linear-gradient(180deg, rgba(2,4,10,0.08), transparent 30%, transparent 65%, rgba(2,4,10,0.95) 100%);
 }
 .hi-hero__hud {
   position: absolute;
@@ -1313,7 +1298,7 @@ const HUNTER_ISLAND_CSS = `
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: calc(var(--hi-shell-top, 0px) + max(10px, env(safe-area-inset-top))) clamp(12px, 3.8vw, 30px) calc(var(--hi-shell-bottom, 0px) + max(8px, env(safe-area-inset-bottom)));
+  padding: calc(var(--hi-shell-top, 0px) + max(4px, env(safe-area-inset-top))) clamp(12px, 3.8vw, 30px) calc(var(--hi-shell-bottom, 0px) + max(4px, env(safe-area-inset-bottom)));
   pointer-events: none;
 }
 .hi-topbar {
@@ -1392,6 +1377,27 @@ const HUNTER_ISLAND_CSS = `
 .hi-mode-toggle--portal .hi-mode-toggle__glyph i {
   display: none;
 }
+.hi-3d-hologram {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  filter: drop-shadow(0 0 16px rgba(124, 58, 237, 0.6));
+}
+.hi-3d-hologram img {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 24px rgba(124, 58, 237, 0.8));
+}
+.hi-3d-hologram span {
+  color: #fff;
+  font: 950 14px/1 var(--font-display);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 16px rgba(124, 58, 237, 0.8), 0 2px 6px rgba(0,0,0,0.8);
+}
 .hi-mobile-header {
   min-width: 0;
   text-align: center;
@@ -1456,20 +1462,36 @@ const HUNTER_ISLAND_CSS = `
 }
 .hi-selected-portal {
   pointer-events: none;
-  width: min(430px, 100%);
+  width: min(440px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid rgba(124,58,237,0.32);
-  border-radius: 16px;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
   background:
-    linear-gradient(115deg, rgba(124,58,237,0.14), rgba(4,3,12,0.78) 60%),
-    rgba(4,3,12,0.74);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 36px rgba(124,58,237,0.18);
-  backdrop-filter: blur(16px);
+    linear-gradient(135deg, rgba(255,255,255,0.06), rgba(4,3,12,0.85) 40%),
+    rgba(4,3,12,0.6);
+  box-shadow: 
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 24px 60px rgba(0,0,0,0.6), 
+    0 0 40px rgba(124,58,237,0.25);
+  backdrop-filter: blur(24px);
+  position: relative;
+  overflow: hidden;
+}
+.hi-selected-portal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 3s infinite;
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
 }
 .hi-selected-portal__index {
   grid-column: 1 / -1;
@@ -1478,10 +1500,10 @@ const HUNTER_ISLAND_CSS = `
   letter-spacing: 1.4px;
 }
 .hi-selected-portal img {
-  width: 38px;
-  height: 38px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(124,58,237,0.5));
+  filter: drop-shadow(0 0 16px var(--portal-color)) brightness(1.2);
 }
 .hi-selected-portal div {
   min-width: 0;
@@ -1492,17 +1514,18 @@ const HUNTER_ISLAND_CSS = `
   min-width: 0;
 }
 .hi-selected-portal strong {
-  color: #f7f5ff;
-  font: 800 19px/1.05 var(--font-display);
-  letter-spacing: 0.6px;
+  color: #ffffff;
+  font: 800 22px/1.05 var(--font-display);
+  letter-spacing: 0.8px;
   text-transform: uppercase;
   overflow-wrap: anywhere;
+  text-shadow: 0 0 12px rgba(255,255,255,0.3);
 }
 .hi-selected-portal span:last-child {
-  margin-top: 4px;
-  color: #9d92c4;
-  font: 600 11px/1.35 var(--font-sans);
-  letter-spacing: 0.2px;
+  margin-top: 5px;
+  color: #b4a7d6;
+  font: 600 12px/1.35 var(--font-sans);
+  letter-spacing: 0.3px;
 }
 .hi-portal-controls {
   pointer-events: auto;
@@ -1583,7 +1606,7 @@ const HUNTER_ISLAND_CSS = `
 }
 .hi-portal-dot {
   flex: 0 0 auto;
-  width: 78px;
+  width: 84px;
   min-height: 48px;
   display: grid;
   justify-items: center;
@@ -1607,8 +1630,10 @@ const HUNTER_ISLAND_CSS = `
   font: 600 9px/1.1 var(--font-sans);
   letter-spacing: 0.2px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  text-align: center;
 }
 .hi-portal-dot--active {
   color: #f7f5ff;
@@ -1630,7 +1655,7 @@ const HUNTER_ISLAND_CSS = `
   display: flex;
   flex-direction: column;
   gap: clamp(5px, 1vh, 10px);
-  padding: calc(var(--hi-shell-top, 0px) + max(8px, env(safe-area-inset-top))) clamp(10px, 3vw, 26px) calc(var(--hi-shell-bottom, 0px) + max(8px, env(safe-area-inset-bottom)));
+  padding: calc(var(--hi-shell-top, 0px) + max(4px, env(safe-area-inset-top))) clamp(10px, 3vw, 26px) calc(var(--hi-shell-bottom, 0px) + max(4px, env(safe-area-inset-bottom)));
   overflow: hidden;
   background:
     radial-gradient(circle at 12% 22%, rgba(34,211,238,0.08), transparent 30%),
@@ -1660,6 +1685,8 @@ const HUNTER_ISLAND_CSS = `
   align-items: stretch;
   justify-items: center;
   width: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .hi-apps-orbit {
   position: absolute;
@@ -1691,8 +1718,7 @@ const HUNTER_ISLAND_CSS = `
   position: relative;
   z-index: 1;
   width: min(880px, 100%);
-  height: 100%;
-  min-height: 0;
+  min-height: 100%;
   display: grid;
   gap: clamp(6px, 1vh, 10px);
   align-content: stretch;
@@ -1802,13 +1828,14 @@ const HUNTER_ISLAND_CSS = `
 }
 .hi-app-tile__label {
   max-width: 100%;
-  color: #f2efff;
-  font: 800 clamp(9px, 1.38vh, 11px)/1.08 var(--font-sans);
-  letter-spacing: 0.15px;
-  text-align: center;
+  color: #f8fafc;
+  font: 800 clamp(10px, 1.4vw, 13px)/1.2 var(--font-display);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .hi-app-tile__meta {
   max-width: 100%;
@@ -1958,21 +1985,6 @@ const HUNTER_ISLAND_CSS = `
   background: radial-gradient(circle at 50% 48%, rgba(255,255,255,0.98) 0 6%, color-mix(in srgb, var(--portal-color), transparent 32%) 12%, transparent 42%);
   mix-blend-mode: screen;
   animation: hiPortalFlash 0.82s ease both;
-}
-@keyframes hiPortalImpact {
-  0% { filter: saturate(1) brightness(1); }
-  30% { filter: saturate(1.35) brightness(1.18); }
-  100% { filter: saturate(1) brightness(1); }
-}
-@keyframes hiRiftSweep {
-  0% { transform: translateX(-44%) skewX(-10deg); opacity: 0; }
-  24% { opacity: 1; }
-  100% { transform: translateX(44%) skewX(-10deg); opacity: 0; }
-}
-@keyframes hiRiftSweepLeft {
-  0% { transform: translateX(44%) skewX(10deg); opacity: 0; }
-  24% { opacity: 1; }
-  100% { transform: translateX(-44%) skewX(10deg); opacity: 0; }
 }
 @keyframes hiPortalJumpFade {
   0% { opacity: 0; transform: scale(0.98); }
@@ -2163,7 +2175,7 @@ const HUNTER_ISLAND_CSS = `
     width: 64px;
   }
 }
-@media (max-height: 700px) {
+@media (max-height: 780px) {
   .hi-hero__hud,
   .hi-apps-view {
     padding-top: calc(var(--hi-shell-top, 0px) + max(6px, env(safe-area-inset-top)));
@@ -2244,6 +2256,52 @@ const HUNTER_ISLAND_CSS = `
   }
   .hi-app-tile__meta {
     display: none;
+  }
+}
+@media (max-height: 680px) {
+  .hi-hero__hud,
+  .hi-apps-view {
+    padding-top: calc(var(--hi-shell-top, 0px) + max(2px, env(safe-area-inset-top)));
+    padding-bottom: calc(var(--hi-shell-bottom, 0px) + max(2px, env(safe-area-inset-bottom)));
+  }
+  .hi-topbar {
+    gap: 4px;
+  }
+  .hi-mobile-header h1 {
+    font-size: 17px;
+  }
+  .hi-portal-bottom {
+    gap: 4px;
+  }
+  .hi-apps-view {
+    gap: 5px;
+  }
+  .hi-apps-shell {
+    gap: 5px;
+  }
+  .hi-app-section {
+    padding: 5px;
+  }
+  .hi-app-section__header {
+    margin-bottom: 4px;
+    font-size: 8px;
+  }
+  .hi-app-grid {
+    gap: 4px;
+  }
+  .hi-app-tile {
+    min-height: 50px;
+    gap: 2px;
+    padding: 4px 3px 5px;
+    border-radius: 11px;
+  }
+  .hi-app-tile__icon {
+    width: clamp(26px, 5vh, 38px);
+    height: clamp(26px, 5vh, 38px);
+    border-radius: 10px;
+  }
+  .hi-app-tile__label {
+    font-size: 8px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
