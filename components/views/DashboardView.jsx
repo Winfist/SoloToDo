@@ -275,26 +275,63 @@ export default function DashboardView({
   const lastScrollY = useRef(0);
 
   useEffect(() => {
+    let startY = 0;
+    let startedAtTop = false;
+
+    const handleTouchStart = (e) => {
+      startY = e.touches[0].clientY;
+      startedAtTop = window.scrollY <= 0;
+    };
+
+    const handleTouchMove = (e) => {
+      if (!startedAtTop) return;
+      
+      const currentY = e.touches[0].clientY;
+      const diffY = currentY - startY;
+      
+      if (window.scrollY <= 0) {
+        if (diffY > 40) {
+          setShowEditHeader(true);
+        } else if (diffY < -10) {
+          setShowEditHeader(false);
+        }
+      }
+    };
+
+    const handleWheel = (e) => {
+      if (window.scrollY <= 0) {
+        if (e.deltaY < -30) {
+          setShowEditHeader(true);
+        } else if (e.deltaY > 10) {
+          setShowEditHeader(false);
+        }
+      }
+    };
+
     const handleScroll = () => {
       const currentY = window.scrollY;
-      if (currentY < lastScrollY.current - 10) {
-        setShowEditHeader(true);
-      } else if (currentY > lastScrollY.current + 10) {
-        setShowEditHeader(false);
-      }
       
-      // Allow iOS pull-to-reveal (negative scrollY)
-      if (currentY < 0) {
-        setShowEditHeader(true);
-      } else if (currentY === 0 && lastScrollY.current > 0) {
-        // If we hit exactly 0 after scrolling down, hide it so it only appears on explicit overscroll
+      // Any normal scroll down hides the header. 
+      // We intentionally do NOT check for currentY < 0 here anymore, 
+      // so a fast kinetic scroll bounce hitting the top won't accidentally reveal the header.
+      if (currentY > 5) {
         setShowEditHeader(false);
       }
       
       lastScrollY.current = currentY;
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('wheel', handleWheel);
+    };
   }, []);
 
 
@@ -1217,11 +1254,17 @@ export default function DashboardView({
       {/* ── EDIT MODE HEADER ── */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: editMode ? 16 : 8, padding: editMode ? "12px 16px" : "0 2px",
         background: editMode ? "rgba(8,12,24,0.88)" : "transparent",
         border: editMode ? `1px solid ${theme.primary}24` : "none",
         borderRadius: 14,
-        transition: "all 0.3s ease",
+        maxHeight: (editMode || showEditHeader) ? 100 : 0,
+        opacity: (editMode || showEditHeader) ? 1 : 0,
+        overflow: "hidden",
+        marginBottom: (editMode || showEditHeader) ? (editMode ? 16 : 8) : 0,
+        padding: editMode ? "12px 16px" : "0 2px",
+        pointerEvents: (editMode || showEditHeader) ? "auto" : "none",
+        transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        transform: (editMode || showEditHeader) ? "translateY(0)" : "translateY(-15px)",
       }}>
         {editMode ? (
           <>
