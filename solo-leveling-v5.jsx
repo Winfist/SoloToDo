@@ -1853,6 +1853,7 @@ function App({ initialHunterName, onLogout }) {
                 onOpenCharisma={() => setShowCharismaView(true)}
                 shellTopOffset={headerOffset}
                 shellBottomOffset="60px"
+                tutorialStepId={tutorialRuntimeState.activeTutorialId === "onboarding" ? tutorialRuntimeState.stepId : null}
               />
             </div>
           )}

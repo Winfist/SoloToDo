@@ -35,6 +35,22 @@ const SIGNATURE_VIOLET_LIGHT = "#a78bfa";
 const PORTAL_VOID_COLOR = new THREE.Color(SIGNATURE_VIOLET);
 const LOCKED_GATE_COLOR = "#3b4658";
 const HUNTER_ISLAND_MODE_KEY = "sl-hunter-island-mode";
+const ONBOARDING_PORTAL_MODE_STEPS = new Set([
+  "explain_portal_mode",
+  "try_swipe_portal",
+  "try_swipe_portal_back",
+  "switch_to_apps",
+  "open_hunter_stats",
+]);
+const ONBOARDING_APPS_MODE_STEPS = new Set([
+  "explain_app_grid",
+  "switch_to_portal",
+]);
+const ONBOARDING_STATS_PORTAL_STEPS = new Set([
+  "explain_portal_mode",
+  "try_swipe_portal",
+  "open_hunter_stats",
+]);
 
 // Reuse the app's AAA portal-void shader (also used by the login tunnel &
 // dungeon gates). Registered under a unique name so it does not collide with
@@ -677,6 +693,7 @@ export default function HunterIslandHub({
   onOpenCharisma,
   shellTopOffset = 0,
   shellBottomOffset = 0,
+  tutorialStepId = null,
 }) {
   // Unified Abyssal Sovereign violet for the whole island (overrides theme tint).
   const accent = SIGNATURE_VIOLET;
@@ -984,6 +1001,7 @@ export default function HunterIslandHub({
        return { ...mod, styleIndex, secondaryColor };
     });
   }, [sections]);
+  const statsPortalIndex = useMemo(() => allModules.findIndex((mod) => mod.key === "stats"), [allModules]);
   const appSections = useMemo(
     () => [
       { key: "arsenal", title: tr("systemHub.arsenal"), items: sections.arsenal },
@@ -1025,6 +1043,33 @@ export default function HunterIslandHub({
   const movePortal = useCallback((direction) => {
     setSelectedPortalIndex(normalizedSelectedIndex + direction, direction);
   }, [normalizedSelectedIndex, setSelectedPortalIndex]);
+
+  useEffect(() => {
+    if (!tutorialStepId) return;
+
+    if (ONBOARDING_PORTAL_MODE_STEPS.has(tutorialStepId)) {
+      if (hunterIslandMode !== "portal") setHunterIslandMode("portal");
+      if (
+        ONBOARDING_STATS_PORTAL_STEPS.has(tutorialStepId) &&
+        statsPortalIndex >= 0 &&
+        normalizedSelectedIndex !== statsPortalIndex
+      ) {
+        setSelectedPortalIndex(statsPortalIndex, 0);
+      }
+      return;
+    }
+
+    if (ONBOARDING_APPS_MODE_STEPS.has(tutorialStepId) && hunterIslandMode !== "apps") {
+      setHunterIslandMode("apps");
+    }
+  }, [
+    hunterIslandMode,
+    normalizedSelectedIndex,
+    setHunterIslandMode,
+    setSelectedPortalIndex,
+    statsPortalIndex,
+    tutorialStepId,
+  ]);
 
   const handleActivate = useCallback((item, withTransition = true) => {
     if (item.locked) return;
