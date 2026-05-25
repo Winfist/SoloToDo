@@ -509,12 +509,6 @@ function App({ initialHunterName, onLogout }) {
   const [isCreatingEntry, setIsCreatingEntry] = React.useState(false);
   const [preview3DDungeon, setPreview3DDungeon] = React.useState(null);
   const [battlePendingStart, setBattlePendingStart] = React.useState(false);
-  const [showDashboardStats, setShowDashboardStats] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem("sl_dashboard_stats_hidden");
-      return saved !== null ? JSON.parse(saved) : true;
-    } catch { return true; }
-  });
 
   // ─ Page Transition State ─
   const [isPageTransitioning, setIsPageTransitioning] = React.useState(false);
@@ -667,9 +661,6 @@ function App({ initialHunterName, onLogout }) {
     }
   }, [view, premiumStatus?.active, openPremiumModal, setView]);
 
-  React.useEffect(() => {
-    localStorage.setItem("sl_dashboard_stats_hidden", JSON.stringify(showDashboardStats));
-  }, [showDashboardStats]);
 
 
 
@@ -873,7 +864,6 @@ function App({ initialHunterName, onLogout }) {
   const rank = getRank(state?.level || 1);
   const xpNeeded = getXpForLevel(state?.level || 1);
   const xpPercent = Math.min(((state?.xp || 0) / xpNeeded) * 100, 100);
-  const streakBonus = Math.min(state?.streak || 0, 5) * 10;
   const shopUnlocked = getRankIndex(rank.name) >= getRankIndex("D");
   const activeDungeons = (state?.dungeons || []).filter(d => !d.cleared && new Date(d.expiresAt) > new Date());
   const filteredQuests = (state?.quests || []).filter(q => {
@@ -1202,8 +1192,6 @@ function App({ initialHunterName, onLogout }) {
             level={state.level}
             gold={state.gold}
             gems={state.gems}
-            streak={state.streak}
-            powerLevel={powerLevel}
             isMusicPlaying={isMusicPlaying}
             icons={{
               coin: "/icon/coin.png",
@@ -1216,7 +1204,6 @@ function App({ initialHunterName, onLogout }) {
               hunterIsland: NAV_ICONS.settings,
               arsenal: ITEM_ICONS.blade,
               guild: NAV_ICONS.guild,
-              streak: STAT_ICONS.str,
               soulLink: SHADOW_ICONS.knight,
               season: SEASONS[state.seasons?.currentSeason]?.iconSrc,
             }}
@@ -1374,8 +1361,6 @@ function App({ initialHunterName, onLogout }) {
               {view === "dashboard" && (
                 <DashboardView
                   state={state} theme={theme} can={can}
-                  showDashboardStats={showDashboardStats} setShowDashboardStats={setShowDashboardStats}
-                  streakBonus={streakBonus} formationBonus={formationBonus} equipBonuses={equipBonuses}
                   xpPercent={xpPercent} xpNeeded={xpNeeded}
                   filteredQuests={filteredQuests} hiddenQuestCount={hiddenQuestCount}
                   questFilter={questFilter} setQuestFilter={setQuestFilter}

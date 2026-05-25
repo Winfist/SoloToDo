@@ -12,5 +12,6 @@ tags:
 - [ ] User State Update Problem (LifeDomains) beim Hard Reset
 
 ## 🎨 Design-Polishing
+- [ ] Dashboard-Doppelungen konsolidieren ([[Dashboard_Doppelungen_Audit]])
 - [ ] Haptic Feedback für A-Rang Task Completion
 - [ ] Cinematic Camera Choreography im Dungeon

@@ -17,7 +17,6 @@ const DEFAULT_LABELS = {
   menu: "Menü",
   actionsTitle: "Aktionen",
   power: "Stärke",
-  streak: "Serie",
   level: "Level",
   sanctum: "Sanctum",
   sanctumDesc: "Deine Basis",
@@ -185,8 +184,6 @@ export default function TopBar({
   level = 1,
   gold = 0,
   gems = 0,
-  streak = 0,
-  powerLevel = 0,
   isMusicPlaying = false,
   icons = {},
   available = {},
@@ -422,31 +419,6 @@ export default function TopBar({
             }}
           >
             {/* Status header — power + streak */}
-            <div
-              style={{
-                display: "flex",
-                padding: "4px 6px 10px",
-                marginBottom: 4,
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-              }}
-            >
-              <div style={{ flex: 1, padding: "0 4px" }}>
-                <div style={{ fontSize: 10, color: "#6b7484", fontFamily: "var(--font-sans)", marginBottom: 1 }}>{L.power}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: accent, fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
-                  {Number(powerLevel || 0).toLocaleString("de-DE")}
-                </div>
-              </div>
-              {streak > 0 && (
-                <div style={{ flex: 1, padding: "0 4px", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div style={{ fontSize: 10, color: "#6b7484", fontFamily: "var(--font-sans)", marginBottom: 1 }}>{L.streak}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 16, fontWeight: 700, color: streak >= 3 ? "#fb923c" : "#e8edf4", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
-                    {icons.streak && <img src={icons.streak} alt="" aria-hidden="true" style={{ width: 14, height: 14, objectFit: "contain" }} />}
-                    {streak}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {actions.map((a) => (
               <MenuRow key={a.key} icon={a.icon} label={a.label} desc={a.desc} color={a.color} badge={a.badge} onClick={() => fire(a.key)} />
             ))}

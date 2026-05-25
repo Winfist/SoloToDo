@@ -1,17 +1,13 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { CATEGORIES, ACHIEVEMENTS } from "../../data/gameData.js";
 import { getUnlocksAtLevel } from "../../data/featureUnlocks.js";
 import { STAT_ICONS, GATE_ICONS, QUEST_ICONS, HEALTH_ICONS, NAV_ICONS } from "../../data/icons.js";
-import { StatRadar, QuestCard, EmergencyQuestCard } from "../../data/constants";
+import { QuestCard, EmergencyQuestCard } from "../../data/constants";
 import HabitTracker from "../HabitTracker.jsx";
 import MicroHabits from "../MicroHabits.jsx";
 import GemBoosterBanner from "../GemBoosterBanner.jsx";
 import { DEFAULT_DASHBOARD_LAYOUT, DEFAULT_HIDDEN_WIDGETS, mergeConfig, getWidgetDef, getDashboardWidgets } from "./DashboardWidgetRegistry.js";
 import { StreakDisplayWidget, DailyProgressWidget, QuickAccessWidget, TodayCommandCenter, ArtifactShowcaseWidget } from "./DashboardWidgets.jsx";
-import ScrollReveal from "../ui/ScrollReveal.jsx";
-import TiltCard from "../ui/TiltCard.jsx";
-import { AnimatedNumber } from "../../hooks/useAnimatedCounter.jsx";
 import { getToday } from "../../data/dateUtils.js";
 import { HealthSummaryWidget } from "./HealthSummaryWidget.jsx";
 import NativeStatsDashboard from "../NativeStatsDashboard.jsx";
@@ -226,8 +222,7 @@ const getItemRects = (containerRef) => {
  */
 export default function DashboardView({
   state, theme, can,
-  showDashboardStats, setShowDashboardStats,
-  streakBonus, formationBonus, equipBonuses, xpPercent, xpNeeded,
+  xpPercent, xpNeeded,
   filteredQuests, hiddenQuestCount,
   questFilter, setQuestFilter,
   completeQuest, completeSubQuest, startEditingQuest, deleteQuest,
@@ -528,10 +523,6 @@ export default function DashboardView({
   const sortedVisibleQuestGroups = groupQuestStacks(sortedVisibleQuests);
   const systemQuests = visibleQuests.filter(q => q.isSystem).sort(sortByFocus);
   const userQuests = visibleQuests.filter(q => !q.isSystem).sort(sortByFocus);
-  const completedTodayCount = (state.completedQuests || []).filter(q => q.completedAt === todayKey).length;
-  const overdueVisibleCount = sortedVisibleQuestGroups.filter(q => q.dueDate && q.dueDate < todayKey).length;
-  const dueTodayVisibleCount = sortedVisibleQuestGroups.filter(q => q.type === "daily" || q.dueDate === todayKey).length;
-  const quickVisibleCount = sortedVisibleQuestGroups.filter(q => q.energy === "quick").length;
   const questTypeFilterOptions = [
     { key: "all", label: t("dashboard.board.typeAll"), color: theme.accent || theme.primary },
     { key: "daily", label: t("dashboard.board.typeDaily"), color: "#22d3ee" },
@@ -685,15 +676,12 @@ export default function DashboardView({
           content: (
             <>
               {/* ── COMPACT HUNTER STATUS ── */}
-              <button
+              <div
                 data-tutorial="hunter-status"
-                onClick={() => setShowDashboardStats(!showDashboardStats)}
                 style={{
                   width: "100%", background: "rgba(8,12,24,0.82)", border: "1px solid rgba(148,163,184,0.12)",
-                  borderRadius: 12, padding: "12px 13px", cursor: "pointer",
+                  borderRadius: 14, padding: "13px 14px",
                   display: "flex", alignItems: "center", gap: 14,
-                  marginBottom: showDashboardStats ? 12 : 0,
-                  transition: "all 0.25s ease",
                   boxShadow: "0 8px 22px rgba(0,0,0,0.18)",
                 }}
               >
@@ -711,65 +699,29 @@ export default function DashboardView({
                 {/* XP bar + info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", fontFamily: "'Outfit',sans-serif" }}>{state.hunterName}</span>
-                    <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace" }}>
-                      {state.xp.toLocaleString()} / {xpNeeded.toLocaleString()} XP
+                    <span style={{ fontSize: 10, fontWeight: 900, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>{t("dashboard.widgets.hunter_status.label")}</span>
+                    <span style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
+                      {Math.round(xpPercent || 0)}%
                     </span>
                   </div>
                   <div style={{ height: 6, background: "rgba(15,15,30,0.9)", borderRadius: 3, overflow: "hidden", border: "1px solid rgba(255,255,255,0.04)" }}>
                     <div style={{
-                      width: `${xpPercent}%`, height: "100%", borderRadius: 3,
+                      width: `${Math.max(0, Math.min(100, xpPercent || 0))}%`, height: "100%", borderRadius: 3,
                       background: `linear-gradient(90deg,${theme.primary},${theme.accent})`,
                       transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
                       position: "relative", overflow: "hidden",
                     }}>
                     </div>
                   </div>
-                  {(streakBonus > 0 || formationBonus.dungeonBonus > 0) && (
-                    <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                      {streakBonus > 0 && <span style={{ fontSize: 9, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace" }}>Serie +{streakBonus}%</span>}
-                      {formationBonus.dungeonBonus > 0 && <span style={{ fontSize: 9, color: "#a78bfa", fontFamily: "'JetBrains Mono',monospace" }}>Formation +{formationBonus.dungeonBonus}%</span>}
-                    </div>
-                  )}
-                </div>
-
-                {/* Expand chevron */}
-                <div style={{
-                  fontSize: 11, color: theme.primary, transition: "transform 0.3s",
-                  transform: showDashboardStats ? "rotate(180deg)" : "rotate(0deg)",
-                  flexShrink: 0,
-                }}>v</div>
-              </button>
-
-              {/* Expanded stats (radar + attributes) */}
-              {showDashboardStats && (
-                <div data-tutorial="dashboard-stats-panel">
-                  <ScrollReveal animation="scaleIn" duration={0.5}>
-                    <TiltCard tiltIntensity={6} glareIntensity={0.1} holographic borderGlow={theme.primary}>
-                      <div style={{ background: theme.card, border: `1px solid ${theme.primary}15`, borderRadius: 22, padding: "20px 18px 16px", marginBottom: 12, position: "relative", overflow: "hidden", backdropFilter: "blur(16px)", boxShadow: `0 4px 24px rgba(0,0,0,0.3)` }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div>
-                            <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 3, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>POWER LEVEL</div>
-                            <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", lineHeight: 1, textShadow: `0 0 30px ${theme.primary}33` }}><AnimatedNumber value={state.level} duration={600} format="number" /></div>
-                          </div>
-                          <StatRadar stats={state.stats} theme={theme} size={100} />
-                        </div>
-                      </div>
-                    </TiltCard>
-                  </ScrollReveal>
-                  <div data-tutorial="dashboard-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6, marginBottom: 16 }}>
-                    {CATEGORIES.map((cat, i) => (
-                      <div key={cat.key} style={{ background: theme.card, border: `1px solid ${cat.color}20`, borderRadius: 12, padding: "8px 2px 6px", textAlign: "center", backdropFilter: "blur(8px)", transition: "border-color 0.3s" }}>
-                        <div style={{ width: 32, height: 32, margin: "0 auto", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "50%", background: `radial-gradient(circle, ${cat.color}18 0%, transparent 100%)`, border: `1px solid ${cat.color}25`, overflow: "hidden" }}>
-                          {cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: "110%", height: "110%", objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15) drop-shadow(0 0 4px ${cat.color}66)`, transform: "scale(1.1)" }} /> : <span style={{ fontSize: 16 }}>{cat.icon}</span>}
-                        </div>
-                        <div style={{ fontSize: 8, color: cat.color, marginTop: 3, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1 }}>{cat.stat}</div>
-                        <div style={{ fontSize: 15, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginTop: 1 }}><AnimatedNumber value={(state.stats[cat.key] || 0) + (equipBonuses[cat.key + "Bonus"] || 0)} duration={700} delay={i * 80} format="number" /></div>
-                      </div>
-                    ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 7, color: "#94a3b8", fontSize: 10, fontFamily: "'Outfit',sans-serif" }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>XP bis zum naechsten Level</span>
+                    <span style={{ color: "#cbd5e1", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>
+                      {(state.xp || 0).toLocaleString()} / {(xpNeeded || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
-              )}
+              </div>
+
             </>
           )
         };
@@ -831,30 +783,6 @@ export default function DashboardView({
                     {t("dashboard.board.desc")}
                   </div>
                 </div>
-                <div style={{ minWidth: 66, textAlign: "center", padding: "8px 10px", borderRadius: 12, background: `${theme.primary}10`, border: `1px solid ${theme.primary}28`, color: theme.accent || theme.primary, fontFamily: "'JetBrains Mono',monospace" }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{sortedVisibleQuestGroups.length}</div>
-                  <div style={{ fontSize: 8, fontWeight: 900, marginTop: 3 }}>{t("dashboard.board.open")}</div>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 7, marginBottom: 12 }}>
-                {[
-                  { label: t("dashboard.board.statToday"), value: dueTodayVisibleCount, color: theme.primary },
-                  { label: t("dashboard.board.statCompleted"), value: completedTodayCount, color: "#22c55e" },
-                  { label: t("dashboard.board.statQuick"), value: quickVisibleCount, color: "#f59e0b" },
-                  { label: t("dashboard.board.statOverdue"), value: overdueVisibleCount, color: overdueVisibleCount > 0 ? "#ef4444" : "#64748b" },
-                ].map(item => (
-                  <div key={item.label} style={{
-                    minWidth: 0,
-                    padding: "8px 7px",
-                    borderRadius: 10,
-                    background: "rgba(255,255,255,0.024)",
-                    border: `1px solid ${item.color}22`,
-                  }}>
-                    <div style={{ color: item.color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</div>
-                    <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 900, fontFamily: "'Outfit',sans-serif", marginTop: 3 }}>{item.value}</div>
-                  </div>
-                ))}
               </div>
 
               <div style={{ marginBottom: 12, padding: 11, borderRadius: 14, background: "rgba(2,6,23,0.52)", border: "1px solid rgba(148,163,184,0.12)" }}>

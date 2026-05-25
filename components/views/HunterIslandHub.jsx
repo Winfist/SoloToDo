@@ -463,7 +463,7 @@ function IslandModeButton({ mode, onModeChange }) {
   );
 }
 
-function IslandTopBar({ briefing, level, mode, onModeChange, rank }) {
+function IslandTopBar({ briefing, mode, onModeChange }) {
   return (
     <div className="hi-topbar" data-tutorial="island-topbar">
       <IslandModeButton mode={mode} onModeChange={onModeChange} />
@@ -472,10 +472,6 @@ function IslandTopBar({ briefing, level, mode, onModeChange, rank }) {
           <h1>Hunter-Insel</h1>
           <span>{briefing}</span>
         </div>
-      </div>
-      <div className="hi-mobile-header__rank">
-        <span>Level {level}</span>
-        <strong>{rank?.name || "-"}</strong>
       </div>
     </div>
   );
@@ -510,7 +506,7 @@ function PortalHud({
 
   return (
     <div className="hi-hero__hud hi-portal-hud">
-      <IslandTopBar briefing={briefing} level={level} mode={mode} onModeChange={onModeChange} rank={rank} />
+      <IslandTopBar briefing={briefing} mode={mode} onModeChange={onModeChange} />
 
       <div className="hi-portal-bottom" data-tutorial="portal-hud">
         <div className="hi-selected-portal">
@@ -615,7 +611,7 @@ function AppLauncherView({
 
   return (
     <div className="hi-apps-view">
-      <IslandTopBar briefing={briefing} level={level} mode={mode} onModeChange={onModeChange} rank={rank} />
+      <IslandTopBar briefing={briefing} mode={mode} onModeChange={onModeChange} />
 
       <div className="hi-apps-content" data-tutorial="apps-grid">
         <div className="hi-apps-orbit" aria-hidden="true">
@@ -907,7 +903,7 @@ export default function HunterIslandHub({
           iconSrc: NAV_ICONS.shop,
           label: "Drops Shop",
           color: "#f59e0b",
-          meta: `${state?.gold || 0} Gold`,
+          meta: "Items & Themes",
         }
         : {
           key: "shop",

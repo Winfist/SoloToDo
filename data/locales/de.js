@@ -512,10 +512,10 @@ export const de = {
       cta: "PRO FREISCHALTEN",
     },
     widgets: {
-      hunter_status: { label: "Vanguard Status", desc: "Level und XP" },
+      hunter_status: { label: "Level-Fortschritt", desc: "XP bis zum naechsten Level" },
       today_command: { label: "Heute", desc: "Fokus, Reminder und Risiken" },
-      streak_display: { label: "Serie", desc: "Aktuelle Serie" },
-      daily_progress: { label: "Tagesfortschritt", desc: "Erledigt und offen" },
+      streak_display: { label: "Serie", desc: "Optionale Serienkarte" },
+      daily_progress: { label: "Tagesfortschritt", desc: "Optionale Fortschrittskarte" },
       health_summary: { label: "Biometrics", desc: "Schritte und Schlaf" },
       screen_time_summary: { label: "Bildschirmzeit", desc: "Limit und Trend" },
       quests: { label: "Quest Board", desc: "Aktive Quests" },
@@ -523,8 +523,8 @@ export const de = {
       artifact_showcase: { label: "Artifacts", desc: "Entdeckte Relikte" },
       habits: { label: "Habit Tracker", desc: "Gewohnheiten" },
       micro_habits: { label: "Micro-Habits", desc: "Kleine Aufgaben" },
-      next_unlock: { label: "System-Update", desc: "Naechstes Unlock" },
-      quick_access: { label: "Schnellzugriff", desc: "Shortcuts" },
+      next_unlock: { label: "System-Update", desc: "Optionale Unlock-Vorschau" },
+      quick_access: { label: "Schnellzugriff", desc: "Optionale Modul-Shortcuts" },
       vision_board: { label: "Vision Board", desc: "Affirmationen" },
     },
     streak: {
@@ -792,15 +792,15 @@ export const de = {
       },
       show_header: {
         title: "DEIN HUD",
-        text: "Hier siehst du Rang, Level, Gold und deine Serie. Das ist dein schneller System-Status.",
+        text: "Hier siehst du Rang, Level, Gold und Gems. Das ist dein schneller System-Status.",
       },
       show_xp_bar: {
-        title: "HUNTER STATUS",
-        text: "Diese Karte zeigt deine XP-Leiste und deinen Level-Fortschritt. Level-Ups schalten neue Bereiche frei.",
+        title: "HEUTE",
+        text: "Diese Karte buendelt Tagesfortschritt, offene Schritte, Reminder und Risiken.",
       },
       show_dashboard_stats: {
         title: "DEINE ATTRIBUTE",
-        text: "STR, INT, VIT, AGI und CHA wachsen durch passende Quests. Diese Werte bestimmen spaeter auch Skills, Gates und Builds.",
+        text: "STR, INT, VIT, AGI und CHA findest du gebuendelt in den Hunter Stats.",
       },
       show_quest_board: {
         title: "QUEST BOARD",
@@ -1331,7 +1331,7 @@ export const de = {
     shadows: { label: "Shadow Army", desc: "Erweckte Shadows" },
     equipment: { label: "Equipment", desc: "Waffen & Ruestung" },
     jobs: { label: "Jobs", desc: "Vanguard-Klassen" },
-    shop: { label: "Shop", desc: "{gold} Gold" },
+    shop: { label: "Shop", desc: "Items & Themes" },
     sanctum: { label: "Inner Sanctum", desc: "Meditation & Willenskraft" },
     protocol: { label: "Dawn / Dusk Protocol", desc: "Morgen- & Abendroutinen" },
     soulLink: { label: "Soul Link", descLinked: "Verbunden mit {name}", descEmpty: "Mit Partner verbinden" },
