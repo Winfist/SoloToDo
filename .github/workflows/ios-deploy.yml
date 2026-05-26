@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - codex/interactive-ios-widgets-ci
   workflow_dispatch:
 
 jobs:
