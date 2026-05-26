@@ -102,6 +102,13 @@ struct Kicker: View {
     let text: String
     var color: Color = SL.t3
     var size: CGFloat = 9
+
+    init(_ text: String, color: Color = SL.t3, size: CGFloat = 9) {
+        self.text = text
+        self.color = color
+        self.size = size
+    }
+
     var body: some View {
         Text(text.uppercased())
             .font(SLFont.mono(size, .semibold))
