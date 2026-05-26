@@ -76,6 +76,7 @@ import {
   JobCard, JobsView, JobLevelUpCinematic, AbilityActivationCinematic, SystemCLI, DUNGEON_ENTRY_FEES
 } from './data/constants';
 import { useGameState } from './hooks/useGameState.jsx';
+import { useGlobalHealthSync } from './hooks/useGlobalHealthSync.jsx';
 import { useFeatureUnlocks } from './hooks/useFeatureUnlocks.js';
 import { getNextUnlockLevel, getUnlocksAtLevel, getLevelCrossingUnlock } from './data/featureUnlocks.js';
 import { useGeminiAI } from './hooks/useGeminiAI.js';
@@ -307,6 +308,7 @@ function App({ initialHunterName, onLogout }) {
     setDailyFocusQuest
   } = gameState;
   const { t: tr, locale, setBootstrapLanguage } = useI18n();
+  useGlobalHealthSync(state, updateHealthData, claimHealthReward);
   const localizedCatalog = useMemo(() => getLocalizedCatalog(locale), [locale]);
   const catalogCategories = localizedCatalog.categories;
   const catalogDifficulties = localizedCatalog.difficulties;

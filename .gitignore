@@ -10,6 +10,10 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist_firebase/
+admin-dist/
+admin-dashboard/dist/
+public_deploy/
 *.local
 
 # Editor directories and files
@@ -33,3 +37,20 @@ firebase-debug.log*
 .env.*
 functions/.env
 functions/.env.*
+
+# Generated logs, bundles, and local launch/debug artifacts
+deploy_*.txt
+firebase*_log*.txt
+build_*.txt
+build_check.txt
+search_*.txt
+search_out*.txt
+*_search.txt
+*_log.txt
+*_log*.txt
+project_bundle.txt
+functions/logs*.txt
+*.old
+
+# Private planning docs should stay outside source control
+*.docx

@@ -7,6 +7,7 @@ import NativeStatsDashboard from "./NativeStatsDashboard";
 import ScreenTimeDashboard from "./ScreenTimeDashboard.jsx";
 import { Capacitor } from "@capacitor/core";
 import { AdService } from "../services/adService.js";
+import { openLegalPage } from "../services/legalLinks.js";
 import QuestIntensityControl from "./QuestIntensityControl.jsx";
 import { getPremiumFeatureForRoute, getPremiumStatus, isPremiumWidgetModule, PREMIUM_PRODUCT } from "../data/premium.js";
 import { LANGUAGE_OPTIONS, getLocaleLabel, normalizeLanguageMode, translate, writeBootstrapLanguage } from "../data/i18n.js";
@@ -1894,6 +1895,33 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
                 <span style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{info.label}</span>
                 <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 600, fontFamily: "'Outfit',sans-serif" }}>{info.value}</span>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Legal links */}
+        <div style={{ padding: "14px 16px", background: "rgba(0,0,0,0.24)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", marginBottom: 16 }}>
+          <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>
+            {t("settings.data.legalTitle").toUpperCase()}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(104px, 1fr))", gap: 8 }}>
+            {[
+              { key: "terms", label: t("settings.data.terms") },
+              { key: "privacy", label: t("settings.data.privacy") },
+              { key: "imprint", label: t("settings.data.imprint") },
+            ].map(link => (
+              <button key={link.key} onClick={() => openLegalPage(link.key)} style={{
+                minHeight: 36, padding: "8px 6px", borderRadius: 9,
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                color: "#cbd5e1", fontWeight: 800, fontSize: 9, fontFamily: "'JetBrains Mono',monospace",
+                cursor: "pointer", transition: "all 0.2s", letterSpacing: 0.8,
+                overflowWrap: "anywhere", lineHeight: 1.25,
+              }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+              >
+                {link.label.toUpperCase()}
+              </button>
             ))}
           </div>
         </div>

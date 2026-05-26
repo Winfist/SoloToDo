@@ -283,10 +283,6 @@ exports.generateQuestDescription = onCall(CALL_OPTIONS, async (request) => {
       : "normal",
   };
 });
-// Trigger redeploy
-
-exports.dummyTestAbc = onCall(CALL_OPTIONS, async (request) => { return {ok: true}; });
-
 // ─── Feature F: Admin Push Notification ────────────────────────────────────────
 
 exports.adminSendPushNotification = onCall(CALL_OPTIONS, async (request) => {

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!--
+  ENTWURF — vor Veröffentlichung juristisch prüfen lassen.
+  Alle [ECKIGEN KLAMMERN] mit deinen echten Daten ersetzen.
+  Stand-Datum unten aktualisieren.
+-->
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datenschutzerklärung — SoloToDo</title>
+  <style>
+    body { margin: 0; background: #06060e; color: #cbd5e1; font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { color: #fff; font-size: 26px; }
+    h2 { color: #e2e8f0; font-size: 18px; margin-top: 32px; }
+    a { color: #60a5fa; }
+    .note { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; padding: 12px 16px; color: #fbbf24; font-size: 13px; }
+    code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<main>
+  <p class="note">Entwurf — bitte vor Veröffentlichung juristisch prüfen und alle Platzhalter ersetzen.</p>
+  <h1>Datenschutzerklärung</h1>
+  <p>Diese Erklärung informiert dich über die Verarbeitung personenbezogener Daten bei Nutzung der App <strong>SoloToDo</strong> („App").</p>
+
+  <h2>1. Verantwortlicher</h2>
+  <p>
+    [VOR- UND NACHNAME]<br>
+    [STRASSE UND HAUSNUMMER]<br>
+    [PLZ ORT], Deutschland<br>
+    E-Mail: <a href="mailto:[KONTAKT-E-MAIL]">[KONTAKT-E-MAIL]</a>
+  </p>
+
+  <h2>2. Konto &amp; Anmeldung</h2>
+  <p>Für die Anmeldung nutzen wir Firebase Authentication (Google Ireland Ltd.) mit „Sign in with Apple" und „Google Sign-In". Verarbeitet werden deine E-Mail-Adresse, eine Nutzer-ID und ein optionaler Anzeigename. Rechtsgrundlage: Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).</p>
+
+  <h2>3. Spiel- und Fortschrittsdaten</h2>
+  <p>Deine Quests, Level, Statistiken und Einstellungen werden primär lokal auf deinem Gerät (localStorage) und – sofern angemeldet – in Google Firebase (Firestore) gespeichert, um Synchronisation, Bestenlisten, Gilden und Soul-Links zu ermöglichen. Rechtsgrundlage: Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).</p>
+
+  <h2>4. Standortdaten</h2>
+  <p>Mit deiner Einwilligung nutzt die App deinen Standort für ortsbasierte Quests. Die Daten werden nur zur Quest-Auswertung verwendet. Rechtsgrundlage: Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), jederzeit in den iOS-Einstellungen widerrufbar.</p>
+
+  <h2>5. Gesundheits- und Fitnessdaten (Apple Health)</h2>
+  <p>Mit deiner ausdrücklichen Einwilligung liest die App ausgewählte Werte aus Apple HealthKit (z. B. Schritte), um Quests zu tracken. Diese Daten verbleiben grundsätzlich auf dem Gerät und werden nicht zu Werbezwecken genutzt. Rechtsgrundlage: ausdrückliche Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).</p>
+
+  <h2>6. Kamera &amp; Fotos</h2>
+  <p>Zur Verifizierung bestimmter Quests kannst du Screenshots/Fotos hochladen. Der Zugriff erfolgt nur nach deiner Auswahl. Rechtsgrundlage: Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).</p>
+
+  <h2>7. Werbung (Google AdMob) &amp; Tracking</h2>
+  <p>Die App zeigt belohnte Videoanzeigen über Google AdMob. In der EU/EWR holen wir vor Auslieferung personalisierter Werbung deine Einwilligung über eine Consent-Mitteilung (Google UMP) ein. Auf iOS fragen wir zusätzlich über das App-Tracking-Transparency-Dialogfeld, ob wir deine Gerätekennung (IDFA) zu Tracking-Zwecken verwenden dürfen. Ohne Einwilligung werden nur nicht-personalisierte Anzeigen ausgeliefert. Du kannst deine Einwilligung jederzeit in den App-Einstellungen unter „Ad-Einwilligung verwalten" ändern. Rechtsgrundlage: Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Weitere Infos: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google-Datenschutzerklärung</a>.</p>
+
+  <h2>8. Push-Benachrichtigungen</h2>
+  <p>Mit deiner Einwilligung senden wir Erinnerungen via Firebase Cloud Messaging / Apple Push. Widerruf jederzeit über die iOS-Einstellungen.</p>
+
+  <h2>9. Absturz- und Fehlerdiagnose</h2>
+  <p>Zur Stabilitätsverbesserung speichern wir bei technischen Fehlern anonymisierbare Diagnosedaten (Fehlermeldung, technischer Kontext, App-Version) in Firestore. Rechtsgrundlage: berechtigtes Interesse an einer funktionsfähigen App (Art. 6 Abs. 1 lit. f DSGVO).</p>
+
+  <h2>10. Chat &amp; nutzergenerierte Inhalte</h2>
+  <p>Global- und Gildenchat-Nachrichten werden mit deinem Anzeigenamen in Firestore gespeichert und anderen Nutzern angezeigt. Gemeldete Inhalte werden zur Moderation gespeichert. Rechtsgrundlage: Vertragserfüllung und berechtigtes Interesse an einer sicheren Community (Art. 6 Abs. 1 lit. b, f DSGVO).</p>
+
+  <h2>11. Empfänger &amp; Drittlandtransfer</h2>
+  <p>Dienstleister: Google (Firebase, AdMob) und Apple. Eine Übermittlung in die USA kann erfolgen; sie ist durch geeignete Garantien (Standardvertragsklauseln / EU-US Data Privacy Framework) abgesichert.</p>
+
+  <h2>12. Speicherdauer</h2>
+  <p>Wir speichern personenbezogene Daten, solange dein Konto besteht. Bei Konto-Löschung (in der App unter Einstellungen) werden die zugehörigen Daten entfernt.</p>
+
+  <h2>13. Deine Rechte</h2>
+  <p>Dir stehen Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch zu (Art. 15–21 DSGVO) sowie das Recht, erteilte Einwilligungen zu widerrufen. Du kannst dich zudem bei einer Datenschutz-Aufsichtsbehörde beschweren.</p>
+
+  <h2>14. Kontakt</h2>
+  <p>Für Datenschutzanfragen: <a href="mailto:[KONTAKT-E-MAIL]">[KONTAKT-E-MAIL]</a></p>
+
+  <p style="margin-top:40px;font-size:12px;color:#64748b">Stand: [DATUM EINSETZEN]</p>
+</main>
+</body>
+</html>

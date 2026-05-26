@@ -24,7 +24,7 @@ function getUserPremiumStatus(premium) {
 import QuestOverview from './QuestOverview';
 import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, limit } from 'firebase/firestore';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -40,6 +40,10 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [fetchError, setFetchError] = useState('');
+  const [reports, setReports] = useState([]);
+  const [errorLogs, setErrorLogs] = useState([]);
+  const [moderationLoading, setModerationLoading] = useState(false);
+  const [moderationError, setModerationError] = useState('');
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -48,6 +52,7 @@ export default function App() {
           setUser(u);
           setLoading(false);
           fetchAllUsers();
+          fetchModerationItems();
         } else {
           await signOut(auth);
           setUser(null);
@@ -79,6 +84,24 @@ export default function App() {
       } else {
         setFetchError('Fehler beim Laden der User: ' + err.message);
       }
+    }
+  };
+
+  const fetchModerationItems = async () => {
+    try {
+      setModerationError('');
+      setModerationLoading(true);
+      const [reportSnapshot, errorSnapshot] = await Promise.all([
+        getDocs(query(collection(db, 'reports'), orderBy('createdAt', 'desc'), limit(100))),
+        getDocs(query(collection(db, 'errorLogs'), orderBy('createdAt', 'desc'), limit(100))),
+      ]);
+      setReports(reportSnapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      setErrorLogs(errorSnapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error(err);
+      setModerationError('Moderationsdaten konnten nicht geladen werden: ' + err.message);
+    } finally {
+      setModerationLoading(false);
     }
   };
 
@@ -154,6 +177,14 @@ export default function App() {
             <button className={`nav-tab ${activeTab === 'quests' ? 'active' : ''}`} onClick={() => setActiveTab('quests')}>
               <Target size={16} /> Quests
             </button>
+            <button className={`nav-tab ${activeTab === 'moderation' ? 'active' : ''}`} onClick={() => { setActiveTab('moderation'); setActiveView('list'); fetchModerationItems(); }}>
+              <AlertTriangle size={16} /> Moderation
+              {reports.filter(r => r.status !== 'resolved').length > 0 && (
+                <span style={{ marginLeft: 4, minWidth: 20, height: 20, borderRadius: 999, background: '#ef4444', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>
+                  {reports.filter(r => r.status !== 'resolved').length}
+                </span>
+              )}
+            </button>
           </div>
           <button onClick={handleLogout} className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             Ausloggen
@@ -197,6 +228,16 @@ export default function App() {
           {activeTab === 'quests' && (
             <QuestOverview users={users} />
           )}
+
+          {activeTab === 'moderation' && (
+            <ModerationCenter
+              reports={reports}
+              errorLogs={errorLogs}
+              loading={moderationLoading}
+              error={moderationError}
+              onRefresh={fetchModerationItems}
+            />
+          )}
         </main>
       )}
     </div>
@@ -235,9 +276,7 @@ function UserList({ users, searchQuery, setSearchQuery, onUserSelect, onRefresh 
       </div>
 
       <div className="users-grid">
-        {filteredUsers.map(u => {
-          const stats = u.stats || {};
-          return (
+        {filteredUsers.map(u => (
             <div key={u.id} className="glass-panel user-card" onClick={() => onUserSelect(u)}>
               <div className="user-card-header">
                 <div className="avatar-circle" style={getUserPremiumStatus(u.premium).active ? { borderColor: '#f59e0b', boxShadow: '0 0 12px rgba(245,158,11,0.35)' } : {}}>
@@ -282,12 +321,154 @@ function UserList({ users, searchQuery, setSearchQuery, onUserSelect, onRefresh 
                 </div>
               </div>
             </div>
-          )
-        })}
+        ))}
 
         {filteredUsers.length === 0 && (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#a0a0b0' }}>
             Keine Spieler gefunden.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatDateTime(value) {
+  const date = value?.toDate ? value.toDate() : value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return 'Unbekannt';
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+}
+
+function shortId(value) {
+  if (!value) return '—';
+  return String(value).length > 18 ? `${String(value).slice(0, 9)}...${String(value).slice(-5)}` : String(value);
+}
+
+function ModerationCenter({ reports, errorLogs, loading, error, onRefresh }) {
+  const [activeQueue, setActiveQueue] = useState('reports');
+  const openReports = reports.filter(r => r.status !== 'resolved');
+
+  const resolveReport = async (report) => {
+    try {
+      await updateDoc(doc(db, 'reports', report.id), {
+        status: 'resolved',
+        resolvedAt: new Date().toISOString(),
+        resolvedBy: auth.currentUser?.uid || 'admin',
+      });
+      await onRefresh();
+    } catch (err) {
+      alert('Report konnte nicht geschlossen werden: ' + err.message);
+    }
+  };
+
+  const deleteErrorLog = async (log) => {
+    try {
+      await deleteDoc(doc(db, 'errorLogs', log.id));
+      await onRefresh();
+    } catch (err) {
+      alert('Fehlerlog konnte nicht entfernt werden: ' + err.message);
+    }
+  };
+
+  return (
+    <div className="animate-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ marginBottom: 6 }}>Moderation & Diagnose</h2>
+          <p className="text-muted">Gemeldete Chats und produktive Client-Fehler aus Firestore.</p>
+        </div>
+        <button onClick={onRefresh} className="btn-icon" title="Aktualisieren">
+          <RefreshCw size={20} />
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div className="glass-panel" style={{ padding: 18 }}>
+          <div className="text-muted" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Offene Reports</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: openReports.length ? '#fca5a5' : '#4ade80' }}>{openReports.length}</div>
+        </div>
+        <div className="glass-panel" style={{ padding: 18 }}>
+          <div className="text-muted" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Fehlerlogs</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: errorLogs.length ? '#fbbf24' : '#64748b' }}>{errorLogs.length}</div>
+        </div>
+      </div>
+
+      <div className="glass-panel">
+        <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+          <button className={activeQueue === 'reports' ? 'btn-primary' : 'btn-danger'} onClick={() => setActiveQueue('reports')} style={activeQueue === 'reports' ? {} : { borderColor: 'var(--border)', color: 'var(--text-main)' }}>
+            Reports ({openReports.length})
+          </button>
+          <button className={activeQueue === 'errors' ? 'btn-primary' : 'btn-danger'} onClick={() => setActiveQueue('errors')} style={activeQueue === 'errors' ? {} : { borderColor: 'var(--border)', color: 'var(--text-main)' }}>
+            Fehlerlogs ({errorLogs.length})
+          </button>
+        </div>
+
+        {loading && <p className="text-muted">Lade Moderationsdaten...</p>}
+        {error && <div className="alert-box"><p>{error}</p></div>}
+
+        {!loading && !error && activeQueue === 'reports' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {reports.length === 0 && <p className="text-muted">Keine Reports vorhanden.</p>}
+            {reports.map(report => (
+              <div key={report.id} style={{ padding: 16, borderRadius: 12, border: `1px solid ${report.status === 'resolved' ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.32)'}`, background: 'rgba(0,0,0,0.28)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ color: '#fff', fontWeight: 800, marginBottom: 4 }}>{report.authorName || 'Unbekannter Autor'} <span className="text-muted" style={{ fontWeight: 500 }}>in {report.context || 'global'}</span></div>
+                    <div className="text-muted" style={{ fontSize: 12 }}>{formatDateTime(report.createdAt)} · Message {shortId(report.messageId)}</div>
+                  </div>
+                  <span style={{ padding: '4px 10px', borderRadius: 999, background: report.status === 'resolved' ? 'rgba(34,197,94,0.16)' : 'rgba(239,68,68,0.16)', color: report.status === 'resolved' ? '#4ade80' : '#fca5a5', fontSize: 12, fontWeight: 800 }}>
+                    {report.status === 'resolved' ? 'ERLEDIGT' : 'OFFEN'}
+                  </span>
+                </div>
+                <div style={{ padding: 12, borderRadius: 8, background: 'rgba(0,0,0,0.35)', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginBottom: 10 }}>
+                  {report.text || 'Kein Nachrichtentext gespeichert.'}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8, color: '#94a3b8', fontSize: 12, marginBottom: 12 }}>
+                  <div>Reporter: <span style={{ color: '#fff', userSelect: 'all' }}>{shortId(report.reporterId)}</span></div>
+                  <div>Autor UID: <span style={{ color: '#fff', userSelect: 'all' }}>{shortId(report.authorId)}</span></div>
+                  <div>Report ID: <span style={{ color: '#fff', userSelect: 'all' }}>{shortId(report.id)}</span></div>
+                </div>
+                {report.status !== 'resolved' && (
+                  <button onClick={() => resolveReport(report)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 14px', fontSize: 14 }}>
+                    <CheckSquare size={16} /> Als erledigt markieren
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && activeQueue === 'errors' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {errorLogs.length === 0 && <p className="text-muted">Keine Fehlerlogs vorhanden.</p>}
+            {errorLogs.map(log => (
+              <div key={log.id} style={{ padding: 16, borderRadius: 12, border: '1px solid rgba(245,158,11,0.26)', background: 'rgba(0,0,0,0.28)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ color: '#fff', fontWeight: 800 }}>{log.context || 'client'} · <span style={{ color: '#fbbf24' }}>{formatDateTime(log.createdAt)}</span></div>
+                    <div className="text-muted" style={{ fontSize: 12 }}>UID <span style={{ color: '#fff', userSelect: 'all' }}>{shortId(log.uid)}</span> · {log.url || 'keine URL'}</div>
+                  </div>
+                  <button onClick={() => deleteErrorLog(log)} className="btn-icon" title="Fehlerlog entfernen">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <div style={{ padding: 12, borderRadius: 8, background: 'rgba(0,0,0,0.35)', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginBottom: 10 }}>
+                  {log.message || 'Unbekannter Fehler'}
+                </div>
+                {log.stack && (
+                  <details>
+                    <summary style={{ cursor: 'pointer', color: '#94a3b8', fontSize: 13 }}>Stacktrace anzeigen</summary>
+                    <pre style={{ marginTop: 10, padding: 12, borderRadius: 8, background: '#020617', color: '#cbd5e1', overflowX: 'auto', fontSize: 12, lineHeight: 1.45 }}>{log.stack}</pre>
+                  </details>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -317,17 +498,18 @@ function UserDetail({ user, onBack, onUpdate }) {
 
   useEffect(() => {
     if (showEditModal) {
+      const currentStats = user.stats || { str: 0, vit: 0, agi: 0, int: 0, cha: 0 };
       setEditData({
         gold: user.gold || 0,
         gems: user.gems || 0,
         xp: user.xp || 0,
         level: user.level || 1,
         statPoints: user.statPoints || 0,
-        str: stats.str || 0,
-        agi: stats.agi || 0,
-        vit: stats.vit || 0,
-        int: stats.int || 0,
-        cha: stats.cha || 0
+        str: currentStats.str || 0,
+        agi: currentStats.agi || 0,
+        vit: currentStats.vit || 0,
+        int: currentStats.int || 0,
+        cha: currentStats.cha || 0
       });
     }
   }, [showEditModal, user]);

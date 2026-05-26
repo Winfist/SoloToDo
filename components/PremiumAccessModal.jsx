@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import Modal from "./ui/Modal.jsx";
 import { getLocalizedPremiumFeature, getLocalizedPremiumProduct, getPremiumStatus, PREMIUM_PRODUCT } from "../data/premium.js";
 import { useI18n } from "./i18n/I18nProvider.jsx";
+import { openLegalPage } from "../services/legalLinks.js";
 
 const SUCCESS = "#34d399";
 
@@ -497,9 +498,9 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
             </p>
 
             <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 11 }}>
-              <button type="button" className="hp-link" onClick={showBetaInfo} style={linkStyle}>{t("premium.terms")}</button>
+              <button type="button" className="hp-link" onClick={() => openLegalPage("terms")} style={linkStyle}>{t("premium.terms")}</button>
               <Dot />
-              <button type="button" className="hp-link" onClick={showBetaInfo} style={linkStyle}>{t("premium.privacy")}</button>
+              <button type="button" className="hp-link" onClick={() => openLegalPage("privacy")} style={linkStyle}>{t("premium.privacy")}</button>
               <Dot />
               <button type="button" className="hp-link" onClick={showBetaInfo} style={linkStyle}>{t("premium.restore")}</button>
             </div>

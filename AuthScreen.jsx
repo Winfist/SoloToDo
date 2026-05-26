@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { SYSTEM_ICONS, SKILL_ICONS } from "./data/icons.js";
 import ScrollApproachHint from "./components/ui/ScrollApproachHint.jsx";
 import { useI18n } from "./components/i18n/I18nProvider.jsx";
+import { openLegalPage } from "./services/legalLinks.js";
 
 const AuthTunnelScene = lazy(() => import("./3d/auth/AuthTunnelScene.jsx"));
 
@@ -453,6 +454,32 @@ function SuccessAnimation({ hunterName, onComplete }) {
 }
 
 // ─── MAIN AUTH SCREEN ─────────────────────────────────────────
+function LegalInlineLink({ kind, children }) {
+  const handleOpen = (event) => {
+    event.stopPropagation();
+    openLegalPage(kind);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openLegalPage(kind);
+    }
+  };
+
+  return (
+    <span
+      role="link"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={handleKeyDown}
+      style={{ color: "#a78bfa", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+    >
+      {children}
+    </span>
+  );
+}
+
 export default function AuthScreen({ onAuthSuccess }) {
   const { t } = useI18n();
   const [mode, setMode] = useState("login");
@@ -701,7 +728,7 @@ export default function AuthScreen({ onAuthSuccess }) {
               {agreedToTerms && <span style={{ color: "#fff", fontSize: 12 }}>✓</span>}
             </div>
             <span style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
-              {t("auth.termsPrefix")} <span style={{ color: "#a78bfa", cursor: "pointer" }}>{t("auth.hunterAgreement")}</span> {t("auth.termsConnector")} <span style={{ color: "#a78bfa", cursor: "pointer" }}>{t("auth.systemTerms")}</span>
+              {t("auth.termsPrefix")} <LegalInlineLink kind="terms">{t("auth.hunterAgreement")}</LegalInlineLink> {t("auth.termsConnector")} <LegalInlineLink kind="privacy">{t("auth.systemTerms")}</LegalInlineLink>
             </span>
           </label>
           {errors.terms && <div style={{ marginTop: 6, fontSize: 11, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", paddingLeft: 32 }}>⚠ {errors.terms}</div>}
