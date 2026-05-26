@@ -1,207 +1,111 @@
-// ─── LARGE WIDGET VIEW (4×4) ─────────────────────────────────
-// "Full System Dashboard" — The showstopper.
-// Multi-zone layout: Header → XP → Quests → Habits → Stats.
-// Glass panels, glow dividers, premium spacing.
-
 import SwiftUI
 import WidgetKit
 
 struct LargeWidgetView: View {
     let data: WidgetData
-    
-    private var primary: Color { Color(hex: data.theme.primary) }
-    private var accent: Color { Color(hex: data.theme.accent) }
+    var contentMode: WidgetContentMode = .quests
+
+    private var accent: Color { Color(hex: data.theme.primary) }
+    private var rankCol: Color { SL.rankColor(data.rank) }
     private var xpPct: Double {
         guard data.xpNeeded > 0 else { return 0 }
         return Double(data.xp) / Double(data.xpNeeded)
     }
-    private var rankCol: Color { SL.rankColor(data.rank) }
-    
+    private var items: [WidgetTaskItem] {
+        widgetTaskItems(for: data, mode: contentMode, limit: 4)
+    }
+    private var sectionTitle: String {
+        switch contentMode {
+        case .quests: return "Aktive Quests"
+        case .habits: return "Heute Habits"
+        case .microHabits: return "Micro-Habits"
+        case .mix: return "Next Actions"
+        }
+    }
+
     var body: some View {
         ZStack {
-            SystemBackground(themeColor: primary)
-            
+            PremiumBackground(accent: accent)
+
             VStack(alignment: .leading, spacing: 0) {
-                
-                // ═══════════════════════════════════
-                // ZONE 1: HEADER — Hunter Identity
-                // ═══════════════════════════════════
-                
-                HStack(alignment: .center) {
-                    SystemHeader(text: "SYSTEM", color: accent, size: 6)
-                    Spacer()
-                    StatusDot(color: primary)
-                    RankBadge(rank: data.rank, size: 12)
-                }
-                
-                // Hunter name + info
-                HStack(alignment: .bottom, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 1) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Kicker("Hunter", color: accent)
                         Text(data.hunterName)
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(SL.textBright)
-                        
-                        Text("LEVEL \(data.level)")
-                            .font(.system(size: 8, weight: .black, design: .monospaced))
-                            .foregroundColor(SL.textMuted)
-                            .tracking(1.5)
+                            .font(SLFont.display(21, .bold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
                     }
-                    
                     Spacer()
-                    
-                    StreakFlame(streak: data.streak, size: 14)
-                    GoldBadge(amount: data.gold, size: 8)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(data.rank)
+                            .font(SLFont.display(26, .bold))
+                            .foregroundColor(rankCol)
+                        StreakBadge(streak: data.streak, size: 13)
+                    }
                 }
-                .padding(.top, 2)
-                
-                // XP Bar
-                HStack(spacing: 6) {
-                    XPBar(progress: xpPct, primary: primary, accent: accent, height: 4)
-                    Text("\(data.xp)/\(data.xpNeeded)")
-                        .font(.system(size: 6, weight: .bold, design: .monospaced))
-                        .foregroundColor(SL.textGhost)
+
+                HStack {
+                    Kicker("Level \(data.level)")
+                    Spacer()
+                    Kicker("\(data.xp) / \(data.xpNeeded) XP")
                 }
-                .padding(.top, 5)
+                .padding(.top, 10)
                 .padding(.bottom, 4)
-                
-                GlowDivider(color: primary, opacity: 0.4)
-                
-                
-                // ═══════════════════════════════════
-                // ZONE 2: ACTIVE QUESTS
-                // ═══════════════════════════════════
-                
-                SectionTitle(text: "AKTIVE QUESTS", color: SL.textGhost)
-                    .padding(.top, 4)
-                    .padding(.bottom, 3)
-                
-                GlassPanel(color: primary, cornerRadius: 8, padding: 6, intensity: 0.7) {
-                    VStack(spacing: 0) {
-                        if data.quests.isEmpty {
-                            HStack(spacing: 6) {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(SL.success)
-                                    .shadow(color: SL.success.opacity(0.3), radius: 3)
-                                Text("Keine offenen Quests")
-                                    .font(.system(size: 9, weight: .medium))
-                                    .foregroundColor(SL.textGhost)
-                                    .italic()
-                            }
-                            .padding(.vertical, 6)
-                        } else {
-                            let questLimit = min(data.config.maxQuests, 5)
-                            let displayQuests = Array(data.quests.prefix(questLimit > 0 ? questLimit : 5))
-                            
-                            ForEach(Array(displayQuests.enumerated()), id: \.element.id) { index, quest in
-                                QuestRow(quest: quest, themeColor: primary, compact: true)
-                                if index < displayQuests.count - 1 {
-                                    Rectangle()
-                                        .fill(Color.white.opacity(0.025))
-                                        .frame(height: 0.5)
-                                        .padding(.leading, 8)
-                                }
-                            }
-                            
-                            // Overflow indicator
-                            if data.totalOpen > questLimit {
-                                HStack {
-                                    Spacer()
-                                    Text("+\(data.totalOpen - questLimit) weitere")
-                                        .font(.system(size: 7, weight: .bold, design: .monospaced))
-                                        .foregroundColor(primary.opacity(0.4))
-                                        .tracking(0.5)
-                                }
-                                .padding(.top, 2)
-                            }
-                        }
-                    }
-                }
-                
-                
-                // ═══════════════════════════════════
-                // ZONE 3: HABITS (if data exists)
-                // ═══════════════════════════════════
-                
-                if !data.habits.isEmpty {
-                    SectionTitle(text: "HABITS  \(data.habitsCompleted)/\(data.habitsTotal)", color: SL.textGhost)
-                        .padding(.top, 5)
-                        .padding(.bottom, 3)
-                    
-                    // 2-column habit grid
-                    let cols = [GridItem(.flexible()), GridItem(.flexible())]
-                    LazyVGrid(columns: cols, spacing: 2) {
-                        ForEach(Array(data.habits.prefix(6).enumerated()), id: \.offset) { _, habit in
-                            HStack(spacing: 4) {
-                                Image(systemName: habit.completed ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 8, weight: .semibold))
-                                    .foregroundColor(habit.completed ? SL.success : SL.textGhost)
-                                    .shadow(color: habit.completed ? SL.success.opacity(0.3) : Color.clear, radius: 2)
-                                
-                                Text(habit.name)
-                                    .font(.system(size: 8, weight: habit.completed ? .semibold : .regular))
-                                    .foregroundColor(habit.completed ? SL.textSub : SL.textGhost)
-                                    .lineLimit(1)
-                                    .strikethrough(habit.completed, color: SL.textGhost)
-                                
-                                Spacer()
-                            }
-                        }
-                    }
-                }
-                
-                
-                // ═══════════════════════════════════
-                // ZONE 4: MICRO-HABITS (progress dots)
-                // ═══════════════════════════════════
-                
-                if !data.microHabits.isEmpty {
-                    SectionTitle(text: "MICRO", color: SL.textGhost)
-                        .padding(.top, 4)
-                        .padding(.bottom, 2)
-                    
-                    HStack(spacing: 10) {
-                        ForEach(data.microHabits.prefix(4), id: \.key) { micro in
-                            VStack(spacing: 2) {
-                                // Progress dots
-                                HStack(spacing: 1.5) {
-                                    ForEach(0..<min(micro.target, 5), id: \.self) { i in
-                                        Circle()
-                                            .fill(i < micro.current ? primary : Color.white.opacity(0.06))
-                                            .frame(width: 4, height: 4)
-                                            .shadow(color: i < micro.current ? primary.opacity(0.3) : Color.clear, radius: 2)
-                                    }
-                                }
-                                Text(micro.label)
-                                    .font(.system(size: 5.5, weight: .bold, design: .monospaced))
-                                    .foregroundColor(micro.current >= micro.target ? SL.success : SL.textMuted)
-                                    .lineLimit(1)
-                            }
+
+                XPBar(progress: xpPct, accent: accent)
+
+                Divider1().padding(.vertical, 12)
+
+                Kicker(sectionTitle)
+                    .padding(.bottom, 2)
+
+                if items.isEmpty {
+                    Spacer(minLength: 8)
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 5) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(SL.ok)
+                            Text("Alles erledigt")
+                                .font(SLFont.ui(11, .medium))
+                                .foregroundColor(SL.t3)
                         }
                         Spacer()
                     }
+                    Spacer(minLength: 8)
+                } else {
+                    VStack(spacing: 8) {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                            PremiumTaskRow(item: item, accent: accent, focus: index == 0)
+                        }
+                    }
+                    .padding(.top, 6)
+
+                    if contentMode == .quests && data.totalOpen > items.count {
+                        Text("+\(data.totalOpen - items.count) weitere")
+                            .font(SLFont.mono(8.5, .semibold))
+                            .foregroundColor(SL.t4)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.top, 5)
+                    }
                 }
-                
-                
+
                 Spacer(minLength: 0)
-                
-                
-                // ═══════════════════════════════════
-                // ZONE 5: STATS FOOTER
-                // ═══════════════════════════════════
-                
-                GlowDivider(color: primary, opacity: 0.2)
-                    .padding(.bottom, 3)
-                
-                HStack(spacing: 4) {
-                    StatPill(label: "STR", value: data.stats.str)
-                    StatPill(label: "INT", value: data.stats.intelligence)
-                    StatPill(label: "VIT", value: data.stats.vit)
-                    StatPill(label: "AGI", value: data.stats.agi)
-                    StatPill(label: "CHA", value: data.stats.cha)
+
+                Divider1().padding(.vertical, 12)
+
+                HStack(spacing: 7) {
+                    StatCell(label: "STR", value: data.stats.str)
+                    StatCell(label: "INT", value: data.stats.intelligence)
+                    StatCell(label: "VIT", value: data.stats.vit)
+                    StatCell(label: "AGI", value: data.stats.agi)
+                    StatCell(label: "CHA", value: data.stats.cha)
                 }
             }
-            .padding(13)
+            .padding(18)
         }
+        .widgetURL(items.first?.deepLink)
     }
 }

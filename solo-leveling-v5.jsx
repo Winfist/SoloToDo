@@ -480,6 +480,8 @@ function App({ initialHunterName, onLogout }) {
     if (!detailQuest) return null;
     return (state?.quests || []).find(q => q.id === detailQuest.id) || detailQuest;
   }, [detailQuest, state?.quests]);
+  const pendingDeepLinkRef = useRef(null);
+  const handleDeepLinkRef = useRef(null);
   const addQuestAttachment = useCallback((questId, attachment) => {
     if (!state || !attachment) return;
     const updated = {
@@ -590,6 +592,79 @@ function App({ initialHunterName, onLogout }) {
     if (premiumFeature && !requirePremium(premiumFeature)) return;
     navigateTo(key);
   }, [navigateTo, requirePremium]);
+
+  const applyDeepLink = useCallback((url) => {
+    if (!url || !String(url).startsWith("solotodo://")) return true;
+    if (!state) return false;
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname === "quest") {
+        const questId = decodeURIComponent(parsed.pathname.replace(/^\/+/, ""));
+        setView("dashboard");
+        const quest = (state.quests || []).find(q => q.id === questId);
+        if (quest) setDetailQuest(quest);
+        return true;
+      }
+      if (parsed.hostname === "training") {
+        setView("training");
+        return true;
+      }
+    } catch (error) {
+      console.warn("[SoloToDo] Deep link could not be parsed.", error);
+    }
+    return true;
+  }, [state, setView]);
+
+  const handleDeepLink = useCallback((url) => {
+    if (applyDeepLink(url)) {
+      pendingDeepLinkRef.current = null;
+    } else {
+      pendingDeepLinkRef.current = url;
+    }
+  }, [applyDeepLink]);
+
+  useEffect(() => {
+    handleDeepLinkRef.current = handleDeepLink;
+  }, [handleDeepLink]);
+
+  useEffect(() => {
+    if (!state || !pendingDeepLinkRef.current) return;
+    if (applyDeepLink(pendingDeepLinkRef.current)) {
+      pendingDeepLinkRef.current = null;
+    }
+  }, [state, applyDeepLink]);
+
+  useEffect(() => {
+    let listener = null;
+    let cancelled = false;
+
+    const setupDeepLinks = async () => {
+      try {
+        const [{ App: CapacitorApp }, { Capacitor }] = await Promise.all([
+          import("@capacitor/app"),
+          import("@capacitor/core"),
+        ]);
+        if (!Capacitor.isNativePlatform()) return;
+
+        const launch = await CapacitorApp.getLaunchUrl?.();
+        if (!cancelled && launch?.url) {
+          handleDeepLinkRef.current?.(launch.url);
+        }
+
+        listener = await CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+          handleDeepLinkRef.current?.(url);
+        });
+      } catch (error) {
+        console.warn("[SoloToDo] Deep link setup failed.", error);
+      }
+    };
+
+    setupDeepLinks();
+    return () => {
+      cancelled = true;
+      listener?.remove?.();
+    };
+  }, []);
 
   // ─ Progressive Feature Unlock System ─
   const { can, nextLevel } = useFeatureUnlocks(state?.level || 1);

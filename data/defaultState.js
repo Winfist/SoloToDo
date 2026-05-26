@@ -195,7 +195,7 @@ export const DEFAULT_STATE = {
     showHunterCard: true,
     showSystemMessage: true,
     syncTheme: true,
-    rotationEnabled: true,
+    rotationEnabled: false,
     rotationIntervalMinutes: 5,
     showSections: {
       streak: true,

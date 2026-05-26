@@ -1,114 +1,87 @@
 // ─── LOCK SCREEN WIDGETS ─────────────────────────────────────
-// Circular: XP Ring + Level (tight, clean)
-// Rectangular: Focus quest + streak info
-// Inline: Streak flame + quest count
+// System renders these monochrome/tinted, so design for legibility
+// without color. Circular: XP ring + level. Rectangular: focus
+// quest + next step + status. Inline: streak + open count.
 
 import SwiftUI
 import WidgetKit
 
-// MARK: - Lock Screen Circular
+// MARK: - Circular (XP ring + level)
 struct LockScreenCircularView: View {
     let data: WidgetData
-    
     private var xpPct: Double {
         guard data.xpNeeded > 0 else { return 0 }
         return Double(data.xp) / Double(data.xpNeeded)
     }
-    
     var body: some View {
         ZStack {
-            // Track
-            Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: 3)
-            
-            // Progress
-            Circle()
-                .trim(from: 0, to: min(xpPct, 1.0))
-                .stroke(
-                    Color(hex: data.theme.primary),
-                    style: StrokeStyle(lineWidth: 3, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-            
+            XPRing(progress: xpPct, accent: .white, size: 58, line: 4)
             VStack(spacing: 0) {
                 Text("\(data.level)")
-                    .font(.system(size: 20, weight: .black, design: .monospaced))
-                    .foregroundColor(.white)
-                Text(data.rank)
-                    .font(.system(size: 7, weight: .heavy, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                Text("RANG \(data.rank)")
+                    .font(.system(size: 7, weight: .semibold, design: .monospaced))
+                    .opacity(0.7)
             }
+            .foregroundColor(.white)
         }
     }
 }
 
-// MARK: - Lock Screen Rectangular
+// MARK: - Rectangular (focus quest + next step)
 struct LockScreenRectangularView: View {
     let data: WidgetData
-    
+    private var quest: WidgetQuest? { data.quests.first }
+    private var step: String? {
+        let s = quest?.nextStep
+        return (s?.isEmpty == false) ? s : nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            if let quest = data.quests.first {
-                HStack(spacing: 4) {
-                    Image(systemName: SL.diffSymbol(quest.difficulty))
-                        .font(.system(size: 9, weight: .bold))
+            if let quest = quest {
+                HStack(spacing: 5) {
+                    Image(systemName: "scope")
+                        .font(.system(size: 10, weight: .semibold))
                     Text(quest.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .lineLimit(1)
                 }
-                
-                HStack(spacing: 6) {
-                    HStack(spacing: 2) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 8))
-                        Text("\(data.streak)")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                if let step = step {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.turn.down.right")
+                            .font(.system(size: 8, weight: .semibold))
+                        Text(step)
+                            .font(.system(size: 12, weight: .regular))
+                            .lineLimit(1)
                     }
-                    Text("·").foregroundColor(.secondary)
-                    Text("LV\(data.level)")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                    Text("·").foregroundColor(.secondary)
-                    Text("[\(quest.category.uppercased())]")
-                        .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                    .opacity(0.8)
                 }
-                .foregroundColor(.secondary)
+                Text("△ \(data.streak) · LV \(data.level) · \(data.totalOpen) OFFEN")
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .opacity(0.62)
             } else {
-                HStack(spacing: 4) {
+                HStack(spacing: 5) {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
                     Text("Alle Quests erledigt")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                 }
-                HStack(spacing: 6) {
-                    HStack(spacing: 2) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 8))
-                        Text("\(data.streak)")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
-                    }
-                    Text("·")
-                    Text("LV\(data.level)")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                }
-                .foregroundColor(.secondary)
+                Text("△ \(data.streak) · LV \(data.level)")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .opacity(0.62)
             }
         }
     }
 }
 
-// MARK: - Lock Screen Inline
+// MARK: - Inline (above the clock)
 struct LockScreenInlineView: View {
     let data: WidgetData
-    
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "flame.fill")
-                .font(.system(size: 10, weight: .bold))
-            Text("\(data.streak)")
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
-            Text("·").foregroundColor(.secondary)
-            Text("\(data.totalOpen) Quests")
-                .font(.system(size: 12, weight: .semibold))
+            Text("\(data.streak) · \(data.totalOpen) Quests offen")
         }
     }
 }

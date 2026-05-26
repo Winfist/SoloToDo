@@ -10,6 +10,7 @@ import WidgetKit
 // MARK: - App Group Constants
 let appGroupId = "group.com.solotodo.app"
 let widgetDataKey = "widgetData"
+let widgetActionQueueKey = "widgetActionQueue"
 
 // MARK: - Root Widget Data
 struct WidgetData: Codable {
@@ -142,52 +143,80 @@ struct WidgetData: Codable {
 // MARK: - Sub-Models (all with default initializers)
 
 struct WidgetFocusQuest: Codable {
+    var id: String?
     var title: String
+    var questDescription: String?
+    var nextStep: String?
     var category: String
     var difficulty: String
-    
-    enum CodingKeys: String, CodingKey { case title, category, difficulty }
+    var canCompleteFromWidget: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case questDescription = "description"
+        case nextStep
+        case category, difficulty
+        case canCompleteFromWidget
+    }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try? c.decode(String.self, forKey: .id)
         title = (try? c.decode(String.self, forKey: .title)) ?? "Quest"
+        questDescription = try? c.decode(String.self, forKey: .questDescription)
+        nextStep = try? c.decode(String.self, forKey: .nextStep)
         category = (try? c.decode(String.self, forKey: .category)) ?? "agi"
         difficulty = (try? c.decode(String.self, forKey: .difficulty)) ?? "normal"
+        canCompleteFromWidget = (try? c.decode(Bool.self, forKey: .canCompleteFromWidget)) ?? false
     }
 }
 
 struct WidgetQuest: Codable, Identifiable {
     var id: String
     var title: String
+    var questDescription: String?
+    var nextStep: String?
     var category: String
     var difficulty: String
     var type: String
     var priority: String
     var dueDate: String?
     var isSystem: Bool
-    
+    var canCompleteFromWidget: Bool
+
     enum CodingKeys: String, CodingKey {
-        case id, title, category, difficulty, type, priority, dueDate, isSystem
+        case id, title
+        case questDescription = "description"
+        case nextStep
+        case category, difficulty, type, priority, dueDate, isSystem
+        case canCompleteFromWidget
     }
     
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = (try? c.decode(String.self, forKey: .id)) ?? UUID().uuidString
         title = (try? c.decode(String.self, forKey: .title)) ?? "Quest"
+        questDescription = try? c.decode(String.self, forKey: .questDescription)
+        nextStep = try? c.decode(String.self, forKey: .nextStep)
         category = (try? c.decode(String.self, forKey: .category)) ?? "agi"
         difficulty = (try? c.decode(String.self, forKey: .difficulty)) ?? "normal"
         type = (try? c.decode(String.self, forKey: .type)) ?? "side"
         priority = (try? c.decode(String.self, forKey: .priority)) ?? "medium"
         dueDate = try? c.decode(String.self, forKey: .dueDate)
         isSystem = (try? c.decode(Bool.self, forKey: .isSystem)) ?? false
+        canCompleteFromWidget = (try? c.decode(Bool.self, forKey: .canCompleteFromWidget)) ?? true
     }
     
     // Direct initializer for placeholder
-    init(id: String = UUID().uuidString, title: String = "Quest", category: String = "agi",
+    init(id: String = UUID().uuidString, title: String = "Quest",
+         questDescription: String? = nil, nextStep: String? = nil, category: String = "agi",
          difficulty: String = "normal", type: String = "side", priority: String = "medium",
-         dueDate: String? = nil, isSystem: Bool = false) {
-        self.id = id; self.title = title; self.category = category
+         dueDate: String? = nil, isSystem: Bool = false, canCompleteFromWidget: Bool = true) {
+        self.id = id; self.title = title
+        self.questDescription = questDescription; self.nextStep = nextStep
+        self.category = category
         self.difficulty = difficulty; self.type = type; self.priority = priority
         self.dueDate = dueDate; self.isSystem = isSystem
+        self.canCompleteFromWidget = canCompleteFromWidget
     }
 }
 
@@ -204,34 +233,52 @@ struct WidgetDeadline: Codable {
 }
 
 struct WidgetHabit: Codable {
+    var id: String
+    var title: String
     var name: String
     var completed: Bool
     var icon: String
-    
-    enum CodingKeys: String, CodingKey { case name, completed, icon }
+    var verification: String
+    var category: String
+    var linkedQuestId: String?
+    var canCompleteFromWidget: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, name, completed, icon, verification, category, linkedQuestId, canCompleteFromWidget
+    }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        name = (try? c.decode(String.self, forKey: .name)) ?? "Habit"
+        id = (try? c.decode(String.self, forKey: .id)) ?? UUID().uuidString
+        title = (try? c.decode(String.self, forKey: .title)) ?? (try? c.decode(String.self, forKey: .name)) ?? "Habit"
+        name = (try? c.decode(String.self, forKey: .name)) ?? title
         completed = (try? c.decode(Bool.self, forKey: .completed)) ?? false
-        icon = (try? c.decode(String.self, forKey: .icon)) ?? "💪"
+        icon = (try? c.decode(String.self, forKey: .icon)) ?? "H"
+        verification = (try? c.decode(String.self, forKey: .verification)) ?? "manual"
+        category = (try? c.decode(String.self, forKey: .category)) ?? "habit"
+        linkedQuestId = try? c.decode(String.self, forKey: .linkedQuestId)
+        canCompleteFromWidget = (try? c.decode(Bool.self, forKey: .canCompleteFromWidget)) ?? (verification == "manual" && !completed)
     }
 }
 
 struct WidgetMicroHabit: Codable {
+    var id: String
     var key: String
     var label: String
     var icon: String
     var current: Int
     var target: Int
-    
-    enum CodingKeys: String, CodingKey { case key, label, icon, current, target }
+    var completed: Bool
+
+    enum CodingKeys: String, CodingKey { case id, key, label, icon, current, target, completed }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        key = (try? c.decode(String.self, forKey: .key)) ?? ""
+        id = (try? c.decode(String.self, forKey: .id)) ?? (try? c.decode(String.self, forKey: .key)) ?? ""
+        key = (try? c.decode(String.self, forKey: .key)) ?? id
         label = (try? c.decode(String.self, forKey: .label)) ?? ""
-        icon = (try? c.decode(String.self, forKey: .icon)) ?? "⭐"
+        icon = (try? c.decode(String.self, forKey: .icon)) ?? String(label.prefix(1))
         current = (try? c.decode(Int.self, forKey: .current)) ?? 0
         target = (try? c.decode(Int.self, forKey: .target)) ?? 5
+        completed = (try? c.decode(Bool.self, forKey: .completed)) ?? (current >= target)
     }
 }
 
@@ -383,7 +430,7 @@ struct WidgetConfig: Codable {
     var showSections: WidgetShowSections
     
     init(modules: [String] = ["streak_xp", "quests", "habits"], maxQuests: Int = 5,
-         rotationEnabled: Bool = true, rotationIntervalMinutes: Int = 5,
+         rotationEnabled: Bool = false, rotationIntervalMinutes: Int = 5,
          showSections: WidgetShowSections = WidgetShowSections()) {
         self.modules = modules; self.maxQuests = maxQuests
         self.rotationEnabled = rotationEnabled
@@ -394,7 +441,7 @@ struct WidgetConfig: Codable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         modules = (try? c.decode([String].self, forKey: .modules)) ?? ["streak_xp", "quests", "habits"]
         maxQuests = (try? c.decode(Int.self, forKey: .maxQuests)) ?? 5
-        rotationEnabled = (try? c.decode(Bool.self, forKey: .rotationEnabled)) ?? true
+        rotationEnabled = (try? c.decode(Bool.self, forKey: .rotationEnabled)) ?? false
         rotationIntervalMinutes = (try? c.decode(Int.self, forKey: .rotationIntervalMinutes)) ?? 5
         showSections = (try? c.decode(WidgetShowSections.self, forKey: .showSections)) ?? WidgetShowSections()
     }

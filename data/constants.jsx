@@ -1006,7 +1006,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
     if (completing) return;
     if (subQuests.length > 0 && !allSubsDone) { setExpanded(true); return; }
     if (!quest.isSystem && quest.createdAtMs) {
-      const waitHours = diff?.waitHours || 1;
+      const waitHours = diff?.waitHours ?? 1;
       const elapsedMs = Date.now() - quest.createdAtMs;
       const requiredMs = waitHours * 3600 * 1000;
       if (elapsedMs < requiredMs) { onComplete(quest.id, null); return; }

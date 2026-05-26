@@ -4,10 +4,12 @@
 // Called on every persist() so the widget always shows fresh data.
 
 import { Capacitor } from '@capacitor/core';
+import { getLocalDateKey, getToday } from '../data/dateUtils.js';
 import { getLocaleObject, getStateLocale, translate } from '../data/i18n.js';
 
 const APP_GROUP = 'group.com.solotodo.app';
 const WIDGET_DATA_KEY = 'widgetData';
+export const WIDGET_ACTION_QUEUE_KEY = 'widgetActionQueue';
 
 // ─── Default Widget Config ────────────────────────────────────
 export const DEFAULT_WIDGET_CONFIG = {
@@ -18,8 +20,10 @@ export const DEFAULT_WIDGET_CONFIG = {
   showHunterCard: true,
   showSystemMessage: true,
   syncTheme: true,
-  // Rotation: widget cycles through quest batches automatically
-  rotationEnabled: true,
+  // Rotation: widget cycles through quest batches automatically.
+  // Default OFF — a stable, curated top-list is more glanceable than
+  // content that changes every few minutes. Opt-in via settings.
+  rotationEnabled: false,
   rotationIntervalMinutes: 5,  // 5 | 10 | 15 | 30
   // Display sections: user can toggle what appears in widgets
   showSections: {
@@ -77,6 +81,13 @@ const RANKS_MINIMAL = [
   { name: 'SSS', minLv: 91, color: '#e879f9' },
 ];
 
+const QUEST_WAIT_HOURS = {
+  easy: 0,
+  normal: 0.5,
+  hard: 1,
+  boss: 2,
+};
+
 function getRankForLevel(level) {
   for (let i = RANKS_MINIMAL.length - 1; i >= 0; i--) {
     if (level >= RANKS_MINIMAL[i].minLv) return RANKS_MINIMAL[i];
@@ -127,13 +138,68 @@ function sortQuests(quests, sortMode) {
   }
 }
 
+// ─── Quest text helpers (widget content) ──────────────────────
+// A quest title alone often doesn't say what to actually do — so we
+// also send a short description and the next open sub-quest ("next step").
+function truncateText(str, max) {
+  const t = (str || '').trim();
+  if (t.length <= max) return t;
+  return (t.slice(0, max).replace(/\s+\S*$/, '').trim() || t.slice(0, max).trim()) + '…';
+}
+
+function nextOpenStep(quest) {
+  const next = (quest.subQuests || []).find(sq => sq && !sq.completed && (sq.title || '').trim());
+  return next ? next.title.trim() : null;
+}
+
+const DEFAULT_MICRO_HABITS = [
+  { id: 'water', label: 'Wasser', dailyTarget: 8 },
+  { id: 'posture', label: 'Haltung', dailyTarget: 5 },
+  { id: 'stretch', label: 'Stretch', dailyTarget: 4 },
+  { id: 'gratitude', label: 'Dankbar', dailyTarget: 3 },
+  { id: 'breathe', label: 'Atmen', dailyTarget: 3 },
+];
+
+function normalizeMicroHabitList(raw) {
+  if (Array.isArray(raw) && raw.length > 0) return raw;
+  if (raw && typeof raw === 'object') {
+    const entries = Object.entries(raw).map(([id, cfg]) => ({ id, ...(cfg || {}) }));
+    if (entries.length > 0) return entries;
+  }
+  return DEFAULT_MICRO_HABITS;
+}
+
+function getMicroTarget(cfg) {
+  return Number(cfg?.dailyTarget ?? cfg?.target ?? 5) || 5;
+}
+
+function isHabitScheduledToday(habit, date = new Date()) {
+  const day = date.getDay();
+  if (habit?.frequency === 'weekday' && (day === 0 || day === 6)) return false;
+  if (habit?.frequency === 'weekend' && day > 0 && day < 6) return false;
+  return true;
+}
+
+function isManualHabitCompletable(habit, today) {
+  const completed = !!habit?.history?.[today]?.completed || !!(habit?.completedDates || []).includes(today);
+  return habit?.active !== false && isHabitScheduledToday(habit) && habit?.verification === 'manual' && !completed;
+}
+
 // ─── Build Widget Payload ─────────────────────────────────────
+function canCompleteQuestFromWidget(quest) {
+  if (!quest?.id || quest.completed) return false;
+  if (quest.isSystem || !quest.createdAtMs) return true;
+  const waitHours = QUEST_WAIT_HOURS[quest.difficulty] ?? 1;
+  return Date.now() - quest.createdAtMs >= waitHours * 3600 * 1000;
+}
+
 function buildWidgetPayload(state) {
   const config = state.widgetConfig || DEFAULT_WIDGET_CONFIG;
   const locale = getStateLocale(state);
   const dateLocale = locale === 'de' ? 'de-DE' : 'en-US';
   const rank = getRankForLevel(state.level || 1);
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const today = getToday();
 
   // Quest data — send ALL sorted quests so widget can handle rotation itself
   const filtered = filterQuests(state.quests, config.questFilter);
@@ -141,40 +207,62 @@ function buildWidgetPayload(state) {
   const allQuests = sorted.map(q => ({
     id: q.id,
     title: q.title || translate(locale, 'quests.fallbackTitle'),
+    description: truncateText(q.description, 120),
+    nextStep: nextOpenStep(q),
     category: q.category || 'agi',
     difficulty: q.difficulty || 'normal',
     type: q.type || 'side',
     priority: q.priority || 'medium',
     dueDate: q.dueDate || null,
     isSystem: !!q.isSystem,
+    canCompleteFromWidget: canCompleteQuestFromWidget(q),
   }));
 
   // Focus quest (highest priority open quest)
   const focusQuest = sorted[0] ? {
+    id: sorted[0].id,
     title: sorted[0].title || translate(locale, 'quests.fallbackTitle'),
+    description: truncateText(sorted[0].description, 120),
+    nextStep: nextOpenStep(sorted[0]),
     category: sorted[0].category,
     difficulty: sorted[0].difficulty,
+    canCompleteFromWidget: canCompleteQuestFromWidget(sorted[0]),
   } : null;
 
   // Habits
-  const habits = (state.habits || []).map(h => ({
-    name: h.name || 'Habit',
-    completed: !!(h.completedDates || []).includes(today),
-    icon: h.icon || '💪',
+  const habits = (state.habits || [])
+    .filter(h => h.active !== false && isHabitScheduledToday(h, now))
+    .map(h => ({
+    id: h.id,
+    title: h.title || h.name || 'Habit',
+    name: h.title || h.name || 'Habit',
+    completed: !!h.history?.[today]?.completed || !!(h.completedDates || []).includes(today),
+    icon: h.icon || 'H',
+    verification: h.verification || 'manual',
+    category: h.category || 'habit',
+    linkedQuestId: h.linkedQuestId || null,
+    canCompleteFromWidget: isManualHabitCompletable(h, today),
   }));
   const habitsCompleted = habits.filter(h => h.completed).length;
   const habitsTotal = habits.length;
 
   // Micro-habits
-  const microConfig = state.microHabits?.habits;
+  const microConfig = normalizeMicroHabitList(state.microHabits?.habits);
   const microDaily = state.microHabits?.daily?.[today] || {};
-  const microHabits = microConfig ? Object.entries(microConfig).map(([key, cfg]) => ({
-    key,
-    label: cfg.label || key,
-    icon: cfg.icon || '⭐',
-    current: microDaily[key] || 0,
-    target: cfg.target || 5,
-  })) : [];
+  const microHabits = microConfig.map(cfg => {
+    const id = cfg.id || cfg.key || cfg.label;
+    const target = getMicroTarget(cfg);
+    const current = Math.min(microDaily[id] || 0, target);
+    return {
+      id,
+      key: id,
+      label: cfg.label || id,
+      icon: cfg.icon || (cfg.label || id || '?').slice(0, 1).toUpperCase(),
+      current,
+      target,
+      completed: current >= target,
+    };
+  }).filter(h => h.id);
 
   // Stats
   const stats = state.stats || { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
@@ -218,7 +306,7 @@ function buildWidgetPayload(state) {
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = getLocalDateKey(d);
     const count = (state.completedQuests || []).filter(q => {
       const cd = q.completedAt || q.date;
       return cd && cd.startsWith(dateStr);
@@ -319,7 +407,7 @@ function buildWidgetPayload(state) {
     config: {
       modules: config.modules || DEFAULT_WIDGET_CONFIG.modules,
       maxQuests: config.maxQuests || 5,
-      rotationEnabled: config.rotationEnabled !== false,
+      rotationEnabled: config.rotationEnabled === true,
       rotationIntervalMinutes: config.rotationIntervalMinutes || 5,
       showSections: config.showSections || DEFAULT_WIDGET_CONFIG.showSections,
     },

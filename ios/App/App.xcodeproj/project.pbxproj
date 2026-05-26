@@ -20,6 +20,7 @@
 		E1A2B3C4D5E6F7A8B9C0D1EC /* SoloToDoWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1EB /* SoloToDoWidgetBundle.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1EE /* WidgetDataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1ED /* WidgetDataModel.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1F0 /* SharedStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1EF /* SharedStyles.swift */; };
+		E1A2B3C4D5E6F7A8B9C0D201 /* WidgetActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D200 /* WidgetActions.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1F2 /* SmallWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1F1 /* SmallWidgetView.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1F4 /* MediumWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1F3 /* MediumWidgetView.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1F6 /* LargeWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1F5 /* LargeWidgetView.swift */; };
@@ -45,6 +46,7 @@
 		E1A2B3C4D5E6F7A8B9C0D1EB /* SoloToDoWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoloToDoWidgetBundle.swift; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D1ED /* WidgetDataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataModel.swift; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D1EF /* SharedStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStyles.swift; sourceTree = "<group>"; };
+		E1A2B3C4D5E6F7A8B9C0D200 /* WidgetActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetActions.swift; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D1F1 /* SmallWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallWidgetView.swift; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D1F3 /* MediumWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediumWidgetView.swift; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D1F5 /* LargeWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeWidgetView.swift; sourceTree = "<group>"; };
@@ -116,6 +118,7 @@
 			children = (
 				E1A2B3C4D5E6F7A8B9C0D1EB /* SoloToDoWidgetBundle.swift */,
 				E1A2B3C4D5E6F7A8B9C0D1ED /* WidgetDataModel.swift */,
+				E1A2B3C4D5E6F7A8B9C0D200 /* WidgetActions.swift */,
 				E1A2B3C4D5E6F7A8B9C0D1EF /* SharedStyles.swift */,
 				E1A2B3C4D5E6F7A8B9C0D1F1 /* SmallWidgetView.swift */,
 				E1A2B3C4D5E6F7A8B9C0D1F3 /* MediumWidgetView.swift */,
@@ -280,6 +283,7 @@
 			files = (
 				E1A2B3C4D5E6F7A8B9C0D1EC /* SoloToDoWidgetBundle.swift in Sources */,
 				E1A2B3C4D5E6F7A8B9C0D1EE /* WidgetDataModel.swift in Sources */,
+				E1A2B3C4D5E6F7A8B9C0D201 /* WidgetActions.swift in Sources */,
 				E1A2B3C4D5E6F7A8B9C0D1F0 /* SharedStyles.swift in Sources */,
 				E1A2B3C4D5E6F7A8B9C0D1F2 /* SmallWidgetView.swift in Sources */,
 				E1A2B3C4D5E6F7A8B9C0D1F4 /* MediumWidgetView.swift in Sources */,

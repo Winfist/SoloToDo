@@ -1,0 +1,199 @@
+name: iOS Xcode Build
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ios-build.yml"
+      - "*.js"
+      - "*.jsx"
+      - "*.ts"
+      - "*.tsx"
+      - "admin-dashboard/**"
+      - "capacitor.config.*"
+      - "components/**"
+      - "data/**"
+      - "hooks/**"
+      - "index.html"
+      - "ios/**"
+      - "multiplayer/**"
+      - "package-lock.json"
+      - "package.json"
+      - "patch-*.cjs"
+      - "patch-health-plugin.js"
+      - "public/**"
+      - "services/**"
+      - "solo-leveling-v5.jsx"
+      - "src/**"
+      - "styles/**"
+      - "vite.config.*"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/workflows/ios-build.yml"
+      - "*.js"
+      - "*.jsx"
+      - "*.ts"
+      - "*.tsx"
+      - "admin-dashboard/**"
+      - "capacitor.config.*"
+      - "components/**"
+      - "data/**"
+      - "hooks/**"
+      - "index.html"
+      - "ios/**"
+      - "multiplayer/**"
+      - "package-lock.json"
+      - "package.json"
+      - "patch-*.cjs"
+      - "patch-health-plugin.js"
+      - "public/**"
+      - "services/**"
+      - "solo-leveling-v5.jsx"
+      - "src/**"
+      - "styles/**"
+      - "vite.config.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-xcode-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  xcode-build:
+    name: Build App + Widget Extension
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    env:
+      IOS_PROJECT: ios/App/App.xcodeproj
+      IOS_WORKING_DIRECTORY: ios/App
+      XCODE_SCHEME: App
+      DERIVED_DATA_PATH: ios/App/DerivedData
+      SPM_CLONE_PATH: ios/App/SPM
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Print tool versions
+        run: |
+          set -euo pipefail
+          sw_vers
+          xcodebuild -version
+          node --version || true
+          npm --version || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            admin-dashboard/package-lock.json
+
+      - name: Install app dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install admin dashboard dependencies
+        run: npm ci --prefix admin-dashboard
+
+      - name: Patch native package compatibility
+        run: |
+          set -euo pipefail
+          node patch-health-plugin.js
+          node patch-widget-bridge.cjs
+
+      - name: Check widget JavaScript services
+        run: |
+          set -euo pipefail
+          node --check services/widgetDataService.js
+          node --check services/widgetActionQueue.js
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Sync Capacitor iOS project
+        run: npx cap sync ios
+
+      - name: Ensure widget target patch is applied
+        run: node patch-widget-extension.cjs
+
+      - name: Reset Xcode caches
+        run: |
+          set -euo pipefail
+          rm -rf "$DERIVED_DATA_PATH"
+          rm -rf "$SPM_CLONE_PATH"
+          rm -rf "$IOS_WORKING_DIRECTORY/AppBuild.xcresult"
+          rm -rf "$IOS_WORKING_DIRECTORY/WidgetBuild.xcresult"
+          rm -rf ~/Library/Caches/org.swift.swiftpm
+          rm -rf ~/Library/org.swift.swiftpm
+
+      - name: List Xcode schemes
+        working-directory: ${{ env.IOS_WORKING_DIRECTORY }}
+        run: xcodebuild -list -project App.xcodeproj
+
+      - name: Resolve Swift Package dependencies
+        working-directory: ${{ env.IOS_WORKING_DIRECTORY }}
+        run: |
+          set -euo pipefail
+          xcodebuild -resolvePackageDependencies \
+            -project App.xcodeproj \
+            -scheme "$XCODE_SCHEME" \
+            -clonedSourcePackagesDirPath SPM
+
+      - name: Build iOS app for simulator
+        working-directory: ${{ env.IOS_WORKING_DIRECTORY }}
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project App.xcodeproj \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath DerivedData \
+            -clonedSourcePackagesDirPath SPM \
+            -resultBundlePath AppBuild.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
+      - name: Build widget extension target directly
+        working-directory: ${{ env.IOS_WORKING_DIRECTORY }}
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project App.xcodeproj \
+            -target SoloToDoWidgetExtension \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath DerivedData \
+            -clonedSourcePackagesDirPath SPM \
+            -resultBundlePath WidgetBuild.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
+      - name: Upload Xcode result bundles on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-result-bundles
+          path: |
+            ios/App/AppBuild.xcresult
+            ios/App/WidgetBuild.xcresult
+          if-no-files-found: ignore

@@ -130,10 +130,124 @@ function createProgressSyncEvent(previous, next, now) {
   };
 }
 
+const DEFAULT_MICRO_HABITS_FOR_WIDGET = [
+  { id: "water", label: "Wasser", dailyTarget: 8 },
+  { id: "posture", label: "Haltung", dailyTarget: 5 },
+  { id: "stretch", label: "Stretch", dailyTarget: 4 },
+  { id: "gratitude", label: "Dankbar", dailyTarget: 3 },
+  { id: "breathe", label: "Atmen", dailyTarget: 3 },
+];
+
+function normalizeMicroHabitListForWidget(raw) {
+  if (Array.isArray(raw) && raw.length > 0) return raw;
+  if (raw && typeof raw === "object") {
+    const entries = Object.entries(raw).map(([id, cfg]) => ({ id, ...(cfg || {}) }));
+    if (entries.length > 0) return entries;
+  }
+  return DEFAULT_MICRO_HABITS_FOR_WIDGET;
+}
+
+function getMicroHabitTargetForWidget(habit) {
+  return Number(habit?.dailyTarget ?? habit?.target ?? 5) || 5;
+}
+
+function isHabitScheduledForWidgetToday(habit, date = new Date()) {
+  const day = date.getDay();
+  if (habit?.frequency === "weekday" && (day === 0 || day === 6)) return false;
+  if (habit?.frequency === "weekend" && day > 0 && day < 6) return false;
+  return true;
+}
+
+function getWidgetGemBoosterMultipliers(state) {
+  const now = Date.now();
+  const active = (state?.activeGemBoosters || []).filter(b => b.expiresAt > now);
+  return active.reduce((acc, booster) => ({
+    xpMult: booster.effect?.xpMult ? Math.max(acc.xpMult, booster.effect.xpMult) : acc.xpMult,
+    goldMult: booster.effect?.goldMult ? Math.max(acc.goldMult, booster.effect.goldMult) : acc.goldMult,
+  }), { xpMult: 1, goldMult: 1 });
+}
+
+function canCompleteQuestFromWidgetNow(quest) {
+  if (!quest || quest.completed) return false;
+  if (quest.isSystem || !quest.createdAtMs) return true;
+  const waitHours = DIFFICULTIES.find(d => d.key === quest.difficulty)?.waitHours ?? 1;
+  return Date.now() - quest.createdAtMs >= waitHours * 3600 * 1000;
+}
+
+function completeHabitFromWidgetState(state, habitId) {
+  const today = getToday();
+  const habits = state?.habits || [];
+  const habit = habits.find(h => h.id === habitId);
+  const completed = !!habit?.history?.[today]?.completed || !!(habit?.completedDates || []).includes(today);
+  if (!habit || habit.active === false || !isHabitScheduledForWidgetToday(habit) || habit.verification !== "manual" || completed) {
+    return state;
+  }
+
+  const updated = habits.map(h => {
+    if (h.id !== habitId) return h;
+    const wasCompletedYesterday = !!h.history?.[getYesterdayKey()]?.completed;
+    const newStreak = wasCompletedYesterday ? (h.currentStreak || 0) + 1 : 1;
+    return {
+      ...h,
+      currentStreak: newStreak,
+      bestStreak: Math.max(h.bestStreak || 0, newStreak),
+      totalCompletions: (h.totalCompletions || 0) + 1,
+      scheduledDays: (h.scheduledDays || 0) + (h.history?.[today]?.scheduled ? 0 : 1),
+      history: { ...h.history, [today]: { completed: true, completedAt: new Date().toISOString() } },
+    };
+  });
+
+  const updatedHabit = updated.find(h => h.id === habitId);
+  const xpGain = 8 + Math.min((updatedHabit?.currentStreak || 0), 10);
+  const linkedQuestId = habit.linkedQuestId;
+  const updatedQuests = linkedQuestId
+    ? (state.quests || []).map(q => q.id === linkedQuestId && !q.completed ? { ...q, completed: true, completedAt: today } : q)
+    : state.quests;
+
+  return calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpGain);
+}
+
+function incrementMicroHabitFromWidgetState(state, habitId) {
+  const today = getToday();
+  const microHabits = normalizeMicroHabitListForWidget(state?.microHabits?.habits);
+  const habit = microHabits.find(h => (h.id || h.key) === habitId);
+  if (!habit) return state;
+
+  const target = getMicroHabitTargetForWidget(habit);
+  const todayData = state?.microHabits?.daily?.[today] || {};
+  const current = todayData[habitId] || 0;
+  if (current >= target) return state;
+
+  const newDaily = { ...todayData, [habitId]: current + 1 };
+  const totalTarget = microHabits.reduce((sum, h) => sum + getMicroHabitTargetForWidget(h), 0);
+  const previousTotal = microHabits.reduce((sum, h) => {
+    const id = h.id || h.key;
+    return sum + Math.min(todayData[id] || 0, getMicroHabitTargetForWidget(h));
+  }, 0);
+  const nextTotal = microHabits.reduce((sum, h) => {
+    const id = h.id || h.key;
+    return sum + Math.min(newDaily[id] || 0, getMicroHabitTargetForWidget(h));
+  }, 0);
+  const wasComplete = previousTotal >= totalTarget * 0.8;
+  const nowComplete = nextTotal >= totalTarget * 0.8;
+  const xpGain = 2 + (nowComplete && !wasComplete ? 25 : 0);
+
+  return calculateLevelUp({
+    ...state,
+    microHabits: {
+      ...(state.microHabits || {}),
+      habits: microHabits,
+      daily: { ...(state.microHabits?.daily || {}), [today]: newDaily },
+      totalTaps: (state.microHabits?.totalTaps || 0) + 1,
+    },
+  }, xpGain);
+}
+
 export function useGameState(initialHunterName, onLogout) {
   const [state, setState] = useState(null);
   const stateRef = useRef(null);
   const initDoneRef = useRef(false);
+  const processingWidgetQueueRef = useRef(false);
   const bootTimestampRef = useRef(Date.now());
   const lastAttachmentCleanupSignatureRef = useRef(null);
   useEffect(() => {
@@ -736,7 +850,7 @@ export function useGameState(initialHunterName, onLogout) {
 
     // Check wait time for manual quests
     if (!quest.isSystem && quest.createdAtMs) {
-      const waitHours = DIFFICULTIES.find(d => d.key === quest.difficulty)?.waitHours || 1;
+      const waitHours = DIFFICULTIES.find(d => d.key === quest.difficulty)?.waitHours ?? 1;
       const elapsedMs = Date.now() - quest.createdAtMs;
       const requiredMs = waitHours * 3600 * 1000;
       if (elapsedMs < requiredMs) {
@@ -776,6 +890,110 @@ export function useGameState(initialHunterName, onLogout) {
     const flow = buildQuestRewardFlow(result, state.level, rect, getStateLocale(state));
     enqueueRewardFlow(flow);
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);
+
+  const processWidgetActionQueue = useCallback(async () => {
+    if (processingWidgetQueueRef.current) return;
+    const currentState = stateRef.current;
+    if (!currentState) return;
+
+    processingWidgetQueueRef.current = true;
+    try {
+      const { readWidgetActionQueue, removeProcessedWidgetActions } = await import('../services/widgetActionQueue.js');
+      const queue = await readWidgetActionQueue();
+      if (!queue.length) return;
+
+      const previousProcessed = new Set([
+        ...(currentState.widgetProcessedActionIds || []),
+      ]);
+      const processedNow = [];
+      const newlyCompletedQuests = [];
+      let workingState = currentState;
+      let changed = false;
+
+      const actions = queue
+        .filter(action => action?.actionId && action?.targetId && action?.type)
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+      for (const action of actions) {
+        if (previousProcessed.has(action.actionId)) {
+          processedNow.push(action.actionId);
+          continue;
+        }
+
+        const before = workingState;
+        if (action.type === "completeQuest") {
+          const quest = (workingState.quests || []).find(q => q.id === action.targetId);
+          if (canCompleteQuestFromWidgetNow(quest)) {
+            const { xpMult } = getWidgetGemBoosterMultipliers(workingState);
+            const result = buildCompleteQuestState(action.targetId, workingState, processAchievementsPure, xpMult, false);
+            if (result?.nextState) {
+              workingState = result.nextState;
+              changed = true;
+              if (result.newlyCompletedQuests?.length) newlyCompletedQuests.push(...result.newlyCompletedQuests);
+              trackEvent('quest_completed', {
+                category: result.quest?.category,
+                difficulty: result.quest?.difficulty,
+                isSystem: !!result.quest?.isSystem,
+                source: 'widget',
+              });
+            }
+          }
+        } else if (action.type === "completeHabit") {
+          workingState = completeHabitFromWidgetState(workingState, action.targetId);
+          changed = changed || workingState !== before;
+        } else if (action.type === "incrementMicroHabit") {
+          workingState = incrementMicroHabitFromWidgetState(workingState, action.targetId);
+          changed = changed || workingState !== before;
+        }
+
+        previousProcessed.add(action.actionId);
+        processedNow.push(action.actionId);
+      }
+
+      if (processedNow.length) {
+        workingState = {
+          ...workingState,
+          widgetProcessedActionIds: Array.from(previousProcessed).slice(-200),
+        };
+        if (changed) {
+          persist(workingState);
+          if (auth.currentUser && newlyCompletedQuests.length) {
+            newlyCompletedQuests.forEach(cq => {
+              const histRef = doc(collection(db, 'users', auth.currentUser.uid, 'questHistory'), cq.id);
+              setDoc(histRef, { ...cq, archivedAt: new Date().toISOString(), source: "widget" }).catch(err =>
+                console.warn('questHistory write failed:', err)
+              );
+            });
+          }
+        } else if ((currentState.widgetProcessedActionIds || []).length !== workingState.widgetProcessedActionIds.length) {
+          persist(workingState);
+        }
+        await removeProcessedWidgetActions(processedNow);
+      }
+    } catch (error) {
+      console.warn("[SoloToDo] Widget action queue processing failed.", error);
+    } finally {
+      processingWidgetQueueRef.current = false;
+    }
+  }, [persist, processAchievementsPure]);
+
+  useEffect(() => {
+    if (!state || loading) return;
+    processWidgetActionQueue();
+  }, [state?.ownerUid, loading, processWidgetActionQueue]);
+
+  useEffect(() => {
+    const onFocus = () => processWidgetActionQueue();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") processWidgetActionQueue();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [processWidgetActionQueue]);
 
 
   const deleteQuest = id => persist({

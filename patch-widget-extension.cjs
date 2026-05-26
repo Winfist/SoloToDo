@@ -65,6 +65,8 @@ const UUIDS = {
   largeViewBuild:      'E1A2B3C4D5E6F7A8B9C0D1F6',
   lockScreenRef:       'E1A2B3C4D5E6F7A8B9C0D1F7',
   lockScreenBuild:     'E1A2B3C4D5E6F7A8B9C0D1F8',
+  widgetActionsRef:    'E1A2B3C4D5E6F7A8B9C0D200',
+  widgetActionsBuild:  'E1A2B3C4D5E6F7A8B9C0D201',
   infoPlistRef:        'E1A2B3C4D5E6F7A8B9C0D1F9',
   entitlementsRef:     'E1A2B3C4D5E6F7A8B9C0D1FA',
   // Groups
@@ -86,6 +88,7 @@ const SWIFT_FILES = [
   { name: 'MediumWidgetView.swift', refId: UUIDS.mediumViewRef, buildId: UUIDS.mediumViewBuild },
   { name: 'LargeWidgetView.swift', refId: UUIDS.largeViewRef, buildId: UUIDS.largeViewBuild },
   { name: 'LockScreenWidgets.swift', refId: UUIDS.lockScreenRef, buildId: UUIDS.lockScreenBuild },
+  { name: 'WidgetActions.swift', refId: UUIDS.widgetActionsRef, buildId: UUIDS.widgetActionsBuild },
 ];
 
 // ─── 1. Add PBXFileReference entries ─────────────────────────
@@ -334,7 +337,7 @@ pbxproj = pbxproj.replace(
 fs.writeFileSync(PBXPROJ_PATH, pbxproj, 'utf-8');
 console.log('[Widget Patch] ✅ Successfully patched project.pbxproj!');
 console.log('[Widget Patch]    - Added SoloToDoWidgetExtension target');
-console.log('[Widget Patch]    - Added 7 Swift source files');
+console.log(`[Widget Patch]    - Added ${SWIFT_FILES.length} Swift source files`);
 console.log('[Widget Patch]    - Added Embed App Extensions phase');
 console.log('[Widget Patch]    - Added build configurations');
 console.log('[Widget Patch]    - Bundle ID: com.solotodo.app.widget');

@@ -1678,9 +1678,9 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           {t("settings.widget.rotationInfo")}
         </div>
 
-        <SettingRow label={t("settings.widget.rotation")} desc={t("settings.widget.rotationDesc")} value={(state.widgetConfig || {}).rotationEnabled !== false} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, rotationEnabled: !(wc.rotationEnabled !== false) } }); }} color="#f59e0b" theme={theme} />
+        <SettingRow label={t("settings.widget.rotation")} desc={t("settings.widget.rotationDesc")} value={(state.widgetConfig || {}).rotationEnabled === true} onChange={() => { const wc = state.widgetConfig || {}; persist({ ...state, widgetConfig: { ...wc, rotationEnabled: !(wc.rotationEnabled === true) } }); }} color="#f59e0b" theme={theme} />
 
-        {(state.widgetConfig || {}).rotationEnabled !== false && (
+        {(state.widgetConfig || {}).rotationEnabled === true && (
           <div style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 4 }}>Rotations-Intervall</div>
             <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>Wie oft das Widget die nächsten Quests zeigt</div>
@@ -1750,6 +1750,55 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         <div style={{ fontSize: 9, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>WIDGET PREVIEW</div>
         
         {/* Large Widget Preview */}
+        <div style={{ borderRadius: 16, background: "linear-gradient(145deg, #0d1020, #070810)", border: "1px solid rgba(255,255,255,0.06)", position: "relative", overflow: "hidden", padding: "16px 18px", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}>
+          <div style={{ position: "absolute", top: -50, left: "20%", right: "20%", height: 90, background: `radial-gradient(circle, ${theme.primary}24, transparent 68%)`, pointerEvents: "none" }} />
+          <div style={{ position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 8, letterSpacing: 2.4, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 3 }}>HUNTER</div>
+                <div style={{ fontSize: 20, lineHeight: 1, fontWeight: 800, color: "#fff", fontFamily: "'Cinzel',serif" }}>{state.hunterName || "Hunter"}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 24, lineHeight: 1, fontWeight: 800, color: theme.primary, fontFamily: "'Cinzel',serif" }}>
+                  {state.level >= 30 ? 'S' : state.level >= 25 ? 'A' : state.level >= 20 ? 'B' : state.level >= 15 ? 'C' : state.level >= 10 ? 'D' : 'E'}
+                </div>
+                <div style={{ fontSize: 10, color: "#fb923c", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>🔥 {state.streak || 0}</div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, letterSpacing: 1.5, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 5 }}>
+              <span>LEVEL {state.level || 1}</span>
+              <span>{state.xp || 0}/{state.xpNeeded || 100} XP</span>
+            </div>
+            <div style={{ height: 4, borderRadius: 999, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 14 }}>
+              <div style={{ height: "100%", width: `${Math.min(((state.xp || 0) / (state.xpNeeded || 100)) * 100, 100)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})`, borderRadius: 999 }} />
+            </div>
+
+            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginBottom: 11 }} />
+            <div style={{ fontSize: 8, letterSpacing: 2.2, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 7 }}>ACTIVE QUESTS</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {(state.quests || []).filter(q => !q.completed).slice(0, 3).map((q, i) => (
+                <div key={q.id || i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <div style={{ width: 3, alignSelf: "stretch", minHeight: 28, borderRadius: 2, background: i === 0 ? theme.primary : "rgba(100,116,139,0.55)" }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{q.title || "Quest"}</div>
+                    {(q.subQuests?.find(sq => !sq.completed)?.title || q.description) && (
+                      <div style={{ fontSize: 10, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 1 }}>
+                        {q.subQuests?.find(sq => !sq.completed)?.title || q.description}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ width: 20, height: 20, borderRadius: 999, border: `1px solid ${theme.primary}66`, display: "flex", alignItems: "center", justifyContent: "center", color: theme.primary, fontSize: 11 }}>✓</div>
+                </div>
+              ))}
+              {(state.quests || []).filter(q => !q.completed).length === 0 && (
+                <div style={{ textAlign: "center", padding: "14px 0", color: "#64748b", fontSize: 12 }}>Alle Quests erledigt</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {false && (
         <div style={{ borderRadius: 20, background: "linear-gradient(145deg, #03030a, #06060e, #0a0a16, #06060e)", border: `1px solid ${theme.primary}22`, position: "relative", overflow: "hidden" }}>
           {/* Scanlines */}
           <div style={{ position: "absolute", inset: 0, opacity: 0.02, pointerEvents: "none", background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.15) 2px, rgba(255,255,255,0.15) 2.5px)" }} />
@@ -1860,7 +1909,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             </div>
 
             {/* Rotation indicator */}
-            {(state.widgetConfig || {}).rotationEnabled !== false && (
+            {(state.widgetConfig || {}).rotationEnabled === true && (
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, padding: "4px 8px", borderRadius: 5, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)" }}>
                 <span style={{ fontSize: 8, color: "#f59e0b" }}>↻</span>
                 <span style={{ fontSize: 7, color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 0.5 }}>
@@ -1870,6 +1919,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             )}
           </div>
         </div>
+        )}
 
         {/* Size label */}
         <div style={{ fontSize: 7, color: "#1e293b", fontFamily: "'JetBrains Mono',monospace", marginTop: 8, textAlign: "center", letterSpacing: 2 }}>LARGE WIDGET · LIVE PREVIEW</div>
