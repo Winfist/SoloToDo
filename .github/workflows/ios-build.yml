@@ -176,6 +176,7 @@ jobs:
           set -euo pipefail
           xcodebuild build \
             -project App.xcodeproj \
+            -scheme "$XCODE_SCHEME" \
             -target SoloToDoWidgetExtension \
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
