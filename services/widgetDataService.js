@@ -10,6 +10,10 @@ import { getLocaleObject, getStateLocale, translate } from '../data/i18n.js';
 const APP_GROUP = 'group.com.solotodo.app';
 const WIDGET_DATA_KEY = 'widgetData';
 export const WIDGET_ACTION_QUEUE_KEY = 'widgetActionQueue';
+// Which quest is currently expanded inline in the widget. The widget writes
+// this on tap; we clear it whenever the app pushes fresh data so opening the
+// app collapses the widget back to its list view.
+const WIDGET_EXPANDED_KEY = 'widgetExpandedQuestId';
 
 // ─── Default Widget Config ────────────────────────────────────
 export const DEFAULT_WIDGET_CONFIG = {
@@ -152,6 +156,16 @@ function nextOpenStep(quest) {
   return next ? next.title.trim() : null;
 }
 
+// The quest's stages ("Etappen") — what to actually do. Sent so the widget can
+// reveal them inline on tap (e.g. "20 Liegestütze", "10 Sit-Ups"). Capped and
+// truncated to keep the shared payload small.
+function questStages(quest) {
+  return (quest.subQuests || [])
+    .filter(sq => sq && (sq.title || '').trim())
+    .slice(0, 8)
+    .map(sq => ({ title: truncateText(sq.title, 70), done: !!sq.completed }));
+}
+
 const DEFAULT_MICRO_HABITS = [
   { id: 'water', label: 'Wasser', dailyTarget: 8 },
   { id: 'posture', label: 'Haltung', dailyTarget: 5 },
@@ -209,6 +223,7 @@ function buildWidgetPayload(state) {
     title: q.title || translate(locale, 'quests.fallbackTitle'),
     description: truncateText(q.description, 120),
     nextStep: nextOpenStep(q),
+    stages: questStages(q),
     category: q.category || 'agi',
     difficulty: q.difficulty || 'normal',
     type: q.type || 'side',
@@ -224,6 +239,7 @@ function buildWidgetPayload(state) {
     title: sorted[0].title || translate(locale, 'quests.fallbackTitle'),
     description: truncateText(sorted[0].description, 120),
     nextStep: nextOpenStep(sorted[0]),
+    stages: questStages(sorted[0]),
     category: sorted[0].category,
     difficulty: sorted[0].difficulty,
     canCompleteFromWidget: canCompleteQuestFromWidget(sorted[0]),
@@ -467,6 +483,12 @@ export async function syncWidgetData(state) {
       key: WIDGET_DATA_KEY,
       value: payloadStr,
     });
+
+    // Collapse any inline-expanded quest now that fresh data is in: opening the
+    // app should reset the widget back to its list view.
+    try {
+      await WidgetBridgePlugin.setItem({ group: APP_GROUP, key: WIDGET_EXPANDED_KEY, value: '' });
+    } catch (_) { /* non-critical */ }
 
     // Trigger widget timeline reload
     if (WidgetBridgePlugin.reloadAllTimelines) {

@@ -11,6 +11,9 @@ import WidgetKit
 let appGroupId = "group.com.solotodo.app"
 let widgetDataKey = "widgetData"
 let widgetActionQueueKey = "widgetActionQueue"
+// ID of the quest the user expanded inline in the widget (set by the tap intent,
+// cleared by the app on the next data sync).
+let widgetExpandedKey = "widgetExpandedQuestId"
 
 // MARK: - Root Widget Data
 struct WidgetData: Codable {
@@ -142,11 +145,27 @@ struct WidgetData: Codable {
 
 // MARK: - Sub-Models (all with default initializers)
 
+/// A quest stage ("Etappe") — the concrete thing to do, e.g. "20 Liegestütze".
+struct WidgetStage: Codable, Identifiable {
+    var title: String
+    var done: Bool
+    var id: String { title }
+
+    enum CodingKeys: String, CodingKey { case title, done }
+    init(title: String, done: Bool) { self.title = title; self.done = done }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        title = (try? c.decode(String.self, forKey: .title)) ?? ""
+        done = (try? c.decode(Bool.self, forKey: .done)) ?? false
+    }
+}
+
 struct WidgetFocusQuest: Codable {
     var id: String?
     var title: String
     var questDescription: String?
     var nextStep: String?
+    var stages: [WidgetStage]
     var category: String
     var difficulty: String
     var canCompleteFromWidget: Bool
@@ -154,7 +173,7 @@ struct WidgetFocusQuest: Codable {
     enum CodingKeys: String, CodingKey {
         case id, title
         case questDescription = "description"
-        case nextStep
+        case nextStep, stages
         case category, difficulty
         case canCompleteFromWidget
     }
@@ -164,6 +183,7 @@ struct WidgetFocusQuest: Codable {
         title = (try? c.decode(String.self, forKey: .title)) ?? "Quest"
         questDescription = try? c.decode(String.self, forKey: .questDescription)
         nextStep = try? c.decode(String.self, forKey: .nextStep)
+        stages = (try? c.decode([WidgetStage].self, forKey: .stages)) ?? []
         category = (try? c.decode(String.self, forKey: .category)) ?? "agi"
         difficulty = (try? c.decode(String.self, forKey: .difficulty)) ?? "normal"
         canCompleteFromWidget = (try? c.decode(Bool.self, forKey: .canCompleteFromWidget)) ?? false
@@ -175,6 +195,7 @@ struct WidgetQuest: Codable, Identifiable {
     var title: String
     var questDescription: String?
     var nextStep: String?
+    var stages: [WidgetStage]
     var category: String
     var difficulty: String
     var type: String
@@ -186,17 +207,18 @@ struct WidgetQuest: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, title
         case questDescription = "description"
-        case nextStep
+        case nextStep, stages
         case category, difficulty, type, priority, dueDate, isSystem
         case canCompleteFromWidget
     }
-    
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = (try? c.decode(String.self, forKey: .id)) ?? UUID().uuidString
         title = (try? c.decode(String.self, forKey: .title)) ?? "Quest"
         questDescription = try? c.decode(String.self, forKey: .questDescription)
         nextStep = try? c.decode(String.self, forKey: .nextStep)
+        stages = (try? c.decode([WidgetStage].self, forKey: .stages)) ?? []
         category = (try? c.decode(String.self, forKey: .category)) ?? "agi"
         difficulty = (try? c.decode(String.self, forKey: .difficulty)) ?? "normal"
         type = (try? c.decode(String.self, forKey: .type)) ?? "side"
@@ -205,19 +227,29 @@ struct WidgetQuest: Codable, Identifiable {
         isSystem = (try? c.decode(Bool.self, forKey: .isSystem)) ?? false
         canCompleteFromWidget = (try? c.decode(Bool.self, forKey: .canCompleteFromWidget)) ?? true
     }
-    
+
     // Direct initializer for placeholder
     init(id: String = UUID().uuidString, title: String = "Quest",
-         questDescription: String? = nil, nextStep: String? = nil, category: String = "agi",
+         questDescription: String? = nil, nextStep: String? = nil, stages: [WidgetStage] = [],
+         category: String = "agi",
          difficulty: String = "normal", type: String = "side", priority: String = "medium",
          dueDate: String? = nil, isSystem: Bool = false, canCompleteFromWidget: Bool = true) {
         self.id = id; self.title = title
         self.questDescription = questDescription; self.nextStep = nextStep
+        self.stages = stages
         self.category = category
         self.difficulty = difficulty; self.type = type; self.priority = priority
         self.dueDate = dueDate; self.isSystem = isSystem
         self.canCompleteFromWidget = canCompleteFromWidget
     }
+
+    /// Open stages first; preserves order. Used for the collapsed "next step".
+    var nextOpenStageTitle: String? {
+        if let s = stages.first(where: { !$0.done })?.title, !s.isEmpty { return s }
+        if let n = nextStep, !n.isEmpty { return n }
+        return nil
+    }
+    var doneStageCount: Int { stages.filter { $0.done }.count }
 }
 
 struct WidgetDeadline: Codable {
@@ -477,6 +509,20 @@ func loadWidgetData() -> WidgetData? {
         }
         return nil
     }
+}
+
+// MARK: - Expanded-quest state
+/// The quest the user expanded inline in the widget, or nil for the list view.
+func loadExpandedQuestId() -> String? {
+    guard let defaults = UserDefaults(suiteName: appGroupId) else { return nil }
+    let value = defaults.string(forKey: widgetExpandedKey)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    return (value?.isEmpty == false) ? value : nil
+}
+
+func setExpandedQuestId(_ id: String?) {
+    guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
+    defaults.set(id ?? "", forKey: widgetExpandedKey)
+    defaults.synchronize()
 }
 
 // MARK: - Placeholder Data

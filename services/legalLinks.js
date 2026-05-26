@@ -1,7 +1,7 @@
 export const LEGAL_LINKS = {
-  privacy: "/datenschutz.html",
-  terms: "/nutzungsbedingungen.html",
-  imprint: "/impressum.html",
+  privacy: "https://solo-todo.web.app/datenschutz.html",
+  terms: "https://solo-todo.web.app/nutzungsbedingungen.html",
+  imprint: "https://solo-todo.web.app/impressum.html",
 };
 
 export function openLegalPage(kind) {

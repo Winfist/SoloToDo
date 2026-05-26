@@ -25,6 +25,7 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
+import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
 import {
@@ -2299,6 +2300,65 @@ export function useGameState(initialHunterName, onLogout) {
     return result;
   }, [state, persist, notify, triggerSystemMessage]);
 
+  // ── In-App-Purchase (RevenueCat) ──────────────────────────────────────────
+  const applyStorePremium = useCallback((customerInfo) => {
+    if (!state) return false;
+    const premium = mapCustomerInfoToPremium(customerInfo, state.premium);
+    if (!premium) return false;
+    if (
+      state.premium?.source === "app_store" &&
+      state.premium?.status === "active" &&
+      state.premium?.activeUntil === premium.activeUntil
+    ) {
+      return true; // unverändert → kein unnötiger Schreibvorgang
+    }
+    persist({ ...state, premium });
+    return true;
+  }, [state, persist]);
+
+  const applyStoreRef = useRef(applyStorePremium);
+  applyStoreRef.current = applyStorePremium;
+
+  const purchasePremiumPlan = useCallback(async (planId) => {
+    const result = await iapPurchasePlan(planId);
+    if (result.ok && applyStoreRef.current?.(result.customerInfo)) {
+      notify("Hunter Pro wurde aktiviert. Willkommen, Monarch.", "success");
+      return { ok: true };
+    }
+    if (result.reason === "cancelled") return { ok: false, cancelled: true };
+    if (result.reason === "unsupported") {
+      notify("Käufe sind nur in der App verfügbar.", "info");
+      return { ok: false };
+    }
+    notify("Kauf fehlgeschlagen. Bitte später erneut versuchen.", "warning");
+    return { ok: false };
+  }, [notify]);
+
+  const restorePremium = useCallback(async () => {
+    const result = await iapRestore();
+    if (result.ok && applyStoreRef.current?.(result.customerInfo)) {
+      notify("Hunter Pro wurde wiederhergestellt.", "success");
+      return { ok: true };
+    }
+    notify("Keine aktiven Käufe zum Wiederherstellen gefunden.", "info");
+    return { ok: false };
+  }, [notify]);
+
+  useEffect(() => {
+    if (!isIapSupported()) return;
+    let active = true;
+    const apply = (info) => { if (active && info) applyStoreRef.current?.(info); };
+    const init = async (uid) => {
+      const ok = await configureIap(uid);
+      if (!ok) return;
+      apply(await getCustomerInfo());
+    };
+    if (auth.currentUser) init(auth.currentUser.uid);
+    const unsubAuth = onAuthStateChanged(auth, (user) => { if (user) init(user.uid); });
+    addCustomerInfoListener(apply);
+    return () => { active = false; unsubAuth(); };
+  }, []);
+
   const premiumStatus = useMemo(() => getPremiumStatus(state?.premium), [state?.premium]);
   const questCreationStatus = useMemo(() => getDailyQuestCreationStatus(state), [state?.premium, state?.dailyUserQuestsCreated]);
 
@@ -2529,6 +2589,9 @@ export function useGameState(initialHunterName, onLogout) {
     buyGemItem,
     claimDailyGemBonus,
     activatePremiumCode,
+    purchasePremiumPlan,
+    restorePremium,
+    iapSupported: isIapSupported(),
     premiumStatus,
     questCreationStatus,
     getActiveGemBoosters,

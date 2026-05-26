@@ -43,122 +43,26 @@ struct SoloToDoWidgetConfigurationIntent: WidgetConfigurationIntent {
     var mode: WidgetContentModeIntent
 }
 
+/// Expands / collapses a quest's stage list inline in the widget. Tapping a
+/// collapsed quest reveals its stages here; tapping the open one again clears
+/// it. Never completes anything — completion only happens in the app.
 @available(iOSApplicationExtension 17.0, *)
-struct QueueWidgetActionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Update SoloToDo"
-    static var description = IntentDescription("Queues a SoloToDo widget action for the app.")
+struct ToggleQuestExpandIntent: AppIntent {
+    static var title: LocalizedStringResource = "Quest-Etappen anzeigen"
+    static var description = IntentDescription("Zeigt die Etappen einer Quest im Widget.")
     static var openAppWhenRun = false
 
-    @Parameter(title: "Action Type")
-    var actionType: String
-
-    @Parameter(title: "Target ID")
-    var targetId: String
+    @Parameter(title: "Quest ID")
+    var questId: String
 
     init() {}
-
-    init(actionType: String, targetId: String) {
-        self.actionType = actionType
-        self.targetId = targetId
-    }
+    init(questId: String) { self.questId = questId }
 
     func perform() async throws -> some IntentResult {
-        appendWidgetAction(type: actionType, targetId: targetId)
-        applyOptimisticWidgetAction(type: actionType, targetId: targetId)
+        let current = loadExpandedQuestId()
+        setExpandedQuestId(current == questId ? nil : questId)
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
-    }
-}
-
-struct WidgetQueuedAction: Codable {
-    var actionId: String
-    var type: String
-    var targetId: String
-    var createdAt: Int64
-    var source: String
-}
-
-func appendWidgetAction(type: String, targetId: String) {
-    guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
-    let existing = defaults.string(forKey: widgetActionQueueKey) ?? "[]"
-    let decoder = JSONDecoder()
-    let current = (try? decoder.decode([WidgetQueuedAction].self, from: Data(existing.utf8))) ?? []
-    let action = WidgetQueuedAction(
-        actionId: UUID().uuidString,
-        type: type,
-        targetId: targetId,
-        createdAt: Int64(Date().timeIntervalSince1970 * 1000),
-        source: "widget"
-    )
-    let next = Array((current + [action]).suffix(50))
-    if let data = try? JSONEncoder().encode(next),
-       let json = String(data: data, encoding: .utf8) {
-        defaults.set(json, forKey: widgetActionQueueKey)
-        defaults.synchronize()
-    }
-}
-
-func applyOptimisticWidgetAction(type: String, targetId: String) {
-    guard let defaults = UserDefaults(suiteName: appGroupId),
-          var widgetData = loadWidgetData() else { return }
-
-    switch type {
-    case "completeQuest":
-        widgetData.quests.removeAll { $0.id == targetId }
-        if widgetData.focusQuest?.id == targetId {
-            widgetData.focusQuest = widgetData.quests.first.map {
-                WidgetFocusQuest(
-                    id: $0.id,
-                    title: $0.title,
-                    questDescription: $0.questDescription,
-                    nextStep: $0.nextStep,
-                    category: $0.category,
-                    difficulty: $0.difficulty,
-                    canCompleteFromWidget: $0.canCompleteFromWidget
-                )
-            }
-        }
-        widgetData.totalOpen = max(0, widgetData.totalOpen - 1)
-
-    case "completeHabit":
-        widgetData.habits = widgetData.habits.map { habit in
-            guard habit.id == targetId else { return habit }
-            var next = habit
-            next.completed = true
-            next.canCompleteFromWidget = false
-            return next
-        }
-        widgetData.habitsCompleted = min(widgetData.habitsTotal, widgetData.habitsCompleted + 1)
-
-    case "incrementMicroHabit":
-        widgetData.microHabits = widgetData.microHabits.map { habit in
-            guard habit.id == targetId || habit.key == targetId else { return habit }
-            var next = habit
-            next.current = min(next.target, next.current + 1)
-            next.completed = next.current >= next.target
-            return next
-        }
-
-    default:
-        break
-    }
-
-    if let encoded = try? JSONEncoder().encode(widgetData),
-       let json = String(data: encoded, encoding: .utf8) {
-        defaults.set(json, forKey: widgetDataKey)
-        defaults.synchronize()
-    }
-}
-
-extension WidgetFocusQuest {
-    init(id: String?, title: String, questDescription: String?, nextStep: String?, category: String, difficulty: String, canCompleteFromWidget: Bool) {
-        self.id = id
-        self.title = title
-        self.questDescription = questDescription
-        self.nextStep = nextStep
-        self.category = category
-        self.difficulty = difficulty
-        self.canCompleteFromWidget = canCompleteFromWidget
     }
 }
 

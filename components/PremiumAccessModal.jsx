@@ -77,7 +77,7 @@ const HOVER_STYLES = `
   .hp-redeem:hover { filter: brightness(1.12); }
 `;
 
-export default function PremiumAccessModal({ open, onClose, state, theme, activatePremiumCode, notify, contextFeature }) {
+export default function PremiumAccessModal({ open, onClose, state, theme, activatePremiumCode, purchasePremiumPlan, restorePremium, iapSupported, notify, contextFeature }) {
   const { t, locale } = useI18n();
   const [code, setCode] = useState("");
   const [inlineMessage, setInlineMessage] = useState(null);
@@ -127,13 +127,27 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
     }
   };
 
-  const startCheckout = () => {
-    const msg = t("premium.checkoutInfo");
-    setInlineMessage({ type: "info", text: msg });
-    notify?.(msg, "info");
+  const [busy, setBusy] = useState(false);
+
+  const startCheckout = async () => {
+    if (!iapSupported) {
+      const msg = t("premium.storeNote");
+      setInlineMessage({ type: "info", text: msg });
+      notify?.(msg, "info");
+      return;
+    }
+    setBusy(true);
+    try { await purchasePremiumPlan?.(selectedPlan); }
+    finally { setBusy(false); }
   };
 
-  const showBetaInfo = () => setInlineMessage({ type: "info", text: t("premium.checkoutInfo") });
+  const doRestore = async () => {
+    if (!iapSupported) {
+      setInlineMessage({ type: "info", text: t("premium.storeNote") });
+      return;
+    }
+    await restorePremium?.();
+  };
 
   const numeric = { fontVariantNumeric: "tabular-nums" };
 
@@ -313,8 +327,8 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
             </div>
           </div>
 
-          {/* Plans + checkout (locked only) */}
-          {!isActive && (
+          {/* Plans + checkout (locked only, native stores only) */}
+          {!isActive && iapSupported && (
             <>
               <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "2px 0 20px" }} />
 
@@ -386,6 +400,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
               <button
                 className="hp-cta"
                 onClick={startCheckout}
+                disabled={busy}
                 style={{
                   width: "100%",
                   minHeight: 52,
@@ -396,11 +411,12 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
                   fontSize: 15,
                   fontWeight: 700,
                   letterSpacing: "-0.01em",
-                  cursor: "pointer",
+                  cursor: busy ? "default" : "pointer",
+                  opacity: busy ? 0.7 : 1,
                   boxShadow: `0 6px 16px ${accent}24`,
                 }}
               >
-                {t("premium.ctaUnlock")}
+                {busy ? "Wird verarbeitet…" : t("premium.ctaUnlock")}
               </button>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap", gap: 8, marginTop: 13, color: "#64748b", fontSize: 11 }}>
@@ -412,6 +428,12 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
                 <span>{t("premium.securedBy")}</span>
               </div>
             </>
+          )}
+
+          {!isActive && !iapSupported && (
+            <div style={{ marginTop: 4, marginBottom: 8, padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 12.5, color: "#94a3b8", lineHeight: 1.5 }}>
+              {t("premium.storeNote")}
+            </div>
           )}
 
           {/* Footer: beta code + legal */}
@@ -502,7 +524,7 @@ export default function PremiumAccessModal({ open, onClose, state, theme, activa
               <Dot />
               <button type="button" className="hp-link" onClick={() => openLegalPage("privacy")} style={linkStyle}>{t("premium.privacy")}</button>
               <Dot />
-              <button type="button" className="hp-link" onClick={showBetaInfo} style={linkStyle}>{t("premium.restore")}</button>
+              <button type="button" className="hp-link" onClick={doRestore} style={linkStyle}>{t("premium.restore")}</button>
             </div>
 
             <p style={{ margin: "13px 0 0", fontSize: 10.5, lineHeight: 1.5, color: "#475569" }}>

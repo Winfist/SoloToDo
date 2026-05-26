@@ -293,6 +293,9 @@ function App({ initialHunterName, onLogout }) {
     buyGemItem,
     claimDailyGemBonus,
     activatePremiumCode,
+    purchasePremiumPlan,
+    restorePremium,
+    iapSupported,
     premiumStatus,
     questCreationStatus,
     getActiveGemBoosters,
@@ -2447,6 +2450,9 @@ function App({ initialHunterName, onLogout }) {
             state={state}
             theme={theme}
             activatePremiumCode={activatePremiumCode}
+            purchasePremiumPlan={purchasePremiumPlan}
+            restorePremium={restorePremium}
+            iapSupported={iapSupported}
             notify={notify}
             contextFeature={premiumModalFeature}
           />

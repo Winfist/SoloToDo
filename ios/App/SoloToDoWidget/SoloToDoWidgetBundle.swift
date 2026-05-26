@@ -36,6 +36,11 @@ struct SoloToDoIntentProvider: AppIntentTimelineProvider {
 func makeSoloToDoTimeline(family: WidgetFamily, contentMode: WidgetContentMode) -> Timeline<SoloToDoEntry> {
     let fullData = loadWidgetData() ?? placeholderData
     let config = fullData.config
+    // Which quest (if any) the user has expanded inline. Only meaningful in
+    // quests mode and only when that quest is still present.
+    let rawExpanded = loadExpandedQuestId()
+    let expandedId: String? = (contentMode == .quests && rawExpanded != nil
+        && fullData.quests.contains { $0.id == rawExpanded }) ? rawExpanded : nil
 
     let batchSize: Int
     switch family {
@@ -49,7 +54,7 @@ func makeSoloToDoTimeline(family: WidgetFamily, contentMode: WidgetContentMode) 
 
     let allQuests = fullData.quests
     var entries: [SoloToDoEntry] = []
-    let canRotate = contentMode == .quests && config.rotationEnabled && allQuests.count > batchSize && batchSize > 0
+    let canRotate = expandedId == nil && contentMode == .quests && config.rotationEnabled && allQuests.count > batchSize && batchSize > 0
 
     if canRotate {
         let intervalMinutes = max(5, config.rotationIntervalMinutes)
@@ -61,7 +66,7 @@ func makeSoloToDoTimeline(family: WidgetFamily, contentMode: WidgetContentMode) 
             var batchData = fullData
             batchData.quests = Array(allQuests[offset..<batchEnd])
             let entryDate = Calendar.current.date(byAdding: .minute, value: intervalMinutes * batchIndex, to: Date())!
-            entries.append(SoloToDoEntry(date: entryDate, data: batchData, questBatchIndex: batchIndex, contentMode: contentMode))
+            entries.append(SoloToDoEntry(date: entryDate, data: batchData, questBatchIndex: batchIndex, contentMode: contentMode, expandedQuestId: expandedId))
             batchIndex += 1
             offset += batchSize
         }
@@ -70,7 +75,7 @@ func makeSoloToDoTimeline(family: WidgetFamily, contentMode: WidgetContentMode) 
         if contentMode == .quests && batchSize > 0 && batchSize < allQuests.count {
             singleData.quests = Array(allQuests.prefix(batchSize))
         }
-        entries.append(SoloToDoEntry(date: Date(), data: singleData, questBatchIndex: 0, contentMode: contentMode))
+        entries.append(SoloToDoEntry(date: Date(), data: singleData, questBatchIndex: 0, contentMode: contentMode, expandedQuestId: expandedId))
     }
 
     let totalDuration = canRotate ? max(15, config.rotationIntervalMinutes * max(entries.count, 1)) : 15
@@ -83,6 +88,7 @@ struct SoloToDoEntry: TimelineEntry {
     var data: WidgetData
     let questBatchIndex: Int
     let contentMode: WidgetContentMode
+    var expandedQuestId: String? = nil
 }
 
 struct SoloToDoMainWidget: Widget {
@@ -146,9 +152,9 @@ struct SoloToDoWidgetEntryView: View {
         case .systemSmall:
             SmallWidgetView(data: entry.data, contentMode: entry.contentMode)
         case .systemMedium:
-            MediumWidgetView(data: entry.data, contentMode: entry.contentMode)
+            MediumWidgetView(data: entry.data, contentMode: entry.contentMode, expandedQuestId: entry.expandedQuestId)
         case .systemLarge:
-            LargeWidgetView(data: entry.data, contentMode: entry.contentMode)
+            LargeWidgetView(data: entry.data, contentMode: entry.contentMode, expandedQuestId: entry.expandedQuestId)
         default:
             SmallWidgetView(data: entry.data, contentMode: entry.contentMode)
         }
