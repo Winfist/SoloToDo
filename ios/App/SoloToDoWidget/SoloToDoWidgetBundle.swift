@@ -89,25 +89,30 @@ struct SoloToDoMainWidget: Widget {
     let kind = "SoloToDoMainWidget"
 
     var body: some WidgetConfiguration {
-        if #available(iOSApplicationExtension 17.0, *) {
-            AppIntentConfiguration(kind: kind, intent: SoloToDoWidgetConfigurationIntent.self, provider: SoloToDoIntentProvider()) { entry in
-                SoloToDoWidgetEntryView(entry: entry)
-                    .containerBackground(for: .widget) {
-                        Color(hex: entry.data.theme.bg)
-                    }
-            }
-            .configurationDisplayName("SoloToDo")
-            .description("Dein Hunter Dashboard - Quests, Habits und Micro-Habits.")
-            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
-        } else {
-            StaticConfiguration(kind: kind, provider: SoloToDoProvider()) { entry in
-                SoloToDoWidgetEntryView(entry: entry)
-                    .background(Color(hex: entry.data.theme.bg))
-            }
-            .configurationDisplayName("SoloToDo")
-            .description("Dein Hunter Dashboard - Quests, Streak, Habits auf einen Blick.")
-            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        StaticConfiguration(kind: kind, provider: SoloToDoProvider()) { entry in
+            SoloToDoWidgetEntryView(entry: entry)
+                .background(Color(hex: entry.data.theme.bg))
         }
+        .configurationDisplayName("SoloToDo")
+        .description("Dein Hunter Dashboard - Quests, Streak, Habits auf einen Blick.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+    }
+}
+
+@available(iOSApplicationExtension 17.0, *)
+struct SoloToDoInteractiveMainWidget: Widget {
+    let kind = "SoloToDoMainWidget"
+
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: kind, intent: SoloToDoWidgetConfigurationIntent.self, provider: SoloToDoIntentProvider()) { entry in
+            SoloToDoWidgetEntryView(entry: entry)
+                .containerBackground(for: .widget) {
+                    Color(hex: entry.data.theme.bg)
+                }
+        }
+        .configurationDisplayName("SoloToDo")
+        .description("Dein Hunter Dashboard - Quests, Habits und Micro-Habits.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
@@ -169,7 +174,25 @@ struct SoloToDoLockScreenEntryView: View {
 }
 
 @main
-struct SoloToDoWidgetBundle: WidgetBundle {
+struct SoloToDoWidgetLauncher {
+    static func main() {
+        if #available(iOSApplicationExtension 17.0, *) {
+            SoloToDoWidgetBundle17.main()
+        } else {
+            SoloToDoWidgetBundle16.main()
+        }
+    }
+}
+
+@available(iOSApplicationExtension 17.0, *)
+struct SoloToDoWidgetBundle17: WidgetBundle {
+    var body: some Widget {
+        SoloToDoInteractiveMainWidget()
+        SoloToDoLockScreenWidget()
+    }
+}
+
+struct SoloToDoWidgetBundle16: WidgetBundle {
     var body: some Widget {
         SoloToDoMainWidget()
         SoloToDoLockScreenWidget()
