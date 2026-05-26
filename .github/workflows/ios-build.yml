@@ -170,25 +170,6 @@ jobs:
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER=""
 
-      - name: Build widget extension target directly
-        working-directory: ${{ env.IOS_WORKING_DIRECTORY }}
-        run: |
-          set -euo pipefail
-          xcodebuild build \
-            -project App.xcodeproj \
-            -scheme "$XCODE_SCHEME" \
-            -target SoloToDoWidgetExtension \
-            -configuration Debug \
-            -destination "generic/platform=iOS Simulator" \
-            -derivedDataPath DerivedData \
-            -clonedSourcePackagesDirPath SPM \
-            -resultBundlePath WidgetBuild.xcresult \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER=""
-
       - name: Upload Xcode result bundles on failure
         if: failure()
         uses: actions/upload-artifact@v4
