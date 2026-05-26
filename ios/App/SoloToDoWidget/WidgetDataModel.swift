@@ -14,6 +14,7 @@ let widgetActionQueueKey = "widgetActionQueue"
 // ID of the quest the user expanded inline in the widget (set by the tap intent,
 // cleared by the app on the next data sync).
 let widgetExpandedKey = "widgetExpandedQuestId"
+let widgetPageIndexPrefix = "widgetPageIndex_"
 
 // MARK: - Root Widget Data
 struct WidgetData: Codable {
@@ -522,6 +523,22 @@ func loadExpandedQuestId() -> String? {
 func setExpandedQuestId(_ id: String?) {
     guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
     defaults.set(id ?? "", forKey: widgetExpandedKey)
+    defaults.synchronize()
+}
+
+// MARK: - Manual widget paging
+func widgetPageIndexKey(for mode: WidgetContentMode) -> String {
+    "\(widgetPageIndexPrefix)\(mode.rawValue)"
+}
+
+func loadWidgetPageIndex(for mode: WidgetContentMode) -> Int {
+    guard let defaults = UserDefaults(suiteName: appGroupId) else { return 0 }
+    return max(0, defaults.integer(forKey: widgetPageIndexKey(for: mode)))
+}
+
+func setWidgetPageIndex(for mode: WidgetContentMode, index: Int) {
+    guard let defaults = UserDefaults(suiteName: appGroupId) else { return }
+    defaults.set(max(0, index), forKey: widgetPageIndexKey(for: mode))
     defaults.synchronize()
 }
 

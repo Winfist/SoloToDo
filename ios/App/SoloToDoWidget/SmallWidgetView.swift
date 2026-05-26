@@ -1,9 +1,8 @@
 import SwiftUI
 import WidgetKit
 
-// Small widget: a single glanceable focus item. It shows what to do
-// next (the quest's next stage) and opens the app on tap — it never
-// completes anything, and it's too small to expand inline.
+// Small widget: a single glanceable focus item. It opens the app and never
+// completes or increments anything.
 struct SmallWidgetView: View {
     let data: WidgetData
     var contentMode: WidgetContentMode = .quests
@@ -30,59 +29,67 @@ struct SmallWidgetView: View {
 
     private var title: String? { quest?.title ?? item?.title }
     private var subtitle: String? { quest?.nextOpenStageTitle ?? item?.subtitle }
+    private var progressText: String? {
+        if let quest, !quest.stages.isEmpty { return "\(quest.doneStageCount)/\(quest.stages.count)" }
+        return item?.progressText
+    }
     private var deepLink: URL? {
-        if let q = quest { return solotodoDeepLink("solotodo://quest/\(q.id)") }
+        if let quest { return solotodoDeepLink("solotodo://quest/\(quest.id)") }
         return item?.deepLink
     }
-    private var hasContent: Bool { title != nil }
 
     var body: some View {
         ZStack {
             PremiumBackground(accent: accent)
 
             VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    Kicker(kicker, color: accent)
-                    Spacer()
+                HStack(alignment: .top) {
+                    Kicker(kicker, color: accent, size: 10)
+                    Spacer(minLength: 6)
                     MetaChip(text: "\(data.rank) · LV \(data.level)", accent: accent)
                 }
 
-                if hasContent {
-                    Spacer(minLength: 10)
+                if let title {
+                    Spacer(minLength: 8)
+
                     Link(destination: deepLink ?? URL(string: "solotodo://training")!) {
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(title ?? "")
-                                .font(SLFont.ui(15, .semibold))
+                            Text(title)
+                                .font(SLFont.ui(14.2, .semibold))
                                 .foregroundColor(SL.t1)
                                 .lineLimit(2)
+                                .minimumScaleFactor(0.78)
                                 .fixedSize(horizontal: false, vertical: true)
-                            if let sub = subtitle, !sub.isEmpty {
+
+                            if let subtitle, !subtitle.isEmpty {
                                 HStack(spacing: 5) {
                                     Image(systemName: "arrow.turn.down.right")
-                                        .font(.system(size: 8, weight: .semibold))
+                                        .font(.system(size: 7.5, weight: .semibold))
                                         .foregroundColor(accent.opacity(0.85))
-                                    Text(sub)
-                                        .font(SLFont.ui(11.5, .regular))
+                                    Text(subtitle)
+                                        .font(SLFont.ui(10.8, .regular))
                                         .foregroundColor(SL.t2)
-                                        .lineLimit(2)
+                                        .lineLimit(1)
                                 }
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    Spacer(minLength: 8)
+
+                    Spacer(minLength: 6)
+
                     HStack {
-                        StreakBadge(streak: data.streak, size: 12)
-                        Spacer()
-                        if let q = quest, !q.stages.isEmpty {
-                            StageCountBadge(done: q.doneStageCount, total: q.stages.count, accent: accent)
+                        StreakBadge(streak: data.streak, size: 11.5)
+                        Spacer(minLength: 6)
+                        if let progressText, !progressText.isEmpty {
+                            MiniValuePill(text: progressText, accent: accent)
                         } else {
-                            Kicker("\(data.totalOpen) offen")
+                            Kicker("\(data.totalOpen) offen", size: 8.5)
                         }
                     }
                     .padding(.bottom, 7)
                 } else {
-                    Spacer()
+                    Spacer(minLength: 10)
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 13))
@@ -90,19 +97,20 @@ struct SmallWidgetView: View {
                         Text("Alles erledigt")
                             .font(SLFont.ui(12, .medium))
                             .foregroundColor(SL.t2)
+                            .lineLimit(1)
                     }
-                    Spacer()
+                    Spacer(minLength: 8)
                     HStack {
-                        StreakBadge(streak: data.streak, size: 12)
+                        StreakBadge(streak: data.streak, size: 11.5)
                         Spacer()
-                        Kicker("\(data.totalOpen) offen")
+                        Kicker("\(data.totalOpen) offen", size: 8.5)
                     }
                     .padding(.bottom, 7)
                 }
 
                 XPBar(progress: xpPct, accent: accent)
             }
-            .padding(15)
+            .padding(13)
         }
         .widgetURL(deepLink)
     }

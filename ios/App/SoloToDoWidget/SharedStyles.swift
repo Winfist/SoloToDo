@@ -249,6 +249,193 @@ struct StatCell: View {
     }
 }
 
+enum WidgetChromeSize {
+    case medium
+    case large
+
+    var horizontalPadding: CGFloat { 17 }
+    var topPadding: CGFloat {
+        switch self { case .large: return 13; case .medium: return 12 }
+    }
+    var bottomPadding: CGFloat {
+        switch self { case .large: return 13; case .medium: return 12 }
+    }
+    var nameSize: CGFloat {
+        switch self { case .large: return 18; case .medium: return 17 }
+    }
+    var isLarge: Bool {
+        switch self { case .large: return true; case .medium: return false }
+    }
+}
+
+struct WidgetChrome<Content: View, Footer: View>: View {
+    let data: WidgetData
+    var accent: Color
+    var size: WidgetChromeSize
+    let content: Content
+    let footer: Footer
+
+    init(
+        data: WidgetData,
+        accent: Color,
+        size: WidgetChromeSize,
+        @ViewBuilder content: () -> Content,
+        @ViewBuilder footer: () -> Footer
+    ) {
+        self.data = data
+        self.accent = accent
+        self.size = size
+        self.content = content()
+        self.footer = footer()
+    }
+
+    var body: some View {
+        ZStack {
+            PremiumBackground(accent: accent)
+
+            VStack(alignment: .leading, spacing: 0) {
+                HunterCompactHeader(data: data, accent: accent, nameSize: size.nameSize)
+
+                XPBar(progress: xpProgress, accent: accent)
+                    .padding(.top, 7)
+
+                Divider1()
+                    .padding(.top, size.isLarge ? 10 : 8)
+                    .padding(.bottom, size.isLarge ? 9 : 8)
+
+                content
+
+                if size.isLarge {
+                    Spacer(minLength: 6)
+                }
+
+                footer
+            }
+            .padding(.horizontal, size.horizontalPadding)
+            .padding(.top, size.topPadding)
+            .padding(.bottom, size.bottomPadding)
+        }
+    }
+
+    private var xpProgress: Double {
+        guard data.xpNeeded > 0 else { return 0 }
+        return Double(data.xp) / Double(data.xpNeeded)
+    }
+}
+
+extension WidgetChrome where Footer == EmptyView {
+    init(
+        data: WidgetData,
+        accent: Color,
+        size: WidgetChromeSize,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(data: data, accent: accent, size: size, content: content) { EmptyView() }
+    }
+}
+
+struct HunterCompactHeader: View {
+    let data: WidgetData
+    var accent: Color
+    var nameSize: CGFloat = 17
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(data.hunterName)
+                .font(SLFont.display(nameSize, .bold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+
+            MetaChip(text: "\(data.rank) · LV \(data.level)", accent: accent)
+
+            Spacer(minLength: 6)
+
+            StreakBadge(streak: data.streak, size: 12)
+        }
+    }
+}
+
+struct MiniValuePill: View {
+    let text: String
+    var accent: Color
+
+    var body: some View {
+        Text(text)
+            .font(SLFont.mono(9.5, .semibold))
+            .foregroundColor(accent)
+            .lineLimit(1)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(accent.opacity(0.10)))
+    }
+}
+
+struct PageButton: View {
+    var mode: WidgetContentMode
+    var accent: Color
+
+    var body: some View {
+        if #available(iOSApplicationExtension 17.0, *) {
+            Button(intent: AdvanceWidgetPageIntent(mode: WidgetContentModeIntent(rawValue: mode.rawValue) ?? .quests)) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(accent)
+                    .frame(width: 24, height: 24)
+                    .background(Circle().fill(accent.opacity(0.10)))
+            }
+            .buttonStyle(.plain)
+        } else {
+            EmptyView()
+        }
+    }
+}
+
+struct WidgetListHeader: View {
+    let title: String
+    var mode: WidgetContentMode
+    var totalItems: Int
+    var pageIndex: Int
+    var pageSize: Int
+    var accent: Color
+
+    private var totalPages: Int { widgetPageCount(totalItems: totalItems, pageSize: pageSize) }
+    private var currentPage: Int { normalizedWidgetPageIndex(pageIndex, totalItems: totalItems, pageSize: pageSize) + 1 }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Kicker(title)
+            Spacer(minLength: 6)
+            if totalItems > pageSize {
+                if #available(iOSApplicationExtension 17.0, *) {
+                    Text("\(currentPage)/\(totalPages)")
+                        .font(SLFont.mono(8.5, .semibold))
+                        .foregroundColor(SL.t4)
+                    PageButton(mode: mode, accent: accent)
+                }
+            }
+        }
+        .frame(height: 24)
+    }
+}
+
+struct CompactStatsFooter: View {
+    let data: WidgetData
+
+    var body: some View {
+        VStack(spacing: 9) {
+            Divider1()
+            HStack(spacing: 6) {
+                StatCell(label: "STR", value: data.stats.str)
+                StatCell(label: "INT", value: data.stats.intelligence)
+                StatCell(label: "VIT", value: data.stats.vit)
+                StatCell(label: "AGI", value: data.stats.agi)
+                StatCell(label: "CHA", value: data.stats.cha)
+            }
+        }
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // MARK: - QUEST PARTS
 // ═══════════════════════════════════════════════════════════════
@@ -258,24 +445,32 @@ struct StageLine: View {
     let stage: WidgetStage
     var accent: Color
     var isNext: Bool = false
+    var lineLimit: Int = 2
+    var fontSize: CGFloat = 12.2
+    var markerSize: CGFloat = 14
+
     var body: some View {
-        HStack(alignment: .top, spacing: 9) {
+        HStack(alignment: .top, spacing: 8) {
             ZStack {
                 if stage.done {
-                    Circle().fill(SL.ok.opacity(0.16)).frame(width: 16, height: 16)
-                    Image(systemName: "checkmark").font(.system(size: 8, weight: .bold)).foregroundColor(SL.ok)
+                    Circle().fill(SL.ok.opacity(0.16)).frame(width: markerSize + 2, height: markerSize + 2)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: markerSize * 0.55, weight: .bold))
+                        .foregroundColor(SL.ok)
                 } else {
-                    Circle().stroke(isNext ? accent : SL.t4, lineWidth: 1.4).frame(width: 14, height: 14)
+                    Circle()
+                        .stroke(isNext ? accent : SL.t4, lineWidth: 1.4)
+                        .frame(width: markerSize, height: markerSize)
                 }
             }
-            .frame(width: 16, height: 16)
+            .frame(width: markerSize + 2, height: markerSize + 2)
             .padding(.top, 1)
 
             Text(stage.title)
-                .font(SLFont.ui(12.5, .regular))
+                .font(SLFont.ui(fontSize, .regular))
                 .foregroundColor(stage.done ? SL.t3 : SL.body)
                 .strikethrough(stage.done, color: SL.t4)
-                .lineLimit(2)
+                .lineLimit(lineLimit)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
@@ -288,10 +483,10 @@ struct QuestCollapsedRow: View {
     let quest: WidgetQuest
     var accent: Color
     var focus: Bool = false
-    var titleSize: CGFloat = 14
+    var titleSize: CGFloat = 13.6
 
     var body: some View {
-        HStack(spacing: 11) {
+        HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 2)
                 .fill(focus ? accent : SL.t4.opacity(0.7))
                 .frame(width: 3)
@@ -309,7 +504,7 @@ struct QuestCollapsedRow: View {
                             .font(.system(size: 7.5, weight: .semibold))
                             .foregroundColor(accent.opacity(0.8))
                         Text(step)
-                            .font(SLFont.ui(11.5, .regular))
+                            .font(SLFont.ui(10.8, .regular))
                             .foregroundColor(SL.t2)
                             .lineLimit(1)
                     }
@@ -332,35 +527,53 @@ struct QuestCollapsedRow: View {
     }
 }
 
-/// Habit / micro-habit row (deep-link only, never completes).
-struct TaskDeepLinkRow: View {
+/// Habit / micro-habit / mixed row (deep-link only, never completes).
+struct TaskListRow: View {
     let item: WidgetTaskItem
     var accent: Color
     var focus: Bool = false
+    var titleSize: CGFloat = 13.6
+
     var body: some View {
         Link(destination: item.deepLink ?? URL(string: "solotodo://training")!) {
-            HStack(spacing: 11) {
+            HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(focus ? accent : SL.t4.opacity(0.7))
                     .frame(width: 3)
                     .padding(.vertical, 2)
+
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title)
-                        .font(SLFont.ui(14, .semibold))
+                        .font(SLFont.ui(titleSize, .semibold))
                         .foregroundColor(SL.t1)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.86)
+
                     if let subtitle = item.subtitle, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(SLFont.ui(11.5, .regular))
-                            .foregroundColor(SL.t2)
-                            .lineLimit(1)
+                        HStack(spacing: 5) {
+                            Image(systemName: "arrow.turn.down.right")
+                                .font(.system(size: 7.5, weight: .semibold))
+                                .foregroundColor(accent.opacity(0.8))
+                            Text(subtitle)
+                                .font(SLFont.ui(10.8, .regular))
+                                .foregroundColor(SL.t2)
+                                .lineLimit(1)
+                        }
                     }
                 }
+
                 Spacer(minLength: 6)
-                Text(item.meta.uppercased())
-                    .font(SLFont.ui(9.5, .semibold))
-                    .tracking(0.6)
-                    .foregroundColor(SL.t3)
+
+                if let progress = item.progressText, !progress.isEmpty {
+                    MiniValuePill(text: progress, accent: accent)
+                } else {
+                    Text(item.meta.uppercased())
+                        .font(SLFont.ui(9.3, .semibold))
+                        .tracking(0.6)
+                        .foregroundColor(SL.t3)
+                        .lineLimit(1)
+                }
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundColor(SL.t4)
@@ -407,9 +620,9 @@ struct CollapseButton: View {
         if #available(iOSApplicationExtension 17.0, *) {
             Button(intent: ToggleQuestExpandIntent(questId: questId)) {
                 Image(systemName: "chevron.up")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(SL.t3)
-                    .frame(width: 26, height: 26)
+                    .frame(width: 24, height: 24)
                     .background(Circle().fill(SL.tile))
             }
             .buttonStyle(.plain)
@@ -425,29 +638,40 @@ struct FocusedQuestView: View {
     var accent: Color
     var maxStages: Int = 8
     var titleLineLimit: Int = 2
+    var stageLineLimit: Int = 2
+    var compact: Bool = false
 
     private var deepLink: URL? { solotodoDeepLink("solotodo://quest/\(quest.id)") }
     private var nextStageId: String? { quest.stages.first(where: { !$0.done })?.id }
     private var shownStages: [WidgetStage] { Array(quest.stages.prefix(maxStages)) }
+    private var stackSpacing: CGFloat { compact ? 6 : 8 }
+    private var headerSpacing: CGFloat { compact ? 3 : 4 }
+    private var titleSize: CGFloat { compact ? 13.4 : 14.6 }
+    private var labelSize: CGFloat { compact ? 9.2 : 10 }
+    private var kickerSize: CGFloat { compact ? 9 : 9.5 }
+    private var stageSpacing: CGFloat { compact ? 4 : 6 }
+    private var stageFontSize: CGFloat { compact ? 11.2 : 12.2 }
+    private var markerSize: CGFloat { compact ? 12 : 14 }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: stackSpacing) {
             // Header — title links to the app, chevron collapses.
             HStack(alignment: .top, spacing: 8) {
                 Link(destination: deepLink ?? URL(string: "solotodo://training")!) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: headerSpacing) {
                         Text(quest.title)
-                            .font(SLFont.ui(15.5, .bold))
+                            .font(SLFont.ui(titleSize, .bold))
                             .foregroundColor(SL.t1)
                             .lineLimit(titleLineLimit)
+                            .minimumScaleFactor(0.86)
                             .fixedSize(horizontal: false, vertical: true)
-                        HStack(spacing: 6) {
+                        HStack(spacing: compact ? 4 : 6) {
                             CategoryTag(category: quest.category)
                             Text("In App öffnen")
-                                .font(SLFont.ui(10, .semibold))
+                                .font(SLFont.ui(labelSize, .semibold))
                                 .foregroundColor(accent.opacity(0.9))
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 8, weight: .bold))
+                                .font(.system(size: compact ? 7 : 8, weight: .bold))
                                 .foregroundColor(accent.opacity(0.9))
                         }
                     }
@@ -458,15 +682,22 @@ struct FocusedQuestView: View {
 
             if !shownStages.isEmpty {
                 HStack {
-                    Kicker("Etappen")
+                    Kicker("Etappen", size: kickerSize)
                     Spacer()
                     Text("\(quest.doneStageCount)/\(quest.stages.count)")
                         .font(SLFont.mono(9.5, .semibold))
                         .foregroundColor(SL.t3)
                 }
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: stageSpacing) {
                     ForEach(Array(shownStages.enumerated()), id: \.offset) { _, stage in
-                        StageLine(stage: stage, accent: accent, isNext: !stage.done && stage.id == nextStageId)
+                        StageLine(
+                            stage: stage,
+                            accent: accent,
+                            isNext: !stage.done && stage.id == nextStageId,
+                            lineLimit: stageLineLimit,
+                            fontSize: stageFontSize,
+                            markerSize: markerSize
+                        )
                     }
                 }
             } else if let desc = quest.questDescription, !desc.isEmpty {

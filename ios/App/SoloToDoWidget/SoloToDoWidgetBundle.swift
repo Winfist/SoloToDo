@@ -33,54 +33,24 @@ struct SoloToDoIntentProvider: AppIntentTimelineProvider {
     }
 }
 
-func makeSoloToDoTimeline(family: WidgetFamily, contentMode: WidgetContentMode) -> Timeline<SoloToDoEntry> {
+func makeSoloToDoTimeline(family _: WidgetFamily, contentMode: WidgetContentMode) -> Timeline<SoloToDoEntry> {
     let fullData = loadWidgetData() ?? placeholderData
-    let config = fullData.config
     // Which quest (if any) the user has expanded inline. Only meaningful in
     // quests mode and only when that quest is still present.
     let rawExpanded = loadExpandedQuestId()
     let expandedId: String? = (contentMode == .quests && rawExpanded != nil
         && fullData.quests.contains { $0.id == rawExpanded }) ? rawExpanded : nil
-
-    let batchSize: Int
-    switch family {
-    case .systemLarge:
-        batchSize = min(config.maxQuests, 6)
-    case .systemMedium:
-        batchSize = min(config.maxQuests, 3)
-    default:
-        batchSize = 1
-    }
-
-    let allQuests = fullData.quests
-    var entries: [SoloToDoEntry] = []
-    let canRotate = expandedId == nil && contentMode == .quests && config.rotationEnabled && allQuests.count > batchSize && batchSize > 0
-
-    if canRotate {
-        let intervalMinutes = max(5, config.rotationIntervalMinutes)
-        var batchIndex = 0
-        var offset = 0
-
-        while offset < allQuests.count {
-            let batchEnd = min(offset + batchSize, allQuests.count)
-            var batchData = fullData
-            batchData.quests = Array(allQuests[offset..<batchEnd])
-            let entryDate = Calendar.current.date(byAdding: .minute, value: intervalMinutes * batchIndex, to: Date())!
-            entries.append(SoloToDoEntry(date: entryDate, data: batchData, questBatchIndex: batchIndex, contentMode: contentMode, expandedQuestId: expandedId))
-            batchIndex += 1
-            offset += batchSize
-        }
-    } else {
-        var singleData = fullData
-        if contentMode == .quests && batchSize > 0 && batchSize < allQuests.count {
-            singleData.quests = Array(allQuests.prefix(batchSize))
-        }
-        entries.append(SoloToDoEntry(date: Date(), data: singleData, questBatchIndex: 0, contentMode: contentMode, expandedQuestId: expandedId))
-    }
-
-    let totalDuration = canRotate ? max(15, config.rotationIntervalMinutes * max(entries.count, 1)) : 15
-    let nextUpdate = Calendar.current.date(byAdding: .minute, value: totalDuration, to: Date())!
-    return Timeline(entries: entries, policy: .after(nextUpdate))
+    let pageIndex = loadWidgetPageIndex(for: contentMode)
+    let entry = SoloToDoEntry(
+        date: Date(),
+        data: fullData,
+        questBatchIndex: 0,
+        contentMode: contentMode,
+        expandedQuestId: expandedId,
+        pageIndex: pageIndex
+    )
+    let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
+    return Timeline(entries: [entry], policy: .after(nextUpdate))
 }
 
 struct SoloToDoEntry: TimelineEntry {
@@ -89,6 +59,7 @@ struct SoloToDoEntry: TimelineEntry {
     let questBatchIndex: Int
     let contentMode: WidgetContentMode
     var expandedQuestId: String? = nil
+    var pageIndex: Int = 0
 }
 
 struct SoloToDoMainWidget: Widget {
@@ -152,9 +123,9 @@ struct SoloToDoWidgetEntryView: View {
         case .systemSmall:
             SmallWidgetView(data: entry.data, contentMode: entry.contentMode)
         case .systemMedium:
-            MediumWidgetView(data: entry.data, contentMode: entry.contentMode, expandedQuestId: entry.expandedQuestId)
+            MediumWidgetView(data: entry.data, contentMode: entry.contentMode, expandedQuestId: entry.expandedQuestId, pageIndex: entry.pageIndex)
         case .systemLarge:
-            LargeWidgetView(data: entry.data, contentMode: entry.contentMode, expandedQuestId: entry.expandedQuestId)
+            LargeWidgetView(data: entry.data, contentMode: entry.contentMode, expandedQuestId: entry.expandedQuestId, pageIndex: entry.pageIndex)
         default:
             SmallWidgetView(data: entry.data, contentMode: entry.contentMode)
         }

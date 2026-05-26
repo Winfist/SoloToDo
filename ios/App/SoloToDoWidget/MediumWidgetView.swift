@@ -1,28 +1,26 @@
 import SwiftUI
 import WidgetKit
 
-// Medium widget: collapsed = identity + a short quest list. Tapping a
-// quest (iOS 17+) reveals its stages inline; tapping the open quest
-// again opens it in the app. Nothing is ever completed here.
+// Medium widget: compact hunter chrome + a two-item page for the selected mode.
+// Quests can expand inline; habits, micro-habits, and mix deep-link into the app.
 struct MediumWidgetView: View {
     let data: WidgetData
     var contentMode: WidgetContentMode = .quests
     var expandedQuestId: String? = nil
+    var pageIndex: Int = 0
 
+    private let pageSize = 2
     private var accent: Color { Color(hex: data.theme.primary) }
-    private var xpPct: Double {
-        guard data.xpNeeded > 0 else { return 0 }
-        return Double(data.xp) / Double(data.xpNeeded)
-    }
-
     private var expandedQuest: WidgetQuest? {
         guard contentMode == .quests, let id = expandedQuestId else { return nil }
         return data.quests.first { $0.id == id }
     }
-    private var quests: [WidgetQuest] { Array(data.quests.prefix(2)) }
-    private var items: [WidgetTaskItem] { widgetTaskItems(for: data, mode: contentMode, limit: 2) }
+    private var allItems: [WidgetTaskItem] { allWidgetTaskItems(for: data, mode: contentMode) }
+    private var pagedQuests: [WidgetQuest] { widgetPageSlice(data.quests, pageIndex: pageIndex, pageSize: pageSize) }
+    private var pagedItems: [WidgetTaskItem] { widgetPageSlice(allItems, pageIndex: pageIndex, pageSize: pageSize) }
+    private var totalItems: Int { contentMode == .quests ? data.quests.count : allItems.count }
 
-    private var label: String {
+    private var sectionTitle: String {
         switch contentMode {
         case .quests: return "Quest Board"
         case .habits: return "Habit Board"
@@ -32,62 +30,40 @@ struct MediumWidgetView: View {
     }
 
     var body: some View {
-        ZStack {
-            PremiumBackground(accent: accent)
-
+        WidgetChrome(data: data, accent: accent, size: .medium) {
             if let quest = expandedQuest {
-                expandedLayout(quest)
+                FocusedQuestView(
+                    quest: quest,
+                    accent: accent,
+                    maxStages: 2,
+                    titleLineLimit: 1,
+                    stageLineLimit: 1,
+                    compact: true
+                )
             } else {
-                listLayout
+                collapsedContent
             }
         }
         .widgetURL(solotodoDeepLink(expandedQuest.map { "solotodo://quest/\($0.id)" } ?? "solotodo://training"))
     }
 
-    // MARK: Expanded — one quest, its stages
-    private func expandedLayout(_ quest: WidgetQuest) -> some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 8) {
-                Text(data.hunterName)
-                    .font(SLFont.display(13, .bold))
-                    .foregroundColor(SL.t2)
-                    .lineLimit(1)
-                MetaChip(text: "\(data.rank) · LV \(data.level)", accent: accent)
-                Spacer(minLength: 4)
-                StreakBadge(streak: data.streak, size: 12)
-            }
-            Divider1()
-            FocusedQuestView(quest: quest, accent: accent, maxStages: 3, titleLineLimit: 1)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 15)
-    }
-
-    // MARK: Collapsed — identity + short list
-    private var listLayout: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(data.hunterName)
-                    .font(SLFont.display(17, .bold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                MetaChip(text: "\(data.rank) · LV \(data.level)", accent: accent)
-                Spacer(minLength: 6)
-                StreakBadge(streak: data.streak, size: 13)
-            }
-
-            XPBar(progress: xpPct, accent: accent)
-                .padding(.top, 9)
-
-            Spacer(minLength: 8)
-            Kicker(label)
-                .padding(.bottom, 4)
+    private var collapsedContent: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            WidgetListHeader(
+                title: sectionTitle,
+                mode: contentMode,
+                totalItems: totalItems,
+                pageIndex: pageIndex,
+                pageSize: pageSize,
+                accent: accent
+            )
 
             if contentMode == .quests {
-                if quests.isEmpty { emptyState } else {
+                if pagedQuests.isEmpty {
+                    emptyState
+                } else {
                     VStack(spacing: 0) {
-                        ForEach(Array(quests.enumerated()), id: \.element.id) { index, quest in
+                        ForEach(Array(pagedQuests.enumerated()), id: \.element.id) { index, quest in
                             QuestTapArea(
                                 questId: quest.id,
                                 expandable: !quest.stages.isEmpty,
@@ -95,43 +71,40 @@ struct MediumWidgetView: View {
                             ) {
                                 QuestCollapsedRow(quest: quest, accent: accent, focus: index == 0)
                             }
-                            .padding(.vertical, 5)
-                            if index < quests.count - 1 { Divider1() }
+                            .padding(.vertical, 4)
+                            if index < pagedQuests.count - 1 { Divider1() }
                         }
                     }
                 }
             } else {
-                if items.isEmpty { emptyState } else {
+                if pagedItems.isEmpty {
+                    emptyState
+                } else {
                     VStack(spacing: 0) {
-                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                            TaskDeepLinkRow(item: item, accent: accent, focus: index == 0)
-                                .padding(.vertical, 5)
-                            if index < items.count - 1 { Divider1() }
+                        ForEach(Array(pagedItems.enumerated()), id: \.element.id) { index, item in
+                            TaskListRow(item: item, accent: accent, focus: index == 0)
+                                .padding(.vertical, 4)
+                            if index < pagedItems.count - 1 { Divider1() }
                         }
                     }
                 }
             }
-            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
     }
 
     private var emptyState: some View {
-        VStack {
-            HStack {
-                Spacer()
-                VStack(spacing: 5) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(SL.ok)
-                    Text("Alles erledigt")
-                        .font(SLFont.ui(11, .medium))
-                        .foregroundColor(SL.t3)
-                }
-                Spacer()
+        HStack {
+            Spacer()
+            VStack(spacing: 5) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 17))
+                    .foregroundColor(SL.ok)
+                Text("Alles erledigt")
+                    .font(SLFont.ui(11, .medium))
+                    .foregroundColor(SL.t3)
             }
             Spacer()
         }
+        .padding(.top, 14)
     }
 }

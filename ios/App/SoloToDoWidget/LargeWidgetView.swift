@@ -1,27 +1,24 @@
 import SwiftUI
 import WidgetKit
 
-// Large widget: collapsed = full hunter dashboard (identity, quest
-// list, stats). Tapping a quest (iOS 17+) expands it into a focused
-// stage checklist; tapping the open quest again opens it in the app.
+// Large widget: compact hunter chrome, four-item pages, and a safe stat footer.
+// Expanded quest detail hides the footer so stages never run into the widget edge.
 struct LargeWidgetView: View {
     let data: WidgetData
     var contentMode: WidgetContentMode = .quests
     var expandedQuestId: String? = nil
+    var pageIndex: Int = 0
 
+    private let pageSize = 4
     private var accent: Color { Color(hex: data.theme.primary) }
-    private var rankCol: Color { SL.rankColor(data.rank) }
-    private var xpPct: Double {
-        guard data.xpNeeded > 0 else { return 0 }
-        return Double(data.xp) / Double(data.xpNeeded)
-    }
-
     private var expandedQuest: WidgetQuest? {
         guard contentMode == .quests, let id = expandedQuestId else { return nil }
         return data.quests.first { $0.id == id }
     }
-    private var quests: [WidgetQuest] { Array(data.quests.prefix(4)) }
-    private var items: [WidgetTaskItem] { widgetTaskItems(for: data, mode: contentMode, limit: 4) }
+    private var allItems: [WidgetTaskItem] { allWidgetTaskItems(for: data, mode: contentMode) }
+    private var pagedQuests: [WidgetQuest] { widgetPageSlice(data.quests, pageIndex: pageIndex, pageSize: pageSize) }
+    private var pagedItems: [WidgetTaskItem] { widgetPageSlice(allItems, pageIndex: pageIndex, pageSize: pageSize) }
+    private var totalItems: Int { contentMode == .quests ? data.quests.count : allItems.count }
 
     private var sectionTitle: String {
         switch contentMode {
@@ -33,67 +30,45 @@ struct LargeWidgetView: View {
     }
 
     var body: some View {
-        ZStack {
-            PremiumBackground(accent: accent)
-
-            VStack(alignment: .leading, spacing: 0) {
-                identityHeader
-
-                XPBar(progress: xpPct, accent: accent)
-
-                Divider1().padding(.vertical, 12)
-
-                if let quest = expandedQuest {
-                    FocusedQuestView(quest: quest, accent: accent, maxStages: 8)
-                    Spacer(minLength: 0)
-                } else {
-                    collapsedBody
+        Group {
+            if let quest = expandedQuest {
+                WidgetChrome(data: data, accent: accent, size: .large) {
+                    FocusedQuestView(
+                        quest: quest,
+                        accent: accent,
+                        maxStages: 4,
+                        titleLineLimit: 1,
+                        stageLineLimit: 2
+                    )
+                }
+            } else {
+                WidgetChrome(data: data, accent: accent, size: .large) {
+                    collapsedContent
+                } footer: {
+                    CompactStatsFooter(data: data)
                 }
             }
-            .padding(18)
         }
         .widgetURL(solotodoDeepLink(expandedQuest.map { "solotodo://quest/\($0.id)" } ?? "solotodo://training"))
     }
 
-    // MARK: Identity header
-    private var identityHeader: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Kicker("Hunter", color: accent)
-                    Text(data.hunterName)
-                        .font(SLFont.display(21, .bold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(data.rank)
-                        .font(SLFont.display(26, .bold))
-                        .foregroundColor(rankCol)
-                    StreakBadge(streak: data.streak, size: 13)
-                }
-            }
-
-            HStack {
-                Kicker("Level \(data.level)")
-                Spacer()
-                Kicker("\(data.xp) / \(data.xpNeeded) XP")
-            }
-            .padding(.top, 10)
-            .padding(.bottom, 6)
-        }
-    }
-
-    // MARK: Collapsed body — list + stats
-    private var collapsedBody: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Kicker(sectionTitle).padding(.bottom, 2)
+    private var collapsedContent: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            WidgetListHeader(
+                title: sectionTitle,
+                mode: contentMode,
+                totalItems: totalItems,
+                pageIndex: pageIndex,
+                pageSize: pageSize,
+                accent: accent
+            )
 
             if contentMode == .quests {
-                if quests.isEmpty { emptyState } else {
-                    VStack(spacing: 9) {
-                        ForEach(Array(quests.enumerated()), id: \.element.id) { index, quest in
+                if pagedQuests.isEmpty {
+                    emptyState
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(pagedQuests.enumerated()), id: \.element.id) { index, quest in
                             QuestTapArea(
                                 questId: quest.id,
                                 expandable: !quest.stages.isEmpty,
@@ -101,59 +76,40 @@ struct LargeWidgetView: View {
                             ) {
                                 QuestCollapsedRow(quest: quest, accent: accent, focus: index == 0)
                             }
+                            .padding(.vertical, 4)
+                            if index < pagedQuests.count - 1 { Divider1() }
                         }
-                    }
-                    .padding(.top, 6)
-
-                    if data.totalOpen > quests.count {
-                        Text("+\(data.totalOpen - quests.count) weitere")
-                            .font(SLFont.mono(8.5, .semibold))
-                            .foregroundColor(SL.t4)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.top, 5)
                     }
                 }
             } else {
-                if items.isEmpty { emptyState } else {
-                    VStack(spacing: 9) {
-                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                            TaskDeepLinkRow(item: item, accent: accent, focus: index == 0)
+                if pagedItems.isEmpty {
+                    emptyState
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(pagedItems.enumerated()), id: \.element.id) { index, item in
+                            TaskListRow(item: item, accent: accent, focus: index == 0)
+                                .padding(.vertical, 4)
+                            if index < pagedItems.count - 1 { Divider1() }
                         }
                     }
-                    .padding(.top, 6)
                 }
-            }
-
-            Spacer(minLength: 0)
-
-            Divider1().padding(.vertical, 12)
-
-            HStack(spacing: 7) {
-                StatCell(label: "STR", value: data.stats.str)
-                StatCell(label: "INT", value: data.stats.intelligence)
-                StatCell(label: "VIT", value: data.stats.vit)
-                StatCell(label: "AGI", value: data.stats.agi)
-                StatCell(label: "CHA", value: data.stats.cha)
             }
         }
     }
 
     private var emptyState: some View {
-        VStack {
-            Spacer(minLength: 8)
-            HStack {
-                Spacer()
-                VStack(spacing: 5) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(SL.ok)
-                    Text("Alles erledigt")
-                        .font(SLFont.ui(11, .medium))
-                        .foregroundColor(SL.t3)
-                }
-                Spacer()
+        HStack {
+            Spacer()
+            VStack(spacing: 5) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(SL.ok)
+                Text("Alles erledigt")
+                    .font(SLFont.ui(11, .medium))
+                    .foregroundColor(SL.t3)
             }
-            Spacer(minLength: 8)
+            Spacer()
         }
+        .padding(.top, 28)
     }
 }

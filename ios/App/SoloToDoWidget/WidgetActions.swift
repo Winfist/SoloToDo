@@ -71,9 +71,7 @@ struct WidgetTaskItem: Identifiable {
     var title: String
     var subtitle: String?
     var meta: String
-    var actionType: String
-    var targetId: String
-    var canComplete: Bool
+    var progressText: String? = nil
     var deepLink: URL?
 }
 
@@ -81,18 +79,69 @@ func solotodoDeepLink(_ value: String) -> URL? {
     URL(string: value)
 }
 
-func widgetTaskItems(for data: WidgetData, mode: WidgetContentMode, limit: Int) -> [WidgetTaskItem] {
+func widgetPageCount(totalItems: Int, pageSize: Int) -> Int {
+    guard totalItems > 0, pageSize > 0 else { return 1 }
+    return Int(ceil(Double(totalItems) / Double(pageSize)))
+}
+
+func normalizedWidgetPageIndex(_ pageIndex: Int, totalItems: Int, pageSize: Int) -> Int {
+    let pages = widgetPageCount(totalItems: totalItems, pageSize: pageSize)
+    guard pages > 0 else { return 0 }
+    return ((pageIndex % pages) + pages) % pages
+}
+
+func widgetPageSlice<T>(_ values: [T], pageIndex: Int, pageSize: Int) -> [T] {
+    guard pageSize > 0, !values.isEmpty else { return [] }
+    let page = normalizedWidgetPageIndex(pageIndex, totalItems: values.count, pageSize: pageSize)
+    let start = min(page * pageSize, values.count)
+    let end = min(start + pageSize, values.count)
+    return Array(values[start..<end])
+}
+
+func interleavedWidgetTaskItems(_ groups: [[WidgetTaskItem]]) -> [WidgetTaskItem] {
+    let maxCount = groups.map(\.count).max() ?? 0
+    guard maxCount > 0 else { return [] }
+
+    var result: [WidgetTaskItem] = []
+    for index in 0..<maxCount {
+        for group in groups where index < group.count {
+            result.append(group[index])
+        }
+    }
+    return result
+}
+
+@available(iOSApplicationExtension 17.0, *)
+struct AdvanceWidgetPageIntent: AppIntent {
+    static var title: LocalizedStringResource = "Naechste Widget-Seite"
+    static var description = IntentDescription("Blaettert im aktuellen Widget-Modus zur naechsten Seite.")
+    static var openAppWhenRun = false
+
+    @Parameter(title: "Mode")
+    var mode: WidgetContentModeIntent
+
+    init() {}
+    init(mode: WidgetContentModeIntent) { self.mode = mode }
+
+    func perform() async throws -> some IntentResult {
+        let contentMode = mode.contentMode
+        setWidgetPageIndex(for: contentMode, index: loadWidgetPageIndex(for: contentMode) + 1)
+        setExpandedQuestId(nil)
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+
+func allWidgetTaskItems(for data: WidgetData, mode: WidgetContentMode) -> [WidgetTaskItem] {
     func questItems(_ quests: [WidgetQuest]) -> [WidgetTaskItem] {
         quests.map { quest in
-            let subtitle = (quest.nextStep?.isEmpty == false ? quest.nextStep : quest.questDescription)
+            let subtitle = (quest.nextOpenStageTitle?.isEmpty == false ? quest.nextOpenStageTitle : quest.questDescription)
             return WidgetTaskItem(
                 id: "quest-\(quest.id)",
                 title: quest.title,
                 subtitle: subtitle,
                 meta: quest.category.uppercased(),
-                actionType: "completeQuest",
-                targetId: quest.id,
-                canComplete: quest.canCompleteFromWidget,
+                progressText: quest.stages.isEmpty ? nil : "\(quest.doneStageCount)/\(quest.stages.count)",
                 deepLink: solotodoDeepLink("solotodo://quest/\(quest.id)")
             )
         }
@@ -103,11 +152,8 @@ func widgetTaskItems(for data: WidgetData, mode: WidgetContentMode, limit: Int) 
             WidgetTaskItem(
                 id: "habit-\(habit.id)",
                 title: habit.name,
-                subtitle: habit.verification == "manual" ? "Manual Habit" : "\(habit.verification.capitalized) - in App oeffnen",
+                subtitle: habit.verification == "manual" ? "Heute offen" : "\(habit.verification.capitalized) - in App oeffnen",
                 meta: "HABIT",
-                actionType: "completeHabit",
-                targetId: habit.id,
-                canComplete: habit.canCompleteFromWidget,
                 deepLink: solotodoDeepLink("solotodo://training?type=habit&id=\(habit.id)")
             )
         }
@@ -118,11 +164,9 @@ func widgetTaskItems(for data: WidgetData, mode: WidgetContentMode, limit: Int) 
             WidgetTaskItem(
                 id: "micro-\(habit.id)",
                 title: habit.label,
-                subtitle: "\(habit.current)/\(habit.target)",
+                subtitle: "Fortschritt",
                 meta: "MICRO",
-                actionType: "incrementMicroHabit",
-                targetId: habit.id,
-                canComplete: !habit.completed,
+                progressText: "\(habit.current)/\(habit.target)",
                 deepLink: solotodoDeepLink("solotodo://training?type=microHabit&id=\(habit.id)")
             )
         }
@@ -137,8 +181,16 @@ func widgetTaskItems(for data: WidgetData, mode: WidgetContentMode, limit: Int) 
     case .microHabits:
         items = microItems(data.microHabits)
     case .mix:
-        let priorityQuests = Array(questItems(data.quests).prefix(2))
-        items = priorityQuests + habitItems(data.habits).filter { $0.canComplete } + microItems(data.microHabits)
+        items = interleavedWidgetTaskItems([
+            questItems(data.quests),
+            habitItems(data.habits),
+            microItems(data.microHabits),
+        ])
     }
+    return items
+}
+
+func widgetTaskItems(for data: WidgetData, mode: WidgetContentMode, limit: Int) -> [WidgetTaskItem] {
+    let items = allWidgetTaskItems(for: data, mode: mode)
     return Array(items.prefix(limit))
 }
