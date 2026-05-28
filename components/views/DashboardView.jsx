@@ -251,8 +251,20 @@ export default function DashboardView({
       setShowScreenTimeScanner(true);
       return;
     }
+    // Step-goal quests are verified by Health data, not a manual tap.
+    if (q && q.isStepGoal) {
+      const steps = Math.max(0, Math.floor(Number(state?.dailySteps) || 0));
+      const target = q.stepTarget || 10000;
+      if (steps >= target) {
+        completeQuest(questId, rect);
+      } else {
+        const fmt = n => n.toLocaleString(locale === "de" ? "de-DE" : "en-US");
+        notify?.(t('quests.stepGoalProgress', { current: fmt(steps), target: fmt(target) }), "info");
+      }
+      return;
+    }
     completeQuest(questId, rect);
-  }, [filteredQuests, state?.quests, completeQuest]);
+  }, [filteredQuests, state?.quests, state?.dailySteps, completeQuest, notify, t, locale]);
 
   // ── Quest sub-state (unchanged from original) ──
   const [originFilter, setOriginFilter] = useState("all");

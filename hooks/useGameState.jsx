@@ -171,6 +171,7 @@ function getWidgetGemBoosterMultipliers(state) {
 
 function canCompleteQuestFromWidgetNow(quest) {
   if (!quest || quest.completed) return false;
+  if (quest.isStepGoal) return false; // verified by Health data, never by a manual widget tap
   if (quest.isSystem || !quest.createdAtMs) return true;
   const waitHours = DIFFICULTIES.find(d => d.key === quest.difficulty)?.waitHours ?? 1;
   return Date.now() - quest.createdAtMs >= waitHours * 3600 * 1000;

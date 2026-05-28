@@ -298,6 +298,7 @@ export const en = {
     screenTimeDesc: "Upload a proof screenshot from Screen Time / Digital Wellbeing and let AI verify your focus.",
     stepGoalTitle: "Walk {steps} steps today",
     stepGoalDesc: "Auto-verified as soon as Apple Health / Google Fit reports your goal.",
+    stepGoalProgress: "Not there yet: {current} / {target} steps. This quest completes automatically.",
     emergencyMessage: "EMERGENCY QUEST DETECTED. Immediate action required.",
     waitMaturing: "This Quest still needs to mature. Wait {hours}h.",
     freeLimit: "Free limit reached: 1 custom Quest per day. Hunter Pro unlocks unlimited Quests.",

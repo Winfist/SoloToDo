@@ -111,5 +111,6 @@ export function isQuestReplaceable(quest) {
   if (!quest.isSystem && !quest.autoAssigned) return false;
   if (quest.linkedGoalId || quest.linkedMilestoneId || quest.linkedHabitId) return false;
   if (quest.isRedemption || quest.isSeasonal || quest.isCharismaQuest || quest.type === "hidden") return false;
+  if (quest.isStepGoal) return false; // passive, auto-verified by Health data
   return true;
 }

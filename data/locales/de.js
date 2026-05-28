@@ -298,6 +298,7 @@ export const de = {
     screenTimeDesc: "Beweisfoto (Einstellungen -> Bildschirmzeit) hochladen und KI den Fokus verifizieren lassen.",
     stepGoalTitle: "{steps} Schritte heute gehen",
     stepGoalDesc: "Wird automatisch verifiziert, sobald Apple Health / Google Fit dein Ziel meldet.",
+    stepGoalProgress: "Noch nicht erreicht: {current} / {target} Schritte. Diese Quest schließt sich automatisch ab.",
     emergencyMessage: "NOTFALL-QUEST DETEKTIERT. Sofortiges Handeln erforderlich.",
     waitMaturing: "Diese Quest muss noch reifen! Warte noch {hours}h.",
     freeLimit: "Free-Limit erreicht: 1 kostenlose Quest pro Tag. Hunter Pro schaltet unbegrenzte Quests frei.",
