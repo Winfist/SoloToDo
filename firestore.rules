@@ -22,10 +22,37 @@ service cloud.firestore {
       }
     }
 
-    // Public Profiles
+    // Public Profiles — leaderboard-readable. Values are authored client-side
+    // (offline-first game), so rules cannot prove correctness. We enforce the
+    // owner, a strict field allow-list, correct types and sane upper bounds so
+    // injected garbage / absurd leaderboard entries (e.g. level 9e18) are
+    // rejected. Numbers arrive from the JS SDK as doubles, hence `is number`,
+    // not `is int`. Each field is optional so partial merge writes (e.g. the
+    // join-guild flow that only sets guildId) still validate.
     match /publicProfiles/{userId} {
+      function pf() { return request.resource.data; }
+      function numOk(field, max) {
+        return !(field in pf())
+          || (pf()[field] is number && pf()[field] >= 0 && pf()[field] <= max);
+      }
+
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && pf().keys().hasOnly([
+             'displayName', 'level', 'totalXpEarned', 'totalQuestsCompleted',
+             'streak', 'shadowCount', 'dungeonsCleared', 'guildId', 'updatedAt'
+           ])
+        && (!('displayName' in pf())
+            || (pf().displayName is string && pf().displayName.size() <= 60))
+        && (!('guildId' in pf())
+            || pf().guildId == null || pf().guildId is string)
+        && numOk('level', 10000)
+        && numOk('totalXpEarned', 1000000000000)
+        && numOk('totalQuestsCompleted', 10000000)
+        && numOk('streak', 100000)
+        && numOk('shadowCount', 100000)
+        && numOk('dungeonsCleared', 10000000);
     }
 
     // Soul Links
