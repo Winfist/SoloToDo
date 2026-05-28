@@ -1,6 +1,7 @@
 import { STAT_ICONS, NAV_ICONS, HABIT_ICONS, STORY_ICONS, SEASON_ICONS } from "../data/icons.js";
 import { getToday, getLocalDateKey } from "../data/dateUtils.js";
 import { getStateLocale, translate } from "../data/i18n.js";
+import { getFocusStats } from "../data/lifeDomains.js";
 
 function ct(state, key, params = {}) {
     return translate(getStateLocale(state), key, params);
@@ -236,11 +237,10 @@ export function checkWeeklyPathReport(state) {
 
     // Check focus domains for mismatch
     const focusDomains = state.lifeDomains || [];
-    const domainToStat = { fitness: "str", wissen: "int", gesundheit: "vit", karriere: "agi", soziales: "cha", dating: "cha", finanzen: "agi", mindset: "int" };
     let focusWarning = "";
     if (focusDomains.length > 0) {
-        const focusStats = [...new Set(focusDomains.map(d => domainToStat[d.toLowerCase()] || d))];
-        const neglectedFocus = focusStats.filter(s => counts[s] <= 1);
+        const focusStats = getFocusStats(focusDomains);
+        const neglectedFocus = focusStats.filter(s => (counts[s] || 0) <= 1);
         if (neglectedFocus.length > 0) {
             focusWarning = ct(state, "systemCoach.focusDomainsWarning", { stats: neglectedFocus.map(s => statNames[s]).join(", ") });
         }

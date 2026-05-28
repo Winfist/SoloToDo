@@ -51,8 +51,8 @@ const CAROUSEL_CSS = `
 .dash-carousel::-webkit-scrollbar { display: none; }
 .dash-carousel-card {
   scroll-snap-align: start;
-  flex: 0 0 84%;
-  max-width: 360px;
+  flex: 0 0 88%;
+  max-width: 420px;
   min-width: 0;
 }
 @media (min-width: 520px) {

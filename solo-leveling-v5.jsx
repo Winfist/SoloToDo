@@ -69,7 +69,7 @@ import {
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
-  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, getJobBonuses, calculateLevelUp,
+  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, generateStarterQuests, getJobBonuses, calculateLevelUp,
   CSS, ParticleField, MusicPlayer, SystemNotification, AchievementToast, XpFloat, LevelUpCinematic, AriseCinematic,
   ShadowCard, ShadowDetailModal, FormationEditor, StatRadar, QuestTimer, QuestTypeBadge,
   EmergencyQuestCard, ChainedQuestProgress, QuestCard, DungeonGate, FloorProgressBar, BossPhaseUI, DungeonBattle,
@@ -882,7 +882,10 @@ function App({ initialHunterName, onLogout }) {
         <style>{CSS(theme)}</style>
         <LifeDomainsOnboarding theme={theme} onComplete={(domains) => {
           console.log("System: Life Domains confirmed:", domains);
-          persist({ ...state, lifeDomains: domains });
+          const lang = state.settings?.language || "de";
+          const keptQuests = (state.quests || []).filter(q => !(q.isStarter || q.origin === "starter") || q.completed);
+          const alignedStarters = generateStarterQuests(lang, domains);
+          persist({ ...state, lifeDomains: domains, quests: [...keptQuests, ...alignedStarters] });
         }} />
       </>
     );
@@ -1327,7 +1330,7 @@ function App({ initialHunterName, onLogout }) {
           {/* Safe area filler removed */}
 
           {/* MAIN */}
-          <main style={{ position: "relative", zIndex: 1, padding: "16px", paddingTop: headerOffset, maxWidth: 480, margin: "0 auto", paddingBottom: 92 }}>
+          <main style={{ position: "relative", zIndex: 1, padding: "16px 12px", paddingTop: headerOffset, maxWidth: 512, margin: "0 auto", paddingBottom: 92 }}>
 
             {/* SHADOW REGRESSION BANNER (replaces plain penalty banner) */}
             {penaltyActive && state.shadowRegression?.active && (state.shadowRegression.previousStreak || 0) > 0 ? (

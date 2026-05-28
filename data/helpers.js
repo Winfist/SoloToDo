@@ -9,6 +9,7 @@ import { getSystemQuestPoolForLocale, localizeQuestTemplate } from "./localizedQ
 import { getToday } from "./dateUtils.js";
 import { getStateLocale, resolveLocale, translate } from "./i18n.js";
 import { getQuestKey, normalizeQuestForStorage } from "./questUtils.js";
+import { getFocusStats } from "./lifeDomains.js";
 
 // ─── JOB XP CONFIG ────────────────────────────────────────────
 export const JOB_XP_SOURCES = {
@@ -112,11 +113,39 @@ export const STARTER_QUEST_TEMPLATE_IDS = [
   "qp_agi_01",
 ];
 
-export function generateStarterQuests(languageMode = "auto") {
+function pickStarterTemplates(domains) {
+  const focusStats = getFocusStats(domains);
+  const fallback = () => STARTER_QUEST_TEMPLATE_IDS
+    .map(id => QUEST_POOL.find(q => q.id === id))
+    .filter(Boolean);
+
+  if (focusStats.length === 0) return fallback();
+
+  // Beginner-friendly pool aligned to the chosen domains.
+  const beginnerPool = QUEST_POOL.filter(
+    q => (q.minLevel || 1) <= 2 && focusStats.includes(q.category)
+  );
+  const shuffled = [...beginnerPool].sort(() => Math.random() - 0.5);
+
+  // First one quest per distinct focus stat for variety, then fill up to 4.
+  const picked = [];
+  const usedCats = new Set();
+  for (const q of shuffled) {
+    if (picked.length >= 4) break;
+    if (!usedCats.has(q.category)) { picked.push(q); usedCats.add(q.category); }
+  }
+  for (const q of shuffled) {
+    if (picked.length >= 4) break;
+    if (!picked.includes(q)) picked.push(q);
+  }
+
+  return picked.length >= 3 ? picked : fallback();
+}
+
+export function generateStarterQuests(languageMode = "auto", domains = null) {
   const today = getToday();
   const locale = resolveLocale(languageMode);
-  return STARTER_QUEST_TEMPLATE_IDS
-    .map(templateId => QUEST_POOL.find(q => q.id === templateId))
+  return pickStarterTemplates(domains)
     .filter(Boolean)
     .map(q => localizeQuestTemplate(q, locale))
     .map((q, index) => normalizeQuestForStorage({
@@ -204,8 +233,23 @@ export function generateDailySystemQuests(count = 3, state = null) {
     }));
   }
 
-  const shuffled = validPool.filter(q => !generatedIds.has(q.id)).sort(() => Math.random() - 0.5);
-  for (const q of shuffled) {
+  // ── Focus toward the hunter's chosen life domains (Wege) ──
+  // Most fill quests come from the focus stats; we still reserve one slot
+  // for variety so a single-domain hunter doesn't get a monotone list.
+  const remaining = validPool.filter(q => !generatedIds.has(q.id));
+  const focusStats = getFocusStats(state?.lifeDomains);
+  let ordered;
+  if (focusStats.length > 0) {
+    const focusPool = remaining.filter(q => focusStats.includes(q.category)).sort(() => Math.random() - 0.5);
+    const otherPool = remaining.filter(q => !focusStats.includes(q.category)).sort(() => Math.random() - 0.5);
+    const slotsToFill = Math.max(0, count - selected.length);
+    const focusTake = Math.max(0, slotsToFill - (slotsToFill >= 3 ? 1 : 0));
+    ordered = [...focusPool.slice(0, focusTake), ...otherPool, ...focusPool.slice(focusTake)];
+  } else {
+    ordered = remaining.sort(() => Math.random() - 0.5);
+  }
+
+  for (const q of ordered) {
     if (selected.length >= count) break; // Now selected.length will correctly count the injected quest
     selected.push(normalizeQuestForStorage({
       ...q,

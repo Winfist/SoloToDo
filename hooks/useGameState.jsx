@@ -24,6 +24,7 @@ import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextM
 import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER_UNLOCK_MESSAGES } from '../data/featureUnlocks.js';
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
+import { getFocusStats } from '../data/lifeDomains.js';
 import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
@@ -706,15 +707,7 @@ export function useGameState(initialHunterName, onLogout) {
 
         // FOCUS-WEIGHTED LOGIC
         if (currentState.lifeDomains && currentState.lifeDomains.length > 0) {
-          const DOMAIN_TO_STATS = {
-            fitness: ["str", "vit", "agi"], knowledge: ["int"], health: ["vit"], career: ["int", "cha"],
-            social: ["cha"], dating: ["cha", "int"], finance: ["int"], mindset: ["vit", "int"]
-          };
-
-          let focusStats = [];
-          currentState.lifeDomains.forEach(d => {
-            if (DOMAIN_TO_STATS[d]) focusStats.push(...DOMAIN_TO_STATS[d]);
-          });
+          const focusStats = getFocusStats(currentState.lifeDomains);
 
           const roll = Math.random();
           if (roll < 0.6) {
