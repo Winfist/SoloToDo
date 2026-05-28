@@ -888,6 +888,20 @@ export function useGameState(initialHunterName, onLogout) {
     enqueueRewardFlow(flow);
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);
 
+  // Auto-complete the passive step-goal quest once Health reports the target.
+  useEffect(() => {
+    if (!state) return;
+    const today = getToday();
+    const steps = Math.max(0, Math.floor(Number(state.dailySteps) || 0));
+    const due = (state.quests || []).find(q =>
+      q.isStepGoal
+      && !q.completed
+      && (q.dueDate || q.createdAt) === today
+      && steps >= (q.stepTarget || 10000)
+    );
+    if (due) completeQuest(due.id);
+  }, [state, completeQuest]);
+
   const processWidgetActionQueue = useCallback(async () => {
     if (processingWidgetQueueRef.current) return;
     const currentState = stateRef.current;

@@ -262,6 +262,32 @@ export function generateDailySystemQuests(count = 3, state = null) {
     }));
   }
 
+  // ── Passive step-goal quest (auto-verified via Apple Health / Google Fit) ──
+  // Added on top of the daily count (not consuming a manual slot) since it
+  // completes itself in the background. Only when health has actually synced
+  // before, so web users don't get an unreachable quest.
+  const stepGoalQuestKey = `step_goal_quest:${today}`;
+  if (state?.healthSyncDate && !activeQuestKeys.has(stepGoalQuestKey)) {
+    const stepTarget = 10000;
+    selected.push(normalizeQuestForStorage({
+      id: `sys_steps_${genId()}`,
+      templateId: "step_goal_quest",
+      questKey: stepGoalQuestKey,
+      title: translate(locale, "quests.stepGoalTitle", { steps: stepTarget.toLocaleString(locale === "de" ? "de-DE" : "en-US") }),
+      description: translate(locale, "quests.stepGoalDesc"),
+      category: "vit",
+      difficulty: "normal",
+      type: "daily",
+      isSystem: true,
+      isStepGoal: true,
+      stepTarget,
+      xpMult: 1.5,
+      goldMult: 1.5,
+      createdAt: today,
+      dueDate: today,
+    }));
+  }
+
   return selected;
 }
 
