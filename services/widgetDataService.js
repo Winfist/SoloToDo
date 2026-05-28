@@ -184,8 +184,21 @@ function sortQuests(quests, sortMode) {
 // collapse them to a single visible card with a `count` field. The
 // first-occurring quest in the sorted order is the representative, so the
 // "best" version (highest priority/difficulty/own-bucket) stays on screen.
+//
+// Normalization is intentionally aggressive so visually-equivalent titles
+// merge: "Push-ups", "Push ups", "Pushups", "PUSH–UPS!" all collapse to the
+// same key. Unicode letters (incl. ä/ö/ü/ß) are preserved.
 function normalizeQuestKey(title) {
-  return String(title || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  let s = String(title || '').normalize('NFKC').toLowerCase();
+  // Strip everything that isn't a Unicode letter or digit — punctuation,
+  // dashes (-, –, —, non-breaking hyphen), whitespace, symbols, emoji, etc.
+  try {
+    s = s.replace(/[^\p{Letter}\p{Number}]+/gu, '');
+  } catch (_) {
+    // Fallback if the regex engine doesn't support Unicode property escapes.
+    s = s.replace(/[^a-z0-9äöüß]+/g, '');
+  }
+  return s;
 }
 
 function dedupQuestsForWidget(quests) {
@@ -193,6 +206,14 @@ function dedupQuestsForWidget(quests) {
   const order = [];
   for (const q of quests) {
     const key = normalizeQuestKey(q.title);
+    if (!key) {
+      // Untitled / unhashable — keep as-is, never merge with another empty.
+      const slot = { quest: q, count: 1 };
+      const ukey = `__untitled__${order.length}`;
+      map.set(ukey, slot);
+      order.push(ukey);
+      continue;
+    }
     if (map.has(key)) {
       map.get(key).count += 1;
     } else {
@@ -292,6 +313,9 @@ function buildWidgetPayload(state) {
   const filtered = filterQuests(state.quests, config.questFilter);
   const sorted = sortQuests(filtered, config.questSort);
   const deduped = dedupQuestsForWidget(sorted);
+  if (deduped.length < sorted.length) {
+    console.log(`[Widget] Deduped quests: ${sorted.length} → ${deduped.length} (collapsed ${sorted.length - deduped.length} duplicate${sorted.length - deduped.length === 1 ? '' : 's'})`);
+  }
   const allQuests = deduped.map(q => ({
     id: q.id,
     title: q.title || translate(locale, 'quests.fallbackTitle'),
