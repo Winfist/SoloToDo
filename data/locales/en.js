@@ -1091,6 +1091,7 @@ export const en = {
       gem_dungeon_refresh: { desc: "Generate new Dungeons immediately." },
       gem_shadow_rename: { desc: "Rename a Shadow." },
       gem_stat_reset: { desc: "Reset all Stat points and allocate them again." },
+      gem_path_reset: { desc: "Re-pick your 3 paths - max. once per week." },
     },
   },
   shop: {
@@ -1165,6 +1166,9 @@ export const en = {
       statResetDone: "All Stat points were reset.",
       statResetAvailable: "{points} points are available.",
       statResetHint: "Distribute them wisely, Hunter.",
+      pathResetTitle: "PATH RESET",
+      pathResetDone: "Choose your 3 new paths. The System will align your quests accordingly.",
+      pathResetCooldown: "Path reset available again in {days} day(s).",
       recoveryTitle: "SYSTEM RECOVERY",
       recoveryConsumed: "Elixir of Recovery consumed.",
       recoveryRestored: "Lost vitality fully restored.",

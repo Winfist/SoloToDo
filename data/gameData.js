@@ -342,6 +342,7 @@ export const GEM_SHOP_ITEMS = [
   { id: "gem_dungeon_refresh", type: "consumable", name: "Dungeon Refresh", cost: 10, desc: "Generiere sofort neue Dungeons", category: "convenience", repeatable: true, iconSrc: "/icons/gem.webp" },
   { id: "gem_shadow_rename", type: "consumable", name: "Shadow Rename Token", cost: 15, desc: "Benenne einen Shadow um", category: "convenience", repeatable: true, iconSrc: "/icons/gem.webp" },
   { id: "gem_stat_reset", type: "consumable", name: "Stat Reset Scroll", cost: 30, desc: "Alle Stat-Punkte zurücksetzen und neu verteilen", category: "convenience", repeatable: true, iconSrc: "/icons/gem.webp" },
+  { id: "gem_path_reset", type: "consumable", name: "Path Reset Crystal", cost: 40, desc: "Wähle deine 3 Wege (Lebensbereiche) neu — max. 1x pro Woche", category: "convenience", repeatable: true, iconSrc: "/icons/gem.webp" },
 ];
 
 // ─── THEMES ───────────────────────────────────────────────────

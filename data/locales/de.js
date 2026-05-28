@@ -1046,6 +1046,7 @@ export const de = {
       gem_dungeon_refresh: { desc: "Generiere sofort neue Dungeons." },
       gem_shadow_rename: { desc: "Benenne einen Shadow um." },
       gem_stat_reset: { desc: "Alle Stat-Punkte zuruecksetzen und neu verteilen." },
+      gem_path_reset: { desc: "Waehle deine 3 Wege neu - max. 1x pro Woche." },
     },
   },
   shop: {
@@ -1120,6 +1121,9 @@ export const de = {
       statResetDone: "Alle Stat-Punkte wurden zurueckgesetzt.",
       statResetAvailable: "{points} Punkte stehen zur Verfuegung.",
       statResetHint: "Verteile sie weise, Hunter.",
+      pathResetTitle: "PFAD ZURUECKGESETZT",
+      pathResetDone: "Waehle deine 3 neuen Wege. Das System richtet deine Quests danach aus.",
+      pathResetCooldown: "Pfad-Reset erst in {days} Tag(en) wieder moeglich.",
       recoveryTitle: "SYSTEM RECOVERY",
       recoveryConsumed: "Elixir of Recovery konsumiert.",
       recoveryRestored: "Verlorene Vitalitaet vollstaendig wiederhergestellt.",

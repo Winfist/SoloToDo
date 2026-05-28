@@ -2367,6 +2367,17 @@ export function useGameState(initialHunterName, onLogout) {
       notify(ltState(state, "shop.notifications.alreadyBought"), "info");
       return;
     }
+    // Anti-abuse: Wege-Reset is limited to once per week so quests can't be
+    // re-rolled toward whatever is easiest each day.
+    if (item.id === "gem_path_reset") {
+      const PATH_RESET_COOLDOWN = 7 * 24 * 60 * 60 * 1000;
+      const sinceLast = Date.now() - (state.lastPathReset || 0);
+      if (sinceLast < PATH_RESET_COOLDOWN) {
+        const days = Math.ceil((PATH_RESET_COOLDOWN - sinceLast) / 86400000);
+        notify(ltState(state, "shop.notifications.pathResetCooldown", { days }), "warning");
+        return;
+      }
+    }
 
     let effects = {};
     if (item.type === "booster") {
@@ -2412,6 +2423,14 @@ export function useGameState(initialHunterName, onLogout) {
           ltState(state, "shop.notifications.statResetAvailable", { points: totalStatPoints + (state.statPoints || 0) }),
           ltState(state, "shop.notifications.statResetHint")
         ]);
+      } else if (item.id === "gem_path_reset") {
+        // Clearing lifeDomains makes the app re-open LifeDomainsOnboarding,
+        // where the hunter picks 3 new Wege (and aligned starters regenerate).
+        effects.lifeDomains = [];
+        effects.lastPathReset = Date.now();
+        triggerSystemMessage(ltState(state, "shop.notifications.pathResetTitle"), [
+          ltState(state, "shop.notifications.pathResetDone"),
+        ]);
       }
     } else if (item.type === "cosmetic") {
       // Shadow cosmetics stored in gemPurchases ─ applied via lookup
@@ -2428,7 +2447,8 @@ export function useGameState(initialHunterName, onLogout) {
     next = processAchievements(next);
     persist(next);
     trackEvent('shop_purchase', { itemId: item.id, cost: item.cost, currency: 'gems' });
-    if (item.type !== "consumable" || !item.id.startsWith("gem_stat_reset")) {
+    const silentConsumables = ["gem_stat_reset", "gem_path_reset"];
+    if (item.type !== "consumable" || !silentConsumables.includes(item.id)) {
       notify(ltState(state, "shop.notifications.purchased", { name: item.name }), item.type === "booster" ? "success" : "named");
     }
   }, [state, persist, processAchievements, notify, triggerSystemMessage]);
