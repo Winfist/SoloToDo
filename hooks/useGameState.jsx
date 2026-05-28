@@ -690,11 +690,14 @@ export function useGameState(initialHunterName, onLogout) {
     const lastTime = currentState.lastSystemTaskTime || 0;
 
     if (now - lastTime >= TASK_INTERVAL) {
-      const activeAutoTasks = (currentState.quests || []).filter(q =>
+      // Global cap: count every active system-assigned quest (the daily ones
+      // generated at reset AND auto-assigned side tasks) so the intensity cap
+      // limits the total on-screen load, not just the auto-task slice.
+      const activeSystemQuests = (currentState.quests || []).filter(q =>
         !q.completed
-        && (q.autoAssigned || (q.isSystem && q.type === "side" && !q.isCharismaQuest))
+        && (q.autoAssigned || (q.isSystem && (q.type === "side" || q.type === "daily") && !q.isCharismaQuest))
       ).length;
-      if (activeAutoTasks >= getQuestIntensityActiveCap(currentState)) return;
+      if (activeSystemQuests >= getQuestIntensityActiveCap(currentState)) return;
 
       // Find tasks in QUEST_POOL not currently in state.quests and not in completedQuests
       const availablePool = QUEST_POOL.filter(q =>
