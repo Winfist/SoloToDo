@@ -204,6 +204,9 @@ struct WidgetQuest: Codable, Identifiable {
     var dueDate: String?
     var isSystem: Bool
     var canCompleteFromWidget: Bool
+    /// How many quests with the same normalized title were collapsed into this
+    /// representative. 1 = unique; > 1 → render an ×N badge.
+    var count: Int
 
     enum CodingKeys: String, CodingKey {
         case id, title
@@ -211,6 +214,7 @@ struct WidgetQuest: Codable, Identifiable {
         case nextStep, stages
         case category, difficulty, type, priority, dueDate, isSystem
         case canCompleteFromWidget
+        case count
     }
 
     init(from decoder: Decoder) throws {
@@ -227,6 +231,7 @@ struct WidgetQuest: Codable, Identifiable {
         dueDate = try? c.decode(String.self, forKey: .dueDate)
         isSystem = (try? c.decode(Bool.self, forKey: .isSystem)) ?? false
         canCompleteFromWidget = (try? c.decode(Bool.self, forKey: .canCompleteFromWidget)) ?? true
+        count = max(1, (try? c.decode(Int.self, forKey: .count)) ?? 1)
     }
 
     // Direct initializer for placeholder
@@ -234,7 +239,8 @@ struct WidgetQuest: Codable, Identifiable {
          questDescription: String? = nil, nextStep: String? = nil, stages: [WidgetStage] = [],
          category: String = "agi",
          difficulty: String = "normal", type: String = "side", priority: String = "medium",
-         dueDate: String? = nil, isSystem: Bool = false, canCompleteFromWidget: Bool = true) {
+         dueDate: String? = nil, isSystem: Bool = false, canCompleteFromWidget: Bool = true,
+         count: Int = 1) {
         self.id = id; self.title = title
         self.questDescription = questDescription; self.nextStep = nextStep
         self.stages = stages
@@ -242,6 +248,7 @@ struct WidgetQuest: Codable, Identifiable {
         self.difficulty = difficulty; self.type = type; self.priority = priority
         self.dueDate = dueDate; self.isSystem = isSystem
         self.canCompleteFromWidget = canCompleteFromWidget
+        self.count = max(1, count)
     }
 
     /// Open stages first; preserves order. Used for the collapsed "next step".

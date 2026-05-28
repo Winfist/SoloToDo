@@ -118,16 +118,49 @@ function filterQuests(quests, filter) {
   }
 }
 
+// ─── Quest sort helpers ───────────────────────────────────────
+// Difficulty descending: boss > hard > normal > easy.
+const DIFFICULTY_RANK = { boss: 0, hard: 1, normal: 2, easy: 3 };
+const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
+
+function isDueToday(dueDate, today) {
+  if (!dueDate) return false;
+  return String(dueDate).slice(0, 10) === today;
+}
+
+// Comprehensive focus key. Lower is better (closer to top).
+// 1. Today-relevant (daily-type or deadline today) before everything else.
+// 2. Hardest difficulty before easiest.
+// 3. Highest priority before lowest.
+// 4. Soonest deadline before later/none.
+function focusSortKey(quest, today) {
+  const todayRelevant = (quest.type === 'daily') || isDueToday(quest.dueDate, today) ? 0 : 1;
+  const diffRank = DIFFICULTY_RANK[String(quest.difficulty || '').toLowerCase()] ?? 2;
+  const prioRank = PRIORITY_RANK[String(quest.priority || '').toLowerCase()] ?? 1;
+  const dueTime = quest.dueDate ? new Date(quest.dueDate).getTime() : Number.POSITIVE_INFINITY;
+  return [todayRelevant, diffRank, prioRank, dueTime];
+}
+
+function compareKeys(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] < b[i]) return -1;
+    if (a[i] > b[i]) return 1;
+  }
+  return 0;
+}
+
 function sortQuests(quests, sortMode) {
+  const today = getToday();
   const within = (arr) => {
-    const sorted = [...arr];
+    const copy = [...arr];
     switch (sortMode) {
-      case 'priority': {
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
-        return sorted.sort((a, b) => (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1));
-      }
+      case 'priority':
+        return copy.sort((a, b) =>
+          (PRIORITY_RANK[String(a.priority || '').toLowerCase()] ?? 1) -
+          (PRIORITY_RANK[String(b.priority || '').toLowerCase()] ?? 1)
+        );
       case 'deadline':
-        return sorted.sort((a, b) => {
+        return copy.sort((a, b) => {
           if (!a.dueDate && !b.dueDate) return 0;
           if (!a.dueDate) return 1;
           if (!b.dueDate) return -1;
@@ -135,20 +168,43 @@ function sortQuests(quests, sortMode) {
         });
       case 'focus':
       default:
-        // Focus: high priority first, then daily, then deadline, then rest
-        return sorted.sort((a, b) => {
-          const pA = a.priority === 'high' ? 0 : a.type === 'daily' ? 1 : a.dueDate ? 2 : 3;
-          const pB = b.priority === 'high' ? 0 : b.type === 'daily' ? 1 : b.dueDate ? 2 : 3;
-          return pA - pB;
-        });
+        return copy.sort((a, b) => compareKeys(focusSortKey(a, today), focusSortKey(b, today)));
     }
   };
-  // User-created quests always rank above system quests; apply the chosen
-  // ordering within each group so the user's own quests sit at the top.
+  // User-created quests always rank above system quests; sort within each
+  // group by the chosen mode so the user's own quests sit at the very top.
   return [
     ...within(quests.filter(q => !q.isSystem)),
     ...within(quests.filter(q => q.isSystem)),
   ];
+}
+
+// ─── Dedupe quests by normalized title ─────────────────────────
+// When the user has multiple quests with the same title (intentional or not),
+// collapse them to a single visible card with a `count` field. The
+// first-occurring quest in the sorted order is the representative, so the
+// "best" version (highest priority/difficulty/own-bucket) stays on screen.
+function normalizeQuestKey(title) {
+  return String(title || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function dedupQuestsForWidget(quests) {
+  const map = new Map();
+  const order = [];
+  for (const q of quests) {
+    const key = normalizeQuestKey(q.title);
+    if (map.has(key)) {
+      map.get(key).count += 1;
+    } else {
+      const slot = { quest: q, count: 1 };
+      map.set(key, slot);
+      order.push(key);
+    }
+  }
+  return order.map(k => {
+    const { quest, count } = map.get(k);
+    return { ...quest, count };
+  });
 }
 
 // ─── Quest text helpers (widget content) ──────────────────────
@@ -230,10 +286,13 @@ function buildWidgetPayload(state) {
   const now = new Date();
   const today = getToday();
 
-  // Quest data — send ALL sorted quests so widget can handle rotation itself
+  // Quest data — send ALL sorted + deduplicated quests so the widget can
+  // handle rotation itself. Duplicates by normalized title collapse to a
+  // single representative with a `count` field.
   const filtered = filterQuests(state.quests, config.questFilter);
   const sorted = sortQuests(filtered, config.questSort);
-  const allQuests = sorted.map(q => ({
+  const deduped = dedupQuestsForWidget(sorted);
+  const allQuests = deduped.map(q => ({
     id: q.id,
     title: q.title || translate(locale, 'quests.fallbackTitle'),
     description: truncateText(q.description, 120),
@@ -245,19 +304,21 @@ function buildWidgetPayload(state) {
     priority: q.priority || 'medium',
     dueDate: q.dueDate || null,
     isSystem: !!q.isSystem,
+    count: q.count || 1,
     canCompleteFromWidget: canCompleteQuestFromWidget(q),
   }));
 
-  // Focus quest (highest priority open quest)
-  const focusQuest = sorted[0] ? {
-    id: sorted[0].id,
-    title: sorted[0].title || translate(locale, 'quests.fallbackTitle'),
-    description: truncateText(sorted[0].description, 120),
-    nextStep: nextOpenStep(sorted[0]),
-    stages: questStages(sorted[0]),
-    category: sorted[0].category,
-    difficulty: sorted[0].difficulty,
-    canCompleteFromWidget: canCompleteQuestFromWidget(sorted[0]),
+  // Focus quest (top-ranked after sort + dedup)
+  const focusQuest = deduped[0] ? {
+    id: deduped[0].id,
+    title: deduped[0].title || translate(locale, 'quests.fallbackTitle'),
+    description: truncateText(deduped[0].description, 120),
+    nextStep: nextOpenStep(deduped[0]),
+    stages: questStages(deduped[0]),
+    category: deduped[0].category,
+    difficulty: deduped[0].difficulty,
+    count: deduped[0].count || 1,
+    canCompleteFromWidget: canCompleteQuestFromWidget(deduped[0]),
   } : null;
 
   // Habits

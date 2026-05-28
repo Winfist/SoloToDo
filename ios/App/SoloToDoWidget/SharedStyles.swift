@@ -337,6 +337,23 @@ func widgetProgress(done: Int, total: Int) -> Double {
     return min(max(Double(done) / Double(total), 0), 1)
 }
 
+private let widgetISODateFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.calendar = Calendar(identifier: .iso8601)
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.timeZone = TimeZone.current
+    f.dateFormat = "yyyy-MM-dd"
+    return f
+}()
+
+/// Returns true when the quest's due date string (YYYY-MM-DD prefix tolerated)
+/// matches the local "today" — used to push today's deadlines to the top of
+/// the focus view and to flag them with a HEUTE badge.
+func widgetIsDueToday(_ dueDate: String?) -> Bool {
+    guard let dueDate, !dueDate.isEmpty else { return false }
+    return String(dueDate.prefix(10)) == widgetISODateFormatter.string(from: Date())
+}
+
 struct RankSigil: View {
     let rank: String
     var accent: Color
@@ -851,6 +868,22 @@ struct QuestCollapsedRow: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
 
+                    if quest.count > 1 {
+                        Text("×\(quest.count)")
+                            .font(SLFont.mono(7.6, .semibold))
+                            .foregroundColor(accent)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(accent.opacity(0.12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                            .stroke(accent.opacity(0.40), lineWidth: 0.6)
+                                    )
+                            )
+                    }
+
                     if showOwnMarker {
                         Text("DEINE")
                             .font(SLFont.mono(6.8, .semibold))
@@ -1014,7 +1047,83 @@ struct CollapseButton: View {
     }
 }
 
-/// Expanded quest: title (→ opens app) + collapse + stage checklist.
+/// Small badge — orange "HEUTE" capsule shown when a quest is due today.
+struct DueTodayBadge: View {
+    var fontSize: CGFloat = 7.6
+    private var tint: Color { Color(hex: "#fb923c") }
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "clock.fill")
+                .font(.system(size: fontSize * 0.95, weight: .bold))
+            Text("HEUTE")
+                .font(SLFont.mono(fontSize, .semibold))
+                .tracking(0.6)
+        }
+        .foregroundColor(tint)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 1.5)
+        .background(
+            Capsule().fill(tint.opacity(0.14))
+                .overlay(Capsule().stroke(tint.opacity(0.35), lineWidth: 0.6))
+        )
+    }
+}
+
+/// Pill that styles the difficulty label (BOSS / HARD / NORMAL / EASY).
+struct DifficultyPill: View {
+    let difficulty: String
+    var fontSize: CGFloat = 8
+    private var tint: Color { widgetDifficultyColor(difficulty) }
+    var body: some View {
+        Text(widgetDifficultyLabel(difficulty))
+            .font(SLFont.mono(fontSize, .semibold))
+            .tracking(0.7)
+            .foregroundColor(tint)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1.5)
+            .background(
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(tint.opacity(0.12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .stroke(tint.opacity(0.40), lineWidth: 0.6)
+                    )
+            )
+    }
+}
+
+/// Footer button used by the expanded quest view: a wide accent-tinted pill
+/// that deep-links into the quest detail in the app.
+struct OpenInAppPill: View {
+    let deepLink: URL
+    var accent: Color
+    var compact: Bool = false
+    var body: some View {
+        Link(destination: deepLink) {
+            HStack(spacing: 6) {
+                Spacer()
+                Text("IN APP ÖFFNEN")
+                    .font(SLFont.mono(compact ? 8.6 : 9.8, .semibold))
+                    .tracking(1.1)
+                    .foregroundColor(accent)
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: compact ? 8 : 9.5, weight: .bold))
+                    .foregroundColor(accent)
+                Spacer()
+            }
+            .padding(.vertical, compact ? 4.5 : 6.5)
+            .background(
+                Capsule()
+                    .fill(accent.opacity(0.11))
+                    .overlay(Capsule().stroke(accent.opacity(0.32), lineWidth: 0.7))
+            )
+        }
+    }
+}
+
+/// Expanded quest: hero icon + title + meta chips + progress ring + stages
+/// checklist + open-in-app footer. Compact variant is tuned for the Medium
+/// widget; the full variant fills the Large widget richly.
 struct FocusedQuestView: View {
     let quest: WidgetQuest
     var accent: Color
@@ -1023,53 +1132,100 @@ struct FocusedQuestView: View {
     var stageLineLimit: Int = 2
     var compact: Bool = false
 
-    private var deepLink: URL? { solotodoDeepLink("solotodo://quest/\(quest.id)") }
+    private var deepLink: URL { solotodoDeepLink("solotodo://quest/\(quest.id)") ?? URL(string: "solotodo://training")! }
+    private var iconName: String { widgetQuestIconName(quest) }
+    private var diffTint: Color { widgetDifficultyColor(quest.difficulty) }
     private var nextStageId: String? { quest.stages.first(where: { !$0.done })?.id }
     private var shownStages: [WidgetStage] { Array(quest.stages.prefix(maxStages)) }
-    private var stackSpacing: CGFloat { compact ? 6 : 8 }
-    private var headerSpacing: CGFloat { compact ? 3 : 4 }
-    private var titleSize: CGFloat { compact ? 13.4 : 14.6 }
-    private var labelSize: CGFloat { compact ? 9.2 : 10 }
-    private var kickerSize: CGFloat { compact ? 9 : 9.5 }
-    private var stageSpacing: CGFloat { compact ? 4 : 6 }
-    private var stageFontSize: CGFloat { compact ? 11.2 : 12.2 }
+    private var hiddenStages: Int { max(0, quest.stages.count - shownStages.count) }
+    private var dueToday: Bool { widgetIsDueToday(quest.dueDate) }
+    private var hasStages: Bool { !quest.stages.isEmpty }
+
+    // Size tuning
+    private var heroSize: CGFloat { compact ? 32 : 50 }
+    private var heroIconSize: CGFloat { compact ? 22 : 34 }
+    private var titleSize: CGFloat { compact ? 13.6 : 17 }
+    private var stackSpacing: CGFloat { compact ? 6 : 10 }
+    private var stageFontSize: CGFloat { compact ? 11.2 : 12.6 }
     private var markerSize: CGFloat { compact ? 12 : 14 }
+    private var stageSpacing: CGFloat { compact ? 4 : 6 }
+    private var ringSize: CGFloat { compact ? 28 : 38 }
+    private var kickerSize: CGFloat { compact ? 9 : 9.8 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: stackSpacing) {
-            // Header — title links to the app, chevron collapses.
-            HStack(alignment: .top, spacing: 8) {
-                Link(destination: deepLink ?? URL(string: "solotodo://training")!) {
-                    VStack(alignment: .leading, spacing: headerSpacing) {
+            // ─── Header: hero icon + title + meta chips + collapse ───
+            HStack(alignment: .top, spacing: compact ? 9 : 11) {
+                WidgetIconTile(
+                    imageName: iconName,
+                    tint: diffTint,
+                    size: heroSize,
+                    iconSize: heroIconSize
+                )
+
+                Link(destination: deepLink) {
+                    VStack(alignment: .leading, spacing: compact ? 3 : 5) {
                         Text(quest.title)
                             .font(SLFont.ui(titleSize, .bold))
                             .foregroundColor(SL.t1)
                             .lineLimit(titleLineLimit)
-                            .minimumScaleFactor(0.86)
+                            .minimumScaleFactor(0.82)
                             .fixedSize(horizontal: false, vertical: true)
-                        HStack(spacing: compact ? 4 : 6) {
+
+                        HStack(spacing: 5) {
+                            DifficultyPill(difficulty: quest.difficulty, fontSize: compact ? 7.6 : 8.2)
                             CategoryTag(category: quest.category)
-                            Text("In App öffnen")
-                                .font(SLFont.ui(labelSize, .semibold))
-                                .foregroundColor(accent.opacity(0.9))
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: compact ? 7 : 8, weight: .bold))
-                                .foregroundColor(accent.opacity(0.9))
+                            if dueToday {
+                                DueTodayBadge(fontSize: compact ? 7.6 : 8.2)
+                            }
+                            if quest.count > 1 {
+                                Text("×\(quest.count)")
+                                    .font(SLFont.mono(compact ? 7.6 : 8.2, .semibold))
+                                    .foregroundColor(accent)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 1.5)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                            .fill(accent.opacity(0.12))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                                    .stroke(accent.opacity(0.38), lineWidth: 0.6)
+                                            )
+                                    )
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+
                 CollapseButton(questId: quest.id)
             }
 
-            if !shownStages.isEmpty {
-                HStack {
+            // ─── Optional description preface (Large only, when room allows) ───
+            if !compact,
+               let desc = quest.questDescription,
+               !desc.isEmpty,
+               shownStages.count <= 4 {
+                Text(desc)
+                    .font(SLFont.ui(11.8, .regular))
+                    .foregroundColor(SL.body)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // ─── Stages section ───
+            if hasStages {
+                HStack(spacing: 8) {
                     Kicker("Etappen", size: kickerSize)
                     Spacer()
-                    Text("\(quest.doneStageCount)/\(quest.stages.count)")
-                        .font(SLFont.mono(9.5, .semibold))
-                        .foregroundColor(SL.t3)
+                    ProgressRingBadge(
+                        done: quest.doneStageCount,
+                        total: quest.stages.count,
+                        accent: accent,
+                        size: ringSize
+                    )
                 }
+
                 VStack(alignment: .leading, spacing: stageSpacing) {
                     ForEach(Array(shownStages.enumerated()), id: \.offset) { _, stage in
                         StageLine(
@@ -1081,13 +1237,38 @@ struct FocusedQuestView: View {
                             markerSize: markerSize
                         )
                     }
+                    if hiddenStages > 0 {
+                        Link(destination: deepLink) {
+                            Text("+ \(hiddenStages) weitere Etappen")
+                                .font(SLFont.ui(compact ? 10 : 11, .semibold))
+                                .foregroundColor(accent.opacity(0.9))
+                                .padding(.leading, markerSize + 10)
+                        }
+                    }
                 }
             } else if let desc = quest.questDescription, !desc.isEmpty {
                 Text(desc)
-                    .font(SLFont.ui(12.5, .regular))
+                    .font(SLFont.ui(compact ? 11.4 : 12.6, .regular))
                     .foregroundColor(SL.body)
-                    .lineLimit(4)
+                    .lineLimit(compact ? 3 : 6)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(accent.opacity(0.8))
+                    Text("Bereit zum Start — öffne die Quest, um loszulegen.")
+                        .font(SLFont.ui(compact ? 11 : 12, .regular))
+                        .foregroundColor(SL.t2)
+                        .lineLimit(2)
+                }
+                .padding(.top, 2)
             }
+
+            Spacer(minLength: 0)
+
+            // ─── Footer pill → opens the quest in the app ───
+            OpenInAppPill(deepLink: deepLink, accent: accent, compact: compact)
         }
     }
 }
