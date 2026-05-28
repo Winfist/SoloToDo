@@ -54,3 +54,6 @@ functions/logs*.txt
 
 # Private planning docs should stay outside source control
 *.docx
+
+# Brainstorming companion scratch files
+.superpowers/

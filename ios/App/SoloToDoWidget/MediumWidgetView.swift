@@ -6,10 +6,11 @@ import WidgetKit
 struct MediumWidgetView: View {
     let data: WidgetData
     var contentMode: WidgetContentMode = .quests
+    var backgroundStyle: WidgetBackgroundStyle = .auto
     var expandedQuestId: String? = nil
     var pageIndex: Int = 0
 
-    private let pageSize = 2
+    private var pageSize: Int { contentMode == .microHabits ? 4 : 2 }
     private var accent: Color { Color(hex: data.theme.primary) }
     private var expandedQuest: WidgetQuest? {
         guard contentMode == .quests, let id = expandedQuestId else { return nil }
@@ -18,7 +19,14 @@ struct MediumWidgetView: View {
     private var allItems: [WidgetTaskItem] { allWidgetTaskItems(for: data, mode: contentMode) }
     private var pagedQuests: [WidgetQuest] { widgetPageSlice(data.quests, pageIndex: pageIndex, pageSize: pageSize) }
     private var pagedItems: [WidgetTaskItem] { widgetPageSlice(allItems, pageIndex: pageIndex, pageSize: pageSize) }
-    private var totalItems: Int { contentMode == .quests ? data.quests.count : allItems.count }
+    private var pagedMicroHabits: [WidgetMicroHabit] { widgetPageSlice(data.microHabits, pageIndex: pageIndex, pageSize: pageSize) }
+    private var totalItems: Int {
+        switch contentMode {
+        case .quests: return data.quests.count
+        case .microHabits: return data.microHabits.count
+        case .habits, .mix: return allItems.count
+        }
+    }
 
     private var sectionTitle: String {
         switch contentMode {
@@ -30,7 +38,7 @@ struct MediumWidgetView: View {
     }
 
     var body: some View {
-        WidgetChrome(data: data, accent: accent, size: .medium) {
+        WidgetChrome(data: data, accent: accent, size: .medium, backgroundStyle: backgroundStyle) {
             if let quest = expandedQuest {
                 FocusedQuestView(
                     quest: quest,
@@ -69,12 +77,19 @@ struct MediumWidgetView: View {
                                 expandable: !quest.stages.isEmpty,
                                 deepLink: solotodoDeepLink("solotodo://quest/\(quest.id)")
                             ) {
-                                QuestCollapsedRow(quest: quest, accent: accent, focus: index == 0)
+                                QuestCollapsedRow(quest: quest, accent: accent, focus: index == 0, compact: true)
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 2)
                             if index < pagedQuests.count - 1 { Divider1() }
                         }
                     }
+                }
+            } else if contentMode == .microHabits {
+                if pagedMicroHabits.isEmpty {
+                    emptyState
+                } else {
+                    MicroHabitRingStrip(habits: pagedMicroHabits, accent: accent, size: .medium)
+                        .padding(.top, 4)
                 }
             } else {
                 if pagedItems.isEmpty {

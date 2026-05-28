@@ -119,27 +119,36 @@ function filterQuests(quests, filter) {
 }
 
 function sortQuests(quests, sortMode) {
-  const sorted = [...quests];
-  switch (sortMode) {
-    case 'priority':
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
-      return sorted.sort((a, b) => (priorityOrder[a.priority] || 1) - (priorityOrder[b.priority] || 1));
-    case 'deadline':
-      return sorted.sort((a, b) => {
-        if (!a.dueDate && !b.dueDate) return 0;
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return new Date(a.dueDate) - new Date(b.dueDate);
-      });
-    case 'focus':
-    default:
-      // Focus: high priority first, then daily, then deadline, then rest
-      return sorted.sort((a, b) => {
-        const pA = a.priority === 'high' ? 0 : a.type === 'daily' ? 1 : a.dueDate ? 2 : 3;
-        const pB = b.priority === 'high' ? 0 : b.type === 'daily' ? 1 : b.dueDate ? 2 : 3;
-        return pA - pB;
-      });
-  }
+  const within = (arr) => {
+    const sorted = [...arr];
+    switch (sortMode) {
+      case 'priority': {
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        return sorted.sort((a, b) => (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1));
+      }
+      case 'deadline':
+        return sorted.sort((a, b) => {
+          if (!a.dueDate && !b.dueDate) return 0;
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate) - new Date(b.dueDate);
+        });
+      case 'focus':
+      default:
+        // Focus: high priority first, then daily, then deadline, then rest
+        return sorted.sort((a, b) => {
+          const pA = a.priority === 'high' ? 0 : a.type === 'daily' ? 1 : a.dueDate ? 2 : 3;
+          const pB = b.priority === 'high' ? 0 : b.type === 'daily' ? 1 : b.dueDate ? 2 : 3;
+          return pA - pB;
+        });
+    }
+  };
+  // User-created quests always rank above system quests; apply the chosen
+  // ordering within each group so the user's own quests sit at the top.
+  return [
+    ...within(quests.filter(q => !q.isSystem)),
+    ...within(quests.filter(q => q.isSystem)),
+  ];
 }
 
 // ─── Quest text helpers (widget content) ──────────────────────
@@ -185,6 +194,12 @@ function normalizeMicroHabitList(raw) {
 
 function getMicroTarget(cfg) {
   return Number(cfg?.dailyTarget ?? cfg?.target ?? 5) || 5;
+}
+
+function getMicroIconKey(id, cfg) {
+  const explicit = typeof cfg?.icon === 'string' && cfg.icon.startsWith('micro_') ? cfg.icon : null;
+  if (explicit) return explicit;
+  return `micro_${id}`;
 }
 
 function isHabitScheduledToday(habit, date = new Date()) {
@@ -273,7 +288,7 @@ function buildWidgetPayload(state) {
       id,
       key: id,
       label: cfg.label || id,
-      icon: cfg.icon || (cfg.label || id || '?').slice(0, 1).toUpperCase(),
+      icon: getMicroIconKey(id, cfg),
       current,
       target,
       completed: current >= target,

@@ -4,36 +4,46 @@ import WidgetKit
 
 struct SoloToDoProvider: TimelineProvider {
     func placeholder(in context: Context) -> SoloToDoEntry {
-        SoloToDoEntry(date: Date(), data: placeholderData, questBatchIndex: 0, contentMode: .quests)
+        SoloToDoEntry(date: Date(), data: placeholderData, questBatchIndex: 0, contentMode: .quests, backgroundStyle: .auto)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SoloToDoEntry) -> Void) {
         let data = loadWidgetData() ?? placeholderData
-        completion(SoloToDoEntry(date: Date(), data: data, questBatchIndex: 0, contentMode: .quests))
+        completion(SoloToDoEntry(date: Date(), data: data, questBatchIndex: 0, contentMode: .quests, backgroundStyle: .auto))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SoloToDoEntry>) -> Void) {
-        completion(makeSoloToDoTimeline(family: context.family, contentMode: .quests))
+        completion(makeSoloToDoTimeline(family: context.family, contentMode: .quests, backgroundStyle: .auto))
     }
 }
 
 @available(iOSApplicationExtension 17.0, *)
 struct SoloToDoIntentProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SoloToDoEntry {
-        SoloToDoEntry(date: Date(), data: placeholderData, questBatchIndex: 0, contentMode: .quests)
+        SoloToDoEntry(date: Date(), data: placeholderData, questBatchIndex: 0, contentMode: .quests, backgroundStyle: .auto)
     }
 
     func snapshot(for configuration: SoloToDoWidgetConfigurationIntent, in context: Context) async -> SoloToDoEntry {
         let data = loadWidgetData() ?? placeholderData
-        return SoloToDoEntry(date: Date(), data: data, questBatchIndex: 0, contentMode: configuration.mode.contentMode)
+        return SoloToDoEntry(
+            date: Date(),
+            data: data,
+            questBatchIndex: 0,
+            contentMode: configuration.mode.contentMode,
+            backgroundStyle: configuration.background.style
+        )
     }
 
     func timeline(for configuration: SoloToDoWidgetConfigurationIntent, in context: Context) async -> Timeline<SoloToDoEntry> {
-        makeSoloToDoTimeline(family: context.family, contentMode: configuration.mode.contentMode)
+        makeSoloToDoTimeline(
+            family: context.family,
+            contentMode: configuration.mode.contentMode,
+            backgroundStyle: configuration.background.style
+        )
     }
 }
 
-func makeSoloToDoTimeline(family _: WidgetFamily, contentMode: WidgetContentMode) -> Timeline<SoloToDoEntry> {
+func makeSoloToDoTimeline(family _: WidgetFamily, contentMode: WidgetContentMode, backgroundStyle: WidgetBackgroundStyle) -> Timeline<SoloToDoEntry> {
     let fullData = loadWidgetData() ?? placeholderData
     // Which quest (if any) the user has expanded inline. Only meaningful in
     // quests mode and only when that quest is still present.
@@ -46,6 +56,7 @@ func makeSoloToDoTimeline(family _: WidgetFamily, contentMode: WidgetContentMode
         data: fullData,
         questBatchIndex: 0,
         contentMode: contentMode,
+        backgroundStyle: backgroundStyle,
         expandedQuestId: expandedId,
         pageIndex: pageIndex
     )
@@ -58,8 +69,19 @@ struct SoloToDoEntry: TimelineEntry {
     var data: WidgetData
     let questBatchIndex: Int
     let contentMode: WidgetContentMode
+    let backgroundStyle: WidgetBackgroundStyle
     var expandedQuestId: String? = nil
     var pageIndex: Int = 0
+}
+
+@ViewBuilder
+func soloToDoWidgetContainerBackground(for entry: SoloToDoEntry) -> some View {
+    switch entry.backgroundStyle {
+    case .transparent:
+        Color.clear
+    case .auto, .dark:
+        Color(hex: entry.data.theme.bg)
+    }
 }
 
 struct SoloToDoMainWidget: Widget {
@@ -73,6 +95,7 @@ struct SoloToDoMainWidget: Widget {
         .configurationDisplayName("SoloToDo")
         .description("Dein Hunter Dashboard - Quests, Streak, Habits auf einen Blick.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .contentMarginsDisabled()
     }
 }
 
@@ -84,12 +107,14 @@ struct SoloToDoInteractiveMainWidget: Widget {
         AppIntentConfiguration(kind: kind, intent: SoloToDoWidgetConfigurationIntent.self, provider: SoloToDoIntentProvider()) { entry in
             SoloToDoWidgetEntryView(entry: entry)
                 .containerBackground(for: .widget) {
-                    Color(hex: entry.data.theme.bg)
+                    soloToDoWidgetContainerBackground(for: entry)
                 }
         }
         .configurationDisplayName("SoloToDo")
         .description("Dein Hunter Dashboard - Quests, Habits und Micro-Habits.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .contentMarginsDisabled()
+        .containerBackgroundRemovable(true)
     }
 }
 
@@ -121,13 +146,13 @@ struct SoloToDoWidgetEntryView: View {
     var body: some View {
         switch family {
         case .systemSmall:
-            SmallWidgetView(data: entry.data, contentMode: entry.contentMode)
+            SmallWidgetView(data: entry.data, contentMode: entry.contentMode, backgroundStyle: entry.backgroundStyle)
         case .systemMedium:
-            MediumWidgetView(data: entry.data, contentMode: entry.contentMode, expandedQuestId: entry.expandedQuestId, pageIndex: entry.pageIndex)
+            MediumWidgetView(data: entry.data, contentMode: entry.contentMode, backgroundStyle: entry.backgroundStyle, expandedQuestId: entry.expandedQuestId, pageIndex: entry.pageIndex)
         case .systemLarge:
-            LargeWidgetView(data: entry.data, contentMode: entry.contentMode, expandedQuestId: entry.expandedQuestId, pageIndex: entry.pageIndex)
+            LargeWidgetView(data: entry.data, contentMode: entry.contentMode, backgroundStyle: entry.backgroundStyle, expandedQuestId: entry.expandedQuestId, pageIndex: entry.pageIndex)
         default:
-            SmallWidgetView(data: entry.data, contentMode: entry.contentMode)
+            SmallWidgetView(data: entry.data, contentMode: entry.contentMode, backgroundStyle: entry.backgroundStyle)
         }
     }
 }

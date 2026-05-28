@@ -69,6 +69,9 @@ const UUIDS = {
   widgetActionsBuild:  'E1A2B3C4D5E6F7A8B9C0D201',
   infoPlistRef:        'E1A2B3C4D5E6F7A8B9C0D1F9',
   entitlementsRef:     'E1A2B3C4D5E6F7A8B9C0D1FA',
+  // Widget asset catalog (full-color icons used by the SwiftUI views)
+  widgetIconsRef:      'E1A2B3C4D5E6F7A8B9C0D202',
+  widgetIconsBuild:    'E1A2B3C4D5E6F7A8B9C0D203',
   // Groups
   widgetGroup:         'E1A2B3C4D5E6F7A8B9C0D1FB',
   // Embed extension
@@ -98,6 +101,7 @@ const fileRefs = SWIFT_FILES.map(f =>
 ).join('\n') + '\n' +
   `\t\t${UUIDS.infoPlistRef} /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };\n` +
   `\t\t${UUIDS.entitlementsRef} /* SoloToDoWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SoloToDoWidget.entitlements; sourceTree = "<group>"; };\n` +
+  `\t\t${UUIDS.widgetIconsRef} /* WidgetIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WidgetIcons.xcassets; sourceTree = "<group>"; };\n` +
   `\t\t${UUIDS.widgetProduct} /* SoloToDoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SoloToDoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };`;
 
 pbxproj = pbxproj.replace(fileRefSection, fileRefs + '\n' + fileRefSection);
@@ -107,7 +111,8 @@ const buildFileSection = '/* End PBXBuildFile section */';
 const buildFiles = SWIFT_FILES.map(f =>
   `\t\t${f.buildId} /* ${f.name} in Sources */ = {isa = PBXBuildFile; fileRef = ${f.refId} /* ${f.name} */; };`
 ).join('\n') + '\n' +
-  `\t\t${UUIDS.embedProductRef} /* SoloToDoWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = ${UUIDS.widgetProduct} /* SoloToDoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };`;
+  `\t\t${UUIDS.embedProductRef} /* SoloToDoWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = ${UUIDS.widgetProduct} /* SoloToDoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };\n` +
+  `\t\t${UUIDS.widgetIconsBuild} /* WidgetIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ${UUIDS.widgetIconsRef} /* WidgetIcons.xcassets */; };`;
 
 pbxproj = pbxproj.replace(buildFileSection, buildFiles + '\n' + buildFileSection);
 
@@ -117,6 +122,7 @@ const widgetGroupEntry = `\t\t${UUIDS.widgetGroup} /* SoloToDoWidget */ = {
 \t\t\tisa = PBXGroup;
 \t\t\tchildren = (
 ${SWIFT_FILES.map(f => `\t\t\t\t${f.refId} /* ${f.name} */,`).join('\n')}
+\t\t\t\t${UUIDS.widgetIconsRef} /* WidgetIcons.xcassets */,
 \t\t\t\t${UUIDS.infoPlistRef} /* Info.plist */,
 \t\t\t\t${UUIDS.entitlementsRef} /* SoloToDoWidget.entitlements */,
 \t\t\t);
@@ -177,6 +183,7 @@ if (pbxproj.includes(resourcesEnd)) {
 \t\t\tisa = PBXResourcesBuildPhase;
 \t\t\tbuildActionMask = 2147483647;
 \t\t\tfiles = (
+\t\t\t\t${UUIDS.widgetIconsBuild} /* WidgetIcons.xcassets in Resources */,
 \t\t\t);
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t};`;

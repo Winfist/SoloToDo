@@ -6,10 +6,18 @@ import WidgetKit
 struct LargeWidgetView: View {
     let data: WidgetData
     var contentMode: WidgetContentMode = .quests
+    var backgroundStyle: WidgetBackgroundStyle = .auto
     var expandedQuestId: String? = nil
     var pageIndex: Int = 0
 
-    private let pageSize = 4
+    // Quests-only mode is dense (no stats footer), so it fits more per page.
+    private var pageSize: Int {
+        switch contentMode {
+        case .quests: return 6
+        case .microHabits: return 5
+        case .habits, .mix: return 4
+        }
+    }
     private var accent: Color { Color(hex: data.theme.primary) }
     private var expandedQuest: WidgetQuest? {
         guard contentMode == .quests, let id = expandedQuestId else { return nil }
@@ -18,7 +26,17 @@ struct LargeWidgetView: View {
     private var allItems: [WidgetTaskItem] { allWidgetTaskItems(for: data, mode: contentMode) }
     private var pagedQuests: [WidgetQuest] { widgetPageSlice(data.quests, pageIndex: pageIndex, pageSize: pageSize) }
     private var pagedItems: [WidgetTaskItem] { widgetPageSlice(allItems, pageIndex: pageIndex, pageSize: pageSize) }
-    private var totalItems: Int { contentMode == .quests ? data.quests.count : allItems.count }
+    private var pagedMicroHabits: [WidgetMicroHabit] { widgetPageSlice(data.microHabits, pageIndex: pageIndex, pageSize: pageSize) }
+    private var pagedMixQuests: [WidgetQuest] { widgetPageSlice(data.quests, pageIndex: pageIndex, pageSize: 3) }
+    private var totalPages: Int { widgetPageCount(totalItems: totalItems, pageSize: pageSize) }
+    private var currentPage: Int { normalizedWidgetPageIndex(pageIndex, totalItems: totalItems, pageSize: pageSize) + 1 }
+    private var totalItems: Int {
+        switch contentMode {
+        case .quests: return data.quests.count
+        case .microHabits: return data.microHabits.count
+        case .habits, .mix: return allItems.count
+        }
+    }
 
     private var sectionTitle: String {
         switch contentMode {
@@ -32,7 +50,7 @@ struct LargeWidgetView: View {
     var body: some View {
         Group {
             if let quest = expandedQuest {
-                WidgetChrome(data: data, accent: accent, size: .large) {
+                WidgetChrome(data: data, accent: accent, size: .large, backgroundStyle: backgroundStyle) {
                     FocusedQuestView(
                         quest: quest,
                         accent: accent,
@@ -41,8 +59,19 @@ struct LargeWidgetView: View {
                         stageLineLimit: 2
                     )
                 }
+            } else if contentMode == .quests {
+                // Maximize quests: no stats footer, more rows per page.
+                WidgetChrome(data: data, accent: accent, size: .large, backgroundStyle: backgroundStyle) {
+                    collapsedContent
+                }
+            } else if contentMode == .mix {
+                WidgetChrome(data: data, accent: accent, size: .large, backgroundStyle: backgroundStyle) {
+                    mixDashboardContent
+                } footer: {
+                    CompactStatsFooter(data: data)
+                }
             } else {
-                WidgetChrome(data: data, accent: accent, size: .large) {
+                WidgetChrome(data: data, accent: accent, size: .large, backgroundStyle: backgroundStyle) {
                     collapsedContent
                 } footer: {
                     CompactStatsFooter(data: data)
@@ -74,12 +103,23 @@ struct LargeWidgetView: View {
                                 expandable: !quest.stages.isEmpty,
                                 deepLink: solotodoDeepLink("solotodo://quest/\(quest.id)")
                             ) {
-                                QuestCollapsedRow(quest: quest, accent: accent, focus: index == 0)
+                                QuestCollapsedRow(quest: quest, accent: accent, focus: index == 0, showDifficultyLabel: true, showOwnMarker: !quest.isSystem)
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 2.5)
                             if index < pagedQuests.count - 1 { Divider1() }
                         }
                     }
+
+                    if totalItems > pageSize {
+                        largeQuestPagerFooter
+                    }
+                }
+            } else if contentMode == .microHabits {
+                if pagedMicroHabits.isEmpty {
+                    emptyState
+                } else {
+                    MicroHabitRingStrip(habits: pagedMicroHabits, accent: accent, size: .large)
+                        .padding(.top, 8)
                 }
             } else {
                 if pagedItems.isEmpty {
@@ -93,6 +133,49 @@ struct LargeWidgetView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private var largeQuestPagerFooter: some View {
+        HStack(spacing: 7) {
+            Spacer()
+            Text("SEITE \(currentPage)/\(totalPages) · TIPPE")
+                .font(SLFont.mono(8.5, .semibold))
+                .foregroundColor(SL.t3)
+            PageButton(mode: .quests, accent: accent)
+        }
+        .padding(.top, 5)
+    }
+
+    private var mixDashboardContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            WidgetListHeader(
+                title: "Next Quests",
+                mode: .mix,
+                totalItems: data.quests.count,
+                pageIndex: pageIndex,
+                pageSize: 3,
+                accent: accent
+            )
+
+            VStack(spacing: 0) {
+                ForEach(Array(pagedMixQuests.enumerated()), id: \.element.id) { index, quest in
+                    QuestTapArea(
+                        questId: quest.id,
+                        expandable: !quest.stages.isEmpty,
+                        deepLink: solotodoDeepLink("solotodo://quest/\(quest.id)")
+                    ) {
+                        QuestCollapsedRow(quest: quest, accent: accent, focus: index == 0, compact: true, showDifficultyLabel: false)
+                    }
+                    .padding(.vertical, 2)
+                    if index < pagedMixQuests.count - 1 { Divider1() }
+                }
+            }
+
+            if !data.microHabits.isEmpty {
+                Divider1()
+                MicroHabitRingStrip(habits: Array(data.microHabits.prefix(5)), accent: accent, size: .compactLarge)
             }
         }
     }

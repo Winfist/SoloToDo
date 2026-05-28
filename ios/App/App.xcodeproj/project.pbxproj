@@ -18,6 +18,7 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A1B2C3D40000000000000001 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* GoogleService-Info.plist */; };
 		E1A2B3C4D5E6F7A8B9C0D1EC /* SoloToDoWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1EB /* SoloToDoWidgetBundle.swift */; };
+		E1A2B3C4D5E6F7A8B9C0D203 /* WidgetIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D202 /* WidgetIcons.xcassets */; };
 		E1A2B3C4D5E6F7A8B9C0D1EE /* WidgetDataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1ED /* WidgetDataModel.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D1F0 /* SharedStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D1EF /* SharedStyles.swift */; };
 		E1A2B3C4D5E6F7A8B9C0D201 /* WidgetActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7A8B9C0D200 /* WidgetActions.swift */; };
@@ -44,6 +45,7 @@
 		A1B2C3D40000000000000002 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		A1B2C3D40000000000000003 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D1EB /* SoloToDoWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoloToDoWidgetBundle.swift; sourceTree = "<group>"; };
+		E1A2B3C4D5E6F7A8B9C0D202 /* WidgetIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WidgetIcons.xcassets; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D1ED /* WidgetDataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataModel.swift; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D1EF /* SharedStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStyles.swift; sourceTree = "<group>"; };
 		E1A2B3C4D5E6F7A8B9C0D200 /* WidgetActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetActions.swift; sourceTree = "<group>"; };
@@ -124,6 +126,7 @@
 				E1A2B3C4D5E6F7A8B9C0D1F3 /* MediumWidgetView.swift */,
 				E1A2B3C4D5E6F7A8B9C0D1F5 /* LargeWidgetView.swift */,
 				E1A2B3C4D5E6F7A8B9C0D1F7 /* LockScreenWidgets.swift */,
+				E1A2B3C4D5E6F7A8B9C0D202 /* WidgetIcons.xcassets */,
 				E1A2B3C4D5E6F7A8B9C0D1F9 /* Info.plist */,
 				E1A2B3C4D5E6F7A8B9C0D1FA /* SoloToDoWidget.entitlements */,
 			);
@@ -261,6 +264,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1A2B3C4D5E6F7A8B9C0D203 /* WidgetIcons.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

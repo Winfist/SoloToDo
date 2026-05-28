@@ -6,6 +6,7 @@ import WidgetKit
 struct SmallWidgetView: View {
     let data: WidgetData
     var contentMode: WidgetContentMode = .quests
+    var backgroundStyle: WidgetBackgroundStyle = .auto
 
     private var accent: Color { Color(hex: data.theme.primary) }
     private var xpPct: Double {
@@ -37,10 +38,18 @@ struct SmallWidgetView: View {
         if let quest { return solotodoDeepLink("solotodo://quest/\(quest.id)") }
         return item?.deepLink
     }
+    private var focusIconName: String? {
+        if let quest { return widgetQuestIconName(quest) }
+        return item?.iconName
+    }
+    private var focusIconTint: Color {
+        if let quest { return widgetDifficultyColor(quest.difficulty) }
+        return accent
+    }
 
     var body: some View {
         ZStack {
-            PremiumBackground(accent: accent)
+            PremiumBackground(accent: accent, style: backgroundStyle)
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
@@ -53,25 +62,37 @@ struct SmallWidgetView: View {
                     Spacer(minLength: 8)
 
                     Link(destination: deepLink ?? URL(string: "solotodo://training")!) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(title)
-                                .font(SLFont.ui(14.2, .semibold))
-                                .foregroundColor(SL.t1)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.78)
-                                .fixedSize(horizontal: false, vertical: true)
+                        HStack(alignment: .top, spacing: 8) {
+                            if let iconName = focusIconName {
+                                WidgetIconTile(
+                                    imageName: iconName,
+                                    tint: focusIconTint,
+                                    size: 34,
+                                    iconSize: 24
+                                )
+                            }
 
-                            if let subtitle, !subtitle.isEmpty {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "arrow.turn.down.right")
-                                        .font(.system(size: 7.5, weight: .semibold))
-                                        .foregroundColor(accent.opacity(0.85))
-                                    Text(subtitle)
-                                        .font(SLFont.ui(10.8, .regular))
-                                        .foregroundColor(SL.t2)
-                                        .lineLimit(1)
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(title)
+                                    .font(SLFont.ui(13.6, .semibold))
+                                    .foregroundColor(SL.t1)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.76)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                if let subtitle, !subtitle.isEmpty {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: "arrow.turn.down.right")
+                                            .font(.system(size: 7.5, weight: .semibold))
+                                            .foregroundColor(accent.opacity(0.85))
+                                        Text(subtitle)
+                                            .font(SLFont.ui(10.4, .regular))
+                                            .foregroundColor(SL.t2)
+                                            .lineLimit(1)
+                                    }
                                 }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }

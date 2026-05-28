@@ -9,6 +9,12 @@ enum WidgetContentMode: String {
     case mix
 }
 
+enum WidgetBackgroundStyle: String {
+    case auto
+    case dark
+    case transparent
+}
+
 @available(iOSApplicationExtension 17.0, *)
 enum WidgetContentModeIntent: String, AppEnum {
     case quests
@@ -35,12 +41,37 @@ enum WidgetContentModeIntent: String, AppEnum {
 }
 
 @available(iOSApplicationExtension 17.0, *)
+enum WidgetBackgroundStyleIntent: String, AppEnum {
+    case auto
+    case dark
+    case transparent
+
+    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Hintergrund")
+    static var caseDisplayRepresentations: [WidgetBackgroundStyleIntent: DisplayRepresentation] = [
+        .auto: "Automatisch",
+        .dark: "Dunkel",
+        .transparent: "Transparent",
+    ]
+
+    var style: WidgetBackgroundStyle {
+        switch self {
+        case .auto: return .auto
+        case .dark: return .dark
+        case .transparent: return .transparent
+        }
+    }
+}
+
+@available(iOSApplicationExtension 17.0, *)
 struct SoloToDoWidgetConfigurationIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "SoloToDo"
     static var description = IntentDescription("Choose what this widget shows.")
 
     @Parameter(title: "Mode", default: WidgetContentModeIntent.quests)
     var mode: WidgetContentModeIntent
+
+    @Parameter(title: "Hintergrund", default: WidgetBackgroundStyleIntent.auto)
+    var background: WidgetBackgroundStyleIntent
 }
 
 /// Expands / collapses a quest's stage list inline in the widget. Tapping a
@@ -72,6 +103,7 @@ struct WidgetTaskItem: Identifiable {
     var subtitle: String?
     var meta: String
     var progressText: String? = nil
+    var iconName: String? = nil
     var deepLink: URL?
 }
 
@@ -96,6 +128,20 @@ func widgetPageSlice<T>(_ values: [T], pageIndex: Int, pageSize: Int) -> [T] {
     let start = min(page * pageSize, values.count)
     let end = min(start + pageSize, values.count)
     return Array(values[start..<end])
+}
+
+func widgetHabitIconName(_ habit: WidgetHabit) -> String {
+    let verification = habit.verification.lowercased()
+    if ["manual", "timer", "counter"].contains(verification) {
+        return "habit_\(verification)"
+    }
+
+    switch habit.category.lowercased() {
+    case "fitness": return "habit_fitness"
+    case "health": return "habit_health"
+    case "mindfulness": return "habit_mindfulness"
+    default: return "habit_manual"
+    }
 }
 
 func interleavedWidgetTaskItems(_ groups: [[WidgetTaskItem]]) -> [WidgetTaskItem] {
@@ -142,6 +188,7 @@ func allWidgetTaskItems(for data: WidgetData, mode: WidgetContentMode) -> [Widge
                 subtitle: subtitle,
                 meta: quest.category.uppercased(),
                 progressText: quest.stages.isEmpty ? nil : "\(quest.doneStageCount)/\(quest.stages.count)",
+                iconName: widgetQuestIconName(quest),
                 deepLink: solotodoDeepLink("solotodo://quest/\(quest.id)")
             )
         }
@@ -154,6 +201,7 @@ func allWidgetTaskItems(for data: WidgetData, mode: WidgetContentMode) -> [Widge
                 title: habit.name,
                 subtitle: habit.verification == "manual" ? "Heute offen" : "\(habit.verification.capitalized) - in App oeffnen",
                 meta: "HABIT",
+                iconName: widgetHabitIconName(habit),
                 deepLink: solotodoDeepLink("solotodo://training?type=habit&id=\(habit.id)")
             )
         }
@@ -167,6 +215,7 @@ func allWidgetTaskItems(for data: WidgetData, mode: WidgetContentMode) -> [Widge
                 subtitle: "Fortschritt",
                 meta: "MICRO",
                 progressText: "\(habit.current)/\(habit.target)",
+                iconName: widgetMicroIconName(habit),
                 deepLink: solotodoDeepLink("solotodo://training?type=microHabit&id=\(habit.id)")
             )
         }
