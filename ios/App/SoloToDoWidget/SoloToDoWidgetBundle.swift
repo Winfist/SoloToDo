@@ -139,6 +139,27 @@ struct SoloToDoLockScreenWidget: Widget {
     }
 }
 
+struct SoloToDoStepsLockScreenWidget: Widget {
+    let kind = "SoloToDoStepsLock"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: SoloToDoProvider()) { entry in
+            if #available(iOS 17.0, *) {
+                SoloToDoStepsLockScreenEntryView(entry: entry)
+                    .containerBackground(for: .widget) {
+                        Color.clear
+                    }
+            } else {
+                SoloToDoStepsLockScreenEntryView(entry: entry)
+                    .background(Color.clear)
+            }
+        }
+        .configurationDisplayName("SoloToDo Schritte")
+        .description("Schritte & Tagesziel auf dem Sperrbildschirm.")
+        .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline])
+    }
+}
+
 struct SoloToDoWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     let entry: SoloToDoEntry
@@ -175,6 +196,24 @@ struct SoloToDoLockScreenEntryView: View {
     }
 }
 
+struct SoloToDoStepsLockScreenEntryView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: SoloToDoEntry
+
+    var body: some View {
+        switch family {
+        case .accessoryCircular:
+            StepsLockScreenCircularView(data: entry.data)
+        case .accessoryRectangular:
+            StepsLockScreenRectangularView(data: entry.data)
+        case .accessoryInline:
+            StepsLockScreenInlineView(data: entry.data)
+        default:
+            StepsLockScreenInlineView(data: entry.data)
+        }
+    }
+}
+
 @main
 struct SoloToDoWidgetLauncher {
     static func main() {
@@ -191,6 +230,7 @@ struct SoloToDoWidgetBundle17: WidgetBundle {
     var body: some Widget {
         SoloToDoInteractiveMainWidget()
         SoloToDoLockScreenWidget()
+        SoloToDoStepsLockScreenWidget()
     }
 }
 
@@ -198,5 +238,6 @@ struct SoloToDoWidgetBundle16: WidgetBundle {
     var body: some Widget {
         SoloToDoMainWidget()
         SoloToDoLockScreenWidget()
+        SoloToDoStepsLockScreenWidget()
     }
 }

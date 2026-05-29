@@ -94,6 +94,19 @@ h6 {
   line-height: var(--leading-tight);
 }
 
+/* ── Ligature guard ──
+   Display/mono fonts (Cinzel, JetBrains Mono, Fira Code) render decorative
+   ligatures that mangle uppercase text — e.g. the "ss" in ABGESCHLOSSEN turns
+   into a long-ſ, reading like "ABGESCHLOPPT" with a vertical glyph. Disable
+   discretionary/historical/contextual ligatures everywhere; keep common ones
+   (fi/fl) which are harmless. */
+*,
+*::before,
+*::after {
+  font-variant-ligatures: no-common-ligatures no-discretionary-ligatures no-historical-ligatures no-contextual;
+  -webkit-font-variant-ligatures: no-common-ligatures no-discretionary-ligatures no-historical-ligatures no-contextual;
+}
+
 /* Tabular numbers for stats/counters */
 .tabular-nums,
 .stat-value,

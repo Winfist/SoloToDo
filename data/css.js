@@ -31,12 +31,15 @@ input,select{font-family:inherit}
 @keyframes sysNotifSweep{0%{transform:translateX(0);opacity:0}12%{opacity:0.85}100%{transform:translateX(330%);opacity:0}}
 @keyframes sysNotifTimer{0%{transform:scaleX(1);opacity:0.95}100%{transform:scaleX(0);opacity:0.25}}
 @keyframes sysNotifPing{0%{transform:scale(0.88);opacity:0.45}70%,100%{transform:scale(1.22);opacity:0}}
+@keyframes sysCliCardIn{0%{transform:translateY(-26px) scale(0.965);opacity:0;filter:blur(8px)}60%{transform:translateY(2px) scale(1.004);opacity:1;filter:blur(0)}100%{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}}
+@keyframes habitWinPop{0%{transform:translateY(14px) scale(0.92);opacity:0}55%{transform:translateY(0) scale(1.02);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
 @media (prefers-reduced-motion: reduce){
   @keyframes sysNotifIn{0%{transform:translate3d(-50%,0,0);opacity:0}100%{transform:translate3d(-50%,0,0);opacity:1}}
   @keyframes sysNotifOut{0%{transform:translate3d(-50%,0,0);opacity:1}100%{transform:translate3d(-50%,0,0);opacity:0}}
   @keyframes sysNotifRail{0%,100%{opacity:0.75}}
   @keyframes sysNotifSweep{0%,100%{opacity:0;transform:none}}
   @keyframes sysNotifPing{0%,100%{opacity:0;transform:none}}
+  @keyframes sysCliCardIn{0%{opacity:0}100%{opacity:1}}
 }
 @keyframes ringExpand{0%{transform:scale(0.5);opacity:0.8}100%{transform:scale(3);opacity:0}}
 @keyframes statBarFill{from{width:0}to{width:var(--fill)}}

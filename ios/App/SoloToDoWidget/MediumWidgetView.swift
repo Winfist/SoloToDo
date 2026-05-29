@@ -37,22 +37,44 @@ struct MediumWidgetView: View {
         }
     }
 
+    // Show the slim steps bar only when Health has data and no quest is expanded
+    // (the focused-quest layout needs the full height for its stages).
+    private var showSteps: Bool { data.health.steps > 0 && expandedQuest == nil }
+
     var body: some View {
-        WidgetChrome(data: data, accent: accent, size: .medium, backgroundStyle: backgroundStyle) {
-            if let quest = expandedQuest {
-                FocusedQuestView(
-                    quest: quest,
-                    accent: accent,
-                    maxStages: 2,
-                    titleLineLimit: 1,
-                    stageLineLimit: 1,
-                    compact: true
-                )
+        Group {
+            if showSteps {
+                WidgetChrome(data: data, accent: accent, size: .medium, backgroundStyle: backgroundStyle) {
+                    chromeContent
+                } footer: {
+                    VStack(spacing: 5) {
+                        Divider1()
+                        StepsBar(steps: data.health.steps, accent: accent)
+                    }
+                    .padding(.top, 4)
+                }
             } else {
-                collapsedContent
+                WidgetChrome(data: data, accent: accent, size: .medium, backgroundStyle: backgroundStyle) {
+                    chromeContent
+                }
             }
         }
         .widgetURL(solotodoDeepLink(expandedQuest.map { "solotodo://quest/\($0.id)" } ?? "solotodo://training"))
+    }
+
+    @ViewBuilder private var chromeContent: some View {
+        if let quest = expandedQuest {
+            FocusedQuestView(
+                quest: quest,
+                accent: accent,
+                maxStages: 2,
+                titleLineLimit: 1,
+                stageLineLimit: 1,
+                compact: true
+            )
+        } else {
+            collapsedContent
+        }
     }
 
     private var collapsedContent: some View {

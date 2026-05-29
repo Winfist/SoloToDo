@@ -250,6 +250,7 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [diagLog, setDiagLog] = useState([]);
 
+  const [hourlySteps, setHourlySteps] = useState([]);
   const [historySteps, setHistorySteps] = useState([]);
   const [historySleep, setHistorySleep] = useState([]);
   const [previousSteps, setPreviousSteps] = useState([]);
@@ -316,25 +317,51 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
 
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
+  // Load today's hourly step breakdown once on mount (native only, silent).
+  useEffect(() => {
+    if (!IS_NATIVE) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const hr = await healthService.getTodayStepsByHour();
+        if (!cancelled && hr.some(b => b.value > 0)) setHourlySteps(hr);
+      } catch (e) { }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // ── Sync ──
   const loadNativeData = async () => {
     setLoading(true); setError(''); setSyncSuccess(false); setDiagLog([]);
     addLog('Sync gestartet...');
     let fetchedSteps = 0, fetchedSleep = { hours: '0.0', minutes: 0 };
+    let gotSteps = false, gotSleep = false;
     try {
       if (IS_NATIVE) {
         try { await healthService.requestPermissions(addLog); } catch (e) { }
         try { fetchedSteps = await healthService.getTodaySteps(addLog); } catch (e) { }
         try { fetchedSleep = await healthService.getLastNightSleep(addLog); } catch (e) { }
-        setSteps(fetchedSteps); setSleep(fetchedSleep);
-        // Patch today's history buckets
+        gotSteps = (Number(fetchedSteps) || 0) > 0;
+        gotSleep = (parseFloat(fetchedSleep?.hours) || 0) > 0;
+        // Only overwrite displayed values when we actually fetched data.
+        // A failed/empty read must not wipe the cached numbers to 0 — that was
+        // the bug where tapping "Daten abrufen" reset everything.
+        if (gotSteps) setSteps(fetchedSteps);
+        if (gotSleep && sleepMode !== 'manual') setSleep(fetchedSleep);
+        // Patch today's history buckets only with real data
         const todayKey = getToday();
-        setHistorySteps(prev => patchHistoryValue(prev, todayKey, fetchedSteps));
-        setHistorySleep(prev => patchHistoryValue(prev, todayKey, sleepMode === 'manual' ? manualSleepHours : parseFloat(fetchedSleep.hours)));
+        if (gotSteps) setHistorySteps(prev => patchHistoryValue(prev, todayKey, fetchedSteps));
+        try {
+          const hr = await healthService.getTodayStepsByHour(addLog);
+          if (hr.some(b => b.value > 0)) setHourlySteps(hr);
+        } catch (e) { }
+        if (gotSleep || sleepMode === 'manual') {
+          setHistorySleep(prev => patchHistoryValue(prev, todayKey, sleepMode === 'manual' ? manualSleepHours : parseFloat(fetchedSleep.hours)));
+        }
       } else { addLog('Web: Keine Sensoren.'); }
       setLastSyncTime(new Date().toLocaleString('de-DE'));
       setSyncSuccess(true);
-      return { steps: fetchedSteps, sleep: fetchedSleep };
+      return { steps: gotSteps ? fetchedSteps : steps, sleep: gotSleep ? fetchedSleep : sleep, gotSteps, gotSleep };
     } catch (err) {
       setError(err.message || String(err)); return null;
     } finally { setLoading(false); }
@@ -342,9 +369,9 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
 
   const syncAndReward = async () => {
     const data = await loadNativeData();
-    if (!data) return;
-    const s = data.steps;
-    let sl = parseFloat(data.sleep.hours);
+    if (!data) return null;
+    const s = Number(data.steps) || 0;
+    let sl = parseFloat(data.sleep?.hours) || 0;
     if (sleepMode === 'manual') sl = manualSleepHours;
     if (sleepMode === 'off') sl = 0;
     if (s > 0 || sl > 0) {
@@ -356,6 +383,7 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
       if (s >= 10000 && !state?.healthRewardsClaimed?.steps_10000) claimHealthReward("steps_10000", 30, 100, "10.000 Schritte", "Schritt-Meilenstein");
       if (sleepMode !== 'off' && sl >= 7 && !state?.healthRewardsClaimed?.sleep_7h) claimHealthReward("sleep_7h", 20, 60, "7+ Stunden Schlaf", "Erholungs-Bonus");
     }
+    return data;
   };
 
   const updatePreferences = (updates) => {
@@ -364,8 +392,16 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
 
   const handleAuthorizeHealth = async () => {
     setIsAuthorizing(true);
-    try { await healthService.authorize(addLog); await syncAndReward(); } catch (e) { }
-    finally { setIsAuthorizing(false); }
+    setError('');
+    try {
+      await healthService.authorize(addLog);
+      const data = await syncAndReward();
+      if (!data || (!data.gotSteps && !data.gotSleep)) {
+        setError('Noch keine Health-Daten empfangen. Öffne iPhone-Einstellungen › Health › Datenzugriff und erlaube Schritte & Schlaf für diese App, dann erneut "Daten abrufen".');
+      }
+    } catch (e) {
+      setError(`Health-Verbindung fehlgeschlagen: ${e?.message || e}`);
+    } finally { setIsAuthorizing(false); }
   };
 
   // ── Computed ──
@@ -436,6 +472,39 @@ export default function NativeStatsDashboard({ state, persist, updateHealthData,
               </div>
             )}
           </div>
+
+          {/* Hourly step breakdown */}
+          {hourlySteps.some(b => b.value > 0) && (() => {
+            const maxHour = Math.max(...hourlySteps.map(b => b.value), 1);
+            const peak = hourlySteps.reduce((best, b) => b.value > best.value ? b : best, hourlySteps[0]);
+            const nowHour = new Date().getHours();
+            return (
+              <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid #38bdf818', borderRadius: 16, padding: '14px 14px 10px', marginBottom: 18 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: '#38bdf8', fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>STUNDENVERLAUF</div>
+                  <div style={{ fontSize: 8, color: '#475569', fontFamily: "'JetBrains Mono',monospace" }}>AKTIVSTE STUNDE: {String(peak.hour).padStart(2, '0')}:00</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 56 }}>
+                  {hourlySteps.map(b => {
+                    const h = Math.max(b.value > 0 ? 3 : 1, Math.round((b.value / maxHour) * 52));
+                    const isPeak = b.hour === peak.hour && b.value > 0;
+                    const isNow = b.hour === nowHour;
+                    return (
+                      <div key={b.hour} title={`${String(b.hour).padStart(2, '0')}:00 — ${b.value.toLocaleString()} Schritte`} style={{
+                        flex: 1, height: h, borderRadius: 2,
+                        background: isPeak ? 'linear-gradient(180deg,#7dd3fc,#38bdf8)' : b.value > 0 ? 'rgba(56,189,248,0.45)' : 'rgba(255,255,255,0.05)',
+                        outline: isNow ? '1px solid rgba(125,211,252,0.5)' : 'none',
+                        transition: 'height 0.4s ease',
+                      }} />
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 7, color: '#374151', fontFamily: "'JetBrains Mono',monospace" }}>
+                  <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Reward Milestones */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>

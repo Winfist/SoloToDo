@@ -1135,12 +1135,20 @@ function RewardRow({ reward, index, visible, counterTriggered, borderColor }) {
       }} />
 
       <div style={{ display:'flex', alignItems:'center', gap:10, position:'relative', zIndex:1 }}>
-        <span style={{
-          fontSize:18, color:accentColor, display:'inline-block',
-          animation:'urmRewardIconPop 550ms ease-out forwards',
-          textShadow:`0 0 12px ${accentColor}88`,
-          filter:`drop-shadow(0 0 5px ${accentColor}55)`,
-        }}>{r.icon}</span>
+        {r.iconSrc ? (
+          <img src={r.iconSrc} alt="" style={{
+            width:22, height:22, objectFit:'contain', display:'inline-block',
+            animation:'urmRewardIconPop 550ms ease-out forwards',
+            filter:`drop-shadow(0 0 6px ${accentColor}88)`,
+          }} />
+        ) : (
+          <span style={{
+            fontSize:18, color:accentColor, display:'inline-block',
+            animation:'urmRewardIconPop 550ms ease-out forwards',
+            textShadow:`0 0 12px ${accentColor}88`,
+            filter:`drop-shadow(0 0 5px ${accentColor}55)`,
+          }}>{r.icon}</span>
+        )}
         <span style={{
           fontSize:10, letterSpacing:3, color:C.silver,
           fontFamily:"'JetBrains Mono',monospace",

@@ -383,11 +383,12 @@ function buildWidgetPayload(state) {
   // Stats
   const stats = state.stats || { str: 0, int: 0, vit: 0, agi: 0, cha: 0 };
 
-  // Health
-  const healthData = state.healthData || {};
+  // Health — read from the canonical fields the app actually persists
+  // (state.healthData was never populated, so the widget always showed 0).
+  const todayHealth = state.healthDailyHistory?.[today] || {};
   const health = {
-    steps: healthData.steps || 0,
-    sleep: healthData.sleepHours || 0,
+    steps: Math.max(0, Math.floor(Number(todayHealth.steps ?? state.dailySteps) || 0)),
+    sleep: Math.max(0, Number(todayHealth.sleepHours ?? state.dailySleepHours) || 0),
   };
 
   // Screen time

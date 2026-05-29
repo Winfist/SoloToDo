@@ -2403,7 +2403,7 @@ function SystemCLI({ message, onClose }) {
       {/* Ambient noise */}
       <div style={{ position: "fixed", inset: 0, opacity: 0.025, backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", pointerEvents: "none" }} />
 
-      <div style={{ width: "100%", maxWidth: 600, background: "linear-gradient(180deg, rgba(10, 8, 22, 0.98), rgba(6, 4, 16, 0.99))", border: `1px solid ${ac}33`, borderTop: `2px solid ${ac}88`, borderRadius: 14, padding: "26px 28px", boxShadow: `0 0 50px ${ac}15, 0 0 120px ${ac}06, 0 24px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)`, position: "relative", overflow: "hidden" }}>
+      <div style={{ width: "100%", maxWidth: 600, background: "linear-gradient(180deg, rgba(10, 8, 22, 0.98), rgba(6, 4, 16, 0.99))", border: `1px solid ${ac}33`, borderTop: `2px solid ${ac}88`, borderRadius: 14, padding: "26px 28px", boxShadow: `0 0 50px ${ac}15, 0 0 120px ${ac}06, 0 24px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)`, position: "relative", overflow: "hidden", animation: "sysCliCardIn 560ms cubic-bezier(0.16,1,0.3,1) both", willChange: "transform, opacity, filter" }}>
         {/* Holographic top shimmer */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${ac}44, ${ac}88, ${ac}44, transparent)`, backgroundSize: "200% 100%", animation: "qcHoloShimmer 2.5s linear infinite" }} />
 

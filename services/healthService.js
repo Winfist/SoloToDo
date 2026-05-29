@@ -274,6 +274,49 @@ export const healthService = {
   },
 
   /**
+   * Get today's steps broken down by hour. Returns a fixed 24-slot array of
+   * { hour, value } (hour 0-23, local time). Empty array on failure.
+   */
+  async getTodayStepsByHour(onLog) {
+    if (!isNative()) return [];
+    try {
+      const Health = getHealthPlugin();
+      if (!Health) return [];
+
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      onLog?.('queryAggregated Stundenverlauf...');
+      const result = await withTimeout(
+        Health.queryAggregated({
+          dataType: 'steps',
+          startDate: startOfDay.toISOString(),
+          endDate: endOfDay.toISOString(),
+          bucket: 'hour',
+          aggregation: 'sum',
+        }),
+        CALL_TIMEOUT,
+        'queryAggregated-steps-hourly'
+      );
+
+      const hourly = Array.from({ length: 24 }, (_, h) => ({ hour: h, value: 0 }));
+      if (result?.samples?.length) {
+        result.samples.forEach(sample => {
+          const h = new Date(sample.startDate).getHours();
+          if (h >= 0 && h < 24) hourly[h].value += Math.floor(sample.value || 0);
+        });
+      }
+      onLog?.(`Stundenverlauf: ${hourly.reduce((a, b) => a + b.value, 0)} Schritte über ${hourly.filter(b => b.value > 0).length} Stunden`);
+      return hourly;
+    } catch (error) {
+      onLog?.(`Stundenverlauf FEHLER: ${error?.message || error}`);
+      return [];
+    }
+  },
+
+  /**
    * Get sleep data for the previous night. Returns { minutes, hours }.
    */
   async getLastNightSleep(onLog) {

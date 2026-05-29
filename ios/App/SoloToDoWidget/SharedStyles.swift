@@ -679,9 +679,14 @@ struct WidgetListHeader: View {
 struct CompactStatsFooter: View {
     let data: WidgetData
 
+    private var hasSteps: Bool { data.health.steps > 0 }
+
     var body: some View {
         VStack(spacing: 9) {
             Divider1()
+            if hasSteps {
+                StepsBar(steps: data.health.steps, accent: Color(hex: data.theme.primary))
+            }
             HStack(spacing: 6) {
                 StatCell(label: "STR", value: data.stats.str)
                 StatCell(label: "INT", value: data.stats.intelligence)
@@ -689,6 +694,62 @@ struct CompactStatsFooter: View {
                 StatCell(label: "AGI", value: data.stats.agi)
                 StatCell(label: "CHA", value: data.stats.cha)
             }
+        }
+    }
+}
+
+/// Daily step goal used across the widget (matches the app's STEP_GOAL).
+let WIDGET_STEP_GOAL = 10000
+
+/// Formats a step count with a thousands separator (12.480).
+func widgetFormatSteps(_ n: Int) -> String {
+    let f = NumberFormatter()
+    f.numberStyle = .decimal
+    f.groupingSeparator = "."
+    return f.string(from: NSNumber(value: max(0, n))) ?? "\(max(0, n))"
+}
+
+/// Slim steps progress row: footprint glyph + count + goal bar.
+/// Goal-reached turns the bar/accent green; otherwise uses the theme accent.
+struct StepsBar: View {
+    let steps: Int
+    var accent: Color
+    var goal: Int = WIDGET_STEP_GOAL
+
+    private var progress: Double {
+        guard goal > 0 else { return 0 }
+        return min(1, max(0, Double(steps) / Double(goal)))
+    }
+    private var reached: Bool { steps >= goal }
+    private var tint: Color { reached ? SL.ok : accent }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Image(systemName: "figure.walk")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(tint)
+                Text(widgetFormatSteps(steps))
+                    .font(SLFont.ui(13, .heavy))
+                    .foregroundColor(SL.t1)
+                Text("SCHRITTE")
+                    .font(SLFont.mono(7.5, .semibold))
+                    .tracking(0.8)
+                    .foregroundColor(SL.t3)
+                Spacer(minLength: 6)
+                Text(reached ? "ZIEL ✓" : "\(Int(progress * 100))%")
+                    .font(SLFont.mono(8.5, .semibold))
+                    .foregroundColor(reached ? SL.ok : SL.t2)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(SL.track)
+                    Capsule()
+                        .fill(tint)
+                        .frame(width: max(3, geo.size.width * progress))
+                }
+            }
+            .frame(height: 4)
         }
     }
 }

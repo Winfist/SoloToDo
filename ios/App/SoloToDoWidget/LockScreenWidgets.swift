@@ -85,3 +85,83 @@ struct LockScreenInlineView: View {
         }
     }
 }
+
+// ─── STEPS LOCK SCREEN ───────────────────────────────────────
+// Dedicated steps accessory. Rendered monochrome/tinted by the
+// system, so progress is conveyed by ring fill / bar length, not
+// color. Goal matches the app (WIDGET_STEP_GOAL = 10000).
+
+private func stepsProgress(_ steps: Int) -> Double {
+    guard WIDGET_STEP_GOAL > 0 else { return 0 }
+    return min(1, max(0, Double(steps) / Double(WIDGET_STEP_GOAL)))
+}
+
+// Compact step label: 8.420 → "8,4k" for the tight circular center.
+private func stepsShort(_ n: Int) -> String {
+    if n >= 1000 {
+        let k = Double(n) / 1000
+        return String(format: "%.1fk", k).replacingOccurrences(of: ".", with: ",")
+    }
+    return "\(max(0, n))"
+}
+
+struct StepsLockScreenCircularView: View {
+    let data: WidgetData
+    private var steps: Int { data.health.steps }
+    var body: some View {
+        ZStack {
+            XPRing(progress: stepsProgress(steps), accent: .white, size: 58, line: 4)
+            VStack(spacing: 0) {
+                Image(systemName: "figure.walk")
+                    .font(.system(size: 11, weight: .bold))
+                Text(stepsShort(steps))
+                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+            }
+            .foregroundColor(.white)
+        }
+    }
+}
+
+struct StepsLockScreenRectangularView: View {
+    let data: WidgetData
+    private var steps: Int { data.health.steps }
+    private var reached: Bool { steps >= WIDGET_STEP_GOAL }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 5) {
+                Image(systemName: "figure.walk")
+                    .font(.system(size: 12, weight: .bold))
+                Text(widgetFormatSteps(steps))
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                Text("Schritte")
+                    .font(.system(size: 11, weight: .regular))
+                    .opacity(0.7)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.22))
+                    Capsule()
+                        .fill(Color.white)
+                        .frame(width: max(3, geo.size.width * stepsProgress(steps)))
+                }
+            }
+            .frame(height: 4)
+            Text(reached ? "Tagesziel erreicht ✓" : "von \(widgetFormatSteps(WIDGET_STEP_GOAL))")
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .opacity(0.62)
+        }
+    }
+}
+
+struct StepsLockScreenInlineView: View {
+    let data: WidgetData
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "figure.walk")
+            Text("\(widgetFormatSteps(data.health.steps)) Schritte")
+        }
+    }
+}

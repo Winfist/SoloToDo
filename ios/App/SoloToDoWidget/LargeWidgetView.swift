@@ -61,8 +61,20 @@ struct LargeWidgetView: View {
                 }
             } else if contentMode == .quests {
                 // Maximize quests: no stats footer, more rows per page.
-                WidgetChrome(data: data, accent: accent, size: .large, backgroundStyle: backgroundStyle) {
-                    collapsedContent
+                // A slim steps bar still surfaces when Health has data.
+                if data.health.steps > 0 {
+                    WidgetChrome(data: data, accent: accent, size: .large, backgroundStyle: backgroundStyle) {
+                        collapsedContent
+                    } footer: {
+                        VStack(spacing: 6) {
+                            Divider1()
+                            StepsBar(steps: data.health.steps, accent: accent)
+                        }
+                    }
+                } else {
+                    WidgetChrome(data: data, accent: accent, size: .large, backgroundStyle: backgroundStyle) {
+                        collapsedContent
+                    }
                 }
             } else if contentMode == .mix {
                 WidgetChrome(data: data, accent: accent, size: .large, backgroundStyle: backgroundStyle) {

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { calculateLevelUp } from "../data/constants";
 import { HABIT_ICONS, QUEST_ICONS, NAV_ICONS, STAT_ICONS, BACKGROUNDS } from "../data/icons.js";
 import { getToday, getLocalDateKey, getYesterdayKey } from "../data/dateUtils.js";
@@ -548,8 +549,62 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
     );
 }
 
+// ── Completion Celebration ───────────────────────────────────
+// Premium, minimal popup shown when a habit is completed — replaces the
+// flat success toast. Auto-dismisses; tap anywhere to close early.
+function HabitCompleteCelebration({ data, onClose }) {
+    const cat = HABIT_CATEGORIES.find(c => c.key === data.habit?.category) || HABIT_CATEGORIES[0];
+    const ac = cat.color;
+    useEffect(() => {
+        const t = setTimeout(onClose, 2200);
+        return () => clearTimeout(t);
+    }, [onClose]);
+    return createPortal(
+        <div onClick={onClose} style={{
+            position: "fixed", inset: 0, zIndex: 4000, display: "flex",
+            alignItems: "center", justifyContent: "center", padding: 24,
+            background: "rgba(2,4,10,0.66)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+            animation: "fadeIn 0.25s ease",
+        }}>
+            <div onClick={e => e.stopPropagation()} style={{
+                width: "min(330px, calc(100vw - 48px))",
+                background: "linear-gradient(180deg, rgba(14,14,26,0.98), rgba(8,8,18,0.99))",
+                border: `1px solid ${ac}33`, borderTop: `2px solid ${ac}`, borderRadius: 18,
+                padding: "26px 24px 22px", textAlign: "center", position: "relative", overflow: "hidden",
+                boxShadow: `0 24px 64px rgba(0,0,0,0.55), 0 0 40px ${ac}14, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                animation: "habitWinPop 520ms cubic-bezier(0.16,1,0.3,1) both",
+            }}>
+                <div style={{
+                    width: 72, height: 72, margin: "0 auto 16px", borderRadius: "50%",
+                    display: "grid", placeItems: "center",
+                    background: `radial-gradient(circle at 50% 40%, ${ac}28, ${ac}0c 60%, transparent)`,
+                    border: `1px solid ${ac}44`,
+                }}>
+                    {cat.iconSrc
+                        ? <img src={cat.iconSrc} alt="" style={{ width: 40, height: 40, objectFit: "contain", filter: `drop-shadow(0 0 8px ${ac}66)` }} />
+                        : <span style={{ fontSize: 34 }}>{cat.icon}</span>}
+                </div>
+                <div style={{ fontSize: 10, letterSpacing: 3, color: ac, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>HABIT ERLEDIGT</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#f1f5f9", fontFamily: "'Cinzel',serif", marginBottom: 16, lineHeight: 1.3 }}>{data.habit?.title}</div>
+                <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+                    <div style={{ flex: 1, padding: "10px 8px", borderRadius: 12, background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.22)" }}>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: "#a78bfa", fontFamily: "'Cinzel',serif" }}>+{data.xpGain}</div>
+                        <div style={{ fontSize: 8, letterSpacing: 2, color: "#7c6fb0", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>XP</div>
+                    </div>
+                    <div style={{ flex: 1, padding: "10px 8px", borderRadius: 12, background: `${ac}10`, border: `1px solid ${ac}33` }}>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: ac, fontFamily: "'Cinzel',serif" }}>{data.streak}</div>
+                        <div style={{ fontSize: 8, letterSpacing: 2, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>STREAK</div>
+                    </div>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
 // ═══ MAIN COMPONENT ══════════════════════════════════════════
 export default function HabitTracker({ state, persist, notify, theme, onModalOpen, onModalClose }) {
+    const [celebration, setCelebration] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
     const [editingHabit, setEditingHabit] = useState(null);
     const [filter, setFilter] = useState("all");
@@ -614,8 +669,8 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
         }) : state.quests;
 
         persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpGain));
-        notify(`Habit erledigt! +${xpGain} XP Streak: ${(updatedHabit?.currentStreak || 1)}`, "success");
-    }, [habits, state, persist, notify, today]);
+        setCelebration({ habit: updatedHabit, xpGain, streak: updatedHabit?.currentStreak || 1 });
+    }, [habits, state, persist, today]);
 
     const updateCounter = useCallback((habitId, value) => {
         const habit = habits.find(h => h.id === habitId);
@@ -649,9 +704,10 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
 
         persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpToGain));
         if (value >= habit.targetCount && !habit.history?.[today]?.completed) {
-            notify(`Ziel erreicht! +12 XP`, "success");
+            const done = updated.find(h => h.id === habitId);
+            setCelebration({ habit: done, xpGain: xpToGain, streak: done?.currentStreak || 1 });
         }
-    }, [habits, state, persist, notify, today]);
+    }, [habits, state, persist, today]);
 
     const HABIT_TO_QUEST_CATEGORY = { fitness: "str", learning: "int", health: "vit", productivity: "agi", social: "cha", mindfulness: "vit" };
 
@@ -692,6 +748,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
 
     return (
         <div style={{ animation: "fadeIn 0.35s ease" }}>
+            {celebration && <HabitCompleteCelebration data={celebration} onClose={() => setCelebration(null)} />}
             {showCreate && <CreateHabitModal onClose={closeCreate} onSave={createHabit} theme={theme} />}
             {editingHabit && <CreateHabitModal onClose={closeEdit} onSave={editHabit} initialHabit={editingHabit} theme={theme} />}
 

@@ -17,6 +17,13 @@
 import { CATEGORIES, DIFFICULTIES, SHADOW_CLASSES } from '../data/gameData.js';
 import { genId } from '../data/helpers.js';
 import { getLocaleObject, getStateLocale, resolveLocale, translate } from '../data/i18n.js';
+import { STAT_ICONS } from '../data/icons.js';
+
+// Maps a quest category/stat to its custom stat icon (str/int/vit/agi/cha).
+function statIconFor(cat, fallbackKey) {
+  const statKey = String(cat?.stat || fallbackKey || '').toLowerCase();
+  return STAT_ICONS[statKey] || null;
+}
 
 export function genFlowId() { return `flow_${genId()}`; }
 
@@ -141,7 +148,7 @@ export function buildQuestRewardFlow(result, oldLevel, rect, localeOrMode = null
   const rewards = [
     { kind: 'xp',   label: trFlow(locale, "labels.xp"), value: `+${xpGain} XP`,   accent: '#a78bfa', icon: '⚔' },
     { kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`,  accent: '#fbbf24', icon: '◈' },
-    { kind: 'stat', label: trFlow(locale, "labels.statIncreased", { stat: (cat?.stat || quest.category).toUpperCase() }), value: `+${statGain}`, accent: cat?.color || '#60a5fa', icon: '↑' },
+    { kind: 'stat', label: trFlow(locale, "labels.statIncreased", { stat: (cat?.stat || quest.category).toUpperCase() }), value: `+${statGain}`, accent: cat?.color || '#60a5fa', icon: '↑', iconSrc: statIconFor(cat, quest.category) },
   ];
   if (soulLinkActive) {
     rewards.push({ kind: 'bonus', label: trFlow(locale, "labels.soulLinkBonus"), value: '+25% XP', accent: '#f472b6', icon: '🔗' });
@@ -288,7 +295,7 @@ export function buildEmergencyRewardFlow(result, localeOrMode = null) {
     rewards: [
       { kind: 'xp',   label: trFlow(locale, "labels.emergencyXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
       { kind: 'gold', label: trFlow(locale, "labels.emergencyGold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
-      { kind: 'stat', label: trFlow(locale, "labels.statIncreased", { stat: (cat?.stat || eq?.category || 'STAT').toUpperCase() }), value: `+${statGain}`, accent: '#ef4444', icon: '↑' },
+      { kind: 'stat', label: trFlow(locale, "labels.statIncreased", { stat: (cat?.stat || eq?.category || 'STAT').toUpperCase() }), value: `+${statGain}`, accent: '#ef4444', icon: '↑', iconSrc: statIconFor(cat, eq?.category) },
       ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
     ],
     highlights,
