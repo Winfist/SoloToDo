@@ -17,7 +17,7 @@
 import { CATEGORIES, DIFFICULTIES, SHADOW_CLASSES } from '../data/gameData.js';
 import { genId } from '../data/helpers.js';
 import { getLocaleObject, getStateLocale, resolveLocale, translate } from '../data/i18n.js';
-import { STAT_ICONS } from '../data/icons.js';
+import { STAT_ICONS, REWARD_ICONS } from '../data/icons.js';
 
 // Maps a quest category/stat to its custom stat icon (str/int/vit/agi/cha).
 function statIconFor(cat, fallbackKey) {
@@ -146,15 +146,15 @@ export function buildQuestRewardFlow(result, oldLevel, rect, localeOrMode = null
 
   // ── Rewards ──
   const rewards = [
-    { kind: 'xp',   label: trFlow(locale, "labels.xp"), value: `+${xpGain} XP`,   accent: '#a78bfa', icon: '⚔' },
-    { kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`,  accent: '#fbbf24', icon: '◈' },
+    { kind: 'xp',   label: trFlow(locale, "labels.xp"), value: `+${xpGain} XP`,   accent: '#a78bfa', icon: '⚔', iconSrc: REWARD_ICONS.xp },
+    { kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`,  accent: '#fbbf24', icon: '◈', iconSrc: REWARD_ICONS.gold },
     { kind: 'stat', label: trFlow(locale, "labels.statIncreased", { stat: (cat?.stat || quest.category).toUpperCase() }), value: `+${statGain}`, accent: cat?.color || '#60a5fa', icon: '↑', iconSrc: statIconFor(cat, quest.category) },
   ];
   if (soulLinkActive) {
     rewards.push({ kind: 'bonus', label: trFlow(locale, "labels.soulLinkBonus"), value: '+25% XP', accent: '#f472b6', icon: '🔗' });
   }
   if (didLevelUp) {
-    rewards.push({ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true });
+    rewards.push({ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true, iconSrc: REWARD_ICONS.level });
   }
 
   // ── Highlights ──
@@ -293,10 +293,10 @@ export function buildEmergencyRewardFlow(result, localeOrMode = null) {
       systemLines: pickFlowMsg(locale, "emergency"),
     },
     rewards: [
-      { kind: 'xp',   label: trFlow(locale, "labels.emergencyXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-      { kind: 'gold', label: trFlow(locale, "labels.emergencyGold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
+      { kind: 'xp',   label: trFlow(locale, "labels.emergencyXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔', iconSrc: REWARD_ICONS.xp },
+      { kind: 'gold', label: trFlow(locale, "labels.emergencyGold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈', iconSrc: REWARD_ICONS.gold },
       { kind: 'stat', label: trFlow(locale, "labels.statIncreased", { stat: (cat?.stat || eq?.category || 'STAT').toUpperCase() }), value: `+${statGain}`, accent: '#ef4444', icon: '↑', iconSrc: statIconFor(cat, eq?.category) },
-      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true, iconSrc: REWARD_ICONS.level }] : []),
     ],
     highlights,
     animationQueue,
@@ -370,9 +370,9 @@ export function buildDungeonRewardFlow(dungeon, result, didLevelUp, earnedPoints
   const sysPoolKey = !won ? "dungeon_defeat" : (variant === 'boss' ? "dungeon_boss" : "dungeon_win");
 
   const rewards = won ? [
-    { kind: 'xp',   label: trFlow(locale, "labels.dungeonXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-    { kind: 'gold', label: trFlow(locale, "labels.dungeonGold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' },
-    ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+    { kind: 'xp',   label: trFlow(locale, "labels.dungeonXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔', iconSrc: REWARD_ICONS.xp },
+    { kind: 'gold', label: trFlow(locale, "labels.dungeonGold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈', iconSrc: REWARD_ICONS.gold },
+    ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true, iconSrc: REWARD_ICONS.level }] : []),
     ...(artifactDrop ? [{ kind: 'artifact', label: trFlow(locale, "labels.artifactDiscovered"), value: artifactDrop.name, accent: artifactDrop.color || '#f59e0b', icon: artifactDrop.icon || '⚡', special: true }] : []),
   ] : [
     { kind: 'defeat', label: trFlow(locale, "labels.defeat"), value: trFlow(locale, "labels.noReward"), accent: '#ef4444', icon: '✗' },
@@ -429,9 +429,9 @@ export function buildStoryChapterRewardFlow(chapter, xpGain, goldGain, didLevelU
       systemLines: pickFlowMsg(locale, "story_chapter"),
     },
     rewards: [
-      { kind: 'xp',   label: trFlow(locale, "labels.chapterXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-      ...(goldGain > 0 ? [{ kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' }] : []),
-      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+      { kind: 'xp',   label: trFlow(locale, "labels.chapterXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔', iconSrc: REWARD_ICONS.xp },
+      ...(goldGain > 0 ? [{ kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈', iconSrc: REWARD_ICONS.gold }] : []),
+      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true, iconSrc: REWARD_ICONS.level }] : []),
     ],
     highlights,
     animationQueue,
@@ -476,9 +476,9 @@ export function buildStoryBossRewardFlow(boss, xpGain, goldGain, didLevelUp, new
       systemLines: pickFlowMsg(locale, "story_boss"),
     },
     rewards: [
-      { kind: 'xp',   label: trFlow(locale, "labels.bossXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔' },
-      ...(goldGain > 0 ? [{ kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈' }] : []),
-      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true }] : []),
+      { kind: 'xp',   label: trFlow(locale, "labels.bossXp"), value: `+${xpGain} XP`,  accent: '#a78bfa', icon: '⚔', iconSrc: REWARD_ICONS.xp },
+      ...(goldGain > 0 ? [{ kind: 'gold', label: trFlow(locale, "labels.gold"), value: `+${goldGain} G`, accent: '#fbbf24', icon: '◈', iconSrc: REWARD_ICONS.gold }] : []),
+      ...(didLevelUp ? [{ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true, iconSrc: REWARD_ICONS.level }] : []),
     ],
     highlights,
     animationQueue,
@@ -523,7 +523,7 @@ export function buildProtocolRewardFlow(run, xpGain, isPerfect, elapsed, localeO
       systemLines: pickFlowMsg(locale, "protocol_perfect"),
     },
     rewards: [
-      { kind: 'xp', label: trFlow(locale, "labels.protocolXpPerfect"), value: `+${xpGain} XP`, accent: '#fbbf24', icon: '★' },
+      { kind: 'xp', label: trFlow(locale, "labels.protocolXpPerfect"), value: `+${xpGain} XP`, accent: '#fbbf24', icon: '★', iconSrc: REWARD_ICONS.xp },
     ],
     highlights: [],
     animationQueue: [

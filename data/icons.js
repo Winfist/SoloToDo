@@ -223,6 +223,14 @@ export const ABILITY_ICONS = {
     consume: "/icons/ability_consume.webp",
 };
 
+// Reward-row icons for the result popup (reuse existing framed-tile art
+// that matches the stat icons' style). No dedicated xp/gold/level art exists.
+export const REWARD_ICONS = {
+    xp:    "/icons/nav_analytics.webp",   // ascending growth chart
+    gold:  "/icons/nav_shop.webp",        // treasure chest + coins
+    level: "/icons/nav_achievements.webp",// golden trophy
+};
+
 // ─── CONVENIENCE: Lookup helpers for components ────────────────
 
 /**
