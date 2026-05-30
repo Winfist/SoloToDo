@@ -10,7 +10,11 @@
     "preview": "vite preview",
     "predeploy": "cmd /c \"if exist dist_firebase rmdir /s /q dist_firebase\" && cmd /c \"mkdir dist_firebase && xcopy /E /I dist\\* dist_firebase\\ && xcopy /E /I admin-dist\\* dist_firebase\\admin\\\"",
     "deploy": "firebase deploy",
-    "postinstall": "node patch-health-plugin.js"
+    "postinstall": "node patch-health-plugin.js",
+    "validate:quests": "node scripts/validate-quests.mjs",
+    "test:emergency": "node scripts/test-emergency.mjs",
+    "test:hidden": "node scripts/test-hidden.mjs",
+    "test:redemption": "node scripts/test-redemption.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
