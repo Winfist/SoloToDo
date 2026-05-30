@@ -768,6 +768,10 @@ const HIDDEN_QUESTS = [
   { id: "hq_body_mind", category: "vit", difficulty: "hard", triggerCondition: { type: "stat_combo", stats: ["str", "vit"], value: 25 }, reward: { xpMult: 4, goldMult: 3 } },
   { id: "hq_social_network", category: "cha", difficulty: "hard", triggerCondition: { type: "stat_value", stat: "cha", value: 20 }, reward: { xpMult: 4, goldMult: 3 } },
   { id: "hq_marathon_runner", category: "str", difficulty: "boss", triggerCondition: { type: "streak", value: 30 }, reward: { xpMult: 5, goldMult: 4 } },
+  { id: "hq_gold_hoarder", category: "int", difficulty: "hard", triggerCondition: { type: "gold_amount", value: 5000 }, reward: { xpMult: 4, goldMult: 4 } },
+  { id: "hq_night_owl", category: "int", difficulty: "normal", triggerCondition: { type: "time_of_day_between", start: 0, end: 4 }, reward: { xpMult: 3, goldMult: 3 } },
+  { id: "hq_weekend_warrior", category: "str", difficulty: "hard", triggerCondition: { type: "weekend_hard_boss" }, reward: { xpMult: 4, goldMult: 3 } },
+  { id: "hq_shadow_collector", category: "cha", difficulty: "hard", triggerCondition: { type: "shadow_count", value: 10 }, reward: { xpMult: 4, goldMult: 3 } },
 ];
 
 export function checkHiddenQuestTriggers(state) {
@@ -789,6 +793,20 @@ export function checkHiddenQuestTriggers(state) {
     if (tc.type === "focus_sessions") triggered = (state.stats?.focusSessions || 0) >= tc.value;
     if (tc.type === "perfect_day") triggered = !!state.lastPerfectDay;
     if (tc.type === "time_of_day") triggered = new Date().getHours() < (tc.beforeHour ?? 6);
+    if (tc.type === "gold_amount") triggered = (state.gold || 0) >= tc.value;
+    if (tc.type === "time_of_day_between") {
+      const h = new Date().getHours();
+      triggered = h >= tc.start && h < tc.end;
+    }
+    if (tc.type === "weekend_hard_boss") {
+      const d = new Date().getDay();
+      if (d === 0 || d === 6) {
+        triggered = (state.completedQuests || []).some(q => q.difficulty === "hard" || q.difficulty === "boss");
+      }
+    }
+    if (tc.type === "shadow_count") {
+      triggered = (state.shadowArmy?.shadows?.length || 0) >= tc.value;
+    }
     if (triggered) {
       // Enrich with locale text at discovery time
       const title = translate(locale, `quests.hidden.${hq.id}.title`) || hq.id;

@@ -458,6 +458,26 @@ export const en = {
         desc: "30 days of unbroken discipline. No gaps, no weakness, no surrender. The ultimate proof.",
         discoveryMsg: "30-day streak reached. The System recognizes a Marathon Warrior.",
       },
+      hq_gold_hoarder: {
+        title: "Gold Hoarder",
+        desc: "Wealth means power and freedom. You have accumulated a small fortune.",
+        discoveryMsg: "Your gold reserves have caught the System's attention.",
+      },
+      hq_night_owl: {
+        title: "Night Owl",
+        desc: "The deepest night is your most productive time. When others sleep, you work.",
+        discoveryMsg: "You have successfully completed the night watch.",
+      },
+      hq_weekend_warrior: {
+        title: "Weekend Warrior",
+        desc: "Weekends are no excuse for weakness. You fight even when others rest.",
+        discoveryMsg: "The weekend belongs to you. An epic battle fought.",
+      },
+      hq_shadow_collector: {
+        title: "Shadow Collector",
+        desc: "Your army of shadows is growing. You now command a considerable force.",
+        discoveryMsg: "Your shadow army has reached critical mass.",
+      },
     },
     redemption: {
       1: {
@@ -562,6 +582,43 @@ export const en = {
           2: { title: "Protocol Stage 2: Complete a 10 km run or 1 hour of intense cardio training" },
           3: { title: "Protocol Stage 3: 5 minutes of cold exposure (ice bath or cold shower)" },
           4: { title: "Protocol Stage 4: Complete 200 burpees and 200 squats within 30 minutes" },
+        },
+      },
+      op_digital_detox: {
+        title: "Operation Digital Detox",
+        desc: "Free your mind from digital noise.",
+        steps: {
+          1: { title: "Detox Stage 1: 4 hours without social media" },
+          2: { title: "Detox Stage 2: A whole day without entertainment media" },
+          3: { title: "Detox Stage 3: 48 hours complete smartphone detox" },
+        },
+      },
+      op_midnight_grind: {
+        title: "Operation Midnight Grind",
+        desc: "Use the silence of the night for extreme progress.",
+        steps: {
+          1: { title: "Grind Stage 1: Work on a project for 1 hour after 10 PM" },
+          2: { title: "Grind Stage 2: Complete 3 quests between 12 AM and 3 AM" },
+          3: { title: "Grind Stage 3: Reach a milestone in complete nocturnal isolation" },
+          4: { title: "Grind Stage 4: Work continuously from 12 AM to 5 AM on your main goal" },
+        },
+      },
+      op_wealth_builder: {
+        title: "Operation Wealth Builder",
+        desc: "Take absolute control over your resources.",
+        steps: {
+          1: { title: "Wealth Stage 1: Track every cent of your expenses for 3 days" },
+          2: { title: "Wealth Stage 2: Eliminate 2 unnecessary expenses or subscriptions" },
+          3: { title: "Wealth Stage 3: Create an investment or savings plan for the next 12 months" },
+        },
+      },
+      op_community_pillar: {
+        title: "Operation Community Pillar",
+        desc: "Become a supporting pillar of your social network.",
+        steps: {
+          1: { title: "Community Stage 1: Proactively and unconditionally offer help to one person" },
+          2: { title: "Community Stage 2: Organize a meetup for at least 3 people" },
+          3: { title: "Community Stage 3: Take a leadership role in a community project" },
         },
       },
     },

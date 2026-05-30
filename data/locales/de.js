@@ -458,6 +458,26 @@ export const de = {
         desc: "30 Tage ununterbrochene Disziplin. Kein Aussetzer, kein Schwaechen, kein Aufgeben. Der ultimative Beweis.",
         discoveryMsg: "30-Tage-Streak erreicht. Das System erkennt einen Marathon-Krieger.",
       },
+      hq_gold_hoarder: {
+        title: "Gold Hoarder",
+        desc: "Reichtum bedeutet Macht und Freiheit. Du hast ein kleines Vermoegen angehaeuft.",
+        discoveryMsg: "Deine Goldreserven haben die Aufmerksamkeit des Systems geweckt.",
+      },
+      hq_night_owl: {
+        title: "Night Owl",
+        desc: "Die tiefste Nacht ist deine produktivste Zeit. Wenn andere schlafen, arbeitest du.",
+        discoveryMsg: "Du hast die Nachtwache erfolgreich beendet.",
+      },
+      hq_weekend_warrior: {
+        title: "Weekend Warrior",
+        desc: "Wochenenden sind keine Ausrede fuer Schwaeche. Du kaempfst, auch wenn andere ruhen.",
+        discoveryMsg: "Das Wochenende gehoert dir. Eine epische Schlacht geschlagen.",
+      },
+      hq_shadow_collector: {
+        title: "Shadow Collector",
+        desc: "Deine Armee der Schatten waechst. Du kommandierst nun eine beachtliche Streitmacht.",
+        discoveryMsg: "Deine Schattenarmee hat eine kritische Masse erreicht.",
+      },
     },
     redemption: {
       1: {
@@ -562,6 +582,43 @@ export const de = {
           2: { title: "Protokoll Stufe 2: Absolviere einen 10 km Lauf oder 1 Stunde intensives Cardio-Training" },
           3: { title: "Protokoll Stufe 3: 5 Minuten Kaelteexposition (Eisbad oder kalte Dusche)" },
           4: { title: "Protokoll Stufe 4: Absolviere 200 Burpees und 200 Squats innerhalb von 30 Minuten" },
+        },
+      },
+      op_digital_detox: {
+        title: "Operation Digital Detox",
+        desc: "Befreie deinen Geist von digitalem Rauschen.",
+        steps: {
+          1: { title: "Detox Stufe 1: 4 Stunden ohne Social Media" },
+          2: { title: "Detox Stufe 2: Einen ganzen Tag ohne Entertainment-Medien" },
+          3: { title: "Detox Stufe 3: 48 Stunden komplettes Smartphone-Detox" },
+        },
+      },
+      op_midnight_grind: {
+        title: "Operation Midnight Grind",
+        desc: "Nutze die Stille der Nacht fuer extremen Fortschritt.",
+        steps: {
+          1: { title: "Grind Stufe 1: Arbeite 1 Stunde nach 22:00 Uhr an einem Projekt" },
+          2: { title: "Grind Stufe 2: Schliesse 3 Quests zwischen 00:00 und 03:00 Uhr ab" },
+          3: { title: "Grind Stufe 3: Erreiche einen Meilenstein in vollkommener naechtlicher Isolation" },
+          4: { title: "Grind Stufe 4: Arbeite durchgehend von 00:00 bis 05:00 Uhr an deinem Hauptziel" },
+        },
+      },
+      op_wealth_builder: {
+        title: "Operation Wealth Builder",
+        desc: "Uebernimm die absolute Kontrolle ueber deine Ressourcen.",
+        steps: {
+          1: { title: "Wealth Stufe 1: Tracke jeden Cent deiner Ausgaben fuer 3 Tage" },
+          2: { title: "Wealth Stufe 2: Eliminiere 2 unnoetige Ausgaben oder Abonnements" },
+          3: { title: "Wealth Stufe 3: Erstelle einen Investitions- oder Sparplan fuer die naechsten 12 Monate" },
+        },
+      },
+      op_community_pillar: {
+        title: "Operation Community Pillar",
+        desc: "Werde zu einem tragenden Pfeiler deines sozialen Netzwerks.",
+        steps: {
+          1: { title: "Community Stufe 1: Biete einer Person proaktiv und bedingungslos Hilfe an" },
+          2: { title: "Community Stufe 2: Organisiere ein Treffen fuer mindestens 3 Personen" },
+          3: { title: "Community Stufe 3: Uebernimm eine Fuehrungsrolle in einem Gemeinschaftsprojekt" },
         },
       },
     },

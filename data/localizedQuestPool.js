@@ -129,6 +129,46 @@ const EN_OVERRIDES = {
     desc: "The ultimate physical trial. Ten disciplines. No dodging. No giving up. The System only accepts perfection.",
     subQuests: ["Complete 10 different exercises of 100 repetitions each (push-ups, squats, sit-ups, lunges, burpees, dips, pull-ups, plank 3 min, box jumps, mountain climbers)", "Finish everything within 90 minutes", "Document times and breaks for future comparison"],
   },
+  qp_str_09: {
+    desc: "Muscle tension without movement generates maximum neural activation. Hold the position.",
+    subQuests: ["3 x 45 seconds wall sit", "3 x 30 seconds glute bridge hold"],
+  },
+  qp_str_09b: {
+    desc: "Restructure stuck tissue. Foam rolling massively increases blood flow and flexibility.",
+    subQuests: ["15 minutes intense foam rolling (focus on legs and back)", "Drink 500ml water afterwards to flush toxins"],
+  },
+  qp_str_10: {
+    desc: "Isolate weak points. Unilateral training forces the weaker side of the body to adapt.",
+    subQuests: ["3 sets of 10 pistol squats (or assisted) per leg", "3 sets of 12 one-arm dumbbell rows per arm"],
+  },
+  qp_str_10b: {
+    desc: "Burn the fuel of the mitochondria. A constant pulse at the anaerobic threshold.",
+    subQuests: ["100 kettlebell swings (or dumbbell swings)", "50 burpees as fast as possible"],
+  },
+  qp_str_10c: {
+    desc: "Eliminate momentum. Slow, controlled execution stimulates muscle fibers deeper.",
+    subQuests: ["3 sets of push-ups (4 sec down, 1 sec hold, explosive up)", "3 sets of squats in the same 4-1-1 tempo"],
+  },
+  qp_str_10d: {
+    desc: "Reaction time is survival. Train multidirectional changes of direction and footwork.",
+    subQuests: ["15 minutes of agility ladder drills or jump rope", "10 x 10 meter shuttle sprints"],
+  },
+  qp_str_11: {
+    desc: "A circuit of absolute physical destruction and rebirth. The System tolerates no pauses.",
+    subQuests: ["Round 1: 50 pull-ups, 50 push-ups, 50 squats", "Round 2: 30 pull-ups, 30 push-ups, 30 squats", "All exercises back-to-back with max 30 seconds rest between rounds"],
+  },
+  qp_str_11b: {
+    desc: "Lift weights that test your structure. Deadlifts demand the entire posterior chain apparatus.",
+    subQuests: ["Perform heavy deadlifts (5 sets, 3-5 reps at 80-85% 1RM)", "Complete 3 minutes of dead hang afterwards (can be split)"],
+  },
+  qp_str_11c: {
+    desc: "Oxygen deficit training. Accustom your muscles to working under suboptimal conditions.",
+    subQuests: ["400m running intervals: 6 reps breathing only through the nose", "Active recovery in between by walking slowly"],
+  },
+  qp_str_12: {
+    desc: "A legendary test of strength. Only the elite can handle this massive volume shock.",
+    subQuests: ["Move a cumulative 10,000 kg of weight in a single training session (any exercises)", "Track and calculate every movement precisely", "Finish the session with a 2km run at a moderate pace"],
+  },
 
   // ─── INT: INTELLIGENCE & LEARNING ───
   qp_int_01: {
@@ -234,6 +274,46 @@ const EN_OVERRIDES = {
   qp_int_08b: {
     desc: "The masterpiece. Bring a major project to completion that manifests months of intellectual work.",
     subQuests: ["Fully complete a long-running intellectual project (book, app, research, course certification)", "Present the result publicly (presentation, post, portfolio)", "Reflect in writing: What did you learn about yourself?"],
+  },
+  qp_int_09: {
+    desc: "Optimize auditory input. Process high-quality podcasts like data packets.",
+    subQuests: ["Listen to a 45-minute episode of an informative podcast", "Note down the three most important takeaways"],
+  },
+  qp_int_09b: {
+    desc: "Activate spatial memory. Visualize and mentally map your environment.",
+    subQuests: ["Draw a detailed floor plan of your house/apartment purely from memory", "Add at least 15 specific objects with correct positioning"],
+  },
+  qp_int_10: {
+    desc: "Increase the clock frequency of your visual input. Train speed-reading techniques.",
+    subQuests: ["Read for 20 minutes with a visual pacer (e.g. your finger) at twice normal speed", "Summarize what you read in a 5-minute written brain dump"],
+  },
+  qp_int_10b: {
+    desc: "Deconstruct an argument into its premises and conclusions. Recognize logical fallacies.",
+    subQuests: ["Analyze an opinion piece or debate video", "Identify at least 2 logical fallacies or weak premises"],
+  },
+  qp_int_10c: {
+    desc: "Build the strongest argument for the opposing side. Expand your empathy-logic.",
+    subQuests: ["Choose a view you fundamentally disagree with", "Write down the most convincing argument FOR this view in 300 words"],
+  },
+  qp_int_10d: {
+    desc: "Connect isolated data points. Mind mapping simultaneously activates both hemispheres of the brain.",
+    subQuests: ["Create a massive, hand-drawn mind map for a project or problem", "Use at least 3 different colors and draw visual symbols"],
+  },
+  qp_int_11: {
+    desc: "Pattern recognition at the highest level. Train handling complex codes and encryptions.",
+    subQuests: ["Solve 3 complex cryptograms or learn the basics of Python/Regex for 60 minutes", "Hide a message in your own code"],
+  },
+  qp_int_11b: {
+    desc: "Decode dense, historical texts. The wisdom of centuries is hidden in the vocabulary.",
+    subQuests: ["Read a primary philosophical text for 30 minutes (e.g., Seneca, Kant, Aurelius)", "Translate a paragraph into modern, own words without loss of meaning"],
+  },
+  qp_int_11c: {
+    desc: "Merge with the machine. Use advanced AI tools to solve a problem in record time.",
+    subQuests: ["Use LLMs or other AI to automate or penetrate a complex workflow", "Optimize the prompt at least 5 times to extract the absolute maximum", "Document the final workflow"],
+  },
+  qp_int_12: {
+    desc: "Master the synthesis. The System tests your ability to retrieve massive knowledge instantly.",
+    subQuests: ["Prepare a 15-minute presentation on a new subject area (without slides)", "Deliver the presentation fluently in front of a camera or real people", "Answer 5 deep questions on the subject afterwards (or simulate them)"],
   },
 
   // ─── VIT: VITALITY & REGENERATION ───
@@ -341,6 +421,56 @@ const EN_OVERRIDES = {
     desc: "The ultimate vitality trial. 7 days of perfect discipline in sleep, nutrition, exercise, and mindfulness.",
     subQuests: ["7 consecutive days: 8h sleep, 0% sugar, 30 min exercise, 10 min meditation — without a single exception", "Document each day with a short vitality score (1-10) and notes", "Compare Day 1 with Day 7: How has your baseline level changed?"],
   },
+  qp_vit_09: {
+    title: "Solar Receptors",
+    desc: "Light controls biology. Activate your receptors.",
+    subQuests: ["Spend 10 minutes in direct sunlight in the morning"]
+  },
+  qp_vit_09b: {
+    title: "Baseline Hydration",
+    desc: "The system needs water after the offline phase.",
+    subQuests: ["Drink 500ml of water right after waking up"]
+  },
+  qp_vit_10: {
+    title: "Nutritional Audit",
+    desc: "Eliminate empty calories from the system.",
+    subQuests: ["Replace one unhealthy meal with a completely wholesome one"]
+  },
+  qp_vit_10b: {
+    title: "Cortisol Reduction",
+    desc: "Stress hormones block regeneration. Initiate countermeasures.",
+    subQuests: ["Complete 20 minutes of active relaxation (yoga, meditation, light stretching)"]
+  },
+  qp_vit_10c: {
+    title: "Sleep Parameters",
+    desc: "Optimize environmental conditions for shutdown.",
+    subQuests: ["Ventilate the bedroom for 15 minutes and eliminate all light sources"]
+  },
+  qp_vit_10d: {
+    title: "Oxygen Saturation",
+    desc: "Increase oxygen intake through conscious diaphragmatic breathing.",
+    subQuests: ["Perform 3 rounds of deep Wim Hof breathing"]
+  },
+  qp_vit_11: {
+    title: "Fasting Protocol",
+    desc: "Give the digestive system time for repair processes.",
+    subQuests: ["Complete an 18-hour intermittent fast"]
+  },
+  qp_vit_11b: {
+    title: "Endurance Test",
+    desc: "Cardiovascular peak performance is non-negotiable.",
+    subQuests: ["Run or cycle for 45 minutes in a moderate to high heart rate zone"]
+  },
+  qp_vit_11c: {
+    title: "Bio Reset",
+    desc: "Remove all stimulants to recalibrate sensors.",
+    subQuests: ["A full day without caffeine and without sugar"]
+  },
+  qp_vit_12: {
+    title: "Perfect Synchronization",
+    desc: "Bring all vitality parameters into absolute harmony.",
+    subQuests: ["7 consecutive days: Perfect macronutrients, 8 hours of sleep, and 3L of water daily"]
+  },
 
   // ─── AGI: AGILITY & PRODUCTIVITY ───
   qp_agi_01: {
@@ -446,6 +576,56 @@ const EN_OVERRIDES = {
   qp_agi_08b: {
     desc: "The ultimate efficiency trial. Bring time allocation to absolute perfection in a single day.",
     subQuests: ["Complete 10 hours of highly focused Deep Work blocks within a 15-hour window", "0 minutes of private distraction during work blocks", "Achieve all project goals set for that day without delay"],
+  },
+  qp_agi_09: {
+    title: "Micro Actions",
+    desc: "Complete small tasks immediately to generate momentum.",
+    subQuests: ["Complete 3 tasks that each take less than 2 minutes"]
+  },
+  qp_agi_09b: {
+    title: "Workspace Focus",
+    desc: "A clear space leads to clear thoughts.",
+    subQuests: ["Remove 5 unnecessary objects from your desk"]
+  },
+  qp_agi_10: {
+    title: "Priority Matrix",
+    desc: "Separate the important from the urgent.",
+    subQuests: ["Organize your to-do list according to the Eisenhower Matrix"]
+  },
+  qp_agi_10b: {
+    title: "Distraction Blocker",
+    desc: "Protect your cognitive capacity.",
+    subQuests: ["Activate 'Do Not Disturb' mode on all devices for 2 hours"]
+  },
+  qp_agi_10c: {
+    title: "Batch Processing",
+    desc: "Group similar tasks to minimize context switching.",
+    subQuests: ["Process all emails and messages together in a single 30-minute block"]
+  },
+  qp_agi_10d: {
+    title: "Weekly Review",
+    desc: "Evaluate progress to make course corrections.",
+    subQuests: ["Conduct a 20-minute review of your weekly goals"]
+  },
+  qp_agi_11: {
+    title: "Deep Focus",
+    desc: "Dive into deep work mode.",
+    subQuests: ["Complete an uninterrupted 90-minute deep work block"]
+  },
+  qp_agi_11b: {
+    title: "System Automation",
+    desc: "Let machines handle routine work.",
+    subQuests: ["Fully automate or delegate a recurring weekly task"]
+  },
+  qp_agi_11c: {
+    title: "Energy Management",
+    desc: "Align your work with your biological clock.",
+    subQuests: ["Complete your most important and hardest task during your biological peak"]
+  },
+  qp_agi_12: {
+    title: "Architect of Time",
+    desc: "Master the dimension of time.",
+    subQuests: ["Plan and execute an entire week in time-boxing format without significant deviations"]
   },
 
   // ─── CHA: CHARISMA & SOCIAL ───
@@ -553,6 +733,56 @@ const EN_OVERRIDES = {
     desc: "Leave a social legacy. The System demands the long-term promotion of the next generation.",
     subQuests: ["Take a person under your wing as a mentor for at least 3 months OR start a long-term charity initiative", "Document progress and development goals monthly", "Create a final reflection on the results achieved"],
   },
+  qp_cha_09: {
+    title: "Presence Check",
+    desc: "Presence is the first step to influence.",
+    subQuests: ["Consciously maintain eye contact and open body language in 3 conversations"]
+  },
+  qp_cha_09b: {
+    title: "Active Listening",
+    desc: "Listening is more powerful than speaking.",
+    subQuests: ["Let the other person speak 80% of the time in a conversation without interrupting"]
+  },
+  qp_cha_10: {
+    title: "Appreciation Signal",
+    desc: "Distribute verbal rewards within your network.",
+    subQuests: ["Give three sincere compliments to different people"]
+  },
+  qp_cha_10b: {
+    title: "Network Maintenance",
+    desc: "Invest in existing alliances.",
+    subQuests: ["Send a message to an important person you haven't spoken to in a while"]
+  },
+  qp_cha_10c: {
+    title: "Conflict Prevention",
+    desc: "De-escalate situations before they arise.",
+    subQuests: ["Address a minor disagreement calmly and objectively right away instead of ignoring it"]
+  },
+  qp_cha_10d: {
+    title: "Voice & Tone",
+    desc: "Tonality controls the emotional response.",
+    subQuests: ["Record a voice message, listen to it, and optimize your emphasis and calmness"]
+  },
+  qp_cha_11: {
+    title: "Public Speaking",
+    desc: "The ability to move groups is essential.",
+    subQuests: ["Confidently deliver a short presentation or tell a story to at least 3 people"]
+  },
+  qp_cha_11b: {
+    title: "Influence",
+    desc: "Convince others of your vision.",
+    subQuests: ["Successfully convince a person of a proposal that benefits both"]
+  },
+  qp_cha_11c: {
+    title: "Empathic Bridge",
+    desc: "Understand the true motives of your counterpart.",
+    subQuests: ["Have a deep conversation about another person's goals and fears without giving advice yourself"]
+  },
+  qp_cha_12: {
+    title: "Aura of the Leader",
+    desc: "Become the gravitational center of your network.",
+    subQuests: ["Organize and lead a successful event or meeting with at least 5 participants"]
+  }
 };
 
 function localizeSubQuests(template, locale, override) {
@@ -641,6 +871,43 @@ export const OPERATION_EN_OVERRIDES = {
       { title: "Protocol Stage 2: Complete a 10 km run or 1 hour of intense cardio training" },
       { title: "Protocol Stage 3: 5 minutes of cold exposure (ice bath or cold shower)" },
       { title: "Protocol Stage 4: Complete 200 burpees and 200 squats within 30 minutes" }
+    ]
+  },
+  op_digital_detox: {
+    title: "Operation Digital Detox",
+    desc: "Free your mind from digital noise.",
+    steps: [
+      { title: "Detox Stage 1: 4 hours without social media" },
+      { title: "Detox Stage 2: A whole day without entertainment media" },
+      { title: "Detox Stage 3: 48 hours complete smartphone detox" }
+    ]
+  },
+  op_midnight_grind: {
+    title: "Operation Midnight Grind",
+    desc: "Use the silence of the night for extreme progress.",
+    steps: [
+      { title: "Grind Stage 1: Work on a project for 1 hour after 10 PM" },
+      { title: "Grind Stage 2: Complete 3 quests between 12 AM and 3 AM" },
+      { title: "Grind Stage 3: Reach a milestone in complete nocturnal isolation" },
+      { title: "Grind Stage 4: Work continuously from 12 AM to 5 AM on your main goal" }
+    ]
+  },
+  op_wealth_builder: {
+    title: "Operation Wealth Builder",
+    desc: "Take absolute control over your resources.",
+    steps: [
+      { title: "Wealth Stage 1: Track every cent of your expenses for 3 days" },
+      { title: "Wealth Stage 2: Eliminate 2 unnecessary expenses or subscriptions" },
+      { title: "Wealth Stage 3: Create an investment or savings plan for the next 12 months" }
+    ]
+  },
+  op_community_pillar: {
+    title: "Operation Community Pillar",
+    desc: "Become a supporting pillar of your social network.",
+    steps: [
+      { title: "Community Stage 1: Proactively and unconditionally offer help to one person" },
+      { title: "Community Stage 2: Organize a meetup for at least 3 people" },
+      { title: "Community Stage 3: Take a leadership role in a community project" }
     ]
   }
 };
