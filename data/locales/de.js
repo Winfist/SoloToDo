@@ -339,6 +339,231 @@ export const de = {
         title: "URGENT: Isolation Warning",
         desc: "Soziales Netzwerk droht zu fragmentieren. Baue sofort eine Kommunikationsbruecke zu einem vernachlaessigten Kontakt auf.",
       },
+      physical2: {
+        title: "URGENT: Structural Collapse",
+        desc: "Kritischer Stabilitaetsverlust im Bewegungsapparat detektiert. Forciere sofortige Strukturreparatur: 50 Jumping Jacks und 1 Minute Plank.",
+      },
+      physical3: {
+        title: "URGENT: Kinetic Stagnation",
+        desc: "Das System registriert 3+ Stunden Inaktivitaet. Sofortige kinetische Reaktivierung: 10-minuetiger Spaziergang oder 3 Treppenlaeufe.",
+      },
+      physical4: {
+        title: "URGENT: Core Integrity Failure",
+        desc: "Rumpfstabilisatoren im kritischen Bereich. Initiiere Notfall-Kernprotokoll: 30 Sit-Ups, 20 Beinheben, 15 Sekunden Seitenplank pro Seite.",
+      },
+      cognitive2: {
+        title: "URGENT: Memory Fragmentation",
+        desc: "Langzeitspeicher-Defragmentierung erforderlich. Schreibe sofort 10 Minuten in ein physisches Journal — keine digitalen Geraete.",
+      },
+      cognitive3: {
+        title: "URGENT: Focus Drain",
+        desc: "Aufmerksamkeitsreserven unter 15%. Initiiere einen 5-minuetigen Atemzyklus: 4 Sekunden ein, 7 halten, 8 aus.",
+      },
+      cognitive4: {
+        title: "URGENT: Neural Pathway Decay",
+        desc: "Synaptische Verbindungen degenerieren. Sofortige Stimulation durch 15 Minuten konzentriertes Lesen eines physischen Buches.",
+      },
+      hydration2: {
+        title: "URGENT: Electrolyte Imbalance",
+        desc: "Mineralstoffhaushalt destabilisiert. Konsumiere eine Banane oder eine Handvoll Nuesse und 500ml Wasser innerhalb der naechsten 15 Minuten.",
+      },
+      hydration3: {
+        title: "URGENT: Nutritional Emergency",
+        desc: "Energiereserven kritisch. Bereite innerhalb von 20 Minuten eine vollwertige Mahlzeit zu — kein Fastfood, kein Zucker-Spike.",
+      },
+      oxygen2: {
+        title: "URGENT: Respiratory Decline",
+        desc: "Sauerstoffsaettigung suboptimal. Fuehre sofort 20 tiefe Atemzuege am offenen Fenster durch und halte jeden Atemzug 5 Sekunden.",
+      },
+      oxygen3: {
+        title: "URGENT: Environmental Contamination",
+        desc: "Umgebungstoxine ueberschreiten Grenzwert. Verlasse die aktuelle Zone fuer einen 15-minuetigen Frischlauf mit bewusster Nasenatmung.",
+      },
+      social2: {
+        title: "URGENT: Empathy Core Offline",
+        desc: "Empathie-Modul reagiert nicht. Sende eine aufrichtige Nachricht an jemanden, den du schaetzt — ohne Anlass, ohne Erwartung.",
+      },
+      social3: {
+        title: "URGENT: Alliance Deterioration",
+        desc: "Buendnisstrukturen drohen zu zerfallen. Fuehre ein echtes Gespraech von mindestens 10 Minuten — kein Chat, echte Stimme.",
+      },
+      social4: {
+        title: "URGENT: Gratitude Buffer Empty",
+        desc: "Dankbarkeits-Speicher vollstaendig entleert. Druecke drei Personen in deinem Leben heute explizit deine Wertschaetzung aus.",
+      },
+    },
+    hidden: {
+      hq_shadow_whisper: {
+        title: "Shadow's Whisper",
+        desc: "Die Stimmen der Gefallenen fluestern Geheimnisse. Nur wer zuhoert, erhaelt ihre Macht.",
+        discoveryMsg: "Die Stimmen der Gefallenen sprechen zu dir.",
+      },
+      hq_thousand_cuts: {
+        title: "A Thousand Cuts",
+        desc: "Kleine Siege summieren sich zu einer unaufhaltsamen Kraft. Zeige Bestaendigkeit.",
+        discoveryMsg: "Deine Ausdauer hat eine verborgene Quest enthuellt.",
+      },
+      hq_iron_resolve: {
+        title: "Iron Resolve",
+        desc: "Dein Wille ist staerker als jede Mauer. Eine ununterbrochene Serie ist der Beweis.",
+        discoveryMsg: "Ein Streak von 5 Tagen hat eine verborgene Quest freigeschaltet!",
+      },
+      hq_mind_palace: {
+        title: "Mind Palace",
+        desc: "Die Stille zwischen den Gedanken ist wahre Kraft. Dein Intellekt oeffnet verborgene Kammern.",
+        discoveryMsg: "Dein Intellekt hat eine verborgene Kammer geoeffnet.",
+      },
+      hq_berserker_trial: {
+        title: "Berserker's Trial",
+        desc: "Kaempfe bis zur letzten Kraft. Nur die Staerksten bestehen die ultimative Pruefung.",
+        discoveryMsg: "Eine legendaere Pruefung erwartet dich.",
+      },
+      hq_dual_mastery: {
+        title: "Dual Mastery",
+        desc: "Koerper und Geist in perfekter Harmonie. Wenn STR und INT gemeinsam aufsteigen, offenbart sich das wahre Potenzial.",
+        discoveryMsg: "Das System erkennt duale Meisterschaft — Koerper UND Geist auf hoechstem Niveau.",
+      },
+      hq_gate_breaker: {
+        title: "Gate Breaker",
+        desc: "Die Gates beugen sich deinem Willen. Jeder geschlossene Dungeon ist ein Schritt naeher an der Legende.",
+        discoveryMsg: "15 Dungeons bezwungen. Das System klassifiziert dich als Gate Breaker.",
+      },
+      hq_flow_state: {
+        title: "Flow State",
+        desc: "Der Zustand absoluter Konzentration — wo Zeit aufhoert zu existieren und nur die Aufgabe zaehlt.",
+        discoveryMsg: "25 Fokus-Sessions absolviert. Du hast den Flow-Zustand gemeistert.",
+      },
+      hq_dawn_hunter: {
+        title: "Dawn Hunter",
+        desc: "Waehrend die Welt schlaeft, jaegst du. Die Morgendaemmerung gehoert den Disziplinierten.",
+        discoveryMsg: "Aktiv vor 6 Uhr morgens. Das System erkennt einen Jaeger der Morgendaemmerung.",
+      },
+      hq_perfect_day: {
+        title: "Perfect Day",
+        desc: "Ein Tag ohne Fehler, ohne Ausrede, ohne Schwaeche. Absolute Perfektion in jeder Quest.",
+        discoveryMsg: "Perfekter Tag registriert. Das System verneigt sich vor wahrer Disziplin.",
+      },
+      hq_body_mind: {
+        title: "Body \u0026 Mind",
+        desc: "Staerke ohne Ausdauer ist Verschwendung. Wenn STR und VIT im Einklang stehen, wird der Koerper zur Festung.",
+        discoveryMsg: "STR und VIT im Gleichgewicht. Der Koerper wird zur unzerstoerbaren Festung.",
+      },
+      hq_social_network: {
+        title: "Social Network",
+        desc: "Wahre Macht liegt nicht nur in der Faust — sie liegt in den Buendnissen, die du schmiedest.",
+        discoveryMsg: "CHA auf Level 20. Dein soziales Netzwerk ist eine Waffe.",
+      },
+      hq_marathon_runner: {
+        title: "Marathon Runner",
+        desc: "30 Tage ununterbrochene Disziplin. Kein Aussetzer, kein Schwaechen, kein Aufgeben. Der ultimative Beweis.",
+        discoveryMsg: "30-Tage-Streak erreicht. Das System erkennt einen Marathon-Krieger.",
+      },
+    },
+    redemption: {
+      1: {
+        title: "Schattenrueckforderung I: Koerperliche Busse",
+        desc: "Ueberwinde die Schwaeche des Koerpers. Der Schatten wartet.",
+      },
+      2: {
+        title: "Schattenrueckforderung II: Mentale Pruefung",
+        desc: "Ueberwinde die Schwaeche des Geistes. Beweise deine Disziplin.",
+      },
+      3: {
+        title: "Schattenrueckforderung III: Die Rueckkehr",
+        desc: "Der letzte Schritt. Beweise, dass du zurueckgekehrt bist.",
+      },
+      4: {
+        title: "Schattenrueckforderung IV: Disziplin des Handelns",
+        desc: "Reaktiviere die Handlungsfaehigkeit. Jede abgeschlossene Aufgabe ist ein Sieg ueber die Traegheit.",
+      },
+      5: {
+        title: "Schattenrueckforderung V: Soziale Wiedergeburt",
+        desc: "Durchbrich die Isolation. Baue eine Bruecke zurueck in die Aussenwelt.",
+      },
+    },
+    seasonal: {
+      frost: {
+        1: { title: "Eisige Morgenroutine: Kaltdusche 3 Tage in Folge" },
+        2: { title: "Frost-Training: 30 Min Outdoor-Sport im Winter" },
+        3: { title: "Winterlicher Fokus: 2 Stunden ununterbrochenes Deep Work" },
+        4: { title: "Geistige Regeneration: 10 Min Meditation im Freien" },
+      },
+      spring: {
+        1: { title: "Fruehlingserwachen: 7-Tage Morgenroutine starten" },
+        2: { title: "Neue Faehigkeit beginnen – 5 Tage taeglich ueben" },
+        3: { title: "Soziale Fruehjahrsoffensive: 3 Treffen vereinbaren" },
+        4: { title: "Fruehlingsputz: Basis komplett aufraeumen und optimieren" },
+      },
+      inferno: {
+        1: { title: "Inferno-Challenge: 100 Liegestuetze in 5 Tagen" },
+        2: { title: "Hitzewelle: Maximale Trainingsintensitaet 3 Tage" },
+        3: { title: "Sommertrockenheit: 3 Liter Wasser taeglich fuer 7 Tage" },
+        4: { title: "Kuehle Planung: 30 Min Projektplanung in kuehlem Raum" },
+      },
+      redgate: {
+        1: { title: "Rotes Tor: 1 Stunde taeglich lernen – 7 Tage" },
+        2: { title: "Herbst-Offensive: Finanzielle Planung abschliessen" },
+        3: { title: "Erntedank: 3 alten Partnern explizite Wertschaetzung senden" },
+        4: { title: "Sturm-Vorbereitung: Koerperliches Widerstandstraining" },
+      },
+    },
+    operations: {
+      op_dawn_disciplin: {
+        title: "Operation Morgenroete",
+        desc: "Etabliere eine unerschuetterliche Morgenroutine fuer maximale Effizienz.",
+        steps: {
+          1: { title: "Morgenroutine Stufe 1: Aufstehen vor 6:30 Uhr und 5 Min Stretching" },
+          2: { title: "Morgenroutine Stufe 2: Kein Smartphone in den ersten 60 Minuten" },
+          3: { title: "Morgenroutine Stufe 3: 45 Min Deep Work vor dem Fruehstueck" },
+        },
+      },
+      op_iron_forge: {
+        title: "Operation Eiserne Schmiede",
+        desc: "Durchbrich physische Plateaus durch progressive Kraftsteigerung.",
+        steps: {
+          1: { title: "Schmiede Stufe 1: Absolviere 30 Min intensives Krafttraining" },
+          2: { title: "Schmiede Stufe 2: Fuehre einen neuen persoenlichen Rekord in einer Grunduebung aus" },
+          3: { title: "Schmiede Stufe 3: Absolviere ein hochintensives Ganzkoerpertraining bis zum Muskelversagen" },
+        },
+      },
+      op_mind_fortress: {
+        title: "Operation Gedankenfestung",
+        desc: "Maximiere deine kognitive Belastbarkeit und Deep-Work-Faehigkeit.",
+        steps: {
+          1: { title: "Festung Stufe 1: 45 Min ununterbrochenes Lernen ohne Ablenkung" },
+          2: { title: "Festung Stufe 2: Erstelle eine visuelle Mindmap oder Zusammenfassung des gelernten Stoffes" },
+          3: { title: "Festung Stufe 3: Schreibe einen Fachaufsatz oder ein Skript ueber die neue Faehigkeit" },
+          4: { title: "Festung Stufe 4: Loese ein komplexes logisches Problem oder absolviere eine schwere Pruefung" },
+        },
+      },
+      op_vitality_reset: {
+        title: "Operation Vitalitaets-Reset",
+        desc: "Entgifte deinen Koerper und lade deine biologischen Reserven vollstaendig auf.",
+        steps: {
+          1: { title: "Reset Stufe 1: Konsumiere heute 3 Liter reines Wasser und 0% Zucker" },
+          2: { title: "Reset Stufe 2: 12 Stunden komplettes Digital-Detox (alle Geraete aus)" },
+          3: { title: "Reset Stufe 3: 16 Stunden Intervallfasten kombiniert mit 1h Spaziergang in der Natur" },
+        },
+      },
+      op_social_expedition: {
+        title: "Operation Soziale Expedition",
+        desc: "Verlasse die soziale Komfortzone und kalibriere dein Charisma.",
+        steps: {
+          1: { title: "Expedition Stufe 1: Sende 3 unerwartete Dankesnachrichten an Freunde oder Familie" },
+          2: { title: "Expedition Stufe 2: Starte ein anspruchsvolles Gespraech mit einer fremden Person" },
+          3: { title: "Expedition Stufe 3: Halte eine Rede vor einer Gruppe oder vermittle in einem bestehenden Konflikt" },
+        },
+      },
+      op_shadow_protocol: {
+        title: "Operation Schatten-Protokoll",
+        desc: "Der ultimative Belastungstest fuer den wahren Schatten-Monarchen.",
+        steps: {
+          1: { title: "Protokoll Stufe 1: 50 Liegestuetze und 15 Min Dehnen direkt nach dem Aufwachen" },
+          2: { title: "Protokoll Stufe 2: Absolviere einen 10 km Lauf oder 1 Stunde intensives Cardio-Training" },
+          3: { title: "Protokoll Stufe 3: 5 Minuten Kaelteexposition (Eisbad oder kalte Dusche)" },
+          4: { title: "Protokoll Stufe 4: Absolviere 200 Burpees und 200 Squats innerhalb von 30 Minuten" },
+        },
+      },
     },
   },
   questActions: {

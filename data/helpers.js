@@ -753,17 +753,28 @@ export function getFloorLogs(floor, dungeon, strategy, playerStats, isStrong, is
 
 // ─── QUEST HELPERS ────────────────────────────────────────────
 const HIDDEN_QUESTS = [
-  { id: "hq_shadow_whisper", title: "Shadow's Whisper", desc: "Du hörst eine Stimme im Dunkeln...", category: "cha", difficulty: "hard", triggerCondition: { type: "shadow_count", value: 3 }, discoveryMsg: "Die Stimmen der Gefallenen sprechen zu dir.", reward: { xpMult: 3, goldMult: 3 } },
-  { id: "hq_thousand_cuts", title: "A Thousand Cuts", desc: "Kleine Siege führen zum großen Sieg.", category: "agi", difficulty: "normal", triggerCondition: { type: "total_quests", value: 10 }, discoveryMsg: "Deine Ausdauer hat eine verborgene Quest enthüllt.", reward: { xpMult: 3, goldMult: 2 } },
-  { id: "hq_iron_resolve", title: "Iron Resolve", desc: "Dein Wille ist stärker als jede Mauer.", category: "vit", difficulty: "hard", triggerCondition: { type: "streak", value: 5 }, discoveryMsg: "Ein Streak von 5 Tagen hat eine verborgene Quest freigeschaltet!", reward: { xpMult: 3, goldMult: 3 } },
-  { id: "hq_mind_palace", title: "Mind Palace", desc: "Die Stille zwischen den Gedanken ist Kraft.", category: "int", difficulty: "hard", triggerCondition: { type: "stat_value", stat: "int", value: 20 }, discoveryMsg: "Dein Intellekt hat eine verborgene Kammer geöffnet.", reward: { xpMult: 4, goldMult: 2 } },
-  { id: "hq_berserker_trial", title: "Berserker's Trial", desc: "Kämpfe bis zur letzten Kraft.", category: "str", difficulty: "boss", triggerCondition: { type: "stat_value", stat: "str", value: 25 }, discoveryMsg: "Eine legendäre Prüfung erwartet dich.", reward: { xpMult: 5, goldMult: 4 } },
+  // ── Original 5 (text from locale: quests.hidden.<id>) ──
+  { id: "hq_shadow_whisper", category: "cha", difficulty: "hard", triggerCondition: { type: "shadow_count", value: 3 }, reward: { xpMult: 3, goldMult: 3 } },
+  { id: "hq_thousand_cuts", category: "agi", difficulty: "normal", triggerCondition: { type: "total_quests", value: 10 }, reward: { xpMult: 3, goldMult: 2 } },
+  { id: "hq_iron_resolve", category: "vit", difficulty: "hard", triggerCondition: { type: "streak", value: 5 }, reward: { xpMult: 3, goldMult: 3 } },
+  { id: "hq_mind_palace", category: "int", difficulty: "hard", triggerCondition: { type: "stat_value", stat: "int", value: 20 }, reward: { xpMult: 4, goldMult: 2 } },
+  { id: "hq_berserker_trial", category: "str", difficulty: "boss", triggerCondition: { type: "stat_value", stat: "str", value: 25 }, reward: { xpMult: 5, goldMult: 4 } },
+  // ── New 8 ──
+  { id: "hq_dual_mastery", category: "str", difficulty: "boss", triggerCondition: { type: "stat_combo", stats: ["str", "int"], value: 30 }, reward: { xpMult: 5, goldMult: 4 } },
+  { id: "hq_gate_breaker", category: "agi", difficulty: "hard", triggerCondition: { type: "dungeon_clears", value: 15 }, reward: { xpMult: 4, goldMult: 3 } },
+  { id: "hq_flow_state", category: "int", difficulty: "hard", triggerCondition: { type: "focus_sessions", value: 25 }, reward: { xpMult: 4, goldMult: 3 } },
+  { id: "hq_dawn_hunter", category: "agi", difficulty: "normal", triggerCondition: { type: "time_of_day", beforeHour: 6 }, reward: { xpMult: 3, goldMult: 2 } },
+  { id: "hq_perfect_day", category: "vit", difficulty: "hard", triggerCondition: { type: "perfect_day" }, reward: { xpMult: 4, goldMult: 3 } },
+  { id: "hq_body_mind", category: "vit", difficulty: "hard", triggerCondition: { type: "stat_combo", stats: ["str", "vit"], value: 25 }, reward: { xpMult: 4, goldMult: 3 } },
+  { id: "hq_social_network", category: "cha", difficulty: "hard", triggerCondition: { type: "stat_value", stat: "cha", value: 20 }, reward: { xpMult: 4, goldMult: 3 } },
+  { id: "hq_marathon_runner", category: "str", difficulty: "boss", triggerCondition: { type: "streak", value: 30 }, reward: { xpMult: 5, goldMult: 4 } },
 ];
 
 export function checkHiddenQuestTriggers(state) {
   const hidden = state.hiddenQuests || { discovered: [], completed: [] };
   const discovered = hidden.discovered || [];
   const completed = hidden.completed || [];
+  const locale = getStateLocale(state);
   const newlyDiscovered = [];
   for (const hq of HIDDEN_QUESTS) {
     if (discovered.includes(hq.id) || completed.includes(hq.id)) continue;
@@ -773,7 +784,18 @@ export function checkHiddenQuestTriggers(state) {
     if (tc.type === "total_quests") triggered = (state.totalQuestsCompleted || 0) >= tc.value;
     if (tc.type === "streak") triggered = (state.streak || 0) >= tc.value;
     if (tc.type === "stat_value") triggered = (state.stats?.[tc.stat] || 0) >= tc.value;
-    if (triggered) newlyDiscovered.push(hq);
+    if (tc.type === "stat_combo") triggered = (tc.stats || []).every(st => (state.stats?.[st] || 0) >= tc.value);
+    if (tc.type === "dungeon_clears") triggered = (state.dungeonHistory || []).filter(d => d.won).length >= tc.value;
+    if (tc.type === "focus_sessions") triggered = (state.stats?.focusSessions || 0) >= tc.value;
+    if (tc.type === "perfect_day") triggered = !!state.lastPerfectDay;
+    if (tc.type === "time_of_day") triggered = new Date().getHours() < (tc.beforeHour ?? 6);
+    if (triggered) {
+      // Enrich with locale text at discovery time
+      const title = translate(locale, `quests.hidden.${hq.id}.title`) || hq.id;
+      const desc = translate(locale, `quests.hidden.${hq.id}.desc`) || "";
+      const discoveryMsg = translate(locale, `quests.hidden.${hq.id}.discoveryMsg`) || "";
+      newlyDiscovered.push({ ...hq, title, desc, discoveryMsg });
+    }
   }
   return newlyDiscovered;
 }
@@ -781,14 +803,38 @@ export function checkHiddenQuestTriggers(state) {
 export function generateEmergencyQuest(playerLevel, stateOrLanguage = null) {
   const locale = typeof stateOrLanguage === "string" ? resolveLocale(stateOrLanguage) : getStateLocale(stateOrLanguage);
   const templates = [
-    { key: "physical", category: "str", difficulty: "hard" },
-    { key: "cognitive", category: "int", difficulty: "hard" },
-    { key: "hydration", category: "vit", difficulty: "hard" },
-    { key: "oxygen", category: "agi", difficulty: "hard" },
-    { key: "social", category: "cha", difficulty: "normal" },
+    // STR (4)
+    { key: "physical",  category: "str", difficulty: "hard" },
+    { key: "physical2", category: "str", difficulty: "hard" },
+    { key: "physical3", category: "str", difficulty: "normal" },
+    { key: "physical4", category: "str", difficulty: "hard" },
+    // INT (4)
+    { key: "cognitive",  category: "int", difficulty: "hard" },
+    { key: "cognitive2", category: "int", difficulty: "hard" },
+    { key: "cognitive3", category: "int", difficulty: "normal" },
+    { key: "cognitive4", category: "int", difficulty: "hard" },
+    // VIT (3)
+    { key: "hydration",  category: "vit", difficulty: "hard" },
+    { key: "hydration2", category: "vit", difficulty: "normal" },
+    { key: "hydration3", category: "vit", difficulty: "hard" },
+    // AGI (3)
+    { key: "oxygen",  category: "agi", difficulty: "hard" },
+    { key: "oxygen2", category: "agi", difficulty: "normal" },
+    { key: "oxygen3", category: "agi", difficulty: "hard" },
+    // CHA (4)
+    { key: "social",  category: "cha", difficulty: "normal" },
+    { key: "social2", category: "cha", difficulty: "normal" },
+    { key: "social3", category: "cha", difficulty: "hard" },
+    { key: "social4", category: "cha", difficulty: "normal" },
   ];
-  const seed = parseInt(getToday().replace(/-/g, "")) % templates.length;
-  const tmpl = templates[seed];
+  // Random selection excluding last used template
+  const lastId = (typeof stateOrLanguage === "object" && stateOrLanguage !== null)
+    ? stateOrLanguage.lastEmergencyTemplateId : null;
+  let pool = templates;
+  if (lastId && templates.length > 1) {
+    pool = templates.filter(t => `emergency_${t.key}` !== lastId);
+  }
+  const tmpl = pool[Math.floor(Math.random() * pool.length)];
   const expires = new Date(); expires.setHours(23, 59, 59, 999);
   return {
     id: `emergency_${getToday()}`,
@@ -818,6 +864,19 @@ export function generateChainedQuest(baseTitle, category, difficulty, step, tota
     createdAt: getToday(),
   };
 }
+
+export function generateOperationStep(op, step, locale) {
+  const totalSteps = op.steps.length;
+  const stepData = op.steps[step - 1];
+  if (!stepData) return null;
+
+  const stepTitle = translate(locale, `quests.operations.${op.id}.steps.${step}.title`) || stepData.title;
+  const quest = generateChainedQuest(stepTitle, op.category, stepData.difficulty, step, totalSteps);
+  quest.operationId = op.id;
+  quest.desc = translate(locale, `quests.operations.${op.id}.desc`) || op.desc || "";
+  return quest;
+}
+
 
 // ─── DUNGEON GATE IMAGE RESOLVER ──────────────────────────────
 import { GATE_ICONS } from "./icons.js";

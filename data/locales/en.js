@@ -339,6 +339,231 @@ export const en = {
         title: "URGENT: Isolation Warning",
         desc: "Your social network is fragmenting. Build a communication bridge to a neglected contact.",
       },
+      physical2: {
+        title: "URGENT: Structural Collapse",
+        desc: "Critical stability loss detected in musculoskeletal framework. Force immediate structural repair: 50 jumping jacks and a 1-minute plank.",
+      },
+      physical3: {
+        title: "URGENT: Kinetic Stagnation",
+        desc: "The System registers 3+ hours of inactivity. Immediate kinetic reactivation required: a 10-minute walk or 3 stair runs.",
+      },
+      physical4: {
+        title: "URGENT: Core Integrity Failure",
+        desc: "Core stabilizers in critical range. Initiate emergency core protocol: 30 sit-ups, 20 leg raises, 15-second side plank per side.",
+      },
+      cognitive2: {
+        title: "URGENT: Memory Fragmentation",
+        desc: "Long-term memory defragmentation required. Write in a physical journal for 10 minutes immediately — no digital devices.",
+      },
+      cognitive3: {
+        title: "URGENT: Focus Drain",
+        desc: "Attention reserves below 15%. Initiate a 5-minute breathing cycle: 4 seconds in, hold 7, exhale 8.",
+      },
+      cognitive4: {
+        title: "URGENT: Neural Pathway Decay",
+        desc: "Synaptic connections degrading. Immediate stimulation required: 15 minutes of focused reading from a physical book.",
+      },
+      hydration2: {
+        title: "URGENT: Electrolyte Imbalance",
+        desc: "Mineral balance destabilized. Consume a banana or a handful of nuts and 500ml of water within the next 15 minutes.",
+      },
+      hydration3: {
+        title: "URGENT: Nutritional Emergency",
+        desc: "Energy reserves critical. Prepare a proper meal within 20 minutes — no fast food, no sugar spikes.",
+      },
+      oxygen2: {
+        title: "URGENT: Respiratory Decline",
+        desc: "Oxygen saturation suboptimal. Perform 20 deep breaths at an open window immediately, holding each breath for 5 seconds.",
+      },
+      oxygen3: {
+        title: "URGENT: Environmental Contamination",
+        desc: "Environmental toxins exceeding threshold. Leave the current zone for a 15-minute run with conscious nasal breathing.",
+      },
+      social2: {
+        title: "URGENT: Empathy Core Offline",
+        desc: "Empathy module unresponsive. Send a genuine message to someone you value — no occasion, no expectation.",
+      },
+      social3: {
+        title: "URGENT: Alliance Deterioration",
+        desc: "Alliance structures are crumbling. Have a real conversation of at least 10 minutes — no chat, real voice.",
+      },
+      social4: {
+        title: "URGENT: Gratitude Buffer Empty",
+        desc: "Gratitude buffer completely depleted. Express explicit appreciation to three people in your life today.",
+      },
+    },
+    hidden: {
+      hq_shadow_whisper: {
+        title: "Shadow's Whisper",
+        desc: "The voices of the fallen whisper secrets. Only those who listen receive their power.",
+        discoveryMsg: "The voices of the fallen speak to you.",
+      },
+      hq_thousand_cuts: {
+        title: "A Thousand Cuts",
+        desc: "Small victories compound into unstoppable force. Demonstrate consistency.",
+        discoveryMsg: "Your endurance has revealed a hidden Quest.",
+      },
+      hq_iron_resolve: {
+        title: "Iron Resolve",
+        desc: "Your will is stronger than any wall. An unbroken streak is the proof.",
+        discoveryMsg: "A 5-day streak has unlocked a hidden Quest!",
+      },
+      hq_mind_palace: {
+        title: "Mind Palace",
+        desc: "The silence between thoughts is true power. Your intellect opens hidden chambers.",
+        discoveryMsg: "Your intellect has opened a hidden chamber.",
+      },
+      hq_berserker_trial: {
+        title: "Berserker's Trial",
+        desc: "Fight to your last breath. Only the strongest survive the ultimate trial.",
+        discoveryMsg: "A legendary trial awaits you.",
+      },
+      hq_dual_mastery: {
+        title: "Dual Mastery",
+        desc: "Body and mind in perfect harmony. When STR and INT ascend together, true potential is revealed.",
+        discoveryMsg: "The System recognizes dual mastery — body AND mind at the highest level.",
+      },
+      hq_gate_breaker: {
+        title: "Gate Breaker",
+        desc: "The Gates bend to your will. Every cleared Dungeon is one step closer to legend.",
+        discoveryMsg: "15 Dungeons conquered. The System classifies you as a Gate Breaker.",
+      },
+      hq_flow_state: {
+        title: "Flow State",
+        desc: "The state of absolute concentration — where time ceases to exist and only the task remains.",
+        discoveryMsg: "25 focus sessions completed. You have mastered the Flow State.",
+      },
+      hq_dawn_hunter: {
+        title: "Dawn Hunter",
+        desc: "While the world sleeps, you hunt. The dawn belongs to the disciplined.",
+        discoveryMsg: "Active before 6 AM. The System recognizes a Dawn Hunter.",
+      },
+      hq_perfect_day: {
+        title: "Perfect Day",
+        desc: "A day without failure, without excuses, without weakness. Absolute perfection in every Quest.",
+        discoveryMsg: "Perfect day registered. The System bows to true discipline.",
+      },
+      hq_body_mind: {
+        title: "Body \u0026 Mind",
+        desc: "Strength without endurance is waste. When STR and VIT align, the body becomes a fortress.",
+        discoveryMsg: "STR and VIT in balance. The body becomes an indestructible fortress.",
+      },
+      hq_social_network: {
+        title: "Social Network",
+        desc: "True power lies not in fists alone — it lies in the alliances you forge.",
+        discoveryMsg: "CHA at Level 20. Your social network is a weapon.",
+      },
+      hq_marathon_runner: {
+        title: "Marathon Runner",
+        desc: "30 days of unbroken discipline. No gaps, no weakness, no surrender. The ultimate proof.",
+        discoveryMsg: "30-day streak reached. The System recognizes a Marathon Warrior.",
+      },
+    },
+    redemption: {
+      1: {
+        title: "Shadow Redemption I: Physical Penance",
+        desc: "Overcome the weakness of the body. The shadow waits.",
+      },
+      2: {
+        title: "Shadow Redemption II: Mental Trial",
+        desc: "Overcome the weakness of the mind. Prove your discipline.",
+      },
+      3: {
+        title: "Shadow Redemption III: The Return",
+        desc: "The final step. Prove that you have returned.",
+      },
+      4: {
+        title: "Shadow Redemption IV: Discipline of Action",
+        desc: "Reactivate your ability to act. Every completed task is a victory over inertia.",
+      },
+      5: {
+        title: "Shadow Redemption V: Social Rebirth",
+        desc: "Break the isolation. Build a bridge back to the outside world.",
+      },
+    },
+    seasonal: {
+      frost: {
+        1: { title: "Icy Morning Routine: Cold shower 3 days in a row" },
+        2: { title: "Frost Training: 30 min outdoor sport in winter" },
+        3: { title: "Winter Focus: 2 hours of uninterrupted deep work" },
+        4: { title: "Mental Recovery: 10 min of outdoor meditation" },
+      },
+      spring: {
+        1: { title: "Spring Awakening: Start a 7-day morning routine" },
+        2: { title: "Start a new skill – practice daily for 5 days" },
+        3: { title: "Spring Social Offensive: Arrange 3 meetings" },
+        4: { title: "Spring Clean: Completely clean and optimize your base" },
+      },
+      inferno: {
+        1: { title: "Inferno Challenge: 100 push-ups in 5 days" },
+        2: { title: "Heatwave: Maximum training intensity for 3 days" },
+        3: { title: "Summer Drought: 3 liters of water daily for 7 days" },
+        4: { title: "Cool Planning: 30 min of project planning in a cool room" },
+      },
+      redgate: {
+        1: { title: "Red Gate: Study 1 hour daily – 7 days" },
+        2: { title: "Autumn Offensive: Finalize financial planning" },
+        3: { title: "Harvest Thanksgiving: Send explicit appreciation to 3 old partners" },
+        4: { title: "Storm Preparation: Physical resistance training" },
+      },
+    },
+    operations: {
+      op_dawn_disciplin: {
+        title: "Operation Dawn Discipline",
+        desc: "Establish an unshakeable morning routine for maximum efficiency.",
+        steps: {
+          1: { title: "Morning Routine Stage 1: Wake up before 6:30 AM and 5 min stretching" },
+          2: { title: "Morning Routine Stage 2: No smartphone in the first 60 minutes" },
+          3: { title: "Morning Routine Stage 3: 45 min deep work before breakfast" },
+        },
+      },
+      op_iron_forge: {
+        title: "Operation Iron Forge",
+        desc: "Break through physical plateaus through progressive strength increases.",
+        steps: {
+          1: { title: "Forge Stage 1: Complete 30 min of intense strength training" },
+          2: { title: "Forge Stage 2: Perform a new personal record in a basic exercise" },
+          3: { title: "Forge Stage 3: Complete a high-intensity full-body workout to muscle failure" },
+        },
+      },
+      op_mind_fortress: {
+        title: "Operation Mind Fortress",
+        desc: "Maximize your cognitive resilience and deep work capacity.",
+        steps: {
+          1: { title: "Fortress Stage 1: 45 min of uninterrupted learning without distraction" },
+          2: { title: "Fortress Stage 2: Create a visual mind map or summary of the learned material" },
+          3: { title: "Fortress Stage 3: Write a technical essay or script about the new skill" },
+          4: { title: "Fortress Stage 4: Solve a complex logical problem or complete a difficult exam" },
+        },
+      },
+      op_vitality_reset: {
+        title: "Operation Vitality Reset",
+        desc: "Detoxify your body and completely recharge your biological reserves.",
+        steps: {
+          1: { title: "Reset Stage 1: Consume 3 liters of pure water and 0% sugar today" },
+          2: { title: "Reset Stage 2: 12 hours of complete digital detox (all devices off)" },
+          3: { title: "Reset Stage 3: 16 hours of intermittent fasting combined with a 1h walk in nature" },
+        },
+      },
+      op_social_expedition: {
+        title: "Operation Social Expedition",
+        desc: "Leave your social comfort zone and calibrate your charisma.",
+        steps: {
+          1: { title: "Expedition Stage 1: Send 3 unexpected thank-you messages to friends or family" },
+          2: { title: "Expedition Stage 2: Start a challenging conversation with a stranger" },
+          3: { title: "Expedition Stage 3: Give a speech in front of a group or mediate in an existing conflict" },
+        },
+      },
+      op_shadow_protocol: {
+        title: "Operation Shadow Protocol",
+        desc: "The ultimate stress test for the true Shadow Monarch.",
+        steps: {
+          1: { title: "Protocol Stage 1: 50 push-ups and 15 min stretching immediately after waking up" },
+          2: { title: "Protocol Stage 2: Complete a 10 km run or 1 hour of intense cardio training" },
+          3: { title: "Protocol Stage 3: 5 minutes of cold exposure (ice bath or cold shower)" },
+          4: { title: "Protocol Stage 4: Complete 200 burpees and 200 squats within 30 minutes" },
+        },
+      },
     },
   },
   questActions: {

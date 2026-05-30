@@ -9,8 +9,9 @@ import {
   genId, getToday, calculateLevelUp, awardJobXp,
   calcFormationBonus, getEquipBonuses, getSkillBonuses, getJobBonuses,
   createShadowFromQuest, calcShadowXpToNext, checkNamedShadowUnlocks,
-  checkHiddenQuestTriggers, generateChainedQuest, getDailyModifier
+  checkHiddenQuestTriggers, generateChainedQuest, generateOperationStep, getDailyModifier
 } from '../data/helpers.js';
+import { OPERATIONS } from '../data/questPool.js';
 import { generateRedemptionQuests } from '../data/protocolHelpers.js';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
 import { isFeatureUnlocked } from '../data/featureUnlocks.js';
@@ -151,7 +152,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   let regressionSystemMessage = null;
   if (newShadowRegression.active && quest.isRedemption) {
     newShadowRegression.questsCompleted = (newShadowRegression.questsCompleted || 0) + 1;
-    if (newShadowRegression.questsCompleted >= 3) {
+    if (newShadowRegression.questsCompleted >= 5) {
       const restoredStreak = Math.floor((newShadowRegression.previousStreak || 0) * 0.5);
       newShadowRegression = {
         ...newShadowRegression,
@@ -175,7 +176,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
       xpGain = Math.round(xpGain * 2);
       notifications.push({ msg: ltState(state, "questActions.regressionCompleted", { streak: restoredStreak }), type: "named" });
     } else {
-      const remaining = 3 - newShadowRegression.questsCompleted;
+      const remaining = 5 - newShadowRegression.questsCompleted;
       notifications.push({ msg: ltState(state, "questActions.regressionProgress", { completed: newShadowRegression.questsCompleted, remaining }), type: "info" });
     }
   }
@@ -183,7 +184,17 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   // Chained quest
   let extraQuests = [];
   if (quest.type === "chained" && quest.chainStep < quest.chainTotal) {
-    const nextStep = generateChainedQuest(quest.title, quest.category, quest.difficulty, quest.chainStep + 1, quest.chainTotal);
+    let nextStep;
+    if (quest.operationId) {
+      const op = OPERATIONS.find(o => o.id === quest.operationId);
+      if (op) {
+        const locale = getStateLocale(state);
+        nextStep = generateOperationStep(op, quest.chainStep + 1, locale);
+      }
+    }
+    if (!nextStep) {
+      nextStep = generateChainedQuest(quest.title, quest.category, quest.difficulty, quest.chainStep + 1, quest.chainTotal);
+    }
     extraQuests = [nextStep];
     notifications.push({ msg: ltState(state, "questActions.chainStep", { step: quest.chainStep, total: quest.chainTotal, multiplier: nextStep.chainMultiplier.toFixed(2) }), type: "info" });
   } else if (quest.type === "chained" && quest.chainStep >= quest.chainTotal) {

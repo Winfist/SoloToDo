@@ -78,6 +78,84 @@ export const QUEST_POOL = [
     tags: ["boss-trial", "extreme", "limit-break"],
     subQuests: [{ id: "1", title: "100 Liegestütze (unterbrochen max. 1 Mal)", completed: false }, { id: "2", title: "100 Sit-Ups", completed: false }, { id: "3", title: "10 Kilometer Lauf", completed: false }]
   },
+  {
+    id: "qp_str_05", title: "Aquatic Conditioning", category: "str", difficulty: "easy", minLevel: 2,
+    desc: "Wasser ist das ursprünglichste Trainingsmedium. Nutze den hydrostatischen Druck zur Ganzkörperaktivierung.",
+    tags: ["swimming", "cardio", "basics"],
+    subQuests: [{ id: "1", title: "20 Minuten kontinuierliches Schwimmen (beliebiger Stil)", completed: false }, { id: "2", title: "3 x Unterwasser-Ausatmung mit kontrollierter Atemtechnik", completed: false }]
+  },
+  {
+    id: "qp_str_05b", title: "Ground Movement", category: "str", difficulty: "easy", minLevel: 3,
+    desc: "Das System erkennt Bewegungsdefizite. Reaktiviere primitive Bewegungsmuster am Boden.",
+    tags: ["mobility", "animal-flow", "flexibility"],
+    subQuests: [{ id: "1", title: "15 Minuten Animal Flow oder Bodenturnen (Bärengang, Krabbengang, Rollen)", completed: false }]
+  },
+  {
+    id: "qp_str_06", title: "Vertical Ascent", category: "str", difficulty: "normal", minLevel: 4,
+    desc: "Überwinde die Vertikale. Klettern aktiviert 80% aller Muskelketten simultan.",
+    tags: ["climbing", "grip", "full-body"],
+    subQuests: [{ id: "1", title: "30 Minuten Bouldern oder Klettern (Halle oder outdoor)", completed: false }, { id: "2", title: "Mindestens 3 verschiedene Routen absolvieren", completed: false }]
+  },
+  {
+    id: "qp_str_06b", title: "Strike Protocol", category: "str", difficulty: "normal", minLevel: 5,
+    desc: "Initiiere Kampf-Simulationen. Schlagtechnik und Reaktionszeit definieren den Hunter.",
+    tags: ["martial-arts", "boxing", "combat"],
+    subQuests: [{ id: "1", title: "30 Minuten Kampfsport-Training (Boxen, Kickboxen, MMA oder Karate)", completed: false }, { id: "2", title: "100 saubere Schlagkombinationen am Sandsack oder Schattenboxen", completed: false }]
+  },
+  {
+    id: "qp_str_06c", title: "Trail Recon", category: "str", difficulty: "normal", minLevel: 7,
+    desc: "Verlasse die kontrollierte Umgebung. Unebenes Terrain rekrutiert stabilisierende Muskelfasern, die das Gym nicht anspricht.",
+    tags: ["trail", "hiking", "outdoor"],
+    subQuests: [{ id: "1", title: "60 Minuten Wandern oder Trail-Running auf unebenem Gelände", completed: false }, { id: "2", title: "Mindestens 300 Höhenmeter überwinden", completed: false }]
+  },
+  {
+    id: "qp_str_06d", title: "Progressive Overload Cycle", category: "str", difficulty: "normal", minLevel: 8,
+    desc: "Stagnation ist Regression. Forciere eine messbare Steigerung gegenüber der letzten Session.",
+    tags: ["progressive-overload", "tracking", "strength"],
+    subQuests: [{ id: "1", title: "Steigere das Gewicht ODER die Wiederholungen in 3 Übungen gegenüber der Vorwoche", completed: false }, { id: "2", title: "Dokumentiere die Steigerung schriftlich in einem Trainingslog", completed: false }]
+  },
+  {
+    id: "qp_str_07", title: "Hybrid Warfare", category: "str", difficulty: "hard", minLevel: 10,
+    desc: "Kombiniere Kraft, Ausdauer und Technik in einer einzigen Session. Das System testet Vielseitigkeit.",
+    tags: ["crossfit", "hybrid", "endurance"],
+    subQuests: [{ id: "1", title: "Absolviere ein 30-minütiges Zirkeltraining: 5 Übungen, 4 Runden, keine Pause zwischen Übungen", completed: false }, { id: "2", title: "Beende die Session mit 1 km Lauf unter 5:30 Minuten", completed: false }]
+  },
+  {
+    id: "qp_str_07b", title: "Weighted Calisthenics", category: "str", difficulty: "hard", minLevel: 13,
+    desc: "Das eigene Körpergewicht genügt nicht mehr. Addiere externen Widerstand zu Eigengewichtsübungen.",
+    tags: ["weighted", "calisthenics", "advanced"],
+    subQuests: [{ id: "1", title: "5 gewichtete Klimmzüge (Dip-Gürtel oder Rucksack)", completed: false }, { id: "2", title: "10 gewichtete Dips", completed: false }, { id: "3", title: "20 gewichtete Kniebeugen", completed: false }]
+  },
+  {
+    id: "qp_str_07c", title: "Endurance Raid", category: "str", difficulty: "hard", minLevel: 16,
+    desc: "Ausdauer jenseits der Komfortzone. Das System prüft die kardiopulmonale Belastbarkeit auf Wettkampfniveau.",
+    tags: ["long-distance", "running", "cycling"],
+    subQuests: [{ id: "1", title: "60 Minuten durchgehende aerobe Belastung ohne Pause (Laufen, Rad oder Rudern)", completed: false }, { id: "2", title: "Die letzten 10 Minuten im Tempo steigern (Negative Split)", completed: false }]
+  },
+  {
+    id: "qp_str_07d", title: "Combat Sparring", category: "str", difficulty: "hard", minLevel: 18,
+    desc: "Theorie ohne Praxis ist wertlos. Tritt gegen einen Gegner an und teste deine Kampffähigkeit unter Druck.",
+    tags: ["sparring", "martial-arts", "pressure"],
+    subQuests: [{ id: "1", title: "Absolviere 3 Runden kontrolliertes Sparring (à 3 Minuten) mit einem Partner", completed: false }, { id: "2", title: "Analysiere danach 2 Schwachstellen in deiner Technik und notiere Korrekturmaßnahmen", completed: false }]
+  },
+  {
+    id: "qp_str_08", title: "Iron Marathon", category: "str", difficulty: "boss", minLevel: 20,
+    desc: "Rang-S-Belastungstest: Absolviere einen Multi-Disziplin-Härtetest, der Kraft, Ausdauer und Willenskraft vereint.",
+    tags: ["boss-trial", "multi-discipline", "extreme"],
+    subQuests: [{ id: "1", title: "1 km Schwimmen ODER 5 km Lauf", completed: false }, { id: "2", title: "200 Liegestütze und 200 Kniebeugen (aufgeteilt in Sets, max. 60 Sek Pause)", completed: false }, { id: "3", title: "5 Minuten Cold Exposure (Eisbad oder kälteste Dusche) als Abschluss", completed: false }]
+  },
+  {
+    id: "qp_str_08a", title: "Mountain Siege", category: "str", difficulty: "boss", minLevel: 25,
+    desc: "Erobere die Vertikale. Nur ein Hunter mit maximaler Kondition überwindet die Schwerkraft über Stunden.",
+    tags: ["endgame", "mountaineering", "summit"],
+    subQuests: [{ id: "1", title: "Absolviere eine Bergwanderung oder Klettertour mit mindestens 1000 Höhenmetern", completed: false }, { id: "2", title: "Trage einen Rucksack mit mindestens 10 kg Zusatzgewicht", completed: false }]
+  },
+  {
+    id: "qp_str_08b", title: "Warrior's Decathlon", category: "str", difficulty: "boss", minLevel: 30,
+    desc: "Die ultimative physische Prüfung. Zehn Disziplinen. Kein Ausweichen. Kein Aufgeben. Das System akzeptiert nur Perfektion.",
+    tags: ["endgame", "decathlon", "ultimate"],
+    subQuests: [{ id: "1", title: "Absolviere 10 verschiedene Übungen à 100 Wiederholungen (Push-ups, Squats, Sit-ups, Lunges, Burpees, Dips, Pull-ups, Plank 3 Min, Box Jumps, Mountain Climbers)", completed: false }, { id: "2", title: "Beende alles innerhalb von 90 Minuten", completed: false }, { id: "3", title: "Dokumentiere Zeiten und Pausen für zukünftige Vergleichbarkeit", completed: false }]
+  },
 
   // ─── INT: INTELLIGENCE & LERNEN ───
   { 
@@ -157,6 +235,84 @@ export const QUEST_POOL = [
     desc: "Vom Schüler zum Meister. Finalisiere ein kognitives Großprojekt und teile die Daten.",
     tags: ["boss-trial", "mastery", "learning"],
     subQuests: [{ id: "1", title: "Einen langen Fachkurs oder ein anspruchsvolles Buch komplett abschließen", completed: false }, { id: "2", title: "Ein Projekt erstellen, das die neuen Konzepte anwendet", completed: false }, { id: "3", title: "Das Konzept einer anderen Person detailliert beibringen", completed: false }]
+  },
+  {
+    id: "qp_int_05", title: "Melodic Encoding", category: "int", difficulty: "easy", minLevel: 2,
+    desc: "Musik aktiviert neuronale Netzwerke, die kein Lehrbuch erreicht. Lerne ein Instrument oder trainiere dein Gehör.",
+    tags: ["music", "creativity", "learning"],
+    subQuests: [{ id: "1", title: "20 Minuten ein Instrument üben oder ein Musik-Tutorial durcharbeiten", completed: false }, { id: "2", title: "Spiele eine einfache Melodie fehlerfrei von Anfang bis Ende", completed: false }]
+  },
+  {
+    id: "qp_int_05b", title: "Sketch Protocol", category: "int", difficulty: "easy", minLevel: 3,
+    desc: "Zeichnen ist visuelles Denken. Trainiere die Hand-Auge-Koordination und die räumliche Vorstellungskraft.",
+    tags: ["drawing", "creativity", "visual"],
+    subQuests: [{ id: "1", title: "Zeichne 15 Minuten lang nach Referenz (Gegenstand, Gesicht oder Landschaft)", completed: false }]
+  },
+  {
+    id: "qp_int_06", title: "Budget Architect", category: "int", difficulty: "normal", minLevel: 4,
+    desc: "Erstelle eine vollständige Finanz-Übersicht. Ohne Kontrolle über Ressourcen ist jede Strategie wertlos.",
+    tags: ["finance", "budget", "planning"],
+    subQuests: [{ id: "1", title: "Erstelle ein detailliertes Monatsbudget mit allen Einnahmen und Fixkosten", completed: false }, { id: "2", title: "Identifiziere 3 Posten mit Einsparpotenzial", completed: false }]
+  },
+  {
+    id: "qp_int_06b", title: "Narrative Construction", category: "int", difficulty: "normal", minLevel: 6,
+    desc: "Schreiben ist die höchste Form der Gedankenordnung. Konstruiere eine kohärente Erzählung.",
+    tags: ["writing", "storytelling", "expression"],
+    subQuests: [{ id: "1", title: "Schreibe eine Kurzgeschichte, einen Essay oder einen Blog-Post (min. 500 Wörter)", completed: false }, { id: "2", title: "Überarbeite den Text einmal vollständig auf Klarheit und Struktur", completed: false }]
+  },
+  {
+    id: "qp_int_06c", title: "Investment Simulation", category: "int", difficulty: "normal", minLevel: 7,
+    desc: "Analysiere Märkte wie ein Stratege. Verstehe Risiko, Rendite und Diversifikation auf fundamentaler Ebene.",
+    tags: ["investment", "finance", "analysis"],
+    subQuests: [{ id: "1", title: "Recherchiere 3 verschiedene Anlageformen (ETF, Aktien, Anleihen, Krypto, Immobilien)", completed: false }, { id: "2", title: "Erstelle ein hypothetisches Portfolio mit Begründung der Allokation", completed: false }]
+  },
+  {
+    id: "qp_int_06d", title: "Side Project Ignition", category: "int", difficulty: "normal", minLevel: 9,
+    desc: "Theorie ohne Anwendung verfällt. Starte ein konkretes Nebenprojekt, das dein Wissen materialisiert.",
+    tags: ["project", "building", "application"],
+    subQuests: [{ id: "1", title: "Definiere ein Side-Project mit klarem Scope (max. 1 Satz Problembeschreibung)", completed: false }, { id: "2", title: "Erstelle den ersten funktionalen Prototyp oder das erste Kapitel/den ersten Entwurf", completed: false }]
+  },
+  {
+    id: "qp_int_07", title: "Systems Cartography", category: "int", difficulty: "hard", minLevel: 11,
+    desc: "Erkenne die unsichtbaren Strukturen. Zerlege ein komplexes System in seine Feedback-Schleifen und Hebelpunkte.",
+    tags: ["systems-thinking", "analysis", "mapping"],
+    subQuests: [{ id: "1", title: "Wähle ein System (Unternehmen, Ökosystem, Software-Architektur) und erstelle eine visuelle Systemkarte", completed: false }, { id: "2", title: "Identifiziere 2 Feedback-Schleifen und 1 Hebelpunkt für maximale Wirkung", completed: false }]
+  },
+  {
+    id: "qp_int_07b", title: "Deep Research Dive", category: "int", difficulty: "hard", minLevel: 14,
+    desc: "Oberflächliches Wissen ist eine Illusion von Kompetenz. Tauche in die Primärquellen ein.",
+    tags: ["research", "academic", "depth"],
+    subQuests: [{ id: "1", title: "Lies 2 wissenschaftliche Paper oder Fachbuch-Kapitel zu einem Thema deiner Wahl", completed: false }, { id: "2", title: "Erstelle eine Zusammenfassung mit eigener kritischer Bewertung", completed: false }]
+  },
+  {
+    id: "qp_int_07c", title: "Creative Fusion", category: "int", difficulty: "hard", minLevel: 16,
+    desc: "Innovation entsteht an der Schnittstelle von Disziplinen. Kombiniere zwei unverbundene Wissensgebiete.",
+    tags: ["interdisciplinary", "innovation", "creativity"],
+    subQuests: [{ id: "1", title: "Wähle 2 unverbundene Fachgebiete und recherchiere jeweils 30 Minuten", completed: false }, { id: "2", title: "Schreibe einen 1-seitigen Aufsatz, der eine neuartige Verbindung zwischen beiden herstellt", completed: false }]
+  },
+  {
+    id: "qp_int_07d", title: "Architectural Blueprint", category: "int", difficulty: "hard", minLevel: 18,
+    desc: "Entwirf ein vollständiges System von Grund auf. Architektur-Design ist der ultimative Test für strukturiertes Denken.",
+    tags: ["architecture", "design", "systems"],
+    subQuests: [{ id: "1", title: "Entwirf die Architektur eines Systems (App, Geschäftsmodell, Lernplan, Organisation)", completed: false }, { id: "2", title: "Dokumentiere Komponenten, Schnittstellen und Abhängigkeiten in einem Diagramm", completed: false }, { id: "3", title: "Lasse das Design von einer anderen Person reviewen und integriere Feedback", completed: false }]
+  },
+  {
+    id: "qp_int_08", title: "Polymath Trial", category: "int", difficulty: "boss", minLevel: 20,
+    desc: "Der Hunter-Intellekt kennt keine Fachgrenzen. Beweise Kompetenz in drei verschiedenen Domänen an einem Tag.",
+    tags: ["boss-trial", "polymath", "mastery"],
+    subQuests: [{ id: "1", title: "Absolviere je 60 Minuten fokussierte Arbeit in 3 verschiedenen Wissensgebieten", completed: false }, { id: "2", title: "Erstelle für jedes Gebiet ein Output-Artefakt (Text, Code, Skizze, Analyse)", completed: false }]
+  },
+  {
+    id: "qp_int_08a", title: "Knowledge Transmission", category: "int", difficulty: "boss", minLevel: 25,
+    desc: "Wahre Meisterschaft zeigt sich in der Fähigkeit, Wissen weiterzugeben. Erstelle ein Lehrwerk.",
+    tags: ["endgame", "teaching", "mastery"],
+    subQuests: [{ id: "1", title: "Erstelle einen vollständigen Leitfaden, Tutorial oder Kurs zu deinem Spezialgebiet (min. 2000 Wörter oder 30 Min Video)", completed: false }, { id: "2", title: "Veröffentliche das Material und sammle Feedback von mindestens 3 Personen", completed: false }]
+  },
+  {
+    id: "qp_int_08b", title: "Opus Magnum", category: "int", difficulty: "boss", minLevel: 30,
+    desc: "Das Meisterwerk. Bringe ein Großprojekt zur Vollendung, das monatelange intellektuelle Arbeit manifestiert.",
+    tags: ["endgame", "magnum-opus", "ultimate"],
+    subQuests: [{ id: "1", title: "Schließe ein lang laufendes intellektuelles Projekt vollständig ab (Buch, App, Forschung, Kurs-Zertifizierung)", completed: false }, { id: "2", title: "Präsentiere das Ergebnis öffentlich (Vortrag, Post, Portfolio)", completed: false }, { id: "3", title: "Reflektiere schriftlich: Was hast du über dich selbst gelernt?", completed: false }]
   },
 
   // ─── VIT: VITALITY & REGENERATION ───
@@ -238,6 +394,84 @@ export const QUEST_POOL = [
     tags: ["boss-trial", "fasting", "mindfulness"],
     subQuests: [{ id: "1", title: "16+ Stunden striktes Intervallfasten (nur Wasser/Tee/Kaffee)", completed: false }, { id: "2", title: "30 Minuten vollkommene Isolation und Stille", completed: false }, { id: "3", title: "Mindestens 1 Stunde Natur-Exposition ohne elektronische Geräte", completed: false }]
   },
+  {
+    id: "qp_vit_05", title: "Gratitude Log", category: "vit", difficulty: "easy", minLevel: 2,
+    desc: "Das System registriert chronischen Negativitäts-Bias. Rekalibriere die Wahrnehmung durch bewusste Dankbarkeit.",
+    tags: ["gratitude", "journaling", "mental-health"],
+    subQuests: [{ id: "1", title: "Schreibe 5 spezifische Dinge auf, für die du heute dankbar bist (nicht generisch)", completed: false }, { id: "2", title: "Teile eine davon mit einer Person, die daran beteiligt war", completed: false }]
+  },
+  {
+    id: "qp_vit_05b", title: "Breath Calibration", category: "vit", difficulty: "easy", minLevel: 3,
+    desc: "Atemmuster steuern das autonome Nervensystem. Übernimm die manuelle Kontrolle.",
+    tags: ["breathwork", "relaxation", "basics"],
+    subQuests: [{ id: "1", title: "Absolviere 10 Minuten strukturierte Atemübung (Box Breathing: 4-4-4-4 oder Wim Hof)", completed: false }]
+  },
+  {
+    id: "qp_vit_06", title: "Micro-Nutrient Audit", category: "vit", difficulty: "normal", minLevel: 4,
+    desc: "Makros allein reichen nicht. Analysiere deine Mikronährstoff-Versorgung auf molekularer Ebene.",
+    tags: ["nutrition", "vitamins", "tracking"],
+    subQuests: [{ id: "1", title: "Tracke alle Mahlzeiten eines Tages in einer Ernährungs-App (Cronometer, MyFitnessPal)", completed: false }, { id: "2", title: "Identifiziere 2 defizitäre Mikronährstoffe und plane gezielte Lebensmittel dagegen", completed: false }]
+  },
+  {
+    id: "qp_vit_06b", title: "Journal Protocol", category: "vit", difficulty: "normal", minLevel: 5,
+    desc: "Gedanken im Kopf sind Chaos. Auf Papier werden sie zu Daten. Initiiere tägliches Journaling.",
+    tags: ["journaling", "reflection", "mental-health"],
+    subQuests: [{ id: "1", title: "Schreibe 15 Minuten ungefiltert in ein Journal (Morning Pages oder Abendreflexion)", completed: false }, { id: "2", title: "Beantworte: Was war heute die größte Herausforderung und was habe ich daraus gelernt?", completed: false }]
+  },
+  {
+    id: "qp_vit_06c", title: "Forest Immersion", category: "vit", difficulty: "normal", minLevel: 7,
+    desc: "Shinrin-yoku — Waldbaden. Wissenschaftlich nachgewiesen zur Senkung von Cortisol und Blutdruck.",
+    tags: ["nature", "forest", "recovery"],
+    subQuests: [{ id: "1", title: "Verbringe 45 Minuten bewusst im Wald oder Park (kein Smartphone, keine Kopfhörer)", completed: false }, { id: "2", title: "Nutze alle 5 Sinne aktiv: Was hörst, riechst, siehst, fühlst, schmeckst du?", completed: false }]
+  },
+  {
+    id: "qp_vit_06d", title: "Sleep Architecture", category: "vit", difficulty: "normal", minLevel: 8,
+    desc: "Schlafqualität > Schlafquantität. Optimiere die Schlaf-Architektur für maximale REM- und Tiefschlaf-Phasen.",
+    tags: ["sleep", "optimization", "routine"],
+    subQuests: [{ id: "1", title: "Etabliere ein 30-minütiges Schlaf-Ritual (gleiche Uhrzeit, gleiche Abfolge: Dimmen, Lesen, Atemübung)", completed: false }, { id: "2", title: "Kein Koffein nach 14:00 Uhr und Schlafzimmer auf unter 19°C kühlen", completed: false }]
+  },
+  {
+    id: "qp_vit_07", title: "Digital Detox Protocol", category: "vit", difficulty: "hard", minLevel: 11,
+    desc: "Totale Entkopplung vom digitalen Rauschen. Das System fordert einen vollständigen Neustart der sensorischen Eingänge.",
+    tags: ["digital-detox", "offline", "reset"],
+    subQuests: [{ id: "1", title: "12 Stunden komplett ohne Smartphone, Laptop und Bildschirme", completed: false }, { id: "2", title: "Fülle die gewonnene Zeit mit analogen Aktivitäten (Lesen, Kochen, Spazieren, Handwerk)", completed: false }]
+  },
+  {
+    id: "qp_vit_07b", title: "Meal Prep Engineering", category: "vit", difficulty: "hard", minLevel: 13,
+    desc: "Ernährung ist kein Zufall. Plane und bereite Mahlzeiten vor, um Impulskonsum zu eliminieren.",
+    tags: ["meal-prep", "nutrition", "discipline"],
+    subQuests: [{ id: "1", title: "Plane alle Mahlzeiten für 3 Tage im Voraus (Makros + Mikros berücksichtigen)", completed: false }, { id: "2", title: "Bereite mindestens 4 Mahlzeiten vor und lagere sie portioniert ein", completed: false }]
+  },
+  {
+    id: "qp_vit_07c", title: "Emotional Debrief", category: "vit", difficulty: "hard", minLevel: 16,
+    desc: "Unterdrückte Emotionen akkumulieren als systemischer Stress. Forciere eine kontrollierte Entladung.",
+    tags: ["mental-health", "emotions", "processing"],
+    subQuests: [{ id: "1", title: "Schreibe 20 Minuten ungefiltert über ein Thema, das dich emotional belastet (Expressive Writing)", completed: false }, { id: "2", title: "Identifiziere das zugrundeliegende Bedürfnis hinter der Emotion und formuliere eine konkrete Maßnahme", completed: false }]
+  },
+  {
+    id: "qp_vit_07d", title: "Recovery Week Protocol", category: "vit", difficulty: "hard", minLevel: 18,
+    desc: "Chronische Überbelastung ohne Deload führt zum Systemkollaps. Plane eine aktive Erholungswoche.",
+    tags: ["recovery", "deload", "planning"],
+    subQuests: [{ id: "1", title: "Plane eine Woche mit reduzierter Trainingsintensität (50% Volumen/Gewicht)", completed: false }, { id: "2", title: "Ersetze intensive Sessions durch Yoga, Schwimmen oder ausgedehnte Spaziergänge", completed: false }, { id: "3", title: "Schlafe jeden Tag dieser Woche mindestens 8 Stunden", completed: false }]
+  },
+  {
+    id: "qp_vit_08", title: "Sanctuary Day", category: "vit", difficulty: "boss", minLevel: 20,
+    desc: "Ein ganzer Tag nur für Regeneration. Kein Output. Kein Hustle. Das System erzwingt vollständige Wiederherstellung.",
+    tags: ["boss-trial", "full-rest", "sanctuary"],
+    subQuests: [{ id: "1", title: "Verbringe den gesamten Tag offline (kein Internet, keine Nachrichten)", completed: false }, { id: "2", title: "Absolviere 3 verschiedene Erholungsaktivitäten (Natur, Bad/Sauna, kreatives Hobby)", completed: false }, { id: "3", title: "Schreibe am Abend eine Reflexion: Wie fühlt sich dein Körper und Geist nach einem Tag ohne Leistungsdruck?", completed: false }]
+  },
+  {
+    id: "qp_vit_08a", title: "Biohacking Mastery", category: "vit", difficulty: "boss", minLevel: 25,
+    desc: "Optimiere jeden Parameter deiner Biologie. Schlaf, Ernährung, Licht, Temperatur — alles wird kalibriert.",
+    tags: ["endgame", "biohacking", "optimization"],
+    subQuests: [{ id: "1", title: "Implementiere 5 wissenschaftlich fundierte Biohacks für eine Woche (z.B. Blue-Light-Filter, Magnesium vor dem Schlaf, Morgensonne, Kältetherapie, Nasenband)", completed: false }, { id: "2", title: "Tracke die Auswirkungen auf Schlafqualität, Energie und Stimmung täglich", completed: false }]
+  },
+  {
+    id: "qp_vit_08b", title: "Vitality Gauntlet", category: "vit", difficulty: "boss", minLevel: 30,
+    desc: "Die ultimative Vitalitätsprüfung. 7 Tage perfekte Disziplin in Schlaf, Ernährung, Bewegung und Achtsamkeit.",
+    tags: ["endgame", "perfect-week", "ultimate"],
+    subQuests: [{ id: "1", title: "7 Tage in Folge: 8h Schlaf, 0% Zucker, 30 Min Bewegung, 10 Min Meditation — ohne eine einzige Ausnahme", completed: false }, { id: "2", title: "Dokumentiere jeden Tag mit einem kurzen Vitalitäts-Score (1-10) und Notizen", completed: false }, { id: "3", title: "Vergleiche Tag 1 mit Tag 7: Wie hat sich dein Baseline-Level verändert?", completed: false }]
+  },
 
   // ─── AGI: AGILITY & PRODUKTIVITÄT ───
   { 
@@ -318,6 +552,84 @@ export const QUEST_POOL = [
     tags: ["boss-trial", "hustle", "completion"],
     subQuests: [{ id: "1", title: "Starte die Arbeit vor Sonnenaufgang", completed: false }, { id: "2", title: "Bereinige das gesamte Arbeits- und Wohnumfeld", completed: false }, { id: "3", title: "Schließe ein Projekt ab, das seit Wochen ansteht", completed: false }]
   },
+  {
+    id: "qp_agi_05", title: "Workspace Cleanse", category: "agi", difficulty: "easy", minLevel: 2,
+    desc: "Ein chaotisches Arbeitsumfeld verlangsamt die kognitive Verarbeitungsgeschwindigkeit. Optimiere deine Basis.",
+    tags: ["productivity", "organization", "workspace"],
+    subQuests: [{ id: "1", title: "Räume deinen Schreibtisch komplett auf und wische ihn ab", completed: false }, { id: "2", title: "Säubere deinen digitalen Desktop von unnötigen Verknüpfungen", completed: false }]
+  },
+  {
+    id: "qp_agi_05b", title: "Focus Block Setup", category: "agi", difficulty: "easy", minLevel: 3,
+    desc: "Das System verlangt ununterbrochene Konzentration. Schütze deine Zeit proaktiv.",
+    tags: ["time-management", "focus", "planning"],
+    subQuests: [{ id: "1", title: "Blocke mindestens zwei 90-Minuten-Fokuszeiten für die kommende Woche im Kalender", completed: false }]
+  },
+  {
+    id: "qp_agi_06", title: "Inbox Zero Protocol", category: "agi", difficulty: "normal", minLevel: 4,
+    desc: "Ungelesene Nachrichten sind offene Schleifen im Arbeitsspeicher. Defragmentiere deine Posteingänge.",
+    tags: ["efficiency", "inbox-zero", "digital"],
+    subQuests: [{ id: "1", title: "Archiviere, lösche oder beantworte alle E-Mails, bis Posteingang Null erreicht ist", completed: false }, { id: "2", title: "Bestelle mindestens 3 ungenutzte Newsletter ab", completed: false }]
+  },
+  {
+    id: "qp_agi_06b", title: "Routine Automation", category: "agi", difficulty: "normal", minLevel: 5,
+    desc: "Manuelle Wiederholungen mindern die Agilität. Delegiere repetitive Aufgaben an das System.",
+    tags: ["automation", "tech", "efficiency"],
+    subQuests: [{ id: "1", title: "Erstelle ein Makro, einen Apple Shortcut oder ein kleines Script für eine tägliche Aufgabe", completed: false }, { id: "2", title: "Testen und optimieren des Ablaufs auf minimale Nutzerinteraktion", completed: false }]
+  },
+  {
+    id: "qp_agi_06c", title: "Digital Filing System", category: "agi", difficulty: "normal", minLevel: 7,
+    desc: "Suchzeit ist verschwendete Lebensenergie. Strukturiere dein digitales Archiv.",
+    tags: ["organization", "digital", "system"],
+    subQuests: [{ id: "1", title: "Bereinige den Download-Ordner und sortiere alle Dateien in eine logische Ordnerstruktur", completed: false }]
+  },
+  {
+    id: "qp_agi_06d", title: "Professional Sync", category: "agi", difficulty: "normal", minLevel: 8,
+    desc: "Führe eine Lagebeurteilung durch. Stimmen deine aktuellen Aktivitäten mit deinen Karrierezielen überein?",
+    tags: ["career", "alignment", "reflection"],
+    subQuests: [{ id: "1", title: "Liste deine 3 wichtigsten beruflichen Projekte auf", completed: false }, { id: "2", title: "Definiere für jedes Projekt den nächsten, sofort ausführbaren Schritt", completed: false }]
+  },
+  {
+    id: "qp_agi_07", title: "Time Tracking Audit", category: "agi", difficulty: "hard", minLevel: 11,
+    desc: "Du kannst nicht optimieren, was du nicht misst. Führe ein genaues Protokoll deiner investierten Zeit.",
+    tags: ["tracking", "audit", "time"],
+    subQuests: [{ id: "1", title: "Tracke jede Minute deiner Arbeitszeit für einen vollen Arbeitstag (z.B. mit Toggle oder Excel)", completed: false }, { id: "2", title: "Analysiere am Abend: Wo ist unproduktive Zeit versickert?", completed: false }]
+  },
+  {
+    id: "qp_agi_07b", title: "Habit Stacking Engine", category: "agi", difficulty: "hard", minLevel: 13,
+    desc: "Verknüpfe neue Gewohnheiten mit bestehenden Auslösern, um neuronale Pfade schneller zu festigen.",
+    tags: ["habits", "psychology", "discipline"],
+    subQuests: [{ id: "1", title: "Etabliere eine neue Habit-Schleife: Nach [bestehender Routine] werde ich sofort [neue Gewohnheit] ausführen", completed: false }, { id: "2", title: "Wiederhole dies erfolgreich an 3 Tagen hintereinander", completed: false }]
+  },
+  {
+    id: "qp_agi_07c", title: "Career Trajectory Map", category: "agi", difficulty: "hard", minLevel: 16,
+    desc: "Ein Hunter ohne Ziel driftet ziellos umher. Zeichne die Route zu deiner ultimativen beruflichen Form.",
+    tags: ["career", "vision", "planning"],
+    subQuests: [{ id: "1", title: "Erstelle einen detaillierten 5-Jahres-Karriereplan mit Meilensteinen und benötigten Skills", completed: false }, { id: "2", title: "Identifiziere 3 konkrete Fähigkeiten, die du als nächstes erlernen musst", completed: false }]
+  },
+  {
+    id: "qp_agi_07d", title: "Network Refresh", category: "agi", difficulty: "hard", minLevel: 18,
+    desc: "Inaktive Verbindungen verkümmern. Reaktivierung deines professionellen Netzwerks.",
+    tags: ["networking", "career", "social"],
+    subQuests: [{ id: "1", title: "Kontaktiere 3 ehemalige Kollegen oder Geschäftspartner ohne geschäftliches Hintergedanken", completed: false }, { id: "2", title: "Schlage einen kurzen virtuellen Kaffee oder Telefonat vor, um sich auszutauschen", completed: false }, { id: "3", title: "Führe mindestens eines dieser Gespräche erfolgreich", completed: false }]
+  },
+  {
+    id: "qp_agi_08", title: "System Integration", category: "agi", difficulty: "boss", minLevel: 20,
+    desc: "Beseitige manuelle Reibungspunkte in deinem Leben. Baue eine integrierte Workflow-Pipeline.",
+    tags: ["boss-trial", "automation", "efficiency"],
+    subQuests: [{ id: "1", title: "Automatisiere einen komplexen, mehrschrittigen Workflow mit Zapier, Make oder Skripten", completed: false }, { id: "2", title: "Dokumentiere das System, damit du es bei Fehlern schnell reparieren kannst", completed: false }]
+  },
+  {
+    id: "qp_agi_08a", title: "Workflow Re-Engineering", category: "agi", difficulty: "boss", minLevel: 25,
+    desc: "Analysiere deine wöchentlichen Routinen und eliminiere Flaschenhälse. Maximiere deinen Hebel.",
+    tags: ["endgame", "optimization", "productivity"],
+    subQuests: [{ id: "1", title: "Führe eine vollständige Analyse deiner wöchentlichen Verpflichtungen durch", completed: false }, { id: "2", title: "Eliminiere, delegiere oder automatisiere mindestens 2 zeitintensive Aufgaben dauerhaft", completed: false }]
+  },
+  {
+    id: "qp_agi_08b", title: "Monarch's Chronometry", category: "agi", difficulty: "boss", minLevel: 30,
+    desc: "Die ultimative Effizienzprüfung. Bringe die Zeiteinteilung zur absoluten Perfektion an einem Tag.",
+    tags: ["endgame", "deep-work", "ultimate"],
+    subQuests: [{ id: "1", title: "Absolviere 10 Stunden hochkonzentrierte Deep-Work-Fokuszeiten innerhalb von 15 Stunden", completed: false }, { id: "2", title: "0 Minuten private Ablenkung während der Arbeitsblöcke", completed: false }, { id: "3", title: "Erreiche alle für diesen Tag gesetzten Projektziele ohne Verzug", completed: false }]
+  },
 
   // ─── CHA: CHARISMA & SOZIALES ───
   { 
@@ -397,5 +709,154 @@ export const QUEST_POOL = [
     desc: "Übernimm das Kommando. Forme deine Umgebung nach deinem Willen.",
     tags: ["boss-trial", "public-speaking", "hosting"],
     subQuests: [{ id: "1", title: "Organisiere und leite ein soziales Event oder Meeting", completed: false }, { id: "2", title: "Halte eine Präsentation oder halte eine Rede vor einer Gruppe", completed: false }]
+  },
+  {
+    id: "qp_cha_05", title: "Appreciation Broadcast", category: "cha", difficulty: "easy", minLevel: 2,
+    desc: "Authentische Wertschätzung stärkt soziale Bindungen. Sende positive Impulse in dein Netzwerk.",
+    tags: ["gratitude", "social", "communication"],
+    subQuests: [{ id: "1", title: "Sende zwei Menschen aus deinem Umfeld eine unerwartete Nachricht, in der du dich für etwas Bestimmtes bedankst", completed: false }]
+  },
+  {
+    id: "qp_cha_05b", title: "Family Line", category: "cha", difficulty: "easy", minLevel: 3,
+    desc: "Die stärksten Fundamente liegen in der Familie. Reaktivierung vernachlässigter familiärer Kanäle.",
+    tags: ["family", "relationship", "communication"],
+    subQuests: [{ id: "1", title: "Führe ein Telefonat oder triff dich mit einem Familienmitglied, das du länger nicht gesprochen hast (min. 15 Minuten)", completed: false }]
+  },
+  {
+    id: "qp_cha_06", title: "Active Listening Protocol", category: "cha", difficulty: "normal", minLevel: 4,
+    desc: "Ein guter Gesprächspartner glänzt nicht durch Reden, sondern durch tiefes Verstehen.",
+    tags: ["communication", "listening", "empathy"],
+    subQuests: [{ id: "1", title: "Führe ein Gespräch, in dem du absolut keine Ratschläge gibst, sondern nur aktiv zuhörst und das Gesagte spiegelst", completed: false }, { id: "2", title: "Lass den anderen ausreden, ohne ihn zu unterbrechen (min. 10 Minuten)", completed: false }]
+  },
+  {
+    id: "qp_cha_06b", title: "Mentorship Catalyst", category: "cha", difficulty: "normal", minLevel: 5,
+    desc: "Wissen wird wertvoller, wenn man es teilt. Hilf einem Verbündeten bei seiner Entwicklung.",
+    tags: ["mentoring", "knowledge", "help"],
+    subQuests: [{ id: "1", title: "Erkläre jemandem eine komplexe Fähigkeit oder Methode, die du gut beherrschst", completed: false }, { id: "2", title: "Beantworte alle Verständnisfragen geduldig und verständlich", completed: false }]
+  },
+  {
+    id: "qp_cha_06c", title: "Community Interface", category: "cha", difficulty: "normal", minLevel: 7,
+    desc: "Ein Hunter agiert nicht im Vakuum. Klinke dich in die lokale oder globale Gemeinschaft ein.",
+    tags: ["community", "networking", "social"],
+    subQuests: [{ id: "1", title: "Nimm an einem lokalen Treffen, Vereinsabend oder Community-Event teil", completed: false }]
+  },
+  {
+    id: "qp_cha_06d", title: "Gratitude Node", category: "cha", difficulty: "normal", minLevel: 8,
+    desc: "Analoge Wertschätzung besitzt ungleich höhere Bindungskraft. Hinterlasse ein bleibendes Signal.",
+    tags: ["gratitude", "writing", "friends"],
+    subQuests: [{ id: "1", title: "Schreibe einen handschriftlichen Dankesbrief an eine Person, die dich unterstützt hat", completed: false }, { id: "2", title: "Übergib oder verschicke den Brief physisch", completed: false }]
+  },
+  {
+    id: "qp_cha_07", title: "Conflict Calibration", category: "cha", difficulty: "hard", minLevel: 11,
+    desc: "Ungesagte Worte vergiften Beziehungen. Konfrontiere Spannungen sachlich und konstruktiv.",
+    tags: ["conflict", "resolution", "communication"],
+    subQuests: [{ id: "1", title: "Sprich ein schwelendes Missverständnis oder einen Konflikt offen, aber ruhig an", completed: false }, { id: "2", title: "Finde gemeinsam eine Vereinbarung oder Lösung, mit der beide Seiten leben können", completed: false }]
+  },
+  {
+    id: "qp_cha_07b", title: "Quality Time Engine", category: "cha", difficulty: "hard", minLevel: 13,
+    desc: "Beziehungen benötigen ungeteilte Aufmerksamkeit. Eliminiere Ablenkungen für echte Nähe.",
+    tags: ["relationship", "friends", "quality-time"],
+    subQuests: [{ id: "1", title: "Plane einen gemeinsamen Abend mit einem Partner oder engen Freund", completed: false }, { id: "2", title: "Verbanne alle Smartphones während der gesamten Zeit (min. 3 Stunden offline)", completed: false }]
+  },
+  {
+    id: "qp_cha_07c", title: "Leadership Alignment", category: "cha", difficulty: "hard", minLevel: 16,
+    desc: "Koordiniere ein Team oder eine Gruppe, um ein gemeinsames Ziel zu erreichen. Übe Führungsstärke.",
+    tags: ["leadership", "teamwork", "management"],
+    subQuests: [{ id: "1", title: "Übernimm die Initiative bei einer Gruppenentscheidung oder einem Projekt", completed: false }, { id: "2", title: "Führe die Diskussion zielgerichtet und sorge dafür, dass jeder gehört wird", completed: false }]
+  },
+  {
+    id: "qp_cha_07d", title: "Social Support Net", category: "cha", difficulty: "hard", minLevel: 18,
+    desc: "In schweren Zeiten zeigt sich der Wert einer Allianz. Sei ein Fels in der Brandung für jemanden in Not.",
+    tags: ["support", "empathy", "crisis"],
+    subQuests: [{ id: "1", title: "Biete einem Freund in einer schwierigen Phase aktiv deine Hilfe oder ein offenes Ohr an", completed: false }, { id: "2", title: "Nimm dir mindestens 1 Stunde Zeit, um ganz für diese Person da zu sein", completed: false }]
+  },
+  {
+    id: "qp_cha_08", title: "Vanguard Summit", category: "cha", difficulty: "boss", minLevel: 20,
+    desc: "Werde zum Mittelpunkt deines Netzwerks. Hoste ein Event, das Wissen und Menschen verbindet.",
+    tags: ["boss-trial", "hosting", "leadership"],
+    subQuests: [{ id: "1", title: "Organisiere ein Netzwerktreffen, einen Vortrag oder einen Workshop für mindestens 4 Personen", completed: false }, { id: "2", title: "Bereite das Thema professionell vor und leite die Veranstaltung eigenständig", completed: false }]
+  },
+  {
+    id: "qp_cha_08a", title: "Tribal Accord", category: "cha", difficulty: "boss", minLevel: 25,
+    desc: "Führe Menschen über Grenzen hinweg zusammen. Schlichte einen tiefen Konflikt oder leite ein großes Gemeinschaftsprojekt.",
+    tags: ["endgame", "conflict-resolution", "community"],
+    subQuests: [{ id: "1", title: "Schlichte erfolgreich einen langanhaltenden Konflikt im Team/Familie ODER Leite ein gemeinnütziges Projekt", completed: false }, { id: "2", title: "Erreiche ein schriftlich oder mündlich fixiertes gemeinsames Abkommen aller Parteien", completed: false }]
+  },
+  {
+    id: "qp_cha_08b", title: "Legacy of Charisma", category: "cha", difficulty: "boss", minLevel: 30,
+    desc: "Hinterlasse ein soziales Erbe. Das System fordert die langfristige Förderung des Nachwuchses.",
+    tags: ["endgame", "mentorship", "legacy"],
+    subQuests: [{ id: "1", title: "Nimm eine Person für mindestens 3 Monate als Mentor unter deine Fittiche ODER starte eine langfristige Wohltätigkeitsinitiative", completed: false }, { id: "2", title: "Dokumentiere den Fortschritt und die Entwicklungsziele monatlich", completed: false }, { id: "3", title: "Erstelle eine Abschlussreflexion über die erbrachten Resultate", completed: false }]
+  }
+];
+
+export const OPERATIONS = [
+  {
+    id: "op_dawn_disciplin",
+    title: "Operation Morgenröte",
+    category: "agi",
+    desc: "Etabliere eine unerschütterliche Morgenroutine für maximale Effizienz.",
+    steps: [
+      { difficulty: "easy", title: "Morgenroutine Stufe 1: Aufstehen vor 6:30 Uhr und 5 Min Stretching" },
+      { difficulty: "normal", title: "Morgenroutine Stufe 2: Kein Smartphone in den ersten 60 Minuten" },
+      { difficulty: "hard", title: "Morgenroutine Stufe 3: 45 Min Deep Work vor dem Frühstück" }
+    ]
+  },
+  {
+    id: "op_iron_forge",
+    title: "Operation Eiserne Schmiede",
+    category: "str",
+    desc: "Durchbrich physische Plateaus durch progressive Kraftsteigerung.",
+    steps: [
+      { difficulty: "easy", title: "Schmiede Stufe 1: Absolviere 30 Min intensives Krafttraining" },
+      { difficulty: "normal", title: "Schmiede Stufe 2: Führe einen neuen persönlichen Rekord in einer Grundübung aus" },
+      { difficulty: "hard", title: "Schmiede Stufe 3: Absolviere ein hochintensives Ganzkörpertraining bis zum Muskelversagen" }
+    ]
+  },
+  {
+    id: "op_mind_fortress",
+    title: "Operation Gedankenfestung",
+    category: "int",
+    desc: "Maximiere deine kognitive Belastbarkeit und Deep-Work-Fähigkeit.",
+    steps: [
+      { difficulty: "easy", title: "Festung Stufe 1: 45 Min ununterbrochenes Lernen ohne Ablenkung" },
+      { difficulty: "normal", title: "Festung Stufe 2: Erstelle eine visuelle Mindmap oder Zusammenfassung des gelernten Stoffes" },
+      { difficulty: "hard", title: "Festung Stufe 3: Schreibe einen Fachaufsatz oder ein Skript über die neue Fähigkeit" },
+      { difficulty: "boss", title: "Festung Stufe 4: Löse ein komplexes logisches Problem oder absolviere eine schwere Prüfung" }
+    ]
+  },
+  {
+    id: "op_vitality_reset",
+    title: "Operation Vitalitäts-Reset",
+    category: "vit",
+    desc: "Entgifte deinen Körper und lade deine biologischen Reserven vollständig auf.",
+    steps: [
+      { difficulty: "easy", title: "Reset Stufe 1: Konsumiere heute 3 Liter reines Wasser und 0% Zucker" },
+      { difficulty: "normal", title: "Reset Stufe 2: 12 Stunden komplettes Digital-Detox (alle Geräte aus)" },
+      { difficulty: "hard", title: "Reset Stufe 3: 16 Stunden Intervallfasten kombiniert mit 1h Spaziergang in der Natur" }
+    ]
+  },
+  {
+    id: "op_social_expedition",
+    title: "Operation Soziale Expedition",
+    category: "cha",
+    desc: "Verlasse die soziale Komfortzone und kalibriere dein Charisma.",
+    steps: [
+      { difficulty: "easy", title: "Expedition Stufe 1: Sende 3 unerwartete Dankesnachrichten an Freunde oder Familie" },
+      { difficulty: "normal", title: "Expedition Stufe 2: Starte ein anspruchsvolles Gespräch mit einer fremden Person" },
+      { difficulty: "hard", title: "Expedition Stufe 3: Halte eine Rede vor einer Gruppe oder vermittle in einem bestehenden Konflikt" }
+    ]
+  },
+  {
+    id: "op_shadow_protocol",
+    title: "Operation Schatten-Protokoll",
+    category: "str",
+    desc: "Der ultimative Belastungstest für den wahren Schatten-Monarchen.",
+    steps: [
+      { difficulty: "easy", title: "Protokoll Stufe 1: 50 Liegestütze und 15 Min Dehnen direkt nach dem Aufwachen" },
+      { difficulty: "normal", title: "Protokoll Stufe 2: Absolviere einen 10 km Lauf oder 1 Stunde intensives Cardio-Training" },
+      { difficulty: "hard", title: "Protokoll Stufe 3: 5 Minuten Kälteexposition (Eisbad oder kalte Dusche)" },
+      { difficulty: "boss", title: "Protokoll Stufe 4: Absolviere 200 Burpees und 200 Squats innerhalb von 30 Minuten" }
+    ]
   }
 ];

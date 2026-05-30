@@ -3,27 +3,29 @@
 // Contains Shadow Regression, Dawn/Dusk Protocol, and Season helpers.
 
 import { genId, getToday } from "./helpers.js";
+import { translate, getStateLocale } from "./i18n.js";
 
 // ─── SHADOW REGRESSION HELPERS ────────────────────────────────
-export function generateRedemptionQuests(playerLevel) {
-  const templates = [
-    { title: "Schattenrückforderung I: Körperliche Buße", category: "str", desc: "Überwinde die Schwäche des Körpers. Der Schatten wartet." },
-    { title: "Schattenrückforderung II: Mentale Prüfung", category: "int", desc: "Überwinde die Schwäche des Geistes. Beweise deine Disziplin." },
-    { title: "Schattenrückforderung III: Die Rückkehr", category: "vit", desc: "Der letzte Schritt. Beweise, dass du zurückgekehrt bist." },
-  ];
-  return templates.map((t, i) => ({
-    id: genId(),
-    title: t.title,
-    category: t.category,
-    difficulty: "hard",
-    type: "redemption",
-    isSystem: true,
-    isRedemption: true,
-    createdAt: getToday(),
-    createdAtMs: Date.now(),
-    xpMult: 1.5,
-    regressionStep: i + 1,
-  }));
+export function generateRedemptionQuests(playerLevel, state = null) {
+  const locale = getStateLocale(state);
+  const categories = ["str", "int", "vit", "agi", "cha"];
+  return categories.map((cat, i) => {
+    const stepNum = i + 1;
+    return {
+      id: genId(),
+      title: translate(locale, `quests.redemption.${stepNum}.title`),
+      desc: translate(locale, `quests.redemption.${stepNum}.desc`),
+      category: cat,
+      difficulty: "hard",
+      type: "redemption",
+      isSystem: true,
+      isRedemption: true,
+      createdAt: getToday(),
+      createdAtMs: Date.now(),
+      xpMult: 1.5,
+      regressionStep: stepNum,
+    };
+  });
 }
 
 // ─── DAWN/DUSK PROTOCOL HELPERS ───────────────────────────────
@@ -46,31 +48,40 @@ export function calculateProtocolXp(run, playerLevel) {
 }
 
 // ─── SEASON HELPERS ───────────────────────────────────────────
-export function generateSeasonalQuests(seasonKey) {
+export function generateSeasonalQuests(seasonKey, state = null) {
+  const locale = getStateLocale(state);
   const SEASON_MAP = {
     frost: [
-      { title: "Eisige Morgenroutine: Kaltdusche 3 Tage in Folge", difficulty: "hard", category: "vit" },
-      { title: "Frost-Training: 30 Min Outdoor-Sport im Winter", difficulty: "normal", category: "str" },
+      { difficulty: "hard", category: "vit" },
+      { difficulty: "normal", category: "str" },
+      { difficulty: "hard", category: "int" },
+      { difficulty: "normal", category: "vit" },
     ],
     spring: [
-      { title: "Frühlingserwachen: 7-Tage Morgenroutine starten", difficulty: "boss", category: "vit" },
-      { title: "Neue Fähigkeit beginnen – 5 Tage täglich üben", difficulty: "hard", category: "int" },
+      { difficulty: "boss", category: "vit" },
+      { difficulty: "hard", category: "int" },
+      { difficulty: "normal", category: "cha" },
+      { difficulty: "hard", category: "agi" },
     ],
     inferno: [
-      { title: "Inferno-Challenge: 100 Liegestütze in 5 Tagen", difficulty: "boss", category: "str" },
-      { title: "Hitzewelle: Maximale Trainingsintensität 3 Tage", difficulty: "hard", category: "str" },
+      { difficulty: "boss", category: "str" },
+      { difficulty: "hard", category: "str" },
+      { difficulty: "hard", category: "vit" },
+      { difficulty: "normal", category: "agi" },
     ],
     redgate: [
-      { title: "Rotes Tor: 1 Stunde täglich lernen – 7 Tage", difficulty: "hard", category: "int" },
-      { title: "Herbst-Offensive: Finanzielle Planung abschließen", difficulty: "normal", category: "int" },
+      { difficulty: "hard", category: "int" },
+      { difficulty: "normal", category: "int" },
+      { difficulty: "hard", category: "cha" },
+      { difficulty: "normal", category: "str" },
     ],
   };
-  const templates = SEASON_MAP[seasonKey] || SEASON_MAP.frost;
-  return templates.map((t) => ({
+  const configs = SEASON_MAP[seasonKey] || SEASON_MAP.frost;
+  return configs.map((cfg, i) => ({
     id: genId(),
-    title: t.title,
-    category: t.category,
-    difficulty: t.difficulty,
+    title: translate(locale, `quests.seasonal.${seasonKey}.${i + 1}.title`),
+    category: cfg.category,
+    difficulty: cfg.difficulty,
     type: "weekly",
     isSystem: true,
     isSeasonal: true,

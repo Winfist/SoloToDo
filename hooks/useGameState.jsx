@@ -525,10 +525,10 @@ export function useGameState(initialHunterName, onLogout) {
               s.streak = 0;
               const hadDailies = s.quests?.some(q => q.type === "daily" && !q.completed);
               if (diff >= 2 && hadDailies && !s.penaltyZone?.active) {
-                s.penaltyZone = { active: true, redemptionLeft: 3, questsCompletedInPenalty: 0 };
+                s.penaltyZone = { active: true, redemptionLeft: 5, questsCompletedInPenalty: 0 };
                 // Shadow Regression: heroic comeback instead of shameful penalty
                 if (!s.shadowRegression?.active) {
-                  const redemptionQs = generateRedemptionQuests(s.level || 1);
+                  const redemptionQs = generateRedemptionQuests(s.level || 1, s);
                   s.shadowRegression = {
                     active: true,
                     previousStreak,
@@ -576,7 +576,7 @@ export function useGameState(initialHunterName, onLogout) {
                   seasonStartDate: today,
                   seasonalCompletions: [],
                 };
-                const seasonalQs = generateSeasonalQuests(detectedSeason);
+                const seasonalQs = generateSeasonalQuests(detectedSeason, s);
                 s.quests = [...s.quests, ...seasonalQs];
                 if (oldSeason) {
                   setTimeout(() => notify(`⚡ Neue Saison: ${SEASONS[detectedSeason].icon} ${SEASONS[detectedSeason].name}! Saison-Quests wurden hinzugefügt.`, "named"), 2000);
@@ -585,7 +585,7 @@ export function useGameState(initialHunterName, onLogout) {
                 // Ensure seasonal quests still exist
                 const hasSeasonal = s.quests.some(q => q.isSeasonal);
                 if (!hasSeasonal) {
-                  s.quests = [...s.quests, ...generateSeasonalQuests(detectedSeason)];
+                  s.quests = [...s.quests, ...generateSeasonalQuests(detectedSeason, s)];
                 }
               }
             }
@@ -600,7 +600,8 @@ export function useGameState(initialHunterName, onLogout) {
           let isNewEmergency = false;
           if (isFeatureUnlocked('emergency_quests', s.level || 1)) {
             if (!s.emergencyQuest || !s.emergencyQuest.id.endsWith(today)) {
-              s.emergencyQuest = generateEmergencyQuest(s.level || 1);
+              s.emergencyQuest = generateEmergencyQuest(s.level || 1, s);
+              s.lastEmergencyTemplateId = s.emergencyQuest.templateId;
               s.emergencyDone = false;
               s.emergencyFailed = false;
               isNewEmergency = true;
