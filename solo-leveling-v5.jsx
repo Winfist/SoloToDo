@@ -2250,6 +2250,8 @@ function App({ initialHunterName, onLogout }) {
                         </>)}
                         {/* ── Ende Schritt 1 ── */}
 
+                        {/* ③ Schritt 2: Einstufung */}
+                        {wizardStep === 2 && (<>
                         {/* DIFFICULTY */}
                         <div data-tutorial="quest-difficulty" style={{ marginBottom: 14 }}>
                           <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.forge.difficultyLabel")}</div>
@@ -2303,6 +2305,8 @@ function App({ initialHunterName, onLogout }) {
                             ))}
                           </div>
                         </div>
+                        </>)}
+                        {/* ── Ende Schritt 2 ── */}
 
                         {/* ── DETAILS TOGGLE ── */}
                         <button onClick={() => setShowDetails(!showDetails)} style={{
@@ -2507,7 +2511,7 @@ function App({ initialHunterName, onLogout }) {
                         )}
 
                         {/* XP PREVIEW */}
-                        {qTitle.trim() && (() => {
+                        {wizardStep === 2 && qTitle.trim() && (() => {
                           const previewDiff = catalogDifficulties.find(d => d.key === qDiff);
                           const previewType = QUEST_TYPES_CONFIG[qType] || QUEST_TYPES_CONFIG.side;
                           const previewXp = Math.round((previewDiff?.xp || 5) * (previewType.xpMult || 1));
