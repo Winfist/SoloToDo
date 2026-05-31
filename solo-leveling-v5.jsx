@@ -2308,27 +2308,10 @@ function App({ initialHunterName, onLogout }) {
                         </>)}
                         {/* ── Ende Schritt 2 ── */}
 
-                        {/* ── DETAILS TOGGLE ── */}
-                        <button onClick={() => setShowDetails(!showDetails)} style={{
-                          width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 11, fontWeight: 700,
-                          background: showDetails ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : "rgba(255,255,255,0.02)",
-                          color: showDetails ? theme.primary : "#64748b",
-                          border: `1px solid ${showDetails ? theme.primary + "44" : "rgba(255,255,255,0.06)"}`,
-                          boxShadow: showDetails ? `inset 0 0 10px ${theme.primary}11` : "none",
-                          cursor: "pointer", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5,
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14,
-                          transition: "all 0.3s"
-                        }}
-                          onMouseEnter={e => { e.currentTarget.style.background = showDetails ? `linear-gradient(90deg, ${theme.primary}22, transparent)` : "rgba(255,255,255,0.04)"; e.currentTarget.style.color = showDetails ? theme.primary : "#94a3b8"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = showDetails ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : "rgba(255,255,255,0.02)"; e.currentTarget.style.color = showDetails ? theme.primary : "#64748b"; }}
-                        >
-                          <span style={{ transform: showDetails ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▼</span>
-                          {tr("quests.forge.detailsToggle")}
-                          <span style={{ fontSize: 9, color: showDetails ? theme.primary : "#475569" }}>{(qDescription.trim() || qSubQuests.length > 0) ? "●" : ""}</span>
-                        </button>
-
+                        {/* ③ Schritt 3: Feinschliff (optional) */}
+                        {wizardStep === 3 && (
+                        <>
                         {/* ── DETAILS PANEL ── */}
-                        {showDetails && (
                           <div style={{ animation: "slideDown 0.3s ease", marginBottom: 14, padding: "16px", borderRadius: 16, background: "rgba(255,255,255,0.015)", border: `1px solid ${theme.primary}15` }}>
                             {/* PHOTO IMPORT PLACEHOLDER */}
                             {can('ai_task_scan') && (
@@ -2439,7 +2422,6 @@ function App({ initialHunterName, onLogout }) {
                               </>
                             )}
                           </div>
-                        )}
 
                         {/* PRODUCTIVITY SIGNALS */}
                         <div style={{ marginBottom: 14, display: "grid", gap: 12 }}>
@@ -2509,6 +2491,9 @@ function App({ initialHunterName, onLogout }) {
                             </div>
                           </label>
                         )}
+                        </>
+                        )}
+                        {/* ── Ende Schritt 3 ── */}
 
                         {/* XP PREVIEW */}
                         {wizardStep === 2 && qTitle.trim() && (() => {
