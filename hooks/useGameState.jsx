@@ -12,8 +12,8 @@ import {
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
-  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, generateStarterQuests, getJobBonuses, checkAllJobsLevel5,
-  saveState, loadState, migrateState, cacheStateLocally, resolveStateConflict, calculateLevelUp, awardJobXp,
+  getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, generateComebackSystemQuest, generateStarterQuests, getJobBonuses, checkAllJobsLevel5,
+  saveState, loadState, migrateState, cacheStateLocally, resolveStateConflict, calculateLevelUp, awardJobXp, saveQuestArchiveEntry,
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests
 } from '../data/constants';
 import { JOBS } from '../data/jobs.js';
@@ -40,9 +40,29 @@ import {
   cleanupQuestAttachmentBlobsForState,
   getQuestAttachmentReferenceSignature
 } from '../services/questAttachmentStore.js';
+import {
+  getQuestPlanningSnapshot,
+  withArchivedQuest,
+  withDeferredQuest,
+  withPinnedQuest,
+  withRestoredQuest,
+} from '../data/questPlanning.js';
 
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
+}
+
+function getQuestLogPriorityToast(state) {
+  const isEnglish = getStateLocale(state) === "en";
+  return {
+    msg: isEnglish
+      ? "Quest created. You can prioritize it in the Quest Log."
+      : "Quest erstellt. Im Quest-Log kannst du sie jetzt priorisieren.",
+    action: {
+      label: isEnglish ? "Prioritize now" : "Jetzt priorisieren",
+      view: "quest_log",
+    },
+  };
 }
 
 function cloneDefaultState() {
@@ -338,11 +358,11 @@ export function useGameState(initialHunterName, onLogout) {
     });
   }, []);
 
-  const notify = useCallback((msg, type = "info") => {
+  const notify = useCallback((msg, type = "info", action = null) => {
     const text = String(msg || "");
     setNotifications(prev => {
       if (prev.some(n => n.msg === text && n.type === type)) return prev;
-      return [{ id: genId(), msg: text, type }, ...prev].slice(0, 4);
+      return [{ id: genId(), msg: text, type, ...(action ? { action } : {}) }, ...prev].slice(0, 4);
     });
   }, []);
   const persist = useCallback(s => {
@@ -546,7 +566,11 @@ export function useGameState(initialHunterName, onLogout) {
             // BUG FIX: Keep redemption quests alive if shadow regression is still active
             const regressionActive = s.shadowRegression?.active;
             s.quests = (s.quests || []).filter(q => !q.isSystem && !q.isSeasonal && !(q.isRedemption && !regressionActive));
-            const newSysQuests = generateDailySystemQuests(getDailySystemQuestCount(s), s);
+            const overloaded = getQuestPlanningSnapshot(s).overloadStatus.overloaded;
+            const comebackQuest = overloaded ? generateComebackSystemQuest(s) : null;
+            const newSysQuests = overloaded
+              ? (comebackQuest ? [comebackQuest] : [])
+              : generateDailySystemQuests(getDailySystemQuestCount(s), s);
             s.quests = [...s.quests, ...newSysQuests];
             if (s.settings?.autoSystemTasks === true) {
               s.lastSystemTaskTime = Date.now();
@@ -686,6 +710,7 @@ export function useGameState(initialHunterName, onLogout) {
     const currentState = stateRef.current;
     if (!currentState || loading) return;
     if (currentState.settings?.autoSystemTasks !== true) return;
+    if (getQuestPlanningSnapshot(currentState).overloadStatus.overloaded) return;
     const TASK_INTERVAL = getQuestIntensityIntervalMs(currentState);
     const intensity = getQuestIntensityPreset(currentState);
     const now = Date.now();
@@ -1014,6 +1039,40 @@ export function useGameState(initialHunterName, onLogout) {
     quests: state.quests.filter(q => q.id !== id),
     reminders: (state.reminders || []).filter(r => r.questId !== id),
   });
+
+  const togglePinnedQuest = useCallback((questId) => {
+    if (!state || !questId) return;
+    const next = withPinnedQuest(state, questId);
+    persist(next);
+    const pinned = next.questPlanning?.pinnedQuestIds?.includes(questId);
+    notify(pinned ? "Quest angepinnt." : "Pin geloest.", pinned ? "success" : "info");
+  }, [state, persist, notify]);
+
+  const deferQuest = useCallback((questId, untilMs) => {
+    if (!state || !questId) return;
+    persist(withDeferredQuest(state, questId, untilMs));
+    notify("Quest auf spaeter gesetzt.", "info");
+  }, [state, persist, notify]);
+
+  const archiveQuest = useCallback((questId) => {
+    if (!state || !questId) return;
+    const result = withArchivedQuest(state, questId);
+    if (!result.archivedQuest) return;
+    persist(result.state);
+    saveQuestArchiveEntry(result.archivedQuest, result.state.questPlanning.lifecycleById[questId])
+      .catch(error => console.warn("[SoloToDo] Quest archive mirror failed.", error));
+    notify("Quest archiviert.", "info");
+  }, [state, persist, notify]);
+
+  const restoreQuest = useCallback((questId) => {
+    if (!state || !questId) return;
+    const result = withRestoredQuest(state, questId);
+    if (!result.restoredQuest) return;
+    persist(result.state);
+    saveQuestArchiveEntry(result.restoredQuest, result.state.questPlanning.lifecycleById[questId])
+      .catch(error => console.warn("[SoloToDo] Quest restore mirror failed.", error));
+    notify("Quest wiederhergestellt.", "success");
+  }, [state, persist, notify]);
 
   const getReplacementCandidates = useCallback((questId) => {
     const current = stateRef.current || state;
@@ -1456,7 +1515,12 @@ export function useGameState(initialHunterName, onLogout) {
       customQuestPool: { ...pool, recentlyUsed: recent },
       ...(options.source === "scan" ? { ai: { ...(state.ai || {}), scannedTasks: ((state.ai?.scannedTasks || 0) + 1) } } : {}),
     };
+    const suggestQuestLog = getQuestPlanningSnapshot(state).loadout.length >= 3;
     persist(nextState);
+    if (suggestQuestLog) {
+      const priorityToast = getQuestLogPriorityToast(state);
+      notify(priorityToast.msg, "info", priorityToast.action);
+    }
     if (inputs.length > quests.length) notify(ltState(state, "quests.importedLimit", { created: quests.length, total: inputs.length }), "warning");
     else notify(ltState(state, "quests.createdCount", { count: quests.length, plural: quests.length > 1 ? "s" : "" }), "success");
     return quests;
@@ -1618,7 +1682,12 @@ export function useGameState(initialHunterName, onLogout) {
       nextState.habits = [...(state.habits || []), linkedHabit];
     }
 
+    const suggestQuestLog = getQuestPlanningSnapshot(state).loadout.length >= 3;
     persist(nextState);
+    if (suggestQuestLog) {
+      const priorityToast = getQuestLogPriorityToast(state);
+      notify(priorityToast.msg, "info", priorityToast.action);
+    }
     if (!input) {
       resetQuestForm();
       setShowCreate(false);
@@ -1645,9 +1714,9 @@ export function useGameState(initialHunterName, onLogout) {
     notify(ltState(state, "quests.reminderSnoozed", { minutes }), "info");
   }, [state, persist, notify]);
 
-  const completeEmergencyQuest = useCallback((eq) => {
+  const completeEmergencyQuest = useCallback((eq, verificationBonus = false) => {
     if (!state || state.emergencyDone) return;
-    const result = buildCompleteEmergencyQuestState(eq, state, processAchievementsPure);
+    const result = buildCompleteEmergencyQuestState(eq, state, processAchievementsPure, verificationBonus);
     persist(result.nextState);
     const flow = buildEmergencyRewardFlow(result, getStateLocale(state));
     enqueueRewardFlow(flow);
@@ -2591,6 +2660,10 @@ export function useGameState(initialHunterName, onLogout) {
     removeFromPool,
     toggleFavoriteTemplate,
     setDailyFocusQuest,
+    togglePinnedQuest,
+    deferQuest,
+    archiveQuest,
+    restoreQuest,
     finishDungeon,
     deployShadow,
     undeployShadow,

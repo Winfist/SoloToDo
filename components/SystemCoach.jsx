@@ -2,6 +2,7 @@ import { STAT_ICONS, NAV_ICONS, HABIT_ICONS, STORY_ICONS, SEASON_ICONS } from ".
 import { getToday, getLocalDateKey } from "../data/dateUtils.js";
 import { getStateLocale, translate } from "../data/i18n.js";
 import { getFocusStats } from "../data/lifeDomains.js";
+import { getQuestPlanningSnapshot } from "../data/questPlanning.js";
 
 function ct(state, key, params = {}) {
     return translate(getStateLocale(state), key, params);
@@ -64,6 +65,30 @@ export function checkOverexertion(state) {
             ct(state, "systemCoach.recovery"),
         ],
         priority: 1,
+    };
+}
+
+export function checkQuestOverload(state, prevState) {
+    const current = getQuestPlanningSnapshot(state).overloadStatus;
+    const previous = prevState ? getQuestPlanningSnapshot(prevState).overloadStatus : { level: "calm" };
+    if (current.level === "calm" || current.level === previous.level) return null;
+    const isEnglish = getStateLocale(state) === "en";
+    const overloaded = current.level === "overload";
+    return {
+        type: overloaded ? "warning" : "coaching",
+        icon: overloaded ? "!" : "LOG",
+        iconSrc: NAV_ICONS.events,
+        title: overloaded ? (isEnglish ? "QUEST LOG PROTECTION" : "QUEST-LOG SCHUTZ") : (isEnglish ? "QUEST LOG REVIEW" : "QUEST-LOG PRÜFEN"),
+        lines: overloaded
+            ? [
+                isEnglish ? "The System is pausing optional calls." : "Das System pausiert optionale Rufe.",
+                isEnglish ? `${current.actionableCount} actionable Quests are open. Sort your Quest Log calmly.` : `${current.actionableCount} ausführbare Quests sind offen. Sortiere dein Quest-Log in Ruhe.`,
+              ]
+            : [
+                isEnglish ? "Your Quest Log is getting full." : "Dein Quest-Log wird voller.",
+                isEnglish ? "Pin what matters now and park the rest for later." : "Pinne, was jetzt zählt, und verschiebe den Rest auf später.",
+              ],
+        priority: overloaded ? 3 : 1,
     };
 }
 
@@ -288,6 +313,8 @@ export function runCoachChecks(state, prevState) {
         const msg = check(state);
         if (msg) messages.push(msg);
     }
+    const questOverload = checkQuestOverload(state, prevState);
+    if (questOverload) messages.push(questOverload);
 
     // Celebrations
     const celebration = checkCelebrations(state, prevState);

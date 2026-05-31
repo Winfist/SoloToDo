@@ -291,6 +291,29 @@ export function generateDailySystemQuests(count = 3, state = null) {
   return selected;
 }
 
+export function generateComebackSystemQuest(state = null) {
+  const locale = getStateLocale(state);
+  const today = getToday();
+  const activeQuestKeys = new Set((state?.quests || []).filter(q => !q.completed).map(getQuestKey));
+  const template = getSystemQuestPoolForLocale(locale)
+    .filter(q => (state?.level || 1) >= (q.minLevel || 1))
+    .filter(q => q.difficulty === "easy")
+    .find(q => !activeQuestKeys.has(getQuestKey({ ...q, templateId: q.id })));
+  if (!template) return null;
+  return normalizeQuestForStorage({
+    ...template,
+    id: `sys_comeback_${genId()}`,
+    templateId: template.templateId || template.id,
+    type: "daily",
+    isSystem: true,
+    isComebackQuest: true,
+    createdAt: today,
+    dueDate: today,
+    priority: "low",
+    energy: "quick",
+  });
+}
+
 /**
  * Async variant: tries to generate quests via AI, falls back to static pool.
  * @param {number} count

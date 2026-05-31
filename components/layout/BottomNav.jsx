@@ -3,6 +3,7 @@ import { getPremiumFeatureForRoute } from "../../data/premium.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 const SYSTEM_SUB_VIEWS = ["stats", "shadows", "jobs", "equipment", "achievements", "shop", "analytics", "challenges", "settings", "more"];
 const TRAINING_SUB_VIEWS = ["goals", "calendar"];
+const DASHBOARD_SUB_VIEWS = ["quest_log"];
 const TAB_FEATURE_MAP = {
   training: "training_tab", dungeon: "dungeons", story: "story",
   stats: "stats_view", analytics: "analytics", achievements: "achievements",
@@ -42,6 +43,7 @@ export default function BottomNav({
 
   const isActive = (key) => {
     if (view === key) return true;
+    if (key === "dashboard" && DASHBOARD_SUB_VIEWS.includes(view)) return true;
     if (key === "system" && SYSTEM_SUB_VIEWS.includes(view) && !configKeys.includes(view)) return true;
     if (key === "training" && TRAINING_SUB_VIEWS.includes(view) && !configKeys.includes(view)) return true;
     return false;

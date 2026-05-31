@@ -17,6 +17,7 @@ import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
 import { isFeatureUnlocked } from '../data/featureUnlocks.js';
 import { hasFocusQuestAbility, getFocusQuestXpBonus, getMomentumBonus, getQuestTimerReduction } from '../data/artifactHelpers.js';
 import { getStateLocale, translate } from '../data/i18n.js';
+import { getQuestVerificationPolicy } from '../data/questVerification.js';
 
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
@@ -52,6 +53,7 @@ export function computeXpGain(quest, streakBonus, equipBonuses, skillBonuses, pe
 export function buildCompleteQuestState(questId, state, processAchievements, gemBoosterMult = 1, verificationBonus = false) {
   const quest = state.quests.find(q => q.id === questId);
   if (!quest) return null;
+  const hasVerificationBonus = verificationBonus && getQuestVerificationPolicy(quest).mode === "photo";
 
   const today = getToday();
   const oldStreak = state.streak;
@@ -68,7 +70,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   xpGain = Math.round(xpGain * gemBoosterMult);
   if (soulLinkActive) xpGain = Math.round(xpGain * 1.25);
   if (state.restBuff?.active) xpGain = Math.round(xpGain * 1.1);
-  if (verificationBonus) xpGain = Math.round(xpGain * 1.2);
+  if (hasVerificationBonus) xpGain = Math.round(xpGain * 1.2);
 
   // ── Fokus-Amulett: +50% XP if this quest is the daily focus ──
   if (hasFocusQuestAbility(state) && state.dailyFocusQuestId === questId) {
@@ -106,7 +108,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
   let goldMult = (1 + (equipBonuses.goldBonus || 0) + (skillBonuses.goldBonus || 0) + (formBonus?.goldBonus || 0)) * (typeCfg.goldMult || 1) * (quest.chainMultiplier || 1);
   let goldGain = Math.round(diff.gold * goldMult);
-  if (verificationBonus) goldGain = Math.round(goldGain * 1.1);
+  if (hasVerificationBonus) goldGain = Math.round(goldGain * 1.1);
 
   let next = calculateLevelUp(state, xpGain);
   const didLevelUp = next._didLevelUp;
@@ -314,7 +316,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     durationFeedback: null,
     notes: null,
     categoryFeedback: null,
-    wasVerified: verificationBonus,
+    wasVerified: hasVerificationBonus,
   };
 
   next = {
@@ -377,7 +379,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   }
 
   // Apply verification bonus tracking before achievement check
-  if (verificationBonus) {
+  if (hasVerificationBonus) {
     next.ai = { ...(next.ai || {}), verifiedQuests: ((next.ai?.verifiedQuests) || 0) + 1 };
     notifications.push({ msg: ltState(state, "questActions.verificationBonus"), type: "success" });
   }
@@ -418,10 +420,13 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
 /**
  * Handle completing an emergency quest.
  */
-export function buildCompleteEmergencyQuestState(eq, state, processAchievements) {
+export function buildCompleteEmergencyQuestState(eq, state, processAchievements, verificationBonus = false) {
   const diff = DIFFICULTIES.find(d => d.key === eq.difficulty) || DIFFICULTIES[1];
-  const xpGain = Math.round(diff.xp * 2.5);
-  const goldGain = Math.round(diff.gold * 2.5);
+  const hasVerificationBonus = verificationBonus && getQuestVerificationPolicy(eq).mode === "photo";
+  let xpGain = Math.round(diff.xp * 2.5);
+  let goldGain = Math.round(diff.gold * 2.5);
+  if (hasVerificationBonus) xpGain = Math.round(xpGain * 1.2);
+  if (hasVerificationBonus) goldGain = Math.round(goldGain * 1.1);
   let next = calculateLevelUp(state, xpGain);
   const didLevelUp = next._didLevelUp;
   const earnedPoints = next._levelsGained;
@@ -433,10 +438,13 @@ export function buildCompleteEmergencyQuestState(eq, state, processAchievements)
     totalGoldEarned: (state.totalGoldEarned || 0) + goldGain,
     stats: { ...next.stats, [eq.category]: (next.stats[eq.category] || 0) + 2 },
     emergencyDone: true,
-    totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1
+    totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1,
+    ...(hasVerificationBonus
+      ? { ai: { ...(next.ai || {}), verifiedQuests: (next.ai?.verifiedQuests || 0) + 1 } }
+      : {})
   };
   const { nextState: afterAch, newAchievements } = processAchievements(next);
   next = afterAch;
 
-  return { nextState: next, didLevelUp, earnedPoints, newLevel, xpGain, goldGain, newAchievements, eq };
+  return { nextState: next, didLevelUp, earnedPoints, newLevel, xpGain, goldGain, newAchievements, eq, wasVerified: hasVerificationBonus };
 }

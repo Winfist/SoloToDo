@@ -20,6 +20,10 @@ service cloud.firestore {
       match /questHistory/{questId} {
         allow read, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
       }
+
+      match /questArchive/{questId} {
+        allow read, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
     }
 
     // Public Profiles — leaderboard-readable. Values are authored client-side

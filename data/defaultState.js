@@ -2,7 +2,7 @@
 // Extracted from data/constants.jsx
 
 export const DEFAULT_STATE = {
-  stateVersion: 2,
+  stateVersion: 3,
   hunterName: "", level: 1, xp: 0, gold: 0, totalGoldEarned: 0,
   premium: {
     tier: "free",
@@ -24,6 +24,13 @@ export const DEFAULT_STATE = {
   stats: { str: 0, int: 0, vit: 0, agi: 0, cha: 0 },
   statPoints: 0,
   quests: [], completedQuests: [], streak: 0, lastActiveDate: null, lastWelcomeDate: null,
+  questArchive: [],
+  questPlanning: {
+    overloadPreset: "balanced",
+    pinnedQuestIds: [],
+    deferredUntilById: {},
+    lifecycleById: {},
+  },
   shopPurchases: [], selectedTheme: "default", selectedTitle: "", selectedPageTransition: "domain_shift",
   shadowArmy: { shadows: [], capacity: 20, formations: { vanguard: [], core: [], rearguard: [] }, totalShadowXp: 0 },
   totalXpEarned: 0, totalQuestsCompleted: 0,

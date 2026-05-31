@@ -1,5 +1,6 @@
 import { QUEST_POOL } from "../data/questPool.js";
 import { localizeQuestTemplate } from "../data/localizedQuestPool.js";
+import { validateQuestPresentations } from "../data/questPresentation.js";
 import { de } from "../data/locales/de.js";
 import { en } from "../data/locales/en.js";
 
@@ -26,6 +27,11 @@ for (const q of QUEST_POOL) {
   const enT = localizeQuestTemplate(q, "en");
   if (!enT.desc || enT.desc.startsWith("Complete this")) errors.push(`${q.id}: missing EN override desc`);
   if ((enT.subQuests || []).length !== q.subQuests.length) errors.push(`${q.id}: EN subQuest count mismatch`);
+}
+for (const locale of ["de", "en"]) {
+  for (const q of validateQuestPresentations(locale)) {
+    errors.push(`${q.id}: missing ${locale.toUpperCase()} presentation title or codename`);
+  }
 }
 
 const counts = Object.fromEntries(CATS.map(c => [c, QUEST_POOL.filter(q => q.category === c).length]));

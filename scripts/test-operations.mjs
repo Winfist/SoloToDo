@@ -17,7 +17,7 @@ if (step1De.title !== "Morgenroutine Stufe 1: Aufstehen vor 6:30 Uhr und 5 Min S
   console.error("German title for step 1 incorrect:", step1De.title);
   process.exit(1);
 }
-if (step1De.desc !== "Etabliere eine unerschuetterliche Morgenroutine fuer maximale Effizienz.") {
+if (step1De.desc !== "Etabliere eine unerschütterliche Morgenroutine für maximale Effizienz.") {
   console.error("German description incorrect:", step1De.desc);
   process.exit(1);
 }

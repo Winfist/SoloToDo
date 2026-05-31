@@ -14,7 +14,9 @@
     "validate:quests": "node scripts/validate-quests.mjs",
     "test:emergency": "node scripts/test-emergency.mjs",
     "test:hidden": "node scripts/test-hidden.mjs",
-    "test:redemption": "node scripts/test-redemption.mjs"
+    "test:redemption": "node scripts/test-redemption.mjs",
+    "test:quest-planning": "node scripts/test-quest-planning.mjs",
+    "test:quest-verification": "node scripts/test-quest-verification.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",

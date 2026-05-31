@@ -6,6 +6,8 @@
 import { Capacitor } from '@capacitor/core';
 import { getLocalDateKey, getToday } from '../data/dateUtils.js';
 import { getLocaleObject, getStateLocale, translate } from '../data/i18n.js';
+import { getQuestPlanningSnapshot } from '../data/questPlanning.js';
+import { getQuestPresentation } from '../data/questPresentation.js';
 
 const APP_GROUP = 'group.com.solotodo.app';
 const WIDGET_DATA_KEY = 'widgetData';
@@ -306,38 +308,45 @@ function buildWidgetPayload(state) {
   const rank = getRankForLevel(state.level || 1);
   const now = new Date();
   const today = getToday();
+  const planningSnapshot = getQuestPlanningSnapshot(state);
 
   // Quest data — send ALL sorted + deduplicated quests so the widget can
   // handle rotation itself. Duplicates by normalized title collapse to a
   // single representative with a `count` field.
-  const filtered = filterQuests(state.quests, config.questFilter);
-  const sorted = sortQuests(filtered, config.questSort);
+  const filtered = filterQuests(planningSnapshot.open, config.questFilter);
+  const sorted = config.rotationEnabled === true
+    ? filtered
+    : planningSnapshot.loadout.filter(q => filtered.some(item => item.id === q.id));
   const deduped = dedupQuestsForWidget(sorted);
   if (deduped.length < sorted.length) {
     console.log(`[Widget] Deduped quests: ${sorted.length} → ${deduped.length} (collapsed ${sorted.length - deduped.length} duplicate${sorted.length - deduped.length === 1 ? '' : 's'})`);
   }
-  const allQuests = deduped.map(q => ({
-    id: q.id,
-    title: q.title || translate(locale, 'quests.fallbackTitle'),
-    description: truncateText(q.description, 120),
-    nextStep: nextOpenStep(q),
-    stages: questStages(q),
-    category: q.category || 'agi',
-    difficulty: q.difficulty || 'normal',
-    type: q.type || 'side',
-    priority: q.priority || 'medium',
-    dueDate: q.dueDate || null,
-    isSystem: !!q.isSystem,
-    count: q.count || 1,
-    canCompleteFromWidget: canCompleteQuestFromWidget(q),
-  }));
+  const allQuests = deduped.map(q => {
+    const presentation = getQuestPresentation(q, locale);
+    return {
+      id: q.id,
+      title: presentation.title || q.title || translate(locale, 'quests.fallbackTitle'),
+      description: truncateText(presentation.description || q.description, 120),
+      nextStep: presentation.nextStep || nextOpenStep(q),
+      stages: questStages(q),
+      category: q.category || 'agi',
+      difficulty: q.difficulty || 'normal',
+      type: q.type || 'side',
+      priority: q.priority || 'medium',
+      dueDate: q.dueDate || null,
+      isSystem: !!q.isSystem,
+      count: q.count || 1,
+      canCompleteFromWidget: canCompleteQuestFromWidget(q),
+    };
+  });
 
   // Focus quest (top-ranked after sort + dedup)
+  const focusPresentation = deduped[0] ? getQuestPresentation(deduped[0], locale) : null;
   const focusQuest = deduped[0] ? {
     id: deduped[0].id,
-    title: deduped[0].title || translate(locale, 'quests.fallbackTitle'),
-    description: truncateText(deduped[0].description, 120),
-    nextStep: nextOpenStep(deduped[0]),
+    title: focusPresentation.title || deduped[0].title || translate(locale, 'quests.fallbackTitle'),
+    description: truncateText(focusPresentation.description || deduped[0].description, 120),
+    nextStep: focusPresentation.nextStep || nextOpenStep(deduped[0]),
     stages: questStages(deduped[0]),
     category: deduped[0].category,
     difficulty: deduped[0].difficulty,
@@ -410,7 +419,7 @@ function buildWidgetPayload(state) {
   }).length;
 
   // Total open quests
-  const totalOpen = (state.quests || []).filter(q => !q.completed).length;
+  const totalOpen = planningSnapshot.actionable.length;
 
   // Deadline alert
   const questsWithDeadline = filtered.filter(q => q.dueDate);

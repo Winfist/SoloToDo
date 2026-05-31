@@ -60,7 +60,7 @@ export const PREMIUM_FEATURES = {
   ai_verification: {
     eyebrow: "VERIFICATION CORE",
     title: "Foto-Verifikation ist Hunter Pro",
-    desc: "Beweise abgeschlossene Quests per Foto und erhalte ein strengeres, motivierendes System-Feedback.",
+    desc: "Beweise passende abgeschlossene Quests per Foto und erhalte ein strengeres, motivierendes System-Feedback.",
     bullets: ["Foto-Beweis", "Integritaet", "Bonus-Feedback"],
   },
   ai_dynamic_quests: {

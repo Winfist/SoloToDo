@@ -14,7 +14,6 @@ import NativeStatsDashboard from "../NativeStatsDashboard.jsx";
 import { ScreenTimeSummaryWidget } from "./ScreenTimeSummaryWidget.jsx";
 import ScreenTimeDashboard from "../ScreenTimeDashboard.jsx";
 import { ScreenTimeVerifyModal } from "../ScreenTimeVerifyModal.jsx";
-import QuestIntensityControl from "../QuestIntensityControl.jsx";
 import SystemUpdatePreviewModal from "./SystemUpdatePreviewModal.jsx";
 import { isPremiumDashboardWidget } from "../../data/premium.js";
 import {
@@ -22,8 +21,9 @@ import {
   getQuestReplacementStatus,
   groupQuestStacks,
   isQuestReplaceable,
-  QUEST_FOCUS_SOFT_CAP
 } from "../../data/questUtils.js";
+import { getQuestPlanningSnapshot, getQuestPlanningState } from "../../data/questPlanning.js";
+import { getQuestPresentation } from "../../data/questPresentation.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 
 // ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
@@ -233,7 +233,8 @@ export default function DashboardView({
   requirePremium,
   openPremiumModal,
   requireQuestSlot,
-  setDailyFocusQuest
+  setDailyFocusQuest,
+  togglePinnedQuest
 }) {
   const { t, locale } = useI18n();
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
@@ -268,14 +269,11 @@ export default function DashboardView({
 
   // ── Quest sub-state (unchanged from original) ──
   const [originFilter, setOriginFilter] = useState("all");
-  const [collapsedSections, setCollapsedSections] = useState({});
   const [quickAddMode, setQuickAddMode] = useState(false);
   const [quickAddTitle, setQuickAddTitle] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [replacementQuest, setReplacementQuest] = useState(null);
   const [replacementOptions, setReplacementOptions] = useState([]);
-
-  const toggleSection = (key) => setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   // ── Dashboard Configuration ──
   const dashConfig = useMemo(() => mergeConfig(state.dashboardConfig, can), [state.dashboardConfig, state.level]);
@@ -554,6 +552,8 @@ export default function DashboardView({
       return true;
     });
   }, [localLayout, locale]);
+  const planningSnapshot = useMemo(() => getQuestPlanningSnapshot(state), [state]);
+  const planningState = getQuestPlanningState(state);
 
   // ── Quest rendering helpers (unchanged) ──
   const visibleQuests = originFilter === "system"
@@ -581,8 +581,6 @@ export default function DashboardView({
     || (diffOrder[a.difficulty] ?? 2) - (diffOrder[b.difficulty] ?? 2);
   const sortedVisibleQuests = [...visibleQuests].sort(sortByFocus);
   const sortedVisibleQuestGroups = groupQuestStacks(sortedVisibleQuests);
-  const systemQuests = visibleQuests.filter(q => q.isSystem).sort(sortByFocus);
-  const userQuests = visibleQuests.filter(q => !q.isSystem).sort(sortByFocus);
   const questTypeFilterOptions = [
     { key: "all", label: t("dashboard.board.typeAll"), color: theme.accent || theme.primary },
     { key: "daily", label: t("dashboard.board.typeDaily"), color: "#22d3ee" },
@@ -603,34 +601,14 @@ export default function DashboardView({
   const questFilterSummary = hasActiveQuestFilters
     ? [questFilter !== "all" ? questTypeLabel : null, originFilter !== "all" ? questOriginLabel : null].filter(Boolean).join(" / ")
     : t("dashboard.board.summaryAll");
-  const overdueQuestList = sortedVisibleQuestGroups.filter(q => q.dueDate && q.dueDate < todayKey);
-  const todayQuestList = sortedVisibleQuestGroups.filter(q => !(q.dueDate && q.dueDate < todayKey) && (q.type === "daily" || q.dueDate === todayKey));
-  const laterQuestList = sortedVisibleQuestGroups.filter(q => !(q.dueDate && q.dueDate < todayKey) && !(q.type === "daily" || q.dueDate === todayKey));
-  const rawQuestBoardSections = [
-    { key: "overdue", title: t("dashboard.board.sectionOverdue"), color: "#ef4444", quests: overdueQuestList },
-    { key: "today", title: t("dashboard.board.sectionToday"), color: theme.primary, quests: todayQuestList },
-    { key: "later", title: t("dashboard.board.sectionLater"), color: "#64748b", quests: laterQuestList },
+  const filteredQuestIds = new Set(filteredQuests.map(q => q.id));
+  const dashboardLoadout = planningSnapshot.loadout.filter(q =>
+    filteredQuestIds.has(q.id)
+    && (originFilter === "all" || (originFilter === "system" ? q.isSystem : !q.isSystem))
+  );
+  const questBoardSections = [
+    { key: "loadout", title: locale === "en" ? "YOUR LOADOUT" : "DEIN LOADOUT", color: theme.primary, quests: groupQuestStacks(dashboardLoadout) },
   ].filter(section => section.quests.length > 0);
-  let focusQuestIndex = 0;
-  const questBoardSections = rawQuestBoardSections.map(section => {
-    const focus = [];
-    section.quests.forEach(q => {
-      if (focusQuestIndex < QUEST_FOCUS_SOFT_CAP) focus.push(q);
-      focusQuestIndex += 1;
-    });
-    return { ...section, quests: focus };
-  }).filter(section => section.quests.length > 0);
-  let reserveQuestIndex = 0;
-  const reserveQuestSections = rawQuestBoardSections.map(section => {
-    const reserve = [];
-    section.quests.forEach(q => {
-      if (reserveQuestIndex >= QUEST_FOCUS_SOFT_CAP) reserve.push(q);
-      reserveQuestIndex += 1;
-    });
-    return { ...section, quests: reserve };
-  }).filter(section => section.quests.length > 0);
-  const reserveQuestCount = reserveQuestSections.reduce((sum, section) => sum + section.quests.length, 0);
-  const showGrouped = false && originFilter === "all" && (systemQuests.length > 0 && userQuests.length > 0);
   const replacementStatus = getQuestReplacementStatus(state);
 
   const openReplacementPicker = useCallback((quest) => {
@@ -657,23 +635,6 @@ export default function DashboardView({
       setReplacementOptions([]);
     }
   }, [replacementQuest, replaceSystemQuest]);
-
-  const SectionHeader = ({ title, icon, color, count, sectionKey }) => (
-    <div onClick={() => toggleSection(sectionKey)} style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "7px 12px", marginBottom: 6, cursor: "pointer",
-      background: `linear-gradient(90deg, ${color}0c, transparent)`,
-      borderLeft: `2px solid ${color}55`, borderRadius: 8,
-      transition: "background 0.2s", userSelect: "none",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-        <span style={{ fontSize: 12 }}>{icon}</span>
-        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color, fontFamily: "'JetBrains Mono',monospace" }}>{title}</span>
-        <span style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>[{count}]</span>
-      </div>
-      <span style={{ fontSize: 9, color, transition: "transform 0.25s", transform: collapsedSections[sectionKey] ? "rotate(-90deg)" : "rotate(0deg)", display: "inline-block" }}>▼</span>
-    </div>
-  );
 
   // ── Render individual widget content by key ──
   // Returns { content, isEmpty } where isEmpty=true means the widget has no visible content
@@ -829,6 +790,14 @@ export default function DashboardView({
                   <EmergencyQuestCard quest={state.emergencyQuest} done={state.emergencyDone} failed={state.emergencyFailed} onComplete={completeEmergencyQuest} theme={theme} />
                 </div>
               )}
+              {planningSnapshot.mandatory.length > 0 && (
+                <div style={{ marginBottom: 14, padding: 11, borderRadius: 14, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.22)" }}>
+                  <div style={{ color: "#f87171", fontSize: 9, fontWeight: 900, letterSpacing: 1.5, fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>SYSTEM-ALARM</div>
+                  {planningSnapshot.mandatory.map((quest, index) => (
+                    <QuestCard key={quest.id} quest={quest} index={index} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} />
+                  ))}
+                </div>
+              )}
 
               {/* ── Quest Board Header ── */}
               <div style={{ margin: "0 0 14px" }}>
@@ -839,6 +808,11 @@ export default function DashboardView({
               </div>
 
               <div style={{ marginBottom: 14 }}>
+                {planningSnapshot.overloadStatus.level !== "calm" && (
+                  <button onClick={() => navigateTo?.("quest_log")} style={{ width: "100%", marginBottom: 10, padding: "10px 11px", borderRadius: 12, textAlign: "left", cursor: "pointer", background: planningSnapshot.overloadStatus.overloaded ? "rgba(239,68,68,0.09)" : "rgba(245,158,11,0.08)", border: `1px solid ${planningSnapshot.overloadStatus.overloaded ? "rgba(239,68,68,0.24)" : "rgba(245,158,11,0.2)"}`, color: planningSnapshot.overloadStatus.overloaded ? "#f87171" : "#fbbf24", fontSize: 11, fontWeight: 800 }}>
+                    {planningSnapshot.overloadStatus.overloaded ? "SYSTEMRUFE PAUSIERT" : "QUEST-LOG PRÜFEN"} · {planningSnapshot.overloadStatus.actionableCount} offen
+                  </button>
+                )}
                 {/* Filter summary + toggle */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
                   <span style={{ color: "#64748b", fontSize: 12, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{questFilterSummary}</span>
@@ -943,14 +917,6 @@ export default function DashboardView({
                 )}
               </div>
 
-              <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 16, background: "rgba(255,255,255,0.02)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-                  <span style={{ color: "#7b8494", fontSize: 12, fontFamily: "'Outfit',sans-serif" }}>{t("dashboard.board.systemSettingDesc")}</span>
-                  <span style={{ padding: "3px 8px", borderRadius: 999, background: "rgba(255,255,255,0.03)", color: "#475569", fontSize: 9, fontWeight: 600, fontFamily: "'Outfit',sans-serif" }}>{t("dashboard.board.noQuest")}</span>
-                </div>
-                <QuestIntensityControl state={state} persist={persist} theme={theme} compact surface="embedded" premiumStatus={premiumStatus} onOpenPremium={openPremiumModal} />
-              </div>
-
               {/* ── QUICK ADD INPUT ── */}
               {quickAddMode && (
                 <div style={{ display: "flex", gap: 6, marginBottom: 10, animation: "slideDown 0.2s ease" }}>
@@ -979,13 +945,18 @@ export default function DashboardView({
               )}
 
               {/* ── QUEST LIST ── */}
-              {visibleQuests.length === 0 ? (
+              {dashboardLoadout.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)", marginBottom: 24 }}>
                   <div style={{ marginBottom: 10, animation: "float 3s ease-in-out infinite", display: "flex", justifyContent: "center" }}>
                     <img src="/icons/skill_attack.webp" alt="no quests" style={{ width: 44, height: 44, objectFit: "contain", opacity: 0.4, filter: "drop-shadow(0 0 10px rgba(100,116,139,0.4))" }} />
                   </div>
                   <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>{t("dashboard.board.emptyTitle")}</div>
                   <div style={{ fontSize: 11, color: "#334155" }}>{t("dashboard.board.emptyDesc")}</div>
+                  {planningSnapshot.questLog.length > 0 && (
+                    <button onClick={() => navigateTo?.("quest_log")} style={{ marginTop: 12, padding: "8px 11px", borderRadius: 9, border: `1px solid ${theme.primary}33`, background: `${theme.primary}10`, color: theme.primary, cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>
+                      QUEST-LOG ÖFFNEN ({planningSnapshot.questLog.length})
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div style={{ marginBottom: 24, display: "grid", gap: 12 }}>
@@ -1013,6 +984,8 @@ export default function DashboardView({
                             onSetFocus={setDailyFocusQuest}
                             isDailyFocus={state.dailyFocusQuestId === q.id}
                             hasAmulet={state.artifacts?.focusAmulet}
+                            onTogglePin={togglePinnedQuest}
+                            isPinned={planningState.pinnedQuestIds.includes(q.id)}
                             canReplace={isQuestReplaceable(q) && replacementStatus.remaining > 0}
                             onReplace={openReplacementPicker}
                           />
@@ -1020,83 +993,18 @@ export default function DashboardView({
                       </div>
                     </section>
                   ))}
-                  {reserveQuestCount > 0 && (
-                    <section>
-                      <div
-                        onClick={() => toggleSection("reserve")}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 8,
-                          margin: "2px 0 8px",
-                          padding: "9px 10px",
-                          borderRadius: 10,
-                          background: "rgba(100,116,139,0.08)",
-                          border: "1px solid rgba(148,163,184,0.13)",
-                          cursor: "pointer",
-                          userSelect: "none",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                          <span style={{ width: 7, height: 7, borderRadius: 999, background: "#64748b", boxShadow: "0 0 12px rgba(100,116,139,0.45)" }} />
-                          <span style={{ color: "#94a3b8", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.2 }}>RESERVE</span>
-                          <span style={{ color: "#64748b", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{reserveQuestCount}</span>
-                        </div>
-                        <span style={{ fontSize: 9, color: "#64748b", transition: "transform 0.25s", transform: collapsedSections.reserve ? "rotate(-90deg)" : "rotate(0deg)", display: "inline-block" }}>▼</span>
+                  {planningSnapshot.questLog.length > 0 && (
+                    <button onClick={() => navigateTo?.("quest_log")} style={{ width: "100%", padding: "11px 12px", borderRadius: 12, border: "1px solid rgba(148,163,184,0.13)", background: "rgba(100,116,139,0.08)", color: "#cbd5e1", cursor: "pointer", textAlign: "left" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "#94a3b8", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
+                        <span>WEITERE QUESTS: {planningSnapshot.questLog.length}</span>
+                        <span>QUEST-LOG ÖFFNEN</span>
                       </div>
-                      {!collapsedSections.reserve && (
-                        <div style={{ display: "grid", gap: 10 }}>
-                          {reserveQuestSections.map(section => (
-                            <div key={`reserve-${section.key}`} style={{ display: "grid", gap: 8 }}>
-                              <div style={{ color: section.color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.1 }}>{section.title}</div>
-                              {section.quests.map(q => (
-                                <QuestCard
-                                  key={q.id}
-                                  quest={q}
-                                  index={sortedVisibleQuestGroups.findIndex(item => item.id === q.id)}
-                                  theme={theme}
-                                  onComplete={handleInterceptComplete}
-                                  onEdit={startEditingQuest}
-                                  onDelete={deleteQuest}
-                                  onCompleteSubQuest={completeSubQuest}
-                                  onOpenDetail={onOpenDetail}
-                                  onSetFocus={setDailyFocusQuest}
-                                  isDailyFocus={state.dailyFocusQuestId === q.id}
-                                  hasAmulet={state.artifacts?.focusAmulet}
-                                  canReplace={isQuestReplaceable(q) && replacementStatus.remaining > 0}
-                                  onReplace={openReplacementPicker}
-                                />
-                              ))}
-                            </div>
-                          ))}
+                      {planningSnapshot.questLog.slice(0, 2).map(quest => (
+                        <div key={quest.id} style={{ marginTop: 7, color: "#64748b", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {getQuestPresentation(quest, locale).title}
                         </div>
-                      )}
-                    </section>
-                  )}
-                  {showGrouped ? (
-                    <>
-                      {systemQuests.length > 0 && (
-                        <>
-                          <SectionHeader title={t("dashboard.board.systemSection")} icon="⚙" color="#06b6d4" count={systemQuests.length} sectionKey="system" />
-                          {!collapsedSections.system && systemQuests.map((q, i) => (
-                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
-                          ))}
-                        </>
-                      )}
-                      {userQuests.length > 0 && (
-                        <>
-                          <SectionHeader title={t("dashboard.board.userSection")} icon="✦" color="#f59e0b" count={userQuests.length} sectionKey="user" />
-                          {!collapsedSections.user && userQuests.map((q, i) => (
-                            <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
-                          ))}
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    sortedVisibleQuests.map((q, i) => (
-                      <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleInterceptComplete} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onSetFocus={setDailyFocusQuest} isDailyFocus={state.dailyFocusQuestId === q.id} hasAmulet={state.artifacts?.focusAmulet} />
-                    ))
+                      ))}
+                    </button>
                   )}
                 </div>
               )}

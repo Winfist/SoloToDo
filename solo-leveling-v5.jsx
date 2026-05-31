@@ -27,6 +27,7 @@ import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
 import LifeDomainsOnboarding from "./components/LifeDomainsOnboarding.jsx";
 import { HUNTER_CODEX } from "./data/hunterCodex.js";
 import { getDailySystemQuestCount } from "./data/questIntensity.js";
+import { getQuestPlanningSnapshot } from "./data/questPlanning.js";
 const InnerSanctum = React.lazy(() => import("./components/InnerSanctum.jsx"));
 const ShadowRegressionCinematic = React.lazy(() => import("./components/ShadowRegressionCinematic.jsx"));
 const SoulLinkView = React.lazy(() => import("./components/SoulLinkView.jsx"));
@@ -40,6 +41,7 @@ import GameIcon from "./components/GameIcon.jsx";
 const RewardedAdModal = React.lazy(() => import("./components/RewardedAdModal.jsx"));
 import GemBoosterBanner from "./components/GemBoosterBanner.jsx";
 import DashboardView from "./components/views/DashboardView.jsx";
+import QuestLogView from "./components/views/QuestLogView.jsx";
 import HunterIslandHub from "./components/views/HunterIslandHub.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
 const QuestCompletionCinematic = React.lazy(() => import("./components/QuestCompletionCinematic.jsx"));
@@ -86,6 +88,7 @@ import { AIChatWidget } from './components/AIChatWidget.jsx';
 import QuestDetailModal from './components/QuestDetailModal.jsx';
 import PremiumAccessModal from './components/PremiumAccessModal.jsx';
 import { getDailyQuestCreationStatus, getPremiumFeatureForRoute } from './data/premium.js';
+import { getQuestVerificationPolicy } from './data/questVerification.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
   "quest_title_input",
@@ -308,7 +311,11 @@ function App({ initialHunterName, onLogout }) {
     activateSystemChallenge,
     updateSystemChallengeProgress,
     abandonSystemChallenge,
-    setDailyFocusQuest
+    setDailyFocusQuest,
+    togglePinnedQuest,
+    deferQuest,
+    archiveQuest,
+    restoreQuest
   } = gameState;
   const { t: tr, locale, setBootstrapLanguage } = useI18n();
   useGlobalHealthSync(state, updateHealthData, claimHealthReward);
@@ -527,7 +534,7 @@ function App({ initialHunterName, onLogout }) {
     shop: tr("nav.viewLabels.shop"), jobs: tr("nav.viewLabels.jobs"), achievements: tr("nav.viewLabels.achievements"),
     analytics: tr("nav.viewLabels.analytics"), training: tr("nav.viewLabels.training"), system: tr("nav.viewLabels.system"),
     goals: tr("nav.viewLabels.goals"), calendar: tr("nav.viewLabels.calendar"), challenges: tr("nav.viewLabels.challenges"),
-    settings: tr("nav.viewLabels.settings"), sanctum: tr("nav.viewLabels.sanctum"),
+    settings: tr("nav.viewLabels.settings"), sanctum: tr("nav.viewLabels.sanctum"), quest_log: "Quest-Log",
   }), [tr]);
   const navigateTo = useCallback((newView) => {
     if (newView === view || isPageTransitioning || transitionPreview) return;
@@ -674,17 +681,45 @@ function App({ initialHunterName, onLogout }) {
 
   // ─ Gemini AI ─
   const geminiAI = useGeminiAI(state);
-  const [verifyingQuest, setVerifyingQuest] = useState(null);
+  const [verificationTarget, setVerificationTarget] = useState(null);
   const [showTaskScan, setShowTaskScan] = useState(false);
 
-  // Intercept completeQuest to offer photo verification if unlocked
-  const handleCompleteQuest = useCallback((questId) => {
-    if (premiumStatus?.active && can('ai_verification') && state?.ai?.verificationEnabled && state?.ai?.enabled) {
-      const quest = state.quests?.find(q => q.id === questId);
-      if (quest) { setVerifyingQuest(quest); return; }
+  const canOfferPhotoVerification = useCallback((quest) => (
+    premiumStatus?.active
+    && can('ai_verification')
+    && state?.ai?.verificationEnabled
+    && state?.ai?.enabled
+    && getQuestVerificationPolicy(quest).mode === "photo"
+  ), [can, state?.ai?.enabled, state?.ai?.verificationEnabled, premiumStatus?.active]);
+
+  // Intercept completion only for curated single-photo quests.
+  const handleCompleteQuest = useCallback((questId, rect) => {
+    const quest = state?.quests?.find(q => q.id === questId);
+    if (quest && canOfferPhotoVerification(quest)) {
+      setVerificationTarget({ kind: "quest", quest, rect });
+      return;
     }
-    completeQuest(questId);
-  }, [can, state, completeQuest, premiumStatus?.active]);
+    completeQuest(questId, rect);
+  }, [state?.quests, canOfferPhotoVerification, completeQuest]);
+
+  const handleCompleteEmergencyQuest = useCallback((quest) => {
+    if (canOfferPhotoVerification(quest)) {
+      setVerificationTarget({ kind: "emergency", quest });
+      return;
+    }
+    completeEmergencyQuest(quest);
+  }, [canOfferPhotoVerification, completeEmergencyQuest]);
+
+  const finishVerificationTarget = useCallback((verified) => {
+    if (!verificationTarget) return;
+    const { kind, quest, rect } = verificationTarget;
+    setVerificationTarget(null);
+    if (kind === "emergency") {
+      completeEmergencyQuest(quest, verified);
+      return;
+    }
+    completeQuest(quest.id, rect, verified);
+  }, [verificationTarget, completeEmergencyQuest, completeQuest]);
 
   // ─ AI: Replace static system quests with AI-generated ones after daily reset ─
   // Uses localStorage so the guard survives page reloads — prevents one call per reload
@@ -698,6 +733,7 @@ function App({ initialHunterName, onLogout }) {
     if (lastActiveDateRef.current === today || alreadyGenToday) return;
     lastActiveDateRef.current = today;
     localStorage.setItem(storageKey, today);
+    if (getQuestPlanningSnapshot(state).overloadStatus.overloaded) return;
     if (!premiumStatus?.active || !can('ai_dynamic_quests') || !state.ai?.enabled || !state.ai?.dynamicMessagesEnabled || geminiAI.isRateLimited()) return;
 
     // Small delay so static quests render first, then swap silently
@@ -716,7 +752,7 @@ function App({ initialHunterName, onLogout }) {
       });
     }, 1500);
     return () => clearTimeout(timer);
-  }, [state?.lastActiveDate, loading, premiumStatus?.active]);
+  }, [state?.lastActiveDate, state?.questPlanning?.overloadPreset, loading, premiumStatus?.active]);
 
   // ─ View Guard: Reset to dashboard if current view is locked ─
   React.useEffect(() => {
@@ -763,7 +799,7 @@ function App({ initialHunterName, onLogout }) {
     const initial = setTimeout(checkCoach, 120000);
     const interval = setInterval(checkCoach, 1800000);
     return () => { clearTimeout(initial); clearInterval(interval); };
-  }, [state?.streak, state?.lastActiveDate, (state?.habits || []).length, loading, premiumStatus?.active]);
+  }, [state?.streak, state?.lastActiveDate, (state?.habits || []).length, (state?.quests || []).length, state?.questPlanning?.overloadPreset, loading, premiumStatus?.active]);
 
   // ─── TUTORIAL SYSTEM ─────────────────────────────────────────
   const tutorialRef = useRef(null);
@@ -1010,7 +1046,20 @@ function App({ initialHunterName, onLogout }) {
           <MusicPlayer play={isMusicPlaying} />
           {penaltyActive && <div style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", border: "2px solid #ef444422", animation: "penaltyPulse 2s infinite" }} />}
           {/* ── Independent reward UI — silenced while a RewardFlow is active ── */}
-          {!rewardFlowActive && notifications.map((n, index) => <SystemNotification key={n.id} message={n.msg} type={n.type} slot={index} onDone={() => removeNotif(n.id)} />)}
+          {!rewardFlowActive && notifications.map((n, index) => (
+            <SystemNotification
+              key={n.id}
+              message={n.msg}
+              type={n.type}
+              slot={index}
+              actionLabel={n.action?.label}
+              onAction={n.action ? () => {
+                if (n.action.view) navigateTo(n.action.view);
+                removeNotif(n.id);
+              } : undefined}
+              onDone={() => removeNotif(n.id)}
+            />
+          ))}
           {!rewardFlowActive && achQueue.slice(0, 1).map(a => <AchievementToast key={a.id} achievement={a} onDone={() => setAchQueue(prev => prev.slice(1))} />)}
           {!rewardFlowActive && xpFloats.map(f => <XpFloat key={f.id} x={f.x} y={f.y} xp={f.xp} gold={f.gold} />)}
 
@@ -1131,20 +1180,12 @@ function App({ initialHunterName, onLogout }) {
           {showFocusMode && <FocusMode state={state} persist={persist} notify={notify} onExit={() => setShowFocusMode(false)} theme={theme} processAchievements={processAchievements} />}
 
           {/* AI: QUEST PHOTO VERIFICATION */}
-          {verifyingQuest && (
+          {verificationTarget && (
             <QuestVerifyModal
-              quest={verifyingQuest}
+              quest={verificationTarget.quest}
               geminiAI={geminiAI}
-              onComplete={(verified) => {
-                const questId = verifyingQuest.id;
-                setVerifyingQuest(null);
-                completeQuest(questId, null, verified);
-              }}
-              onSkip={() => {
-                const questId = verifyingQuest.id;
-                setVerifyingQuest(null);
-                completeQuest(questId, null, false);
-              }}
+              onComplete={finishVerificationTarget}
+              onSkip={() => finishVerificationTarget(false)}
             />
           )}
 
@@ -1478,7 +1519,7 @@ function App({ initialHunterName, onLogout }) {
                   completeQuest={handleCompleteQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
                   getReplacementCandidates={getReplacementCandidates}
                   replaceSystemQuest={replaceSystemQuest}
-                  completeEmergencyQuest={completeEmergencyQuest} createQuest={createQuest} setDailyFocusQuest={setDailyFocusQuest}
+                  completeEmergencyQuest={handleCompleteEmergencyQuest} createQuest={createQuest} setDailyFocusQuest={setDailyFocusQuest}
                   setShowCreate={requestShowCreate}
                   setShowTaskScan={setShowTaskScan}
                   setShowFocusMode={setShowFocusMode}
@@ -1498,6 +1539,24 @@ function App({ initialHunterName, onLogout }) {
                   requirePremium={requirePremium}
                   openPremiumModal={openPremiumModal}
                   requireQuestSlot={requireQuestSlot}
+                  togglePinnedQuest={togglePinnedQuest}
+                />
+              )}
+
+              {view === "quest_log" && (
+                <QuestLogView
+                  state={state}
+                  theme={theme}
+                  navigateTo={navigateTo}
+                  completeQuest={handleCompleteQuest}
+                  completeSubQuest={completeSubQuest}
+                  startEditingQuest={startEditingQuest}
+                  deleteQuest={deleteQuest}
+                  onOpenDetail={setDetailQuest}
+                  togglePinnedQuest={togglePinnedQuest}
+                  deferQuest={deferQuest}
+                  archiveQuest={archiveQuest}
+                  restoreQuest={restoreQuest}
                 />
               )}
 

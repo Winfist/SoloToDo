@@ -12,21 +12,47 @@ function systemPersona(language = "de") {
 
 const SYSTEM_PERSONA = systemPersona("de");
 
-function VERIFY_QUEST_PROMPT(title, desc, language = "de") {
+function VERIFY_QUEST_PROMPT(title, desc, questSteps = [], evidenceKind = "artifact", language = "de") {
   const persona = systemPersona(language);
+  const steps = Array.isArray(questSteps) ? questSteps.filter(Boolean) : [];
+  const evidenceFocus = {
+    artifact: {
+      en: "a visible finished artifact, document, note, or relevant screenshot",
+      de: "ein sichtbares fertiges Ergebnis, Dokument, Notizblatt oder relevanter Screenshot",
+    },
+    environment: {
+      en: "a visibly changed room, workspace, or prepared environment",
+      de: "ein sichtbar veraenderter Raum, Arbeitsplatz oder vorbereiteter Zustand",
+    },
+    outdoor: {
+      en: "visible presence at a relevant outdoor place",
+      de: "sichtbare Anwesenheit an einem passenden Ort im Freien",
+    },
+    meal: {
+      en: "a visibly prepared meal or relevant food result",
+      de: "eine sichtbar vorbereitete Mahlzeit oder ein passendes Lebensmittel-Ergebnis",
+    },
+  };
+  const focus = evidenceFocus[evidenceKind] || evidenceFocus.artifact;
+  const enSteps = steps.length > 0 ? `\nSub-Quests:\n${steps.map(step => `- ${step}`).join("\n")}` : "";
+  const deSteps = steps.length > 0 ? `\nSub-Quests:\n${steps.map(step => `- ${step}`).join("\n")}` : "";
+
   if (normalizeLanguage(language) === "en") {
     return `${persona}
 
-Evaluate whether an uploaded photo plausibly proves a completed Quest.
+Evaluate whether one uploaded photo visibly supports the completed core of a Quest.
 
-Quest: "${title}"${desc ? `\nDescription: "${desc}"` : ""}
+Quest: "${title}"${desc ? `\nDescription: "${desc}"` : ""}${enSteps}
+Expected evidence focus: ${focus.en}.
 
-EVALUATION RULES (LENIENT):
-- Check only whether the photo thematically matches the Quest; exact proof is not required.
-- Outdoor photos can prove running or sport Quests.
-- A clean room can prove cleaning Quests.
-- Book pages or a visible book can prove reading Quests.
-- When in doubt, verify. The Vanguard deserves credit for effort.
+EVALUATION RULES:
+- The photo must visibly support the central Quest result, state, or place. A merely thematic image is insufficient.
+- The photo does not need to prove every minor requirement, but it must show meaningful evidence for the Quest core.
+- Accept a clearly visible finished artifact, changed environment, relevant outdoor place, or prepared meal when it matches the expected evidence focus.
+- Reject a static photo as proof of repetitions, exercise form, workout completion, duration, distance, elevation gain, sleep, detox, or social interaction.
+- An outdoor photo can support presence outdoors. It never proves running distance, elevation gain, or sports performance.
+- A visible book alone does not prove that it was read. Require a visible result such as notes when the Quest core is learning or reading.
+- When in doubt, reject.
 
 Return ONLY this JSON object, no Markdown and no extra text:
 {"verified": true, "reason": "Short reason (max 1 sentence)", "confidence": 85}`;
@@ -34,16 +60,19 @@ Return ONLY this JSON object, no Markdown and no extra text:
 
   return `${persona}
 
-Du bewertest, ob ein hochgeladenes Foto eine abgeschlossene Quest belegt.
+Du bewertest, ob ein einzelnes hochgeladenes Foto den abgeschlossenen Kern einer Quest sichtbar stuetzt.
 
-Quest: "${title}"${desc ? `\nBeschreibung: "${desc}"` : ""}
+Quest: "${title}"${desc ? `\nBeschreibung: "${desc}"` : ""}${deSteps}
+Erwarteter Evidenz-Fokus: ${focus.de}.
 
-BEWERTUNGSREGELN (GROSSZUEGIG):
-- Pruefe nur, ob das Foto THEMATISCH zur Quest passt; keine exakten Beweise noetig.
-- Ein Outdoor-Foto reicht fuer eine Lauf- oder Sport-Quest.
-- Ein aufgeraeumter Raum reicht fuer eine Aufraeum-Quest.
-- Buchseiten oder ein Buch im Bild reicht fuer eine Lese-Quest.
-- Im Zweifel: verifiziere. Der Vanguard verdient den Bonus fuer seine Muehe.
+BEWERTUNGSREGELN:
+- Das Foto muss das zentrale Quest-Ergebnis, den Zustand oder den Ort sichtbar stuetzen. Ein nur thematisch passendes Bild reicht nicht.
+- Das Foto muss nicht jede Nebenanforderung lueckenlos beweisen, aber es muss den Quest-Kern sinnvoll belegen.
+- Akzeptiere ein klar sichtbares fertiges Ergebnis, eine veraenderte Umgebung, einen relevanten Ort im Freien oder eine vorbereitete Mahlzeit, wenn dies zum Evidenz-Fokus passt.
+- Lehne ein statisches Foto als Beweis fuer Wiederholungen, korrekte Sportausfuehrung, Trainingsabschluss, Dauer, Distanz, Hoehenmeter, Schlaf, Detox oder soziale Interaktion ab.
+- Ein Outdoor-Foto kann die Anwesenheit draussen stuetzen. Es beweist niemals Laufdistanz, Hoehenmeter oder sportliche Leistung.
+- Ein sichtbares Buch allein beweist nicht, dass es gelesen wurde. Verlange bei Lern- oder Lese-Quests ein sichtbares Ergebnis wie Notizen.
+- Im Zweifel: ablehnen.
 
 Antworte NUR mit diesem JSON-Objekt, kein Markdown und kein Extra-Text:
 {"verified": true, "reason": "Kurze Begruendung (max 1 Satz)", "confidence": 85}`;

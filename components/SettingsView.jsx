@@ -9,6 +9,7 @@ import { Capacitor } from "@capacitor/core";
 import { AdService } from "../services/adService.js";
 import { openLegalPage } from "../services/legalLinks.js";
 import QuestIntensityControl from "./QuestIntensityControl.jsx";
+import QuestPlanningControl from "./QuestPlanningControl.jsx";
 import { getPremiumFeatureForRoute, getPremiumStatus, isPremiumWidgetModule, PREMIUM_PRODUCT } from "../data/premium.js";
 import { LANGUAGE_OPTIONS, getLocaleLabel, normalizeLanguageMode, translate, writeBootstrapLanguage } from "../data/i18n.js";
 import { useI18n } from "./i18n/I18nProvider.jsx";
@@ -1519,6 +1520,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <SettingsSection title={t("settings.sections.automation")} icon={<SettingsIcon name="automation" />} color="#22d3ee" open={openSection === "automation"} onToggle={() => toggleSection("automation")} theme={theme}>
         <QuestIntensityControl state={state} persist={persist} theme={theme} premiumStatus={premiumStatus} onOpenPremium={onOpenPremium} />
+        <QuestPlanningControl state={state} persist={persist} theme={theme} />
       </SettingsSection>
 
       {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1548,9 +1550,9 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
           {/* AI Toggles */}
           {can?.('ai_verification') ? (
-            <SettingRow label="Quest-Verifikation" desc={premiumStatus.active ? "Foto-Beweis für +20% XP & Gold" : "Hunter Pro: Foto-Beweis & Integritaets-Feedback"} value={premiumStatus.active && (state.ai?.verificationEnabled ?? true)} onChange={() => premiumStatus.active ? toggleAI("verificationEnabled") : onOpenPremium?.("ai_verification")} color="#22c55e" theme={theme} />
+            <SettingRow label="Quest-Verifikation" desc={premiumStatus.active ? "Foto-Beweis bei passenden Quests: +20% XP & Gold" : "Hunter Pro: Foto-Beweis bei passenden Quests"} value={premiumStatus.active && (state.ai?.verificationEnabled ?? true)} onChange={() => premiumStatus.active ? toggleAI("verificationEnabled") : onOpenPremium?.("ai_verification")} color="#22c55e" theme={theme} />
           ) : (
-            <SettingRow label="Quest-Verifikation" desc="Foto-Beweis für Quest-Abschluss" disabled lockLevel={11} theme={theme} />
+            <SettingRow label="Quest-Verifikation" desc="Foto-Beweis bei passenden Quests" disabled lockLevel={11} theme={theme} />
           )}
 
           {can?.('ai_coach') ? (

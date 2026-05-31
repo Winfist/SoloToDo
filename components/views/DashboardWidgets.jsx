@@ -4,6 +4,7 @@ import { CATEGORIES, DIFFICULTIES, QUEST_TYPES_CONFIG } from "../../data/gameDat
 import StreakFlame from "../ui/StreakFlame.jsx";
 import { getToday, formatLocalDateTime } from "../../data/dateUtils.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
+import { getQuestPlanningSnapshot } from "../../data/questPlanning.js";
 
 // ── Premium glass card base ──────────────────────────────────
 // Single shared surface style: frosted glass on dark, no accent
@@ -89,12 +90,11 @@ export function StreakDisplayWidget({ state, theme }) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export function DailyProgressWidget({ state, theme }) {
   const { t } = useI18n();
-  const allQuests = (state.quests || []);
-  const today = getToday();
-  const todayQuests = allQuests.filter(q => !q.completed && (q.type === "daily" || !q.dueDate || q.dueDate <= today));
-  const completedToday = (state.completedQuests || []).filter(q => q.completedAt === today).length;
-  const totalForToday = todayQuests.length + completedToday;
-  const percent = totalForToday > 0 ? Math.round((completedToday / totalForToday) * 100) : 0;
+  const snapshot = getQuestPlanningSnapshot(state);
+  const todayQuests = snapshot.loadout;
+  const completedToday = snapshot.completedToday;
+  const totalForToday = snapshot.todayTarget;
+  const percent = totalForToday > 0 ? Math.min(100, Math.round((completedToday / totalForToday) * 100)) : 0;
   const statusColor = percent >= 100 ? "#22c55e" : percent >= 60 ? "#f59e0b" : theme.primary;
   const statusText = percent >= 100 ? t("dashboard.progress.statusDone") : percent >= 60 ? t("dashboard.progress.statusRunning") : t("dashboard.progress.statusOpen");
 
@@ -137,14 +137,14 @@ export function DailyProgressWidget({ state, theme }) {
 //  TODAY COMMAND CENTER — Hero widget
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snoozeReminder, setShowTaskScan, setShowCreate }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const today = getToday();
-  const activeQuests = (state.quests || []).filter(q => !q.completed);
-  const completedTodayCount = (state.completedQuests || []).filter(q => q.completedAt === today).length;
-  const dueNowCount = activeQuests.filter(q => q.type === "daily" || !q.dueDate || q.dueDate <= today).length;
-  const overdueCount = activeQuests.filter(q => q.dueDate && q.dueDate < today).length;
-  const totalToday = dueNowCount + completedTodayCount;
-  const progressPct = totalToday ? Math.round((completedTodayCount / totalToday) * 100) : 0;
+  const snapshot = getQuestPlanningSnapshot(state);
+  const completedTodayCount = snapshot.completedToday;
+  const dueNowCount = snapshot.loadout.length;
+  const overdueCount = snapshot.actionable.filter(q => q.dueDate && q.dueDate < today).length;
+  const totalToday = snapshot.todayTarget;
+  const progressPct = totalToday ? Math.min(100, Math.round((completedTodayCount / totalToday) * 100)) : 0;
   const habitsOpen = (state.habits || []).filter(h => h.active !== false && !h.history?.[today]).length;
   const streakRisk = (state.streak || 0) > 0 && completedTodayCount === 0 && (state.streak || 0) > 0;
   const nextReminder = (state.reminders || [])
@@ -180,7 +180,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
             {t("dashboard.command.title")}
           </h2>
           <div style={{ color: "#7b8494", fontSize: 13, marginTop: 6, lineHeight: 1.4, fontFamily: "'Outfit',sans-serif" }}>
-            {overdueCount > 0 ? t("dashboard.command.overdue", { count: overdueCount }) : t("dashboard.command.noDebt")} · {t("dashboard.command.openQuests", { count: dueNowCount })}
+            {completedTodayCount}/{totalToday} {locale === "en" ? "daily target" : "Tagesziel"} · {dueNowCount} {locale === "en" ? "in loadout" : "im Loadout"} · {snapshot.questLog.length} {locale === "en" ? "in Quest Log" : "im Quest-Log"}
           </div>
         </div>
 

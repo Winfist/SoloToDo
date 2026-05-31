@@ -108,14 +108,15 @@ export function useGeminiAI(state) {
 
   // ─── Feature A: Quest photo verification ─────────────────────────────────
 
-  const verifyQuest = useCallback(async (imageFile, questTitle, questDesc = "") => {
+  const verifyQuest = useCallback(async (imageFile, questData = {}) => {
     if (rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
-      const { base64, mimeType } = await fileToBase64(imageFile);
+      const { questTitle, questDesc = "", questSteps = [], evidenceKind = "artifact" } = questData;
+      const { base64, mimeType } = await compressFileToBase64(imageFile);
       const fn = httpsCallable(functions, "verifyQuestPhoto");
-      const result = await fn({ imageBase64: base64, mimeType, questTitle, questDesc, language });
+      const result = await fn({ imageBase64: base64, mimeType, questTitle, questDesc, questSteps, evidenceKind, language });
       return result.data; // { verified, reason, confidence }
     } catch (err) {
       handleError(err);
@@ -132,7 +133,7 @@ export function useGeminiAI(state) {
     setIsLoading(true);
     setError(null);
     try {
-      const { base64, mimeType } = await fileToBase64(imageFile);
+      const { base64, mimeType } = await compressFileToBase64(imageFile);
       const fn = httpsCallable(functions, "scanTaskPhoto");
       const result = await fn({ imageBase64: base64, mimeType, language });
       return result.data; // { tasks: [{ title, category, difficulty }] }

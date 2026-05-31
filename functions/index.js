@@ -44,7 +44,7 @@ function normalizeLanguage(language) {
 
 exports.verifyQuestPhoto = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
-  const { imageBase64, questTitle, questDesc, mimeType } = request.data;
+  const { imageBase64, questTitle, questDesc, questSteps, evidenceKind, mimeType } = request.data;
   const language = normalizeLanguage(request.data?.language);
 
   if (!imageBase64 || !questTitle) {
@@ -53,7 +53,19 @@ exports.verifyQuestPhoto = onCall(CALL_OPTIONS, async (request) => {
 
   await checkAndIncrementRateLimit(uid);
 
-  const prompt = VERIFY_QUEST_PROMPT(questTitle, questDesc || "", language);
+  const safeQuestSteps = Array.isArray(questSteps)
+    ? questSteps.slice(0, 8).map(step => String(step || "").slice(0, 240)).filter(Boolean)
+    : [];
+  const safeEvidenceKind = ["artifact", "environment", "outdoor", "meal"].includes(evidenceKind)
+    ? evidenceKind
+    : "artifact";
+  const prompt = VERIFY_QUEST_PROMPT(
+    String(questTitle).slice(0, 200),
+    String(questDesc || "").slice(0, 1000),
+    safeQuestSteps,
+    safeEvidenceKind,
+    language
+  );
   const raw = await callGeminiWithImage(prompt, imageBase64, mimeType || "image/jpeg");
 
   const result = parseJSON(raw, {

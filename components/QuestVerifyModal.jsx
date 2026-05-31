@@ -4,6 +4,8 @@
 
 import { useState, useRef } from "react";
 import { useI18n } from "./i18n/I18nProvider.jsx";
+import { getQuestDescription } from "../data/questUtils.js";
+import { getQuestVerificationPolicy } from "../data/questVerification.js";
 
 const PHASE = {
   CHOICE: "choice",       // Ask: upload photo or skip?
@@ -31,7 +33,15 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
   async function handleScan() {
     if (!selectedFile) return;
     setPhase(PHASE.SCANNING);
-    const res = await geminiAI.verifyQuest(selectedFile, quest.title, quest.desc || "");
+    const questSteps = (quest.subQuests || [])
+      .map(step => typeof step === "string" ? step : step?.title)
+      .filter(Boolean);
+    const res = await geminiAI.verifyQuest(selectedFile, {
+      questTitle: quest.title,
+      questDesc: getQuestDescription(quest),
+      questSteps,
+      evidenceKind: getQuestVerificationPolicy(quest).evidenceKind,
+    });
     if (!res) {
       // On error (rate limit, network) — treat as skipped
       onSkip();
@@ -62,6 +72,12 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
             <p style={styles.prompt}>
               {t("modals.questVerify.prompt")}
             </p>
+            <p style={styles.evidenceHint}>
+              {t(`modals.questVerify.evidenceHints.${getQuestVerificationPolicy(quest).evidenceKind}`)}
+            </p>
+            <p style={styles.privacyHint}>
+              {t("modals.questVerify.privacyHint")}
+            </p>
             <div style={styles.bonusBadge}>
               <span>📸 +20% XP &nbsp;|&nbsp; +10% GOLD</span>
             </div>
@@ -85,6 +101,9 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
                 <div style={styles.scanOverlay} />
               </div>
             )}
+            <p style={styles.privacyHint}>
+              {t("modals.questVerify.privacyHint")}
+            </p>
             <div style={styles.buttonRow}>
               <button style={styles.btnPrimary} onClick={handleScan} disabled={!selectedFile}>
                 {t("modals.questVerify.startScan")}
@@ -211,6 +230,12 @@ const styles = {
   },
   prompt: {
     textAlign: "center", color: "#a0b8cc", fontSize: "0.85rem", margin: 0,
+  },
+  evidenceHint: {
+    textAlign: "center", color: "#7dd3fc", fontSize: "0.76rem", margin: 0,
+  },
+  privacyHint: {
+    textAlign: "center", color: "#64748b", fontSize: "0.7rem", lineHeight: 1.45, margin: 0,
   },
   bonusBadge: {
     background: "rgba(0,200,255,0.1)", border: "1px solid rgba(0,200,255,0.3)",

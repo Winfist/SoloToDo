@@ -945,7 +945,14 @@ export const de = {
   modals: {
     questVerify: {
       header: "QUEST VERIFICATION PROTOCOL",
-      prompt: "Lade ein Beweisfoto hoch und erhalte einen Bonus.",
+      prompt: "Lade bei passenden Quests ein Beweisfoto hoch und erhalte einen Bonus.",
+      privacyHint: "Keine sensiblen oder privaten Daten hochladen. Das Bild wird nur zur KI-Analyse gesendet und nicht als Quest-Anhang gespeichert.",
+      evidenceHints: {
+        artifact: "Zeige das sichtbare Ergebnis, Dokument oder den Screenshot.",
+        environment: "Zeige den veränderten Raum oder vorbereiteten Zustand.",
+        outdoor: "Zeige den relevanten Ort im Freien.",
+        meal: "Zeige die vorbereitete Mahlzeit.",
+      },
       uploadPhoto: "FOTO HOCHLADEN",
       skipProof: "OHNE BEWEIS",
       startScan: "SCAN STARTEN",

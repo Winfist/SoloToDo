@@ -85,6 +85,7 @@ export function generateSeasonalQuests(seasonKey, state = null) {
     type: "weekly",
     isSystem: true,
     isSeasonal: true,
+    verificationKey: `seasonal:${seasonKey}:${i + 1}`,
     createdAt: getToday(),
     createdAtMs: Date.now(),
   }));

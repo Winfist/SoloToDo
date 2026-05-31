@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { DEFAULT_STATE } from "./defaultState.js";
 import { calcShadowXpToNext, genId, getToday, getXpForLevel, recalculateLevelFromTotalXp } from "./helpers.js";
 import { normalizeQuestForStorage } from "./questUtils.js";
+import { DEFAULT_QUEST_PLANNING } from "./questPlanning.js";
 import { syncWidgetData } from "../services/widgetDataService.js";
 
 const ACTIVE_STATE_KEY = "sl-todo-v5";
@@ -341,6 +342,33 @@ function hasNonStarterProgress(state, completedQuests = []) {
   );
 }
 
+function mergeQuestLifecycle(primary = {}, fallback = {}) {
+  const keys = new Set([...Object.keys(fallback || {}), ...Object.keys(primary || {})]);
+  const merged = {};
+  for (const key of keys) {
+    const left = primary?.[key];
+    const right = fallback?.[key];
+    merged[key] = Number(left?.updatedAtMs || 0) >= Number(right?.updatedAtMs || 0) ? left : right;
+  }
+  return merged;
+}
+
+function mergeQuestPlanning(primary = {}, fallback = {}) {
+  const lifecycleById = mergeQuestLifecycle(primary.lifecycleById, fallback.lifecycleById);
+  const deferredUntilById = { ...(fallback.deferredUntilById || {}), ...(primary.deferredUntilById || {}) };
+  const pinnedQuestIds = unionValues(primary.pinnedQuestIds, fallback.pinnedQuestIds)
+    .filter(id => lifecycleById[id]?.status !== "archived")
+    .slice(0, 3);
+  return {
+    ...DEFAULT_QUEST_PLANNING,
+    ...fallback,
+    ...primary,
+    pinnedQuestIds,
+    deferredUntilById,
+    lifecycleById,
+  };
+}
+
 function withoutStarterQuestProgress(state) {
   if (!state) return state;
   return {
@@ -367,7 +395,13 @@ function mergeStateProgress(primary, fallback) {
   const dungeonHistory = mergeArrayByKey(primaryProgress.dungeonHistory, fallbackProgress.dungeonHistory, dungeonHistoryKey);
   const achievementsUnlocked = unionValues(primary.achievements?.unlocked, fallback.achievements?.unlocked);
   const achievementsNotified = unionValues(primary.achievements?.notified, fallback.achievements?.notified);
-  let quests = mergeQuests(primaryProgress.quests, fallbackProgress.quests, completedQuests);
+  const questPlanning = mergeQuestPlanning(primaryProgress.questPlanning, fallbackProgress.questPlanning);
+  let quests = mergeQuests(primaryProgress.quests, fallbackProgress.quests, completedQuests)
+    .filter(quest => questPlanning.lifecycleById?.[quest.id]?.status !== "archived");
+  const questArchive = mergeArrayByKey(primaryProgress.questArchive, fallbackProgress.questArchive, questKey)
+    .filter(quest => questPlanning.lifecycleById?.[quest.id]?.status === "archived")
+    .sort((a, b) => Number(b.archivedAtMs || 0) - Number(a.archivedAtMs || 0))
+    .slice(0, 100);
   const inventory = mergeArrayByKey(primaryProgress.equipment?.inventory, fallbackProgress.equipment?.inventory, inventoryKey);
   const shadows = mergeArrayByKey(primaryProgress.shadowArmy?.shadows, fallbackProgress.shadowArmy?.shadows, shadowKey);
   const today = getToday();
@@ -432,6 +466,8 @@ function mergeStateProgress(primary, fallback) {
       discovered: unionValues(primary.hiddenQuests?.discovered, fallback.hiddenQuests?.discovered),
       completed: unionValues(primary.hiddenQuests?.completed, fallback.hiddenQuests?.completed),
     },
+    questPlanning,
+    questArchive,
     quests,
     completedQuests,
     reminders: mergeArrayByKey(primary.reminders, fallback.reminders, item => item?.id || item?.questId),
@@ -771,6 +807,12 @@ export function migrateState(oldState) {
     oldState.stateVersion = 2;
   }
 
+  if (version < 3) {
+    oldState.questPlanning = { ...DEFAULT_QUEST_PLANNING, ...(oldState.questPlanning || {}) };
+    oldState.questArchive = Array.isArray(oldState.questArchive) ? oldState.questArchive : [];
+    oldState.stateVersion = 3;
+  }
+
   const s = { ...DEFAULT_STATE, ...oldState };
   s.level = Math.max(1, s.level || 1);
   s.xp = s.xp || 0;
@@ -792,6 +834,14 @@ export function migrateState(oldState) {
   s.achievements = { ...DEFAULT_STATE.achievements, ...(oldState.achievements || {}) };
   s.hiddenQuests = { ...DEFAULT_STATE.hiddenQuests, ...(oldState.hiddenQuests || {}) };
   s.questReplacements = { ...DEFAULT_STATE.questReplacements, ...(oldState.questReplacements || {}) };
+  s.questPlanning = {
+    ...DEFAULT_QUEST_PLANNING,
+    ...(oldState.questPlanning || {}),
+    pinnedQuestIds: Array.isArray(oldState.questPlanning?.pinnedQuestIds) ? oldState.questPlanning.pinnedQuestIds.slice(0, 3) : [],
+    deferredUntilById: oldState.questPlanning?.deferredUntilById || {},
+    lifecycleById: oldState.questPlanning?.lifecycleById || {},
+  };
+  s.questArchive = Array.isArray(oldState.questArchive) ? oldState.questArchive.map(normalizeQuestForStorage).slice(0, 100) : [];
   s.healthPreferences = { ...DEFAULT_STATE.healthPreferences, ...(oldState.healthPreferences || {}) };
   s.healthPreferences.manualSleepLog = {
     ...DEFAULT_STATE.healthPreferences.manualSleepLog,
@@ -994,6 +1044,10 @@ function trimStateForPersistence(state) {
     s.syncEvents = s.syncEvents.slice(-500);
   }
 
+  if (Array.isArray(s.questArchive) && s.questArchive.length > 100) {
+    s.questArchive = s.questArchive.slice(0, 100);
+  }
+
   return s;
 }
 
@@ -1073,4 +1127,16 @@ export async function saveState(s) {
     console.error("System: Speicherfehler:", e);
     await markCloudSyncPending(true, user);
   }
+}
+
+export async function saveQuestArchiveEntry(quest, lifecycle) {
+  const user = auth.currentUser;
+  if (!user || !quest?.id) return;
+  const ref = doc(db, "users", user.uid, "questArchive", quest.id);
+  await setDoc(ref, {
+    ...JSON.parse(JSON.stringify(quest)),
+    status: lifecycle?.status || "archived",
+    updatedAtMs: lifecycle?.updatedAtMs || Date.now(),
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
 }

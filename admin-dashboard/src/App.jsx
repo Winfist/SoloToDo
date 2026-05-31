@@ -630,6 +630,13 @@ function UserDetail({ user, onBack, onUpdate }) {
         payload.activeGemBoosters = [];
         payload.gemPurchases = [];
         payload.syncEvents = [];
+        payload.questArchive = [];
+        payload.questPlanning = {
+          overloadPreset: 'balanced',
+          pinnedQuestIds: [],
+          deferredUntilById: {},
+          lifecycleById: {},
+        };
         payload.adsWatchedToday = 0;
         payload.lastAdWatchDate = null;
       }
@@ -646,6 +653,14 @@ function UserDetail({ user, onBack, onUpdate }) {
           console.log(`Deleted ${histSnap.size} questHistory docs for ${user.id}`);
         } catch (histErr) {
           console.warn('questHistory cleanup failed:', histErr);
+        }
+        try {
+          const archiveCol = collection(db, 'users', user.id, 'questArchive');
+          const archiveSnap = await getDocs(archiveCol);
+          await Promise.all(archiveSnap.docs.map(d => deleteDoc(d.ref)));
+          console.log(`Deleted ${archiveSnap.size} questArchive docs for ${user.id}`);
+        } catch (archiveErr) {
+          console.warn('questArchive cleanup failed:', archiveErr);
         }
       }
 

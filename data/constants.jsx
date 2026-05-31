@@ -13,6 +13,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { getToday as getLocalToday, formatLocalDateTime } from "./dateUtils.js";
 import { getQuestDescription } from "./questUtils.js";
+import { getQuestPresentation } from "./questPresentation.js";
 import { useI18n } from "../components/i18n/I18nProvider.jsx";
 
 // â”€â”€â”€ RE-EXPORTS FROM SPLIT MODULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -31,7 +32,7 @@ export {
   getRank, getXpForLevel, getRankIndex, genId, getToday,
   getDailyModifier, calcPowerLevel, getEquipBonuses,
   checkSkillUnlocks, getSkillBonuses, checkAchievements,
-  generateDungeons, generateDailySystemQuests, generateStarterQuests, getJobBonuses,
+  generateDungeons, generateDailySystemQuests, generateComebackSystemQuest, generateStarterQuests, getJobBonuses,
   calculateLevelUp, recalculateLevelFromTotalXp, awardJobXp,
   checkJobUnlocked, checkAllJobsLevel5, formatCooldown,
   calculateJobQuestProgress, calcSuccessChance, getEquipDropForDungeon,
@@ -56,6 +57,7 @@ export {
   resolveStateConflict,
   getStateProgressScore,
   getStateTimestamp,
+  saveQuestArchiveEntry,
 } from "./storage.js";
 
 export { CSS } from "./css.js";
@@ -179,7 +181,7 @@ function getSystemNotificationMeta(message, type) {
   return meta;
 }
 
-function SystemNotification({ message, type = "info", onDone, slot = 0 }) {
+function SystemNotification({ message, type = "info", onDone, slot = 0, actionLabel, onAction }) {
   const [exiting, setExiting] = useState(false);
   const onDoneRef = useRef(onDone);
   useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
@@ -196,7 +198,7 @@ function SystemNotification({ message, type = "info", onDone, slot = 0 }) {
       zIndex: 240 - slot,
       animation: exiting ? "sysNotifOut 360ms cubic-bezier(0.4,0,0.2,1) forwards" : "sysNotifIn 420ms cubic-bezier(0.16,1,0.3,1) both",
       transition: "top 180ms cubic-bezier(0.4,0,0.2,1)",
-      pointerEvents: "none",
+      pointerEvents: actionLabel ? "auto" : "none",
       width: "min(466px, calc(100vw - 28px))",
       opacity: dim,
       willChange: "transform, opacity",
@@ -247,6 +249,11 @@ function SystemNotification({ message, type = "info", onDone, slot = 0 }) {
               <span style={{ color: "#64748b", fontSize: 8, fontWeight: 800, letterSpacing: 2, fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap" }}>{meta.label}</span>
             </div>
             <div style={{ color: "#edf7ff", fontSize: 13, fontWeight: 700, lineHeight: 1.35, textShadow: "0 1px 10px rgba(0,0,0,0.65)", overflowWrap: "anywhere" }}>{message}</div>
+            {actionLabel && (
+              <button type="button" onClick={onAction} style={{ marginTop: 8, padding: "5px 8px", borderRadius: 7, border: `1px solid ${c}66`, background: `${c}18`, color: c, cursor: "pointer", fontSize: 9, fontWeight: 900, letterSpacing: 0.8, fontFamily: "'JetBrains Mono',monospace" }}>
+                {actionLabel}
+              </button>
+            )}
           </div>
         </div>
 
@@ -987,8 +994,8 @@ function QuestActionMenuItem({ label, color, icon, danger, onClick }) {
   );
 }
 
-function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false }) {
-  const { t } = useI18n();
+function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false, onTogglePin, isPinned = false }) {
+  const { t, locale } = useI18n();
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [hover, setHover] = useState(false);
@@ -1024,7 +1031,8 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   const subQuests = quest.subQuests || [];
   const completedSubs = subQuests.filter(sq => sq.completed).length;
   const allSubsDone = subQuests.length > 0 && completedSubs === subQuests.length;
-  const questDescription = getQuestDescription(quest);
+  const presentation = getQuestPresentation(quest, locale);
+  const questDescription = presentation.description || getQuestDescription(quest);
   const stackCount = quest.stackCount || quest.stackItems?.length || 1;
   const hasDetails = !!questDescription || subQuests.length > 0 || stackCount > 1;
   const todayKey = getLocalToday();
@@ -1181,12 +1189,25 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
                 cursor: (onOpenDetail || hasDetails) ? "pointer" : "inherit",
               }}
             >
-              {quest.title}
+              {presentation.title || quest.title}
             </div>
             <span style={{ flexShrink: 0, color: "#a78bfa", fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
               +{xpGain} XP
             </span>
           </div>
+
+          {presentation.codeName && (
+            <div style={{ marginTop: 4, color: "#64748b", fontSize: 9, lineHeight: 1.3, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.9 }}>
+              {presentation.codeName.toUpperCase()}
+            </div>
+          )}
+
+          {presentation.nextStep && (
+            <div style={{ marginTop: 6, color: "#cbd5e1", fontSize: 11, lineHeight: 1.35, fontFamily: "'Outfit',sans-serif" }}>
+              <span style={{ color: questAccent, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", marginRight: 6 }}>NEXT</span>
+              {presentation.nextStep}
+            </div>
+          )}
 
           {questDescription && !expanded && (
             <div style={{ marginTop: 4, color: "#8a93a6", fontSize: 11, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>
@@ -1283,7 +1304,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
               <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
             </svg>
           </button>
-          {isDailyFocus && (
+          {(isDailyFocus || isPinned) && (
             <span aria-hidden="true" style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: 999, background: "#fbbf24", boxShadow: "0 0 6px rgba(251,191,36,0.6)", border: "1px solid rgba(8,12,24,0.95)" }} />
           )}
           {menuOpen && (
@@ -1294,6 +1315,14 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
                   color="#fbbf24"
                   icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l2.6 5.3 5.8.9-4.2 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8-4.2-4.1 5.8-.9z" /></svg>}
                   onClick={(e) => { e.stopPropagation(); onSetFocus(isDailyFocus ? null : quest.id); setMenuOpen(false); }}
+                />
+              )}
+              {onTogglePin && (
+                <QuestActionMenuItem
+                  label={isPinned ? "Pin loesen" : "Anpinnen"}
+                  color="#fbbf24"
+                  icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5" /><path d="M5 8l4-4h6l4 4-3 3v4H8v-4z" /></svg>}
+                  onClick={(e) => { e.stopPropagation(); onTogglePin(quest.id); setMenuOpen(false); }}
                 />
               )}
               {canReplace && onReplace && (

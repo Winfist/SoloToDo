@@ -945,7 +945,14 @@ export const en = {
   modals: {
     questVerify: {
       header: "QUEST VERIFICATION PROTOCOL",
-      prompt: "Upload a proof photo and receive a bonus.",
+      prompt: "Upload a proof photo for an eligible Quest and receive a bonus.",
+      privacyHint: "Do not upload sensitive or private data. The image is sent only for AI analysis and is not stored as a Quest attachment.",
+      evidenceHints: {
+        artifact: "Show the visible result, document, or screenshot.",
+        environment: "Show the changed room or prepared environment.",
+        outdoor: "Show the relevant outdoor place.",
+        meal: "Show the prepared meal.",
+      },
       uploadPhoto: "UPLOAD PHOTO",
       skipProof: "WITHOUT PROOF",
       startScan: "START SCAN",
@@ -1517,7 +1524,7 @@ export const en = {
       unlimited_quests: { title: "Unlimited Quests are Hunter Pro", desc: "Free Hunters can create one custom Quest per day. Hunter Pro removes this daily limit.", bullets: ["1 free Quest per day", "Unlimited with Pro", "More daily planning"] },
       ai_task_scan: { title: "Photo Scan is Hunter Pro", desc: "Scan notes, task sheets, or handwritten lists and turn them directly into Quests.", bullets: ["Task scanner", "Quest suggestions", "Faster daily plan"] },
       ai_quest_desc: { title: "AI Quest Details are Hunter Pro", desc: "Generate mission details, sub-Quests, and clear steps for your task.", bullets: ["Quest description", "Sub-Quests", "Better execution"] },
-      ai_verification: { title: "Photo Verification is Hunter Pro", desc: "Prove completed Quests by photo and receive stricter, motivating System feedback.", bullets: ["Photo proof", "Integrity", "Bonus feedback"] },
+      ai_verification: { title: "Photo Verification is Hunter Pro", desc: "Prove eligible completed Quests by photo and receive stricter, motivating System feedback.", bullets: ["Photo proof", "Integrity", "Bonus feedback"] },
       ai_dynamic_quests: { title: "Dynamic AI Quests are Hunter Pro", desc: "Your System generates personal daily Quests based on progress, focus, and behavior.", bullets: ["Personalized Quests", "Daily reset", "More variation"] },
       ai_coach: { title: "AI Coach Plus is Hunter Pro", desc: "Receive smarter System messages, interventions, and coaching impulses.", bullets: ["Coach impulses", "System comments", "Motivation support"] },
       advanced_analytics: { title: "Advanced Analytics is Hunter Pro", desc: "See patterns in streaks, XP, categories, focus, and long-term progress.", bullets: ["Trend analysis", "Focus patterns", "Progress insight"] },
