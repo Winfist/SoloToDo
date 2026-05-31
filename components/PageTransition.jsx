@@ -145,11 +145,6 @@ const LOCAL_TRANSITION_CSS = `
 @keyframes ptScanLine{0%{transform:translateY(-104vh);opacity:0}12%{opacity:1}88%{opacity:.92}100%{transform:translateY(104vh);opacity:0}}
 @keyframes ptEyesReveal{0%{opacity:0;transform:translate(-50%,-50%) scale(.08);filter:blur(10px)}42%{opacity:1;transform:translate(-50%,-50%) scale(1.22);filter:blur(0)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 @keyframes ptEyePulse{0%{filter:brightness(1)}100%{filter:brightness(1.65)}}
-@keyframes ptBadgeIn{0%{opacity:0;transform:translateY(-10px) scale(.82);filter:blur(6px)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
-@keyframes ptViewText{0%{opacity:0;letter-spacing:0;filter:blur(14px);transform:translateY(12px) scaleY(.75)}20%{opacity:.55;filter:blur(4px);transform:translateY(-3px) scaleY(1.18) skewX(-3deg)}45%{opacity:1;letter-spacing:10px;filter:blur(0)}75%{transform:skewX(.6deg)}100%{opacity:1;letter-spacing:10px;filter:blur(0);transform:none}}
-@keyframes ptCursor{50%{opacity:0}}
-@keyframes ptUnderline{0%{width:0;opacity:0}100%{width:148px;opacity:1}}
-@keyframes ptTextOut{0%{opacity:1;filter:blur(0)}100%{opacity:0;filter:blur(7px);transform:translate(-50%,-50%) scale(.92)}}
 @keyframes ptResidualFloat{0%{opacity:.9;transform:translate3d(0,0,0) scale(1)}55%{opacity:.52;transform:translate3d(var(--rx,0),-28px,0) scale(.85)}100%{opacity:0;transform:translate3d(var(--rx,0),-76px,0) scale(.08)}}
 @keyframes ptRadialBurst{0%{width:0;height:0;opacity:.75}45%{width:140vw;height:140vw;opacity:.35}100%{width:210vw;height:210vw;opacity:0}}
 @keyframes ptAfterglow{0%{opacity:1}100%{opacity:0}}
@@ -166,7 +161,6 @@ const LOCAL_TRANSITION_CSS = `
 @keyframes ptShadowRise{0%{height:0;opacity:0;transform:translateY(40px)}45%{opacity:.8}100%{height:44vh;opacity:0;transform:translateY(-18px)}}
 @media (prefers-reduced-motion: reduce){
   @keyframes ptChromatic{0%,100%{opacity:.85;backdrop-filter:none}}
-  @keyframes ptViewText{0%{opacity:0}100%{opacity:1;letter-spacing:6px;filter:none;transform:none}}
 }
 `;
 
@@ -184,7 +178,6 @@ export default function PageTransition({
   const midpointFired = useRef(false);
   const shakeRef = useRef({ x: 0, y: 0 });
   const [phase, setPhase] = useState(0);
-  const [typedText, setTypedText] = useState("");
   const [showEyes, setShowEyes] = useState(false);
 
   const config = useMemo(() => {
@@ -258,7 +251,6 @@ export default function PageTransition({
 
     midpointFired.current = false;
     setPhase(1);
-    setTypedText("");
     setShowEyes(false);
     triggerShake(5 * (config.shake || 1), scaleMs(240));
 
@@ -281,19 +273,6 @@ export default function PageTransition({
 
     return () => timers.forEach(clearTimeout);
   }, [config, isActive, onComplete, onMidpoint, scaleMs, timing, triggerShake]);
-
-  useEffect(() => {
-    if (phase < 2 || !targetLabel) return undefined;
-    const fullText = `${config.command} > ${targetLabel}`;
-    let i = 0;
-    setTypedText("");
-    const interval = setInterval(() => {
-      i += 1;
-      setTypedText(fullText.slice(0, i));
-      if (i >= fullText.length) clearInterval(interval);
-    }, scaleMs(config.mode === "shadow_step" ? 12 : 18, 6));
-    return () => clearInterval(interval);
-  }, [config.command, config.mode, phase, scaleMs, targetLabel]);
 
   useEffect(() => {
     if (!isActive) return undefined;
@@ -683,89 +662,6 @@ export default function PageTransition({
               }}
             />
           ))}
-        </div>
-      )}
-
-      {phase >= 2 && phase <= 3 && (
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 10,
-            textAlign: "center",
-            pointerEvents: "none",
-            width: "min(92vw, 620px)",
-            animation: phase === 3 ? `ptTextOut ${scaleMs(350)}ms ease-out forwards` : "none",
-          }}
-        >
-          <div
-            style={{
-              display: "inline-block",
-              padding: "4px 17px",
-              borderRadius: 999,
-              background: `linear-gradient(90deg, ${rgba(config.secondary, 0.1)}, ${rgba(config.primary, 0.14)})`,
-              border: `1px solid ${rgba(config.secondary, 0.34)}`,
-              marginBottom: 14,
-              boxShadow: `0 0 22px ${rgba(config.primary, 0.18)}`,
-              animation: `ptBadgeIn ${scaleMs(300)}ms ease both`,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 9,
-                letterSpacing: 4,
-                color: config.accent,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontWeight: 800,
-                textShadow: `0 0 14px ${rgba(config.primary, 0.75)}`,
-              }}
-            >
-              {config.badge}
-            </span>
-          </div>
-
-          <div
-            style={{
-              fontSize: "clamp(20px, 7vw, 38px)",
-              fontWeight: 900,
-              color: "#fff",
-              fontFamily: "'Cinzel', serif",
-              letterSpacing: 10,
-              textShadow: `0 0 48px ${rgba(config.primary, 0.78)}, 0 0 96px ${rgba(config.secondary, 0.38)}, 0 2px 4px rgba(0,0,0,0.9)`,
-              animation: `ptViewText ${scaleMs(620)}ms ease-out forwards`,
-              minHeight: 52,
-              lineHeight: 1.18,
-              overflowWrap: "anywhere",
-            }}
-          >
-            {typedText}
-            <span
-              style={{
-                display: "inline-block",
-                width: 3,
-                height: "0.72em",
-                background: `linear-gradient(180deg, ${config.hot}, ${config.primary})`,
-                marginLeft: 6,
-                animation: `ptCursor ${scaleMs(500)}ms step-end infinite`,
-                verticalAlign: "middle",
-                boxShadow: `0 0 12px ${config.hot}, 0 0 28px ${rgba(config.primary, 0.55)}`,
-                borderRadius: 1,
-              }}
-            />
-          </div>
-
-          <div
-            style={{
-              width: 148,
-              height: 1,
-              margin: "15px auto 0",
-              background: `linear-gradient(90deg, transparent, ${rgba(config.primary, 0.65)}, ${rgba(config.hot, 0.5)}, ${rgba(config.secondary, 0.55)}, transparent)`,
-              animation: `ptUnderline ${scaleMs(420)}ms ease-out ${scaleMs(180, 0)}ms both`,
-              boxShadow: `0 0 12px ${rgba(config.primary, 0.42)}`,
-            }}
-          />
         </div>
       )}
 
