@@ -4,8 +4,9 @@ import {
   QUEST_INTENSITY_PRESETS,
   formatQuestIntensityCooldown,
   formatQuestIntensityInterval,
-  getQuestIntensityPreset,
+  getEffectiveQuestIntensityPreset,
 } from "../data/questIntensity.js";
+import { getQuestPlanningSnapshot } from "../data/questPlanning.js";
 
 function isAutoQuest(quest) {
   return !quest.completed
@@ -219,15 +220,17 @@ function PremiumLockedOverlay({ theme, onOpenPremium, compact = false, embedded 
 }
 
 
-export default function QuestIntensityControl({ state, persist, theme, compact = false, surface = "card", premiumStatus, onOpenPremium }) {
-  const selected = getQuestIntensityPreset(state);
-  const enabled = state.settings?.autoSystemTasks === true;
+export default function QuestIntensityControl({ state, persist, theme, compact = false, surface = "card", premiumStatus, onOpenPremium, lockMode = "full" }) {
+  const selected = getEffectiveQuestIntensityPreset(state);
+  const isLocked = premiumStatus && !premiumStatus.active;
+  const partialLocked = isLocked && lockMode === "partial";
+  const enabled = !isLocked && state.settings?.autoSystemTasks === true;
+  const overloaded = getQuestPlanningSnapshot(state).overloadStatus.overloaded;
   const activeAutoCount = useMemo(() => (state.quests || []).filter(isAutoQuest).length, [state.quests]);
   const nextCall = getNextSystemCall(state, selected, enabled);
   const embedded = surface === "embedded";
 
   // Premium gate: free users see a locked overlay
-  const isLocked = premiumStatus && !premiumStatus.active;
 
   const saveSettings = (patch) => {
     if (isLocked) return; // Block changes for free users
@@ -258,7 +261,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
     <div style={{
       position: "relative",
       overflow: "hidden",
-      minHeight: isLocked && compact ? (embedded ? 184 : 198) : undefined,
+      minHeight: isLocked && lockMode === "full" && compact ? (embedded ? 184 : 198) : undefined,
       padding: embedded ? 0 : compact ? 10 : 14,
       borderRadius: embedded ? 0 : compact ? 12 : 16,
       background: embedded ? "transparent" : panelBg,
@@ -266,7 +269,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
       boxShadow: embedded ? "none" : enabled ? `0 0 24px ${selected.color}18, inset 0 1px 0 rgba(255,255,255,0.06)` : "inset 0 1px 0 rgba(255,255,255,0.04)",
     }}>
       {/* Premium locked overlay */}
-      {isLocked && <PremiumLockedOverlay theme={theme} onOpenPremium={onOpenPremium} compact={compact} embedded={embedded} />}
+      {isLocked && lockMode === "full" && <PremiumLockedOverlay theme={theme} onOpenPremium={onOpenPremium} compact={compact} embedded={embedded} />}
 
       {!embedded && (
         <div style={{
@@ -399,7 +402,13 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
             return (
               <button
                 key={preset.key}
-                onClick={() => selectPreset(preset)}
+                onClick={() => {
+                  if (partialLocked && preset.key !== "baby_gate") {
+                    onOpenPremium?.("quest_intensity");
+                    return;
+                  }
+                  selectPreset(preset);
+                }}
                 aria-pressed={active}
                 title={`${preset.label} - ${formatQuestIntensityInterval(preset)}`}
                 style={{
@@ -411,7 +420,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
                   border: `${embedded ? 1 : 1.5}px solid ${active ? preset.color + (embedded ? "62" : "88") : "rgba(255,255,255,0.07)"}`,
                   background: active ? `${preset.color}${embedded ? "12" : "18"}` : "rgba(255,255,255,0.022)",
                   color: active ? "#fff" : "#94a3b8",
-                  cursor: isLocked ? "default" : "pointer",
+                  cursor: partialLocked && preset.key !== "baby_gate" ? "pointer" : isLocked ? "default" : "pointer",
                   textAlign: compact ? "center" : "left",
                   transition: "transform 0.2s ease, border-color 0.2s ease, background 0.2s ease",
                   boxShadow: active && !embedded ? `0 0 18px ${preset.color}22` : "none",
@@ -456,6 +465,9 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
                     lineHeight: 1.18,
                     overflowWrap: "anywhere",
                   }}>{compact ? preset.shortLabel : preset.label}</div>
+                  {partialLocked && preset.key !== "baby_gate" && (
+                    <span style={{ position: "absolute", top: 6, right: 6, zIndex: 2, fontSize: 9, opacity: 0.7 }}>🔒</span>
+                  )}
                   {!compact && (
                     <>
                       <div style={{ fontSize: 9, color: preset.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, marginTop: 6 }}>
@@ -486,6 +498,18 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
             <span>Nächster: {nextCall}</span>
             <span>{activeAutoCount}/{selected.activeCap} aktiv</span>
           </div>
+        )}
+
+        {overloaded && (
+          <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", fontSize: 10, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.4 }}>
+            Gedrosselt: Zu viele offene Quests. Statt neuer Rufe gibt es eine Comeback-Quest.
+          </div>
+        )}
+
+        {partialLocked && (
+          <button onClick={() => onOpenPremium?.("quest_intensity")} style={{ marginTop: 10, width: "100%", padding: "9px", borderRadius: 10, border: `1px solid ${theme.primary}55`, background: `linear-gradient(135deg, ${theme.primary}22, rgba(168,85,247,0.12))`, color: "#fff", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, cursor: "pointer" }}>
+            MEHR SYSTEMRUFE → PRO
+          </button>
         )}
       </div>
     </div>

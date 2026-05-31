@@ -709,6 +709,7 @@ export function useGameState(initialHunterName, onLogout) {
   const assignRandomTask = useCallback(() => {
     const currentState = stateRef.current;
     if (!currentState || loading) return;
+    if (!getPremiumStatus(currentState.premium).active) return;
     if (currentState.settings?.autoSystemTasks !== true) return;
     if (getQuestPlanningSnapshot(currentState).overloadStatus.overloaded) return;
     const TASK_INTERVAL = getQuestIntensityIntervalMs(currentState);

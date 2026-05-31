@@ -6,6 +6,11 @@ import {
   withRestoredQuest,
 } from "../data/questPlanning.js";
 import { getToday } from "../data/dateUtils.js";
+import {
+  getDailySystemQuestCount,
+  getQuestIntensityActiveCap,
+  getQuestIntensityIntervalMs,
+} from "../data/questIntensity.js";
 
 const today = getToday();
 const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -37,6 +42,22 @@ const assert = (condition, message) => {
     process.exit(1);
   }
 };
+
+const expiredPremiumIntensity = {
+  settings: { questIntensity: "monarch_call" },
+  premium: { tier: "hunter_pro", activeUntil: "2020-01-01T00:00:00.000Z" },
+};
+assert(getDailySystemQuestCount(expiredPremiumIntensity) === 1, "free users must fall back to one daily system Quest");
+assert(getQuestIntensityActiveCap(expiredPremiumIntensity) === 1, "free users must fall back to the Baby Gate active cap");
+assert(getQuestIntensityIntervalMs(expiredPremiumIntensity) === 24 * 60 * 60 * 1000, "free users must fall back to the Baby Gate interval");
+
+const activePremiumIntensity = {
+  settings: { questIntensity: "monarch_call" },
+  premium: { tier: "hunter_pro", activeUntil: new Date(Date.now() + 86400000).toISOString() },
+};
+assert(getDailySystemQuestCount(activePremiumIntensity) === 4, "premium users must keep their selected daily intensity");
+assert(getQuestIntensityActiveCap(activePremiumIntensity) === 8, "premium users must keep their selected active cap");
+assert(getQuestIntensityIntervalMs(activePremiumIntensity) === 2 * 60 * 60 * 1000, "premium users must keep their selected interval");
 
 const priorityState = state([
   quest("system", { isSystem: true }),

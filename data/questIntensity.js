@@ -1,3 +1,5 @@
+import { isPremiumActive } from "./premium.js";
+
 export const DEFAULT_QUEST_INTENSITY_KEY = "baby_gate";
 
 export const QUEST_INTENSITY_PRESETS = [
@@ -77,16 +79,24 @@ export function getQuestIntensityPreset(value) {
     || QUEST_INTENSITY_PRESETS[0];
 }
 
+export function getEffectiveQuestIntensityPreset(value, nowMs = Date.now()) {
+  const selected = getQuestIntensityPreset(value);
+  if (typeof value === "string" || value?.intervalHours) return selected;
+  return isPremiumActive(value?.premium, nowMs)
+    ? selected
+    : getQuestIntensityPreset(DEFAULT_QUEST_INTENSITY_KEY);
+}
+
 export function getQuestIntensityIntervalMs(value) {
-  return getQuestIntensityPreset(value).intervalHours * 60 * 60 * 1000;
+  return getEffectiveQuestIntensityPreset(value).intervalHours * 60 * 60 * 1000;
 }
 
 export function getDailySystemQuestCount(value) {
-  return getQuestIntensityPreset(value).dailyQuestCount;
+  return getEffectiveQuestIntensityPreset(value).dailyQuestCount;
 }
 
 export function getQuestIntensityActiveCap(value) {
-  return getQuestIntensityPreset(value).activeCap;
+  return getEffectiveQuestIntensityPreset(value).activeCap;
 }
 
 export function formatQuestIntensityInterval(presetOrValue) {
