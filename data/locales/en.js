@@ -232,6 +232,12 @@ export const en = {
     fallbackTitle: "Quest",
     noOpen: "No open Quests",
     forge: {
+      step1: "What?",
+      step2: "Classify",
+      step3: "Details",
+      next: "Next",
+      createNow: "Create now",
+      backToCreate: "Back to create",
       kicker: "QUEST FORGE",
       titleCreate: "Forge Quest",
       titleEdit: "Adjust Quest",
@@ -864,6 +870,8 @@ export const en = {
       subQuestCount: "{done}/{total} stages",
     },
     board: {
+      frequency: "Frequency",
+      perDayShort: "day",
       typeAll: "All",
       typeDaily: "Daily",
       typeSide: "Side",

@@ -2063,29 +2063,38 @@ function App({ initialHunterName, onLogout }) {
                           onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#64748b"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}>&#x2715;</button>
                       </div>
                     </div>
-                    {/* 3 Mode tabs: Erstellen / Mein Pool / Bibliothek */}
-                    <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-                      {[
-                        { key: "create", label: tr("quests.forge.tabs.create") },
-                        { key: "pool", label: tr("quests.forge.tabs.pool") },
-                        { key: "library", label: tr("quests.forge.tabs.library") },
-                      ].map(tab => (
-                        <button key={tab.key} onClick={() => setForgeTab(tab.key)} style={{
-                          flex: 1, padding: "10px 6px", fontSize: 11, fontWeight: 900,
-                          background: forgeTab === tab.key ? `linear-gradient(135deg, ${theme.primary}25 0%, ${theme.primary}05 100%)` : "rgba(255,255,255,0.015)",
-                          color: forgeTab === tab.key ? theme.primary : "#475569",
-                          border: `1px solid ${forgeTab === tab.key ? theme.primary + "aa" : "rgba(255,255,255,0.05)"}`,
-                          borderRadius: forgeTab === tab.key ? "14px 3px 14px 3px" : "8px",
-                          boxShadow: forgeTab === tab.key ? `0 8px 24px ${theme.primary}33, inset 0 0 16px ${theme.primary}28` : "none",
-                          transition: "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)", cursor: "pointer", fontFamily: "'Cinzel',serif", letterSpacing: 1, textTransform: "uppercase",
-                          position: "relative", zIndex: forgeTab === tab.key ? 10 : 1, transform: forgeTab === tab.key ? "scale(1.02) translateY(-1px)" : "scale(1)",
-                          textShadow: forgeTab === tab.key ? `0 0 10px ${theme.primary}aa` : "none"
-                        }}
-                          onMouseEnter={e => { if (forgeTab !== tab.key) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
-                          onMouseLeave={e => { if (forgeTab !== tab.key) { e.currentTarget.style.background = "rgba(255,255,255,0.015)"; e.currentTarget.style.transform = "none"; } }}
-                        >{tab.label}</button>
-                      ))}
-                    </div>
+                    {/* ③ Wizard-Stepper (nur im Erstellen-Modus) */}
+                    {forgeTab === "create" ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+                        {[1, 2, 3].map((s, i) => {
+                          const reached = wizardStep >= s;
+                          const done = wizardStep > s;
+                          const labels = { 1: tr("quests.forge.step1"), 2: tr("quests.forge.step2"), 3: tr("quests.forge.step3") };
+                          return (
+                            <React.Fragment key={s}>
+                              <button
+                                onClick={() => { if (qTitle.trim() || s === 1) setWizardStep(s); }}
+                                style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: (qTitle.trim() || s === 1) ? "pointer" : "default", padding: 0 }}
+                              >
+                                <span style={{
+                                  width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                  fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace",
+                                  background: reached ? theme.primary : "rgba(255,255,255,0.08)",
+                                  color: reached ? "#04121a" : "#64748b",
+                                  boxShadow: wizardStep === s ? `0 0 12px ${theme.primary}66` : "none",
+                                }}>{done ? "✓" : s}</span>
+                                <span style={{ fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", color: wizardStep === s ? theme.primary : "#475569", letterSpacing: 1 }}>{labels[s]}</span>
+                              </button>
+                              {i < 2 && <span style={{ flex: 1, height: 2, borderRadius: 2, background: wizardStep > s ? theme.primary + "88" : "rgba(255,255,255,0.08)" }} />}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <button onClick={() => setForgeTab("create")} style={{ marginBottom: 14, padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: theme.accent || theme.primary, fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>
+                        ‹ {tr("quests.forge.backToCreate")}
+                      </button>
+                    )}
                   </div>
 
                   {/* Scrollable content */}
