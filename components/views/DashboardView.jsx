@@ -23,8 +23,10 @@ import {
   isQuestReplaceable,
 } from "../../data/questUtils.js";
 import { getQuestPlanningSnapshot, getQuestPlanningState } from "../../data/questPlanning.js";
+import { getDailySystemQuestCount } from "../../data/questIntensity.js";
 import { getQuestPresentation } from "../../data/questPresentation.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
+import QuestIntensityControl from "../QuestIntensityControl.jsx";
 
 // ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
 const EDIT_MODE_CSS = `
@@ -272,6 +274,7 @@ export default function DashboardView({
   const [quickAddMode, setQuickAddMode] = useState(false);
   const [quickAddTitle, setQuickAddTitle] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [freqOpen, setFreqOpen] = useState(false);
   const [replacementQuest, setReplacementQuest] = useState(null);
   const [replacementOptions, setReplacementOptions] = useState([]);
 
@@ -814,28 +817,37 @@ export default function DashboardView({
                   </button>
                 )}
                 {/* Filter summary + toggle */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
-                  <span style={{ color: "#64748b", fontSize: 12, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{questFilterSummary}</span>
-                  {can('quest_filters') && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                  <span style={{ flex: 1, minWidth: 0, color: "#64748b", fontSize: 12, fontFamily: "'Outfit',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{questFilterSummary}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    {can('quest_filters') && (
+                      <button
+                        onClick={() => setFiltersOpen(open => !open)}
+                        aria-expanded={filtersOpen || hasActiveQuestFilters}
+                        style={{
+                          minHeight: 30,
+                          padding: "0 10px",
+                          borderRadius: 999,
+                          background: hasActiveQuestFilters ? `${theme.primary}10` : "rgba(255,255,255,0.03)",
+                          color: hasActiveQuestFilters ? (theme.accent || theme.primary) : "#64748b",
+                          border: "none",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          fontFamily: "'JetBrains Mono',monospace",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {t("dashboard.board.filter")}{hasActiveQuestFilters ? ` ${activeQuestFilterCount}` : ""}
+                      </button>
+                    )}
                     <button
-                      onClick={() => setFiltersOpen(open => !open)}
-                      aria-expanded={filtersOpen || hasActiveQuestFilters}
-                      style={{
-                        minHeight: 30,
-                        padding: "0 10px",
-                        borderRadius: 999,
-                        background: hasActiveQuestFilters ? `${theme.primary}10` : "rgba(255,255,255,0.03)",
-                        color: hasActiveQuestFilters ? (theme.accent || theme.primary) : "#64748b",
-                        border: "none",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        fontFamily: "'JetBrains Mono',monospace",
-                        cursor: "pointer",
-                      }}
+                      onClick={() => setFreqOpen(open => !open)}
+                      aria-expanded={freqOpen}
+                      style={{ minHeight: 30, padding: "0 10px", borderRadius: 999, background: `${theme.primary}10`, color: theme.accent || theme.primary, border: "none", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", whiteSpace: "nowrap" }}
                     >
-                      {t("dashboard.board.filter")}{hasActiveQuestFilters ? ` ${activeQuestFilterCount}` : ""}
+                      ⚡ {t("dashboard.board.frequency")} · {getDailySystemQuestCount(state)}/{t("dashboard.board.perDayShort")}
                     </button>
-                  )}
+                  </div>
                 </div>
 
                 {/* Action buttons */}
@@ -913,6 +925,20 @@ export default function DashboardView({
                         >{f.label}</button>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {freqOpen && (
+                  <div style={{ marginTop: 11, paddingTop: 10, borderTop: "1px solid rgba(148,163,184,0.1)" }}>
+                    <QuestIntensityControl
+                      state={state}
+                      persist={persist}
+                      theme={theme}
+                      compact
+                      premiumStatus={premiumStatus}
+                      onOpenPremium={openPremiumModal}
+                      lockMode={premiumStatus?.active ? "full" : "partial"}
+                    />
                   </div>
                 )}
               </div>
