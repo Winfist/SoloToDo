@@ -43,6 +43,7 @@ export default function QuestDetailModal({
   onAddAttachment,
   onDeleteAttachment,
   onSaveNotes,
+  onCreateHabitFromQuest,
   completedQuests = [], // Pass from parent for history
   gameState, // NEW: for tactical hints
   readOnly = false
@@ -724,6 +725,25 @@ export default function QuestDetailModal({
                 {t("modals.questDetail.delete")}
               </button>
             )}
+          </div>
+        )}
+
+        {readOnly && onCreateHabitFromQuest && (
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ color: primary, fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5 }}>
+                {t("modals.questDetail.habitPromptTitle")}
+              </div>
+              <div style={{ color: "#94a3b8", fontSize: 11, lineHeight: 1.5, marginTop: 5 }}>
+                {t("modals.questDetail.habitPromptText")}
+              </div>
+            </div>
+            <button
+              onClick={() => { onClose(); onCreateHabitFromQuest(quest); }}
+              style={{ width: "100%", padding: "12px", borderRadius: 8, background: `linear-gradient(135deg, ${primary}33, ${primary}11)`, border: `1px solid ${primary}`, color: primary, fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", boxShadow: `0 0 16px ${primary}22` }}
+            >
+              {t("modals.questDetail.createHabit")}
+            </button>
           </div>
         )}
 

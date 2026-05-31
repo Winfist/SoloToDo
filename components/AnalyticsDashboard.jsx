@@ -180,7 +180,7 @@ const DEFAULT_MICRO = [
     {id:"breathe",iconSrc:MICRO_ICONS.breathe,label:"Atmen",dailyTarget:3,color:"#06b6d4"},
 ];
 
-export default function AnalyticsDashboard({ state, theme, gameState }) {
+export default function AnalyticsDashboard({ state, theme, gameState, onCreateHabitFromQuest }) {
     const cq = state?.completedQuests || [];
     const habits = state?.habits || [];
     const [historyTime, setHistoryTime] = useState("all");
@@ -711,7 +711,7 @@ export default function AnalyticsDashboard({ state, theme, gameState }) {
                 </div>
             </div>
 
-            {selectedQuest && <QuestDetailModal quest={selectedQuest} theme={theme} onClose={()=>setSelectedQuest(null)} gameState={gameState} readOnly={true}/>}
+            {selectedQuest && <QuestDetailModal quest={selectedQuest} theme={theme} onClose={()=>setSelectedQuest(null)} gameState={gameState} readOnly={true} onCreateHabitFromQuest={habits.some(habit => habit.id === selectedQuest.linkedHabitId || habit.sourceQuestId === selectedQuest.id) ? null : onCreateHabitFromQuest}/>}
         </div>
     );
 }

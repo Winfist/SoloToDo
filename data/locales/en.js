@@ -1077,6 +1077,9 @@ export const en = {
       systemBriefing: "SYSTEM BRIEFING",
       hideGuidance: "HIDE GUIDANCE",
       showGuidance: "SHOW GUIDANCE",
+      habitPromptTitle: "CONTINUE AS ROUTINE",
+      habitPromptText: "Was this Quest useful? Start with a prefilled Habit and adjust its frequency and verification before saving.",
+      createHabit: "CONTINUE AS HABIT",
     },
     questCreate: {
       priorityHigh: "HIGH",

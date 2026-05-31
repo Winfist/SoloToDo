@@ -102,6 +102,13 @@ const ONBOARDING_QUEST_FORM_STEP_IDS = new Set([
   "quest_category",
   "submit_quest",
 ]);
+const QUEST_TO_HABIT_CATEGORY = {
+  str: "fitness",
+  int: "learning",
+  vit: "health",
+  agi: "productivity",
+  cha: "social",
+};
 
 function hoursUntilMidnight() {
   const now = new Date();
@@ -487,10 +494,23 @@ function App({ initialHunterName, onLogout }) {
   }, [premiumModalFeature, setShowCreate, showPremiumModal, tutorialNeedsQuestForge]);
 
   const [detailQuest, setDetailQuest] = React.useState(null);
+  const [habitDraft, setHabitDraft] = React.useState(null);
   const liveDetailQuest = useMemo(() => {
     if (!detailQuest) return null;
     return (state?.quests || []).find(q => q.id === detailQuest.id) || detailQuest;
   }, [detailQuest, state?.quests]);
+  const openHabitFromCompletedQuest = useCallback((quest) => {
+    if (!quest) return;
+    setHabitDraft({
+      sourceQuestId: quest.id,
+      title: quest.title,
+      category: QUEST_TO_HABIT_CATEGORY[quest.category] || "productivity",
+      frequency: "daily",
+      verification: "manual",
+    });
+    setView("dashboard");
+  }, [setView]);
+  const clearHabitDraft = useCallback(() => setHabitDraft(null), []);
   const pendingDeepLinkRef = useRef(null);
   const handleDeepLinkRef = useRef(null);
   const addQuestAttachment = useCallback((questId, attachment) => {
@@ -1551,6 +1571,8 @@ function App({ initialHunterName, onLogout }) {
                   openPremiumModal={openPremiumModal}
                   requireQuestSlot={requireQuestSlot}
                   togglePinnedQuest={togglePinnedQuest}
+                  habitDraft={habitDraft}
+                  onHabitDraftHandled={clearHabitDraft}
                 />
               )}
 
@@ -1862,7 +1884,7 @@ function App({ initialHunterName, onLogout }) {
               {
                 view === "analytics" && (
                   <React.Suspense fallback={null}>
-                    <AnalyticsDashboard state={state} theme={theme} />
+                    <AnalyticsDashboard state={state} gameState={state} theme={theme} onCreateHabitFromQuest={can('habit_tracker') ? openHabitFromCompletedQuest : null} />
                   </React.Suspense>
                 )
               }

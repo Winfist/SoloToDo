@@ -1077,6 +1077,9 @@ export const de = {
       systemBriefing: "SYSTEM-ANLEITUNG",
       hideGuidance: "ANLEITUNG AUSBLENDEN",
       showGuidance: "ANLEITUNG ANZEIGEN",
+      habitPromptTitle: "ALS ROUTINE WEITERFÜHREN",
+      habitPromptText: "War diese Quest sinnvoll? Übernimm sie als vorausgefüllten Habit und passe Frequenz sowie Verifizierung vor dem Speichern an.",
+      createHabit: "ALS HABIT WEITERFÜHREN",
     },
     questCreate: {
       priorityHigh: "HOCH",

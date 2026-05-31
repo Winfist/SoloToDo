@@ -343,16 +343,17 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
 }
 
 // ── Create/Edit Habit Modal ───────────────────────────────────────
-function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
+function CreateHabitModal({ onClose, onSave, initialHabit, initialValues, theme }) {
     const isEdit = !!initialHabit;
     const formContentRef = useRef(null);
-    const [title, setTitle] = useState(initialHabit?.title || "");
-    const [category, setCategory] = useState(initialHabit?.category || "fitness");
-    const [frequency, setFrequency] = useState(initialHabit?.frequency || "daily");
-    const [verification, setVerification] = useState(initialHabit?.verification || "manual");
-    const [targetMinutes, setTargetMinutes] = useState(initialHabit?.targetMinutes || 30);
-    const [targetCount, setTargetCount] = useState(initialHabit?.targetCount || 10);
-    const [icon, setIcon] = useState(initialHabit?.icon || "");
+    const preset = initialHabit || initialValues;
+    const [title, setTitle] = useState(preset?.title || "");
+    const [category, setCategory] = useState(preset?.category || "fitness");
+    const [frequency, setFrequency] = useState(preset?.frequency || "daily");
+    const [verification, setVerification] = useState(preset?.verification || "manual");
+    const [targetMinutes, setTargetMinutes] = useState(preset?.targetMinutes || 30);
+    const [targetCount, setTargetCount] = useState(preset?.targetCount || 10);
+    const [icon, setIcon] = useState(preset?.icon || "");
 
     const cat = HABIT_CATEGORIES.find(c => c.key === category) || HABIT_CATEGORIES[0];
 
@@ -379,6 +380,7 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
             scheduledDays: initialHabit ? initialHabit.scheduledDays : 0,
             history: initialHabit ? initialHabit.history : {},
             active: initialHabit ? initialHabit.active : true,
+            sourceQuestId: initialHabit?.sourceQuestId || initialValues?.sourceQuestId,
         });
         onClose();
     };
@@ -609,11 +611,13 @@ function HabitCompleteCelebration({ data, onClose }) {
 }
 
 // ═══ MAIN COMPONENT ══════════════════════════════════════════
-export default function HabitTracker({ state, persist, notify, theme, onModalOpen, onModalClose }) {
+export default function HabitTracker({ state, persist, notify, theme, onModalOpen, onModalClose, habitDraft, onHabitDraftHandled }) {
     const [celebration, setCelebration] = useState(null);
     const [showCreate, setShowCreate] = useState(false);
+    const [createSeed, setCreateSeed] = useState(null);
     const [editingHabit, setEditingHabit] = useState(null);
     const [filter, setFilter] = useState("all");
+    const handledDraftRef = useRef(null);
     const habits = state?.habits || [];
     const today = getToday();
 
@@ -626,11 +630,32 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
 
     const openCreate = () => {
         if (atHabitCap) { notify(`Max. ${MAX_HABITS} Habits erreicht.${hasRoutineStone ? " (inkl. Routine-Stein +1)" : ""}`, "warning"); return; }
+        setCreateSeed(null);
         setShowCreate(true); onModalOpen?.();
     };
-    const closeCreate = () => { setShowCreate(false); onModalClose?.(); };
+    const closeCreate = () => { setShowCreate(false); setCreateSeed(null); onHabitDraftHandled?.(); onModalClose?.(); };
     const openEdit = (habit) => { setEditingHabit(habit); onModalOpen?.(); };
     const closeEdit = () => { setEditingHabit(null); onModalClose?.(); };
+
+    useEffect(() => {
+        if (!habitDraft) {
+            handledDraftRef.current = null;
+            return;
+        }
+        const draftKey = habitDraft.sourceQuestId || habitDraft.title;
+        if (handledDraftRef.current === draftKey) return;
+        handledDraftRef.current = draftKey;
+
+        if (atHabitCap) {
+            notify(`Max. ${MAX_HABITS} Habits erreicht.${hasRoutineStone ? " (inkl. Routine-Stein +1)" : ""}`, "warning");
+            onHabitDraftHandled?.();
+            return;
+        }
+
+        setCreateSeed(habitDraft);
+        setShowCreate(true);
+        onModalOpen?.();
+    }, [habitDraft, atHabitCap, MAX_HABITS, hasRoutineStone, notify, onModalOpen, onHabitDraftHandled]);
 
     const todayHabits = habits.filter(h => {
         if (!h.active) return false;
@@ -755,7 +780,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
     return (
         <div style={{ animation: "fadeIn 0.35s ease" }}>
             {celebration && <HabitCompleteCelebration data={celebration} onClose={() => setCelebration(null)} />}
-            {showCreate && <CreateHabitModal onClose={closeCreate} onSave={createHabit} theme={theme} />}
+            {showCreate && <CreateHabitModal onClose={closeCreate} onSave={createHabit} initialValues={createSeed} theme={theme} />}
             {editingHabit && <CreateHabitModal onClose={closeEdit} onSave={editHabit} initialHabit={editingHabit} theme={theme} />}
 
             {/* Header with progress */}

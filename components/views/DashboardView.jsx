@@ -236,7 +236,9 @@ export default function DashboardView({
   openPremiumModal,
   requireQuestSlot,
   setDailyFocusQuest,
-  togglePinnedQuest
+  togglePinnedQuest,
+  habitDraft,
+  onHabitDraftHandled
 }) {
   const { t, locale } = useI18n();
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
@@ -361,6 +363,7 @@ export default function DashboardView({
   const [localLayout, setLocalLayout] = useState(dashConfig.layout);
   const [localHidden, setLocalHidden] = useState(dashConfig.hidden);
   const [localCollapsed, setLocalCollapsed] = useState(dashConfig.collapsed);
+  const hasVisibleHabitTracker = can('habit_tracker') && localLayout.includes("habits") && !localCollapsed.habits;
 
   // Sync when dashConfig changes from outside (e.g., reset)
   useEffect(() => {
@@ -1084,7 +1087,7 @@ export default function DashboardView({
           isEmpty: false,
           content: (
             <div data-tutorial="habit-tracker">
-              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} />
+              <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} habitDraft={habitDraft} onHabitDraftHandled={onHabitDraftHandled} />
             </div>
           )
         };
@@ -1268,6 +1271,12 @@ export default function DashboardView({
       </div>
 
       {/* ── WIDGET LIST ── */}
+      {habitDraft && can('habit_tracker') && !hasVisibleHabitTracker && (
+        <div style={{ display: "none" }} aria-hidden="true">
+          <HabitTracker state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} habitDraft={habitDraft} onHabitDraftHandled={onHabitDraftHandled} />
+        </div>
+      )}
+
       <div ref={containerRef}>
         {visibleWidgets.map((widget, i) => {
           const def = widget;
