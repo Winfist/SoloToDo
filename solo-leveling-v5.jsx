@@ -327,6 +327,7 @@ function App({ initialHunterName, onLogout }) {
     if (state?.settings?.language) setBootstrapLanguage(state.settings.language);
   }, [state?.settings?.language, setBootstrapLanguage]);
   const [forgeTab, setForgeTab] = useState("create");
+  const [wizardStep, setWizardStep] = useState(1); // ③ Quest-Wizard: 1=Was? 2=Einstufung 3=Feinschliff
   // ── v3.0 Neural Boot Sequence state (must be before any early returns) ──
   const [bootComplete, setBootComplete] = React.useState(false);
   // ── v3.0 Sticky Header (must be before any early returns) ──
@@ -596,6 +597,9 @@ function App({ initialHunterName, onLogout }) {
     if (next) openQuestCreate();
     else setShowCreate(false);
   }, [openQuestCreate, setShowCreate]);
+
+  // ③ Wizard immer auf Schritt 1 starten, sobald das Erstellen-Modal sichtbar wird
+  useEffect(() => { if (showCreate) setWizardStep(1); }, [showCreate]);
 
   const navigateToWithAccess = useCallback((key) => {
     const premiumFeature = getPremiumFeatureForRoute(key);
