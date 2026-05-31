@@ -827,17 +827,22 @@ export default function DashboardView({
                       <button
                         onClick={() => setFiltersOpen(open => !open)}
                         aria-expanded={filtersOpen || hasActiveQuestFilters}
+                        aria-pressed={filtersOpen}
                         style={{
                           minHeight: 30,
                           padding: "0 10px",
                           borderRadius: 999,
-                          background: hasActiveQuestFilters ? `${theme.primary}10` : "rgba(255,255,255,0.03)",
-                          color: hasActiveQuestFilters ? (theme.accent || theme.primary) : "#64748b",
-                          border: "none",
+                          background: filtersOpen
+                            ? `linear-gradient(135deg, ${theme.primary}28, ${theme.primary}10)`
+                            : hasActiveQuestFilters ? `${theme.primary}10` : "rgba(255,255,255,0.03)",
+                          color: filtersOpen || hasActiveQuestFilters ? (theme.accent || theme.primary) : "#64748b",
+                          border: `1px solid ${filtersOpen ? theme.primary + "88" : hasActiveQuestFilters ? theme.primary + "38" : "transparent"}`,
+                          boxShadow: filtersOpen ? `0 0 16px ${theme.primary}33, inset 0 1px 0 rgba(255,255,255,0.12)` : "none",
                           fontSize: 10,
                           fontWeight: 700,
                           fontFamily: "'JetBrains Mono',monospace",
                           cursor: "pointer",
+                          transition: "all 0.2s ease",
                         }}
                       >
                         {t("dashboard.board.filter")}{hasActiveQuestFilters ? ` ${activeQuestFilterCount}` : ""}
@@ -846,7 +851,8 @@ export default function DashboardView({
                     <button
                       onClick={() => setFreqOpen(open => !open)}
                       aria-expanded={freqOpen}
-                      style={{ minHeight: 30, padding: "0 10px", borderRadius: 999, background: `${theme.primary}10`, color: theme.accent || theme.primary, border: "none", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", whiteSpace: "nowrap" }}
+                      aria-pressed={freqOpen}
+                      style={{ minHeight: 30, padding: "0 10px", borderRadius: 999, background: freqOpen ? `linear-gradient(135deg, ${theme.primary}28, ${theme.primary}10)` : `${theme.primary}10`, color: theme.accent || theme.primary, border: `1px solid ${freqOpen ? theme.primary + "88" : theme.primary + "28"}`, boxShadow: freqOpen ? `0 0 16px ${theme.primary}33, inset 0 1px 0 rgba(255,255,255,0.12)` : "none", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s ease" }}
                     >
                       ⚡ {t("dashboard.board.frequency")} · {getDailySystemQuestCount(state)}/{t("dashboard.board.perDayShort")}
                     </button>
