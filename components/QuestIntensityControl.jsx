@@ -466,7 +466,10 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
                     overflowWrap: "anywhere",
                   }}>{compact ? preset.shortLabel : preset.label}</div>
                   {partialLocked && preset.key !== "baby_gate" && (
-                    <span style={{ position: "absolute", top: 6, right: 6, zIndex: 2, fontSize: 9, opacity: 0.7 }}>🔒</span>
+                    <svg data-pro-lock="true" aria-hidden="true" width={compact ? "9" : "12"} height={compact ? "9" : "12"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", top: compact ? 2 : 6, right: compact ? 2 : 6, zIndex: 2, color: "#c084fc", opacity: 0.82 }}>
+                      <rect x="4" y="10" width="16" height="11" rx="2" />
+                      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                    </svg>
                   )}
                   {!compact && (
                     <>
