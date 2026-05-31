@@ -135,6 +135,71 @@ function SettingRow({ label, desc, value, onChange, color, disabled, lockLevel, 
   );
 }
 
+// ─── PREMIUM LINE ICONS (cohesive set; replaces emoji section + widget-module icons) ──
+function SettingsIcon({ name, size = 18 }) {
+  const c = {
+    width: size, height: size, viewBox: "0 0 24 24", fill: "none",
+    stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round",
+    strokeLinejoin: "round", "aria-hidden": true,
+  };
+  switch (name) {
+    case "language":
+      return (<svg {...c}><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><ellipse cx="12" cy="12" rx="4" ry="9" /></svg>);
+    case "premium":
+      return (<svg {...c}><path d="M3 7l4 3.5L12 4l5 6.5L21 7l-1.6 11.5H4.6L3 7z" /><path d="M4.6 18.5h14.8" /></svg>);
+    case "appearance":
+      return (<svg {...c}><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none" /></svg>);
+    case "vfx":
+      return (<svg {...c}><path d="M12 3.5l1.7 4.6 4.8 1.7-4.8 1.7L12 16l-1.7-4.5L5.5 9.8l4.8-1.7z" /><path d="M18.5 14.5l.7 1.9 2 .8-2 .8-.7 1.9-.7-1.9-2-.8 2-.8z" /></svg>);
+    case "nav":
+      return (<svg {...c}><rect x="3.5" y="3.5" width="7" height="7" rx="1.6" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.6" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.6" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.6" /></svg>);
+    case "notifications":
+      return (<svg {...c}><path d="M6 9.5a6 6 0 0 1 12 0c0 4.5 2 5.5 2 5.5H4s2-1 2-5.5z" /><path d="M10 19a2 2 0 0 0 4 0" /></svg>);
+    case "gameplay":
+      return (<svg {...c}><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" /><line x1="5" y1="14" x2="9" y2="18" /><line x1="7" y1="17" x2="4" y2="20" /></svg>);
+    case "automation":
+      return (<svg {...c}><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16" /><path d="M3 21v-5h5" /></svg>);
+    case "ai":
+      return (<svg {...c}><rect x="6" y="6" width="12" height="12" rx="2.5" /><rect x="9.5" y="9.5" width="5" height="5" rx="1" /><path d="M9 2.5v2M15 2.5v2M9 19.5v2M15 19.5v2M2.5 9h2M2.5 15h2M19.5 9h2M19.5 15h2" /></svg>);
+    case "health":
+      return (<svg {...c}><path d="M19 13.7c1.4-1.4 3-3.1 3-5.4A5.2 5.2 0 0 0 16.5 3C15 3 13.5 3.6 12 5 10.5 3.6 9 3 7.5 3A5.2 5.2 0 0 0 2 8.3c0 2.3 1.6 4 3 5.4l7 6.8z" /></svg>);
+    case "focus":
+      return (<svg {...c}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" /></svg>);
+    case "widget":
+      return (<svg {...c}><rect x="3" y="4" width="18" height="16" rx="2.5" /><rect x="6.5" y="7.5" width="6" height="3.5" rx="1" fill="currentColor" stroke="none" /><path d="M6.5 14h11M6.5 16.8h7" /></svg>);
+    case "data":
+      return (<svg {...c}><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8" /><path d="M19.5 5.5v5.5c0 1.55-3.36 2.8-7.5 2.8s-7.5-1.25-7.5-2.8V5.5" /><path d="M19.5 11v5.5c0 1.55-3.36 2.8-7.5 2.8s-7.5-1.25-7.5-2.8V11" /></svg>);
+    case "flame":
+      return (<svg {...c}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>);
+    case "sword":
+      return (<svg {...c}><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" /></svg>);
+    case "list":
+      return (<svg {...c}><path d="M8 6h12M8 12h12M8 18h12" /><circle cx="4" cy="6" r="1.1" fill="currentColor" stroke="none" /><circle cx="4" cy="12" r="1.1" fill="currentColor" stroke="none" /><circle cx="4" cy="18" r="1.1" fill="currentColor" stroke="none" /></svg>);
+    case "strength":
+      return (<svg {...c}><path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11" /></svg>);
+    case "dna":
+      return (<svg {...c}><circle cx="7" cy="7" r="2.2" /><circle cx="17" cy="17" r="2.2" /><path d="M8.7 8.7l6.6 6.6" /><path d="M16 6.5A10 10 0 0 0 6.5 16" /></svg>);
+    case "trophy":
+      return (<svg {...c}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 21h16" /><path d="M9.5 17c.5.2.9.6.9 1.3V21M14.5 17c-.5.2-.9.6-.9 1.3V21" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2z" /></svg>);
+    case "phone":
+      return (<svg {...c}><rect x="6" y="2.5" width="12" height="19" rx="2.5" /><path d="M10.5 18.5h3" /></svg>);
+    case "alarm":
+      return (<svg {...c}><circle cx="12" cy="13" r="7.5" /><path d="M12 9.5V13l2.5 1.8" /><path d="M5 3.2 2.3 6M21.7 6 19 3.2" /></svg>);
+    case "chat":
+      return (<svg {...c}><path d="M20.5 11.3a8 8 0 0 1-8.6 8 8.6 8.6 0 0 1-3.8-1L4 19.5l1.2-3.8a8 8 0 0 1-1.2-4.4 8 8 0 0 1 8.5-8 8 8 0 0 1 8 8z" /></svg>);
+    case "chart":
+      return (<svg {...c}><path d="M3.5 3.5v17h17" /><path d="M8 16v-4M12.5 16V8M17 16v-2.5" /></svg>);
+    case "shield":
+      return (<svg {...c}><path d="M12 22s7.5-3.8 7.5-9.5V5L12 2.2 4.5 5v7.5C4.5 18.2 12 22 12 22z" /></svg>);
+    case "ghost":
+      return (<svg {...c}><path d="M5 20V10a7 7 0 0 1 14 0v10l-2.3-1.8-2.3 1.8-2.4-1.8L9.6 20 7.3 18.2 5 20z" /><circle cx="9.5" cy="10.5" r="1" fill="currentColor" stroke="none" /><circle cx="14.5" cy="10.5" r="1" fill="currentColor" stroke="none" /></svg>);
+    case "bolt":
+      return (<svg {...c}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10" /></svg>);
+    default:
+      return null;
+  }
+}
+
 // ─── COLLAPSIBLE SECTION ──────────────────────────────────────
 function SettingsSection({ title, icon, color, open, onToggle, children, theme, badge }) {
   return (
@@ -157,7 +222,7 @@ function SettingsSection({ title, icon, color, open, onToggle, children, theme, 
           <div style={{
             width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
             background: `${color || theme.primary}15`, border: `1px solid ${color || theme.primary}25`,
-            fontSize: 16,
+            color: color || theme.primary, fontSize: 16,
           }}>{icon}</div>
           <div style={{ textAlign: "left" }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#e2e8f0", fontFamily: "'Cinzel',serif", letterSpacing: 1 }}>{title}</div>
@@ -1108,7 +1173,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
 
       <SettingsSection
         title={t("settings.languageSection")}
-        icon="LANG"
+        icon={<SettingsIcon name="language" />}
         color="#38bdf8"
         open={openSection === "language"}
         onToggle={() => toggleSection("language")}
@@ -1161,7 +1226,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
          ════════════════════════════════════════════════════════════ */}
       <SettingsSection
         title={t("settings.sections.premium")}
-        icon="PRO"
+        icon={<SettingsIcon name="premium" />}
         color="#a855f7"
         open={openSection === "premium"}
         onToggle={() => toggleSection("premium")}
@@ -1247,7 +1312,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         </div>
       </SettingsSection>
 
-      <SettingsSection title={t("settings.sections.appearance")} icon="🎨" color="#a78bfa" open={openSection === "look"} onToggle={() => toggleSection("look")} theme={theme} badge="THEME · DISPLAY">
+      <SettingsSection title={t("settings.sections.appearance")} icon={<SettingsIcon name="appearance" />} color="#a78bfa" open={openSection === "look"} onToggle={() => toggleSection("look")} theme={theme} badge="THEME · DISPLAY">
 
         <ThemeSwitcher state={state} persist={persist} theme={theme} onOpenShop={onOpenShop} />
 
@@ -1322,7 +1387,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 1b: VISUELLE EFFEKTE (v3.0)
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title={t("settings.sections.vfx")} icon="✨" color="#22d3ee" open={openSection === "vfx"} onToggle={() => toggleSection("vfx")} theme={theme} badge="ARISE v3.0">
+      <SettingsSection title={t("settings.sections.vfx")} icon={<SettingsIcon name="vfx" />} color="#22d3ee" open={openSection === "vfx"} onToggle={() => toggleSection("vfx")} theme={theme} badge="ARISE v3.0">
         <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, marginBottom: 14 }}>
           Premium-Effekte für ein immersives Erlebnis. Deaktiviere einzelne Effekte für bessere Performance auf älteren Geräten.
         </div>
@@ -1369,7 +1434,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 2: NAVIGATION ANPASSEN
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title={t("settings.sections.nav")} icon="📱" color="#22d3ee" open={openSection === "nav"} onToggle={() => toggleSection("nav")} theme={theme} badge="DRAG & DROP">
+      <SettingsSection title={t("settings.sections.nav")} icon={<SettingsIcon name="nav" />} color="#22d3ee" open={openSection === "nav"} onToggle={() => toggleSection("nav")} theme={theme} badge="DRAG & DROP">
         <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, marginBottom: 14 }}>
           Wähle bis zu {MAX_NAV_TABS} Tabs für deine Bottom-Navigation. Halte ⠿ zum Ziehen oder nutze die Pfeile.
         </div>
@@ -1388,7 +1453,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 3: BENACHRICHTIGUNGEN
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title={t("settings.sections.notifications")} icon="🔔" color="#f59e0b" open={openSection === "notif"} onToggle={() => toggleSection("notif")} theme={theme}>
+      <SettingsSection title={t("settings.sections.notifications")} icon={<SettingsIcon name="notifications" />} color="#f59e0b" open={openSection === "notif"} onToggle={() => toggleSection("notif")} theme={theme}>
         <SettingRow label="System-Nachrichten" desc="CLI-Nachrichten beim App-Start" value={getSetting("systemMessages", true)} onChange={() => toggleSetting("systemMessages", true)} theme={theme} />
         <SettingRow label="Haptisches Feedback" desc="Vibration bei Quest-Abschluss" value={getSetting("haptics", true)} onChange={() => toggleSetting("haptics", true)} theme={theme} />
         <SettingRow label="Quest-Completion Cinematic" desc="Epische Belohnungs-Animation" value={getSetting("questCinematic", true)} onChange={() => toggleSetting("questCinematic", true)} theme={theme} />
@@ -1441,7 +1506,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 4: GAMEPLAY
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title={t("settings.sections.gameplay")} icon="⚔️" color="#ef4444" open={openSection === "game"} onToggle={() => toggleSection("game")} theme={theme}>
+      <SettingsSection title={t("settings.sections.gameplay")} icon={<SettingsIcon name="gameplay" />} color="#ef4444" open={openSection === "game"} onToggle={() => toggleSection("game")} theme={theme}>
         <SettingRow label="Quest-Wartezeit" desc="Zeige Timer bis Quest abschließbar ist" value={getSetting("questTimer", true)} onChange={() => toggleSetting("questTimer", true)} theme={theme} />
         <SettingRow label="Auto-Schwierigkeit" desc="Schwierigkeit automatisch erkennen (z.B. '10 Liegestütz' → Easy)" value={getSetting("autoDifficulty", true)} onChange={() => toggleSetting("autoDifficulty", true)} theme={theme} />
         <SettingRow label="Dashboard Stats" desc="Hunter Stats auf dem Dashboard standardmäßig anzeigen" value={getSetting("dashboardStatsOpen", true)} onChange={() => toggleSetting("dashboardStatsOpen", true)} theme={theme} />
@@ -1452,7 +1517,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 4B: AUFGABEN-AUTOMATION
          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-      <SettingsSection title={t("settings.sections.automation")} icon="AUTO" color="#22d3ee" open={openSection === "automation"} onToggle={() => toggleSection("automation")} theme={theme}>
+      <SettingsSection title={t("settings.sections.automation")} icon={<SettingsIcon name="automation" />} color="#22d3ee" open={openSection === "automation"} onToggle={() => toggleSection("automation")} theme={theme}>
         <QuestIntensityControl state={state} persist={persist} theme={theme} premiumStatus={premiumStatus} onOpenPremium={onOpenPremium} />
       </SettingsSection>
 
@@ -1460,7 +1525,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
            SECTION 5: SYSTEM KI
          ════════════════════════════════════════════════════════════ */}
       {can?.('ai_quest_desc') && (
-        <SettingsSection title={t("settings.sections.ai")} icon="🤖" color="#22c55e" open={openSection === "ai"} onToggle={() => toggleSection("ai")} theme={theme}
+        <SettingsSection title={t("settings.sections.ai")} icon={<SettingsIcon name="ai" />} color="#22c55e" open={openSection === "ai"} onToggle={() => toggleSection("ai")} theme={theme}
           badge={<span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: (state.ai?.enabled ?? true) ? "#22c55e" : "#ef4444", display: "inline-block", boxShadow: (state.ai?.enabled ?? true) ? "0 0 6px #22c55e" : "none" }} />{(state.ai?.enabled ?? true) ? "ONLINE" : "OFFLINE"}</span>}
         >
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 14, lineHeight: 1.5 }}>
@@ -1532,13 +1597,13 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 5B: GESUNDHEIT & NATIVE DATEN
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title={t("settings.sections.health")} icon="❤️" color="#ef4444" open={openSection === "health"} onToggle={() => toggleSection("health")} theme={theme}>
+      <SettingsSection title={t("settings.sections.health")} icon={<SettingsIcon name="health" />} color="#ef4444" open={openSection === "health"} onToggle={() => toggleSection("health")} theme={theme}>
         <div style={{ padding: "0 0 16px 0" }}>
           <NativeStatsDashboard state={state} persist={persist} updateHealthData={updateHealthData} claimHealthReward={claimHealthReward} />
         </div>
       </SettingsSection>
 
-      <SettingsSection title={t("settings.sections.screenTime")} icon="FOCUS" color="#f59e0b" open={openSection === "screenTime"} onToggle={() => toggleSection("screenTime")} theme={theme}>
+      <SettingsSection title={t("settings.sections.screenTime")} icon={<SettingsIcon name="focus" />} color="#f59e0b" open={openSection === "screenTime"} onToggle={() => toggleSection("screenTime")} theme={theme}>
         <div style={{ padding: "0 0 16px 0" }}>
           <ScreenTimeDashboard
             state={state}
@@ -1554,7 +1619,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION: WIDGET INTERFACE
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title={t("settings.sections.widget")} icon="📡" color="#22d3ee" open={openSection === "widget"} onToggle={() => toggleSection("widget")} theme={theme} badge="iOS WIDGET">
+      <SettingsSection title={t("settings.sections.widget")} icon={<SettingsIcon name="widget" />} color="#22d3ee" open={openSection === "widget"} onToggle={() => toggleSection("widget")} theme={theme} badge="iOS WIDGET">
         <div style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.5, marginBottom: 14 }}>
           {t("settings.widget.description")}
         </div>
@@ -1587,16 +1652,19 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.questOrder")}</div>
           <div style={{ display: "flex", gap: 6 }}>
             {[
-              { key: "focus", label: "🎯 Fokus" },
-              { key: "priority", label: "⚡ Priorität" },
-              { key: "deadline", label: "⏰ Deadline" },
+              { key: "focus", label: "Fokus", icon: "focus" },
+              { key: "priority", label: "Priorität", icon: "bolt" },
+              { key: "deadline", label: "Deadline", icon: "alarm" },
             ].map(opt => {
               const wc = state.widgetConfig || {};
               const active = (wc.questSort || "focus") === opt.key;
               return (
                 <button key={opt.key} onClick={() => { const widgetConfig = { ...(state.widgetConfig || {}), questSort: opt.key }; persist({ ...state, widgetConfig }); }}
-                  style={{ flex: 1, padding: "8px 6px", borderRadius: 10, background: active ? `${theme.primary}22` : "rgba(255,255,255,0.03)", border: `1.5px solid ${active ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: active ? theme.accent : "#64748b", fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.25s", fontFamily: "'Outfit',sans-serif" }}
-                >{opt.label}</button>
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "8px 6px", borderRadius: 10, background: active ? `${theme.primary}22` : "rgba(255,255,255,0.03)", border: `1.5px solid ${active ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`, color: active ? theme.accent : "#64748b", fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.25s", fontFamily: "'Outfit',sans-serif" }}
+                >
+                  <SettingsIcon name={opt.icon} size={13} />
+                  {opt.label}
+                </button>
               );
             })}
           </div>
@@ -1623,20 +1691,20 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         <div style={{ paddingTop: 14 }}>
           <div style={{ fontSize: 9, letterSpacing: 3, color: theme.accent, fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>{t("settings.widget.modulesTitle")}</div>
           {[
-            { key: 'streak_xp', icon: '🔥', color: '#f97316' },
-            { key: 'quests', icon: '🗡️', color: '#f59e0b' },
-            { key: 'daily_quests', icon: '📋', color: '#22d3ee' },
-            { key: 'focus_quest', icon: '🎯', color: '#ef4444' },
-            { key: 'habits', icon: '💪', color: '#22c55e' },
-            { key: 'micro_habits', icon: '🧬', color: '#06b6d4' },
-            { key: 'hunter_card', icon: '🏆', color: '#a855f7' },
-            { key: 'health', icon: '❤️', color: '#ef4444' },
-            { key: 'screen_time', icon: '📱', color: '#f59e0b' },
-            { key: 'deadline_alert', icon: '⏰', color: '#dc2626' },
-            { key: 'system_message', icon: '💬', color: '#6366f1' },
-            { key: 'week_heatmap', icon: '📊', color: '#22c55e' },
-            { key: 'streak_shield', icon: '🛡️', color: '#3b82f6' },
-            { key: 'shadow_army', icon: '👻', color: '#64748b' },
+            { key: 'streak_xp', icon: 'flame', color: '#f97316' },
+            { key: 'quests', icon: 'sword', color: '#f59e0b' },
+            { key: 'daily_quests', icon: 'list', color: '#22d3ee' },
+            { key: 'focus_quest', icon: 'focus', color: '#ef4444' },
+            { key: 'habits', icon: 'strength', color: '#22c55e' },
+            { key: 'micro_habits', icon: 'dna', color: '#06b6d4' },
+            { key: 'hunter_card', icon: 'trophy', color: '#a855f7' },
+            { key: 'health', icon: 'health', color: '#ef4444' },
+            { key: 'screen_time', icon: 'phone', color: '#f59e0b' },
+            { key: 'deadline_alert', icon: 'alarm', color: '#dc2626' },
+            { key: 'system_message', icon: 'chat', color: '#6366f1' },
+            { key: 'week_heatmap', icon: 'chart', color: '#22c55e' },
+            { key: 'streak_shield', icon: 'shield', color: '#3b82f6' },
+            { key: 'shadow_army', icon: 'ghost', color: '#64748b' },
           ].map(baseMod => {
             const mod = {
               ...baseMod,
@@ -1650,7 +1718,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             return (
               <div key={mod.key} onClick={() => lockedByPremium && onOpenPremium?.("widgets")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: lockedByPremium ? "11px 10px" : "10px 0", margin: lockedByPremium ? "6px 0" : 0, borderRadius: lockedByPremium ? 13 : 0, background: lockedByPremium ? "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(168,85,247,0.07), rgba(255,255,255,0.018))" : "transparent", border: lockedByPremium ? "1px solid rgba(251,191,36,0.18)" : "none", borderBottom: lockedByPremium ? "1px solid rgba(251,191,36,0.18)" : "1px solid rgba(255,255,255,0.03)", cursor: lockedByPremium ? "pointer" : "default", boxShadow: lockedByPremium ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 20px ${theme.primary}10` : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: lockedByPremium ? "rgba(168,85,247,0.12)" : `${mod.color}15`, border: `1px solid ${lockedByPremium ? "rgba(168,85,247,0.28)" : mod.color + "25"}`, fontSize: 14 }}>{lockedByPremium ? "PRO" : mod.icon}</div>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: lockedByPremium ? "rgba(168,85,247,0.12)" : `${mod.color}15`, border: `1px solid ${lockedByPremium ? "rgba(168,85,247,0.28)" : mod.color + "25"}`, color: lockedByPremium ? "#c4b5fd" : mod.color, fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>{lockedByPremium ? "PRO" : <SettingsIcon name={mod.icon} size={16} />}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: lockedByPremium ? "#fde68a" : isActive ? "#e2e8f0" : "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mod.label}</div>
@@ -1928,7 +1996,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
       {/* ════════════════════════════════════════════════════════════
            SECTION 6: DATEN & ACCOUNT
          ════════════════════════════════════════════════════════════ */}
-      <SettingsSection title={t("settings.sections.data")} icon="💾" color="#6366f1" open={openSection === "data"} onToggle={() => toggleSection("data")} theme={theme}>
+      <SettingsSection title={t("settings.sections.data")} icon={<SettingsIcon name="data" />} color="#6366f1" open={openSection === "data"} onToggle={() => toggleSection("data")} theme={theme}>
 
         {/* Account Info */}
         <div style={{ padding: "14px 16px", background: "rgba(0,0,0,0.3)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", marginBottom: 16 }}>

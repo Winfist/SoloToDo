@@ -5,6 +5,7 @@ import { getToday as getLocalToday, formatLocalDateTime } from "../data/dateUtil
 import GlitchText from "./ui/GlitchText.jsx";
 import { useI18n } from "./i18n/I18nProvider.jsx";
 import { getQuestDescription } from "../data/questUtils.js";
+import { getQuestVideoPath } from "../data/questVideos.js";
 import {
   MAX_QUEST_ATTACHMENTS,
   deleteQuestAttachmentBlobs,
@@ -53,6 +54,17 @@ export default function QuestDetailModal({
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachmentError, setAttachmentError] = useState("");
   const attachmentInputRef = useRef(null);
+
+  // Video player states & refs
+  const [videoCollapsed, setVideoCollapsed] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef(null);
+
+  const videoPath = getQuestVideoPath(quest);
+
+  useEffect(() => {
+    setVideoError(false);
+  }, [quest?.id]);
   const questAttachments = useMemo(
     () => Array.isArray(quest?.attachments) ? quest.attachments : [],
     [quest?.attachments]
@@ -337,6 +349,90 @@ export default function QuestDetailModal({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* System Guidance Video */}
+              {videoPath && !videoError && (
+                <div style={{
+                  background: "rgba(0,0,0,0.38)",
+                  borderRadius: 12,
+                  border: `1px solid ${primary}28`,
+                  padding: "12px 14px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  boxShadow: `0 0 20px ${primary}0c, inset 0 0 12px ${primary}04`,
+                  animation: "fadeIn 0.5s ease"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 9, letterSpacing: 2, color: primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: primary, boxShadow: `0 0 8px ${primary}`, animation: "pulse 1.5s infinite" }} />
+                      {t("modals.questDetail.systemBriefing")}
+                    </div>
+                    <button 
+                      onClick={() => setVideoCollapsed(!videoCollapsed)} 
+                      style={{
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        color: "#64748b",
+                        fontSize: 8,
+                        fontFamily: "'JetBrains Mono',monospace",
+                        fontWeight: 900,
+                        cursor: "pointer",
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = primary; e.currentTarget.style.borderColor = primary + "44"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#64748b"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                    >
+                      {videoCollapsed ? t("modals.questDetail.showGuidance") : t("modals.questDetail.hideGuidance")}
+                    </button>
+                  </div>
+
+                  {!videoCollapsed && (
+                    <div style={{
+                      position: "relative",
+                      borderRadius: 10,
+                      overflow: "hidden",
+                      border: `1px solid ${primary}44`,
+                      background: "#020205",
+                      aspectRatio: "16 / 9",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: `0 8px 24px rgba(0,0,0,0.6)`
+                    }}>
+                      {/* Subtle cinematic vignette (premium — replaces the CRT/RGB-split glitch) */}
+                      <div style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "radial-gradient(ellipse at 50% 42%, transparent 56%, rgba(2,2,8,0.42) 100%)",
+                        zIndex: 2,
+                        pointerEvents: "none",
+                      }} />
+                      
+                      <video
+                        ref={videoRef}
+                        src={videoPath}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        onError={() => {
+                          console.warn(`[SoloToDo] Video path failed to load: ${videoPath}. Hiding player.`);
+                          setVideoError(true);
+                        }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block"
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

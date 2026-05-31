@@ -962,13 +962,52 @@ function ChainedQuestProgress({ quest }) {
 }
 
 // ═══ QUEST CARD 2.0 ═══════════════════════════════════════════
+function QuestActionMenuItem({ label, color, icon, danger, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="press-feedback"
+      style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 9,
+        padding: danger ? "9px 9px 7px" : "8px 9px", borderRadius: 8, cursor: "pointer",
+        background: "transparent", border: "none",
+        borderTop: danger ? "1px solid rgba(148,163,184,0.14)" : "none",
+        marginTop: danger ? 3 : 0,
+        color: color || "#cbd5e1",
+        fontSize: 12, fontWeight: 700, fontFamily: "'Outfit',sans-serif",
+        textAlign: "left",
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+    >
+      <span style={{ flexShrink: 0, display: "flex" }}>{icon}</span>
+      {label}
+    </button>
+  );
+}
+
 function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false }) {
   const { t } = useI18n();
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [hover, setHover] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const cardRef = useRef(null);
+  const actionsRef = useRef(null);
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDocPointer = (ev) => {
+      if (actionsRef.current && !actionsRef.current.contains(ev.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDocPointer);
+    document.addEventListener("touchstart", onDocPointer, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onDocPointer);
+      document.removeEventListener("touchstart", onDocPointer);
+    };
+  }, [menuOpen]);
   const diff = DIFFICULTIES.find(d => d.key === quest.difficulty) || DIFFICULTIES[0];
   const cat = CATEGORIES.find(c => c.key === quest.category) || CATEGORIES[0];
   const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
@@ -1091,10 +1130,10 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             <span style={{ padding: "2px 7px", borderRadius: 7, color: questAccent, background: `${questAccent}12`, border: `1px solid ${questAccent}26`, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.4 }}>
               {typeLabel}
             </span>
-            <span style={{ padding: "2px 7px", borderRadius: 7, color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+            <span style={{ padding: "2px 7px", borderRadius: 7, color: "#64748b", background: "transparent", border: "none", fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>
               {isSystemQuest ? t("dashboard.board.originSystem") : t("dashboard.board.originCustom")}
             </span>
-            <span style={{ padding: "2px 7px", borderRadius: 7, color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
+            <span style={{ padding: "2px 7px", borderRadius: 7, color: "#64748b", background: "transparent", border: "none", fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>
               {categoryLabel}
             </span>
             {stackCount > 1 && (
@@ -1150,7 +1189,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
           </div>
 
           {questDescription && !expanded && (
-            <div style={{ marginTop: 4, color: "#64748b", fontSize: 11, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>
+            <div style={{ marginTop: 4, color: "#8a93a6", fontSize: 11, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>
               {questDescription}
             </div>
           )}
@@ -1160,8 +1199,8 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
               <span style={{ color: priorityMeta?.color || "#94a3b8", background: `${priorityMeta?.color || "#94a3b8"}12`, border: `1px solid ${priorityMeta?.color || "#94a3b8"}24`, borderRadius: 7, padding: "2px 7px", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>
                 {priorityMeta?.label || "MITTEL"}
               </span>
-              {energyMeta && <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "2px 7px", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{energyMeta}</span>}
-              {quest.context && <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "2px 7px", fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{quest.context}</span>}
+              {energyMeta && <span style={{ color: "#64748b", background: "transparent", border: "none", borderRadius: 7, padding: "2px 7px", fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>{energyMeta}</span>}
+              {quest.context && <span style={{ color: "#64748b", background: "transparent", border: "none", borderRadius: 7, padding: "2px 7px", fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>{quest.context}</span>}
               {quest.tags?.slice(0, 2).map((t, i) => (
                 <span key={i} style={{ color: "#64748b", fontSize: 9, fontFamily: "'JetBrains Mono',monospace" }}>#{t}</span>
               ))}
@@ -1223,227 +1262,67 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-end" }}>
-          {hasAmulet && onSetFocus && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onSetFocus(isDailyFocus ? null : quest.id); }}
-              className="press-feedback"
-              title="Tagesfokus (Amulett)"
-              style={{
-                width: 30, height: 24, borderRadius: 7, cursor: "pointer",
-                color: isDailyFocus ? "#fbbf24" : "#64748b",
-                background: isDailyFocus ? "rgba(251,191,36,0.12)" : "rgba(255,255,255,0.03)",
-                border: `1px solid ${isDailyFocus ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.08)"}`,
-                fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace",
-                boxShadow: isDailyFocus ? "0 0 10px rgba(251,191,36,0.2)" : "none",
-                transition: "all 0.2s ease"
-              }}
-            >
-              FOK
-            </button>
+        <div ref={actionsRef} style={{ position: "relative", zIndex: menuOpen ? 30 : undefined, alignSelf: "flex-start" }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o); }}
+            className="press-feedback"
+            aria-label="Aktionen"
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
+            title="Aktionen"
+            style={{
+              width: 30, height: 30, borderRadius: 8, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: menuOpen ? "#cbd5e1" : "#64748b",
+              background: menuOpen ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.025)",
+              border: `1px solid ${menuOpen ? "rgba(148,163,184,0.22)" : "rgba(255,255,255,0.07)"}`,
+              transition: "all 0.18s ease",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+            </svg>
+          </button>
+          {isDailyFocus && (
+            <span aria-hidden="true" style={{ position: "absolute", top: -3, right: -3, width: 8, height: 8, borderRadius: 999, background: "#fbbf24", boxShadow: "0 0 6px rgba(251,191,36,0.6)", border: "1px solid rgba(8,12,24,0.95)" }} />
           )}
-          {canReplace && onReplace && (
-            <button onClick={(e) => { e.stopPropagation(); onReplace(quest); }} className="press-feedback" style={{ width: 30, height: 24, borderRadius: 7, color: "#fbbf24", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.22)", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>ALT</button>
-          )}
-          {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(quest); }} className="press-feedback" style={{ width: 30, height: 24, borderRadius: 7, color: "#60a5fa", background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>EDIT</button>}
-          {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(quest.id); }} className="press-feedback" style={{ width: 30, height: 24, borderRadius: 7, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", fontSize: 8, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>DEL</button>}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Difficulty-based styling
-  const cardBg = completing
-    ? `linear-gradient(135deg,${diff.color}15,transparent)`
-    : `linear-gradient(135deg,rgba(12,12,20,0.95),${isSystemQuest ? "rgba(6,26,36,0.92)" : "rgba(22,18,10,0.92)"}), url(${isBoss ? BACKGROUNDS.boss : BACKGROUNDS.standard})`;
-
-  const cardBorder = isBoss
-    ? `1px solid ${hover ? "#ef444466" : "#ef444433"}`
-    : isHard
-      ? `1px solid ${hover ? diff.color + "55" : theme.primary + "22"}`
-      : isHidden
-        ? `1px solid ${hover ? typeCfg.color + "55" : typeCfg.color + "33"}`
-        : `1px solid ${hover ? diff.color + "44" : theme.primary + "18"}`;
-
-  const cardLeftBorder = isBoss
-    ? `3px solid ${hover ? "#ef4444" : "#ef444488"}`
-    : isHard
-      ? `3px solid ${hover ? "#f97316cc" : "#f9731666"}`
-      : `3px solid ${isHidden ? typeCfg.color : isSystemQuest ? "#06b6d4" : diff.color}${hover ? "cc" : "66"}`;
-
-  const cardShadow = isBoss
-    ? `0 4px 24px rgba(0,0,0,0.5), 0 0 ${hover ? "24px" : "12px"} rgba(239,68,68,${hover ? "0.15" : "0.08"}), inset 0 1px 0 rgba(255,255,255,0.04)`
-    : isHard
-      ? `0 4px 24px rgba(0,0,0,0.45), -4px 0 16px rgba(249,115,22,0.06), inset 0 1px 0 rgba(255,255,255,0.04)`
-      : isHidden
-        ? `0 4px 20px rgba(0,0,0,0.4), 0 0 12px ${typeCfg.color}18, inset 0 1px 0 rgba(255,255,255,0.03)`
-        : `0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)`;
-
-  // Determine rarity border class
-  const rarityClass = isBoss ? 'rarity-border rarity-border-boss'
-    : isHard ? 'rarity-border rarity-border-hard'
-      : isHidden ? 'rarity-border rarity-border-hidden'
-        : '';
-
-  return (
-    <div className={rarityClass} style={{ marginBottom: 8 }}>
-      <div ref={cardRef} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClick={() => { if (onOpenDetail) onOpenDetail(quest); }} style={{
-        background: cardBg,
-        backgroundSize: "cover", backgroundPosition: "center", backgroundBlendMode: "overlay",
-        border: cardBorder, borderRadius: 14, padding: "14px 16px",
-        borderLeft: cardLeftBorder,
-        animation: completing ? "fadeOut 0.5s ease forwards" : `cardEnter 0.4s ease ${index * 0.06}s both`,
-        display: "flex", alignItems: "flex-start", gap: 12,
-        transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-        transform: hover && !completing ? "translateY(-2px) translateX(2px)" : "none",
-        backdropFilter: "blur(12px) saturate(1.4)",
-        WebkitBackdropFilter: "blur(12px) saturate(1.4)",
-        boxShadow: cardShadow,
-        opacity: isEasy ? (hover ? 1 : 0.88) : 1,
-        position: "relative",
-        overflow: "hidden",
-        cursor: onOpenDetail ? "pointer" : "default",
-      }}>
-        {/* Scan line overlay for Boss quests */}
-        {isBoss && !completing && <div style={{ position: "absolute", top: 0, left: "-100%", width: "60%", height: "100%", background: "linear-gradient(90deg,transparent,rgba(239,68,68,0.03),transparent)", animation: "scanLine 6s linear infinite", pointerEvents: "none", zIndex: 1 }} />}
-        {/* Ambient glow for Boss quests */}
-        {isBoss && !completing && <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(ellipse at 15% 0%, rgba(239,68,68,0.06), transparent 55%)", pointerEvents: "none", zIndex: 0 }} />}
-
-        <button onClick={(e) => { e.stopPropagation(); handleComplete(); }} className="press-feedback" style={{
-          width: confirming ? 46 : 38, height: 38, borderRadius: 10, flexShrink: 0, marginTop: 2,
-          background: completing ? diff.color + "22" : confirming ? "#f59e0b22" : "transparent",
-          border: `2px solid ${completing ? diff.color : confirming ? "#f59e0b" : subQuests.length > 0 && !allSubsDone ? "#334155" : diff.color + "44"}`,
-          color: confirming ? "#f59e0b" : subQuests.length > 0 && !allSubsDone ? "#334155" : diff.color, fontSize: confirming ? 11 : 15, display: "flex", alignItems: "center", justifyContent: "center",
-          transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", transform: completing ? "scale(1.15)" : confirming ? "scale(1.05)" : hover ? "scale(1.05)" : "scale(1)",
-          cursor: subQuests.length > 0 && !allSubsDone ? "default" : "pointer",
-          boxShadow: completing ? `0 0 16px ${diff.color}44` : confirming ? "0 0 12px #f59e0b33" : "none",
-          position: "relative", zIndex: 2,
-        }}>
-          {completing ? <span style={{ animation: "checkPop 0.4s ease forwards", display: "inline-block" }}>✓</span> : confirming ? <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>JA?</span> : subQuests.length > 0 && !allSubsDone ? <span style={{ opacity: 0.4, fontSize: 10, fontFamily: "'JetBrains Mono',monospace" }}>{completedSubs}/{subQuests.length}</span> : <span style={{ opacity: 0.5 }}>✓</span>}
-        </button>
-        <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 2 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
-            <QuestTypeBadge type={quest.type} />
-            <span style={{
-              color: originBadge.color,
-              fontFamily: "'JetBrains Mono',monospace",
-              fontWeight: 700,
-              padding: "2px 8px",
-              borderRadius: 6,
-              background: originBadge.color + "15",
-              fontSize: 9,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 3,
-              border: `1px solid ${originBadge.color}44`,
-              animation: isSystemQuest ? "systemBadgePulse 2s ease-in-out infinite" : "none",
-              letterSpacing: 1,
-            }}>
-              {originBadge.icon} {originBadge.label}
-            </span>
-            <span style={{ color: diff.color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, padding: "2px 8px", borderRadius: 8, background: diff.color + "15", fontSize: 9, display: "inline-flex", alignItems: "center", gap: 3, boxShadow: isBoss ? `0 0 6px ${diff.color}22` : "none" }}>{diff.iconSrc ? <img src={diff.iconSrc} alt={diff.label} style={{ width: 10, height: 10, objectFit: "contain" }} /> : diff.icon} {diff.label}</span>
-            <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: cat.color + "15", color: cat.color, fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4, boxShadow: `0 0 4px ${cat.color}11` }}>{cat.iconSrc ? <img src={cat.iconSrc} alt={cat.stat} style={{ width: 10, height: 10, objectFit: "contain", mixBlendMode: "screen", filter: `brightness(1.15)` }} /> : cat.icon} <span>{cat.stat}</span></span>
-            {quest.tags?.map((t, i) => (
-              <span key={i} style={{ padding: "1px 6px", borderRadius: 4, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 8, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase", transition: "all 0.2s" }}>#{t}</span>
-            ))}
-            {quest.type === "weekly" && quest.timeLimit && <QuestTimer expiresAt={quest.timeLimit} color="#8b5cf6" />}
-            {quest.dueDate && <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: isOverdue ? "rgba(239,68,68,0.15)" : isDueToday ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.04)", color: isOverdue ? "#ef4444" : isDueToday ? "#f59e0b" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4, border: `1px solid ${isOverdue ? "#ef444455" : isDueToday ? "#f59e0b55" : "rgba(255,255,255,0.08)"}` }}>{isOverdue ? "ÜBERFÄLLIG" : isDueToday ? "HEUTE" : quest.dueDate}</span>}
-            {reminderLabel && <span style={{ padding: "2px 8px", borderRadius: 8, fontSize: 9, background: `${theme.primary}14`, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 4, border: `1px solid ${theme.primary}33` }}>REM {reminderLabel}</span>}
-          </div>
-          {quest.systemMessage && (
-            <div style={{ fontSize: 9, letterSpacing: 1, color: "#f87171", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4, background: "rgba(248,113,113,0.1)", padding: "4px 6px", borderRadius: 6, borderLeft: "2px solid #f87171" }}>
-              ⚠ {quest.systemMessage}
-            </div>
-          )}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div onClick={(e) => {
-              if (onOpenDetail) { e.stopPropagation(); onOpenDetail(quest); }
-              else if (hasDetails) { e.stopPropagation(); setExpanded(!expanded); }
-            }} style={{ fontSize: 14, fontWeight: 600, color: completing ? "#64748b" : "#e2e8f0", textDecoration: completing ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: expanded ? "normal" : "nowrap", fontFamily: "'Outfit',sans-serif", cursor: (onOpenDetail || hasDetails) ? "pointer" : "inherit", flex: 1 }}>{quest.title}</div>
-            {hasDetails && <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} style={{ background: "transparent", border: "none", color: "#475569", fontSize: 10, cursor: "pointer", padding: "2px 4px", transition: "transform 0.2s", transform: expanded ? "rotate(180deg)" : "none", flexShrink: 0, fontFamily: "'JetBrains Mono',monospace" }}>▼</button>}
-          </div>
-          {questDescription && !expanded && (
-            <div style={{ fontSize: 11, color: "#64748b", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif", fontStyle: "italic" }}>{questDescription}</div>
-          )}
-          {(quest.priority || quest.energy || quest.context) && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 6, fontFamily: "'JetBrains Mono',monospace", fontSize: 9 }}>
-              <span style={{ color: priorityMeta.color, background: `${priorityMeta.color}14`, border: `1px solid ${priorityMeta.color}33`, borderRadius: 6, padding: "2px 7px" }}>PRIO {priorityMeta.label}</span>
-              {energyMeta && <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "2px 7px" }}>{energyMeta}</span>}
-              {quest.context && <span style={{ color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "2px 7px" }}>{quest.context}</span>}
-            </div>
-          )}
-          {quest.type === "chained" && <ChainedQuestProgress quest={quest} />}
-          {subQuests.length > 0 && !expanded && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                <div style={{ height: "100%", borderRadius: 2, background: allSubsDone ? "#22c55e" : `linear-gradient(90deg,${theme.primary},${theme.accent})`, width: `${subQuests.length > 0 ? (completedSubs / subQuests.length) * 100 : 0}%`, transition: "width 0.4s ease", boxShadow: `0 0 6px ${allSubsDone ? "#22c55e44" : theme.glow}` }} />
-              </div>
-              <span style={{ fontSize: 9, color: allSubsDone ? "#22c55e" : "#64748b", fontFamily: "'JetBrains Mono',monospace", flexShrink: 0 }}>{completedSubs}/{subQuests.length}</span>
-            </div>
-          )}
-          {expanded && (
-            <div style={{ marginTop: 8, animation: "slideDown 0.25s ease", overflow: "hidden" }}>
-              {questDescription && (
-                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5, marginBottom: 10, fontFamily: "'Outfit',sans-serif", fontStyle: "italic", padding: "8px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 10, borderLeft: `2px solid ${diff.color}44` }}>{questDescription}</div>
+          {menuOpen && (
+            <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: 35, right: 0, zIndex: 2, minWidth: 156, padding: 5, borderRadius: 12, background: "rgba(12,16,28,0.98)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "0 18px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
+              {hasAmulet && onSetFocus && (
+                <QuestActionMenuItem
+                  label={isDailyFocus ? "Fokus entfernen" : "Tagesfokus"}
+                  color="#fbbf24"
+                  icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l2.6 5.3 5.8.9-4.2 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8-4.2-4.1 5.8-.9z" /></svg>}
+                  onClick={(e) => { e.stopPropagation(); onSetFocus(isDailyFocus ? null : quest.id); setMenuOpen(false); }}
+                />
               )}
-              {subQuests.length > 0 && (
-                <div style={{ marginBottom: 6 }}>
-                  <div style={{ fontSize: 9, letterSpacing: 2, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginBottom: 6 }}>{t("quests.stages")}</div>
-                  {subQuests.map((sq, si) => (
-                    <div key={sq.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", marginBottom: 3, borderRadius: 8, background: sq.completed ? "rgba(34,197,94,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${sq.completed ? "#22c55e22" : "rgba(255,255,255,0.04)"}`, transition: "all 0.2s" }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); if (!sq.completed && onCompleteSubQuest) onCompleteSubQuest(quest.id, sq.id); }}
-                        disabled={sq.completed}
-                        className="press-feedback"
-                        style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, background: sq.completed ? "#22c55e22" : "transparent", border: `1.5px solid ${sq.completed ? "#22c55e" : diff.color + "44"}`, color: sq.completed ? "#22c55e" : diff.color + "66", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: sq.completed ? "default" : "pointer", transition: "all 0.2s" }}
-                      >
-                        {sq.completed ? "✓" : ""}
-                      </button>
-                      <span style={{ fontSize: 12, color: sq.completed ? "#64748b" : "#e2e8f0", textDecoration: sq.completed ? "line-through" : "none", fontFamily: "'Outfit',sans-serif", flex: 1 }}>{sq.title}</span>
-                      <span style={{ fontSize: 8, color: "#334155", fontFamily: "'JetBrains Mono',monospace" }}>{si + 1}/{subQuests.length}</span>
-                    </div>
-                  ))}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-                    <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 2, background: allSubsDone ? "#22c55e" : `linear-gradient(90deg,${theme.primary},${theme.accent})`, width: `${(completedSubs / subQuests.length) * 100}%`, transition: "width 0.4s ease" }} />
-                    </div>
-                    <span style={{ fontSize: 9, color: allSubsDone ? "#22c55e" : "#94a3b8", fontFamily: "'JetBrains Mono',monospace" }}>{allSubsDone ? t("quests.allStagesDone") : `${completedSubs}/${subQuests.length} ${t("quests.stagesLower")}`}</span>
-                  </div>
-                </div>
+              {canReplace && onReplace && (
+                <QuestActionMenuItem
+                  label="Ersetzen"
+                  color="#fbbf24"
+                  icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h12l-3-3M20 16H8l3 3" /></svg>}
+                  onClick={(e) => { e.stopPropagation(); onReplace(quest); setMenuOpen(false); }}
+                />
+              )}
+              {onEdit && (
+                <QuestActionMenuItem
+                  label="Bearbeiten"
+                  color="#cbd5e1"
+                  icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>}
+                  onClick={(e) => { e.stopPropagation(); onEdit(quest); setMenuOpen(false); }}
+                />
+              )}
+              {onDelete && (
+                <QuestActionMenuItem
+                  label="Löschen"
+                  color="#f87171"
+                  danger
+                  icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8l1-13" /><path d="M9 7V4h6v3" /></svg>}
+                  onClick={(e) => { e.stopPropagation(); onDelete(quest.id); setMenuOpen(false); }}
+                />
               )}
             </div>
           )}
-          <div style={{ fontSize: 10, color: "#475569", fontFamily: "'JetBrains Mono',monospace", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
-            <span style={{ color: "#a78bfa", textShadow: hover ? "0 0 6px #a78bfa44" : "none", transition: "text-shadow 0.3s" }}>+{xpGain} XP</span>
-            <span style={{ margin: "0 5px", color: "#1e293b" }}>·</span>
-            <span style={{ color: "#fbbf24", textShadow: hover ? "0 0 6px #fbbf2444" : "none", transition: "text-shadow 0.3s" }}>+{goldGain} G</span>
-            {subQuests.length > 0 && <span style={{ margin: "0 5px", color: "#334155" }}>·</span>}
-            {subQuests.length > 0 && <span style={{ color: theme.primary, fontSize: 9 }}>{subQuests.length} {t("quests.stagesLower")}</span>}
-            {isHidden && <span style={{ margin: "0 5px", color: typeCfg.color }}>· ✨ Verborgene Belohnung</span>}
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0, opacity: 1, transition: "opacity 0.2s", position: "relative", zIndex: 2 }}>
-          {hasAmulet && onSetFocus && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onSetFocus(isDailyFocus ? null : quest.id); }}
-              className="press-feedback"
-              title="Tagesfokus (Amulett)"
-              style={{
-                width: 24, height: 24, borderRadius: 7, cursor: "pointer",
-                color: isDailyFocus ? "#fbbf24" : "#64748b",
-                background: isDailyFocus ? "rgba(251,191,36,0.12)" : "rgba(255,255,255,0.05)",
-                border: `1px solid ${isDailyFocus ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.1)"}`,
-                fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace",
-                boxShadow: isDailyFocus ? "0 0 10px rgba(251,191,36,0.2)" : "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.2s ease"
-              }}
-            >
-              F
-            </button>
-          )}
-          {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(quest); }} className="press-feedback" style={{ fontSize: 14, color: "#3b82f6", background: "transparent", padding: "4px", cursor: "pointer", border: "none" }}>✏️</button>}
-          {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(quest.id); }} className="press-feedback" style={{ fontSize: 14, color: "#ef4444", background: "transparent", padding: "4px", cursor: "pointer", border: "none" }}>✕</button>}
         </div>
       </div>
     </div>

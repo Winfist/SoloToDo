@@ -124,7 +124,7 @@ function PremiumLockedOverlay({ theme, onOpenPremium, compact = false, embedded 
           lineHeight: 1.2,
           textShadow: `0 0 20px ${accentColor}44`,
         }}>
-          Intensitaet anpassen
+          Intensität anpassen
         </div>
 
         {/* Description */}
@@ -312,7 +312,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
                 fontFamily: "'JetBrains Mono',monospace",
                 fontWeight: 900,
               }}>
-                SYSTEMRUF INTENSITAET
+                SYSTEMRUF INTENSITÄT
               </div>
               <div style={{
                 display: "flex",
@@ -371,7 +371,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
             marginBottom: 12,
           }}>
             {[
-              { label: "Naechster Ruf", value: nextCall },
+              { label: "Nächster Ruf", value: nextCall },
               { label: "Aktive Auto-Quests", value: `${activeAutoCount}/${selected.activeCap}` },
               { label: "Daily Start", value: `${selected.dailyQuestCount} System-${selected.dailyQuestCount === 1 ? "Quest" : "Quests"}` },
             ].map(item => (
@@ -483,7 +483,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
             fontSize: 8,
             fontWeight: 800,
           }}>
-            <span>Naechster: {nextCall}</span>
+            <span>Nächster: {nextCall}</span>
             <span>{activeAutoCount}/{selected.activeCap} aktiv</span>
           </div>
         )}

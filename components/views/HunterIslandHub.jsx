@@ -200,8 +200,8 @@ function CosmicBackground({ count, reducedMotion, portalColor }) {
 
 // ── Soft additive glow discs behind a gate (fake bloom under ACES) ──────────
 function GateGlow({ selected, dim, color }) {
-  const radii = selected ? [2.0, 1.4, 1.0] : [1.3, 0.95];
-  const ops = selected ? [0.05, 0.07, 0.11] : [0.02, 0.03];
+  const radii = selected ? [1.8, 1.3, 0.95] : [1.3, 0.95];
+  const ops = selected ? [0.035, 0.05, 0.075] : [0.02, 0.03];
   return (
     <group position={[0, 0, -0.22]}>
       {radii.map((r, i) => (
@@ -1253,7 +1253,7 @@ export default function HunterIslandHub({
                 alpha: true,
                 powerPreference: "high-performance",
                 toneMapping: THREE.ACESFilmicToneMapping,
-                toneMappingExposure: 1.12,
+                toneMappingExposure: 1.0,
               }}
             >
               <PortalScene
@@ -1382,7 +1382,7 @@ const HUNTER_ISLAND_CSS = `
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: calc(var(--hi-shell-top, 0px) + max(4px, env(safe-area-inset-top))) clamp(12px, 3.8vw, 30px) calc(var(--hi-shell-bottom, 0px) + max(4px, env(safe-area-inset-bottom)));
+  padding: calc(var(--hi-shell-top, 0px) + 6px) clamp(12px, 3.8vw, 30px) calc(var(--hi-shell-bottom, 0px) + max(4px, env(safe-area-inset-bottom)));
   pointer-events: none;
 }
 .hi-topbar {
@@ -1560,8 +1560,8 @@ const HUNTER_ISLAND_CSS = `
     rgba(4,3,12,0.6);
   box-shadow: 
     inset 0 1px 0 rgba(255,255,255,0.1),
-    0 24px 60px rgba(0,0,0,0.6), 
-    0 0 40px rgba(124,58,237,0.25);
+    0 24px 60px rgba(0,0,0,0.6),
+    0 0 24px rgba(124,58,237,0.14);
   backdrop-filter: blur(24px);
   position: relative;
   overflow: hidden;
@@ -1691,12 +1691,13 @@ const HUNTER_ISLAND_CSS = `
 .hi-portal-dot {
   flex: 0 0 auto;
   position: relative;
-  width: 84px;
-  min-height: 48px;
+  width: 96px;
+  min-height: 60px;
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 5px;
+  gap: 6px;
+  padding: 7px 6px;
   color: #8a7fb0;
   border: 1px solid rgba(124,58,237,0.14);
   border-radius: 12px;
@@ -1704,16 +1705,16 @@ const HUNTER_ISLAND_CSS = `
   transition: transform 0.18s ease, color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 .hi-portal-dot img {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
-  filter: grayscale(0.35) brightness(0.86);
+  filter: grayscale(0.3) brightness(0.9);
 }
 .hi-portal-dot span {
   max-width: 100%;
   color: inherit;
-  font: 600 9px/1.1 var(--font-sans);
-  letter-spacing: 0.2px;
+  font: 600 10.5px/1.15 var(--font-sans);
+  letter-spacing: 0.3px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -1722,16 +1723,19 @@ const HUNTER_ISLAND_CSS = `
 }
 .hi-portal-dot--active {
   color: #f7f5ff;
-  border-color: rgba(124,58,237,0.6);
-  background: linear-gradient(135deg, rgba(124,58,237,0.32), rgba(8,5,18,0.88));
-  box-shadow: 0 0 22px rgba(124,58,237,0.32);
-  transform: translateY(-1px);
+  border-color: rgba(167,139,250,0.7);
+  background: linear-gradient(135deg, rgba(124,58,237,0.34), rgba(8,5,18,0.9));
+  box-shadow: inset 0 0 0 1px rgba(167,139,250,0.4), 0 8px 22px rgba(0,0,0,0.42), 0 0 16px rgba(124,58,237,0.24);
+  transform: translateY(-2px) scale(1.05);
 }
 .hi-portal-dot--active img {
-  filter: drop-shadow(0 0 9px rgba(124,58,237,0.6));
+  filter: drop-shadow(0 0 8px rgba(124,58,237,0.55));
 }
 .hi-portal-dot--locked {
-  opacity: 0.55;
+  opacity: 0.4;
+}
+.hi-portal-dot--locked img {
+  filter: grayscale(0.75) brightness(0.7);
 }
 .hi-portal-dot--premium {
   border-color: rgba(245,158,11,0.34);
@@ -1806,7 +1810,7 @@ const HUNTER_ISLAND_CSS = `
   display: flex;
   flex-direction: column;
   gap: clamp(5px, 1vh, 10px);
-  padding: calc(var(--hi-shell-top, 0px) + max(4px, env(safe-area-inset-top))) clamp(10px, 3vw, 26px) calc(var(--hi-shell-bottom, 0px) + max(4px, env(safe-area-inset-bottom)));
+  padding: calc(var(--hi-shell-top, 0px) + 6px) clamp(10px, 3vw, 26px) calc(var(--hi-shell-bottom, 0px) + max(4px, env(safe-area-inset-bottom)));
   overflow: hidden;
   background:
     radial-gradient(circle at 12% 22%, rgba(34,211,238,0.08), transparent 30%),
@@ -2228,8 +2232,8 @@ const HUNTER_ISLAND_CSS = `
     width: min(680px, 100%);
   }
   .hi-portal-dot {
-    width: 94px;
-    min-height: 54px;
+    width: 108px;
+    min-height: 64px;
   }
 }
 @media (min-width: 860px) {
@@ -2311,8 +2315,8 @@ const HUNTER_ISLAND_CSS = `
     font-size: 12px;
   }
   .hi-portal-dot {
-    width: 70px;
-    min-height: 45px;
+    width: 88px;
+    min-height: 56px;
   }
   .hi-apps-view {
     padding-left: 12px;
@@ -2337,13 +2341,13 @@ const HUNTER_ISLAND_CSS = `
     font-size: 21px;
   }
   .hi-portal-dot {
-    width: 64px;
+    width: 78px;
   }
 }
 @media (max-height: 780px) {
   .hi-hero__hud,
   .hi-apps-view {
-    padding-top: calc(var(--hi-shell-top, 0px) + max(6px, env(safe-area-inset-top)));
+    padding-top: calc(var(--hi-shell-top, 0px) + 6px);
     padding-bottom: calc(var(--hi-shell-bottom, 0px) + max(6px, env(safe-area-inset-bottom)));
   }
   .hi-topbar {
@@ -2383,14 +2387,14 @@ const HUNTER_ISLAND_CSS = `
     min-height: 40px;
   }
   .hi-portal-dot {
-    min-height: 39px;
+    min-height: 50px;
   }
   .hi-portal-dot img {
-    width: 17px;
-    height: 17px;
+    width: 23px;
+    height: 23px;
   }
   .hi-portal-dot span {
-    font-size: 8px;
+    font-size: 9.5px;
   }
   .hi-apps-view {
     gap: 7px;
@@ -2426,7 +2430,7 @@ const HUNTER_ISLAND_CSS = `
 @media (max-height: 680px) {
   .hi-hero__hud,
   .hi-apps-view {
-    padding-top: calc(var(--hi-shell-top, 0px) + max(2px, env(safe-area-inset-top)));
+    padding-top: calc(var(--hi-shell-top, 0px) + 4px);
     padding-bottom: calc(var(--hi-shell-bottom, 0px) + max(2px, env(safe-area-inset-bottom)));
   }
   .hi-topbar {

@@ -1369,11 +1369,39 @@ function App({ initialHunterName, onLogout }) {
                 </div>
               </div>
             ) : penaltyActive ? (
-              <div style={{ background: "rgba(20,4,4,0.9)", border: "1px solid #ef444433", borderLeft: "3px solid #ef4444", borderRadius: 14, padding: "14px 16px", marginBottom: 14, backdropFilter: "blur(8px)", animation: "glitch 4s ease-in-out infinite" }}>
-                <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>PENALTY ZONE AKTIV</div>
-                <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: 500 }}>Das System bestraft Inaktivität. Schließe {Math.max(0, (state.penaltyZone?.redemptionLeft || 3) - (state.penaltyZone?.questsCompletedInPenalty || 0))} weitere Quests ab.</div>
-                <div style={{ fontSize: 10, color: "#ef4444", marginTop: 6, fontFamily: "'JetBrains Mono',monospace" }}>-20% XP aus allen Quests</div>
-              </div>
+              (() => {
+                const total = state.penaltyZone?.redemptionLeft || 3;
+                const done = Math.min(total, state.penaltyZone?.questsCompletedInPenalty || 0);
+                const remaining = Math.max(0, total - done);
+                return (
+                  <div style={{ position: "relative", overflow: "hidden", background: "linear-gradient(135deg, rgba(42,9,12,0.92), rgba(10,3,5,0.94))", border: "1px solid rgba(239,68,68,0.28)", borderLeft: "3px solid #ef4444", borderRadius: 16, padding: "14px 16px", marginBottom: 14, backdropFilter: "blur(12px)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 14px 34px rgba(0,0,0,0.4), 0 0 24px rgba(239,68,68,0.1)" }}>
+                    <div aria-hidden="true" style={{ position: "absolute", top: -40, right: -30, width: 150, height: 150, background: "radial-gradient(circle, rgba(239,68,68,0.16), transparent 70%)", pointerEvents: "none" }} />
+                    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 11, marginBottom: 11 }}>
+                      <div style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                          <path d="M12 9v4" /><circle cx="12" cy="16.7" r="0.7" fill="currentColor" stroke="none" />
+                        </svg>
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 9, letterSpacing: 3, color: "#ef4444", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>PENALTY ZONE AKTIV</div>
+                        <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: 600, marginTop: 1 }}>Das System bestraft Inaktivität.</div>
+                      </div>
+                      <div style={{ marginLeft: "auto", flexShrink: 0, alignSelf: "flex-start", padding: "3px 8px", borderRadius: 999, background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.32)", color: "#f87171", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.4, whiteSpace: "nowrap" }}>-20% XP</div>
+                    </div>
+                    <div style={{ position: "relative" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                        <span style={{ fontSize: 10, color: "#fca5a5", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.5 }}>Erlösung</span>
+                        <span style={{ fontSize: 10, color: "#fca5a5", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>{done}/{total}</span>
+                      </div>
+                      <div style={{ height: 6, background: "rgba(239,68,68,0.1)", borderRadius: 3, overflow: "hidden", border: "1px solid rgba(239,68,68,0.15)" }}>
+                        <div style={{ width: `${(done / total) * 100}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #991b1b, #dc2626, #ef4444)", transition: "width 0.6s ease", boxShadow: "0 0 8px rgba(239,68,68,0.4)" }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 7 }}>Noch <strong style={{ color: "#fca5a5" }}>{remaining}</strong> {remaining === 1 ? "Quest" : "Quests"} bis zur Befreiung.</div>
+                    </div>
+                  </div>
+                );
+              })()
             ) : null}
 
             {/* SEASON / WORLD EVENT BANNER */}

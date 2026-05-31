@@ -1059,6 +1059,9 @@ export const en = {
       timeEnergyWarningText: "It is past 9 PM. Are you sure you still have the endurance required for such a deep task?",
       systemAnalysisTitle: "SYSTEM ANALYSIS",
       systemAnalysisText: "Your {stat} (Level {level}) is superior. This task should be an easy feat for you.",
+      systemBriefing: "SYSTEM BRIEFING",
+      hideGuidance: "HIDE GUIDANCE",
+      showGuidance: "SHOW GUIDANCE",
     },
     questCreate: {
       priorityHigh: "HIGH",
