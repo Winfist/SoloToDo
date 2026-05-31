@@ -9,7 +9,7 @@
     "build:cap": "vite build && npx cap sync",
     "preview": "vite preview",
     "predeploy": "cmd /c \"if exist dist_firebase rmdir /s /q dist_firebase\" && cmd /c \"mkdir dist_firebase && xcopy /E /I dist\\* dist_firebase\\ && xcopy /E /I admin-dist\\* dist_firebase\\admin\\\"",
-    "deploy": "firebase deploy",
+    "deploy": "node ./node_modules/firebase-tools/lib/bin/firebase.js deploy",
     "postinstall": "node patch-health-plugin.js",
     "validate:quests": "node scripts/validate-quests.mjs",
     "test:emergency": "node scripts/test-emergency.mjs",
