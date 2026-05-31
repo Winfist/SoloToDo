@@ -2187,6 +2187,20 @@ function App({ initialHunterName, onLogout }) {
                     ) : (
                       /* ─── ERSTELLEN TAB ─── */
                       <>
+                        {/* ③ Schritt 1: Was? */}
+                        {wizardStep === 1 && (<>
+                        {/* Einstieg: Zufall / Vorlage / Pool */}
+                        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                          <button onClick={() => {
+                            const pool = QUEST_POOL; const pick = pool[Math.floor(Math.random() * pool.length)];
+                            setRandomizing(true);
+                            setQTitle(pick.title); setQCat(pick.category); setQDiff(pick.difficulty); setQType("side");
+                            setQDescription(pick.desc || ""); setQSubQuests(pick.subQuests ? [...pick.subQuests] : []); setQTags(pick.tags ? pick.tags.join(", ") : "");
+                            setTimeout(() => setRandomizing(false), 600);
+                          }} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, fontSize: 9, fontWeight: 800, background: "rgba(245,158,11,0.1)", border: "1px solid #f59e0b33", color: "#f59e0b", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>🎲 {tr("quests.forge.randomIdea")}</button>
+                          <button onClick={() => setForgeTab("library")} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, fontSize: 9, fontWeight: 800, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>📋 {tr("quests.forge.tabs.library")}</button>
+                          <button onClick={() => setForgeTab("pool")} style={{ flex: 1, padding: "9px 6px", borderRadius: 10, fontSize: 9, fontWeight: 800, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer" }}>⭐ {tr("quests.forge.tabs.pool")}</button>
+                        </div>
                         {/* QUEST TITLE */}
                         <div style={{ marginBottom: 16 }}>
                           <div style={{ fontSize: 9, letterSpacing: 2, color: "#64748b", marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.forge.titleLabel")}</div>
@@ -2233,6 +2247,8 @@ function App({ initialHunterName, onLogout }) {
                             })}
                           </div>
                         </div>
+                        </>)}
+                        {/* ── Ende Schritt 1 ── */}
 
                         {/* DIFFICULTY */}
                         <div data-tutorial="quest-difficulty" style={{ marginBottom: 14 }}>
