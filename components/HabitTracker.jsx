@@ -345,6 +345,7 @@ function HabitCard({ habit, todayLog, onComplete, onCounterUpdate, onEdit, onDel
 // ── Create/Edit Habit Modal ───────────────────────────────────────
 function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
     const isEdit = !!initialHabit;
+    const formContentRef = useRef(null);
     const [title, setTitle] = useState(initialHabit?.title || "");
     const [category, setCategory] = useState(initialHabit?.category || "fitness");
     const [frequency, setFrequency] = useState(initialHabit?.frequency || "daily");
@@ -354,6 +355,10 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
     const [icon, setIcon] = useState(initialHabit?.icon || "");
 
     const cat = HABIT_CATEGORIES.find(c => c.key === category) || HABIT_CATEGORIES[0];
+
+    useEffect(() => {
+        formContentRef.current?.scrollTo({ top: 0 });
+    }, []);
 
     const handleSave = () => {
         if (!title.trim()) return;
@@ -378,8 +383,8 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
         onClose();
     };
 
-    return (
-        <div onClick={onClose} style={{
+    return createPortal(
+        <div role="dialog" aria-modal="true" onClick={onClose} style={{
             position: "fixed", inset: 0, zIndex: 500,
             background: "rgba(2,2,10,0.95)", backdropFilter: "blur(20px)",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -412,7 +417,7 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
                 </div>
 
                 {/* Scrollable Form Content Sub-Component */}
-                <div style={{ padding: "0 24px 24px", overflowY: "auto", flex: 1, position: "relative", zIndex: 1 }}>
+                <div ref={formContentRef} style={{ padding: "0 24px 24px", overflowY: "auto", overscrollBehavior: "contain", flex: 1, position: "relative", zIndex: 1 }}>
 
 
                     {/* Title */}
@@ -545,7 +550,8 @@ function CreateHabitModal({ onClose, onSave, initialHabit, theme }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
