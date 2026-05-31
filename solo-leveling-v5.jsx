@@ -601,6 +601,13 @@ function App({ initialHunterName, onLogout }) {
   // ③ Wizard immer auf Schritt 1 starten, sobald das Erstellen-Modal sichtbar wird
   useEffect(() => { if (showCreate) setWizardStep(1); }, [showCreate]);
 
+  const handleWizardSubmit = useCallback(() => {
+    if (!editingQuestId && !requireQuestSlot(null, { bypassDailyLimit: tutorialBypassesQuestLimit })) return;
+    if (qType === "chained") addChainedQuest(qTitle, qCat, qDiff, { bypassDailyLimit: tutorialBypassesQuestLimit });
+    else createQuest(null, { bypassDailyLimit: tutorialBypassesQuestLimit });
+    setForgeTab("create");
+  }, [editingQuestId, requireQuestSlot, tutorialBypassesQuestLimit, qType, qTitle, qCat, qDiff, addChainedQuest, createQuest]);
+
   const navigateToWithAccess = useCallback((key) => {
     const premiumFeature = getPremiumFeatureForRoute(key);
     if (premiumFeature && !requirePremium(premiumFeature)) return;
@@ -2518,17 +2525,26 @@ function App({ initialHunterName, onLogout }) {
                     )}
                   </div>
 
-                  {!showTemplates && (
-                    <div style={{ padding: "14px 24px 20px", flexShrink: 0, borderTop: `1px solid ${theme.primary}1a` }}>
-                      <button data-tutorial="quest-submit-btn" onClick={() => {
-                        if (!editingQuestId && !requireQuestSlot(null, { bypassDailyLimit: tutorialBypassesQuestLimit })) return;
-                        if (qType === "chained") addChainedQuest(qTitle, qCat, qDiff, { bypassDailyLimit: tutorialBypassesQuestLimit });
-                        else createQuest(null, { bypassDailyLimit: tutorialBypassesQuestLimit });
-                        setForgeTab("create");
-                      }} disabled={!qTitle.trim()} style={{ width: "100%", padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : 'rgba(10,10,24,0.6)', color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 6px 30px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.3)` : "inset 0 2px 4px rgba(0,0,0,0.5)", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: qTitle.trim() ? "none" : "1px solid rgba(255,255,255,0.04)" }}
-                        onMouseEnter={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "translateY(-3px) scale(1.01)"; e.currentTarget.style.boxShadow = `0 12px 40px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.4)`; } }}
-                        onMouseLeave={e => { if (qTitle.trim()) { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 6px 30px ${theme.glow}, inset 0 2px 0 rgba(255,255,255,0.3)`; } }}
-                      >{qTitle.trim() ? (editingQuestId ? `✦ ${tr("quests.forge.submitSave")} ✦` : `✦ ${tr("quests.forge.submitAccept")} ✦`) : tr("quests.forge.submitNeedTitle")}</button>
+                  {!showTemplates && forgeTab === "create" && (
+                    <div style={{ padding: "14px 24px 20px", flexShrink: 0, borderTop: `1px solid ${theme.primary}1a`, display: "flex", gap: 10, alignItems: "center" }}>
+                      {wizardStep > 1 && (
+                        <button onClick={() => setWizardStep(step => Math.max(1, step - 1))} style={{ padding: "13px 16px", borderRadius: 14, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#94a3b8", fontSize: 13, fontWeight: 900, fontFamily: "'Cinzel',serif", cursor: "pointer" }}>‹</button>
+                      )}
+                      {wizardStep < 3 ? (
+                        <>
+                          <button
+                            data-tutorial="quest-submit-btn"
+                            disabled={!qTitle.trim()}
+                            onClick={() => setWizardStep(step => Math.min(3, step + 1))}
+                            style={{ flex: 1, padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : "rgba(10,10,24,0.6)", color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 2, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 6px 30px ${theme.glow}` : "none", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: "none" }}
+                          >{tr("quests.forge.next")} ›</button>
+                          {wizardStep === 2 && (
+                            <button onClick={handleWizardSubmit} disabled={!qTitle.trim()} title={tr("quests.forge.createNow")} style={{ padding: "15px 14px", borderRadius: 16, fontSize: 12, fontWeight: 900, background: "transparent", border: `1px solid ${theme.primary}55`, color: theme.accent || theme.primary, fontFamily: "'Cinzel',serif", cursor: qTitle.trim() ? "pointer" : "not-allowed" }}>✦</button>
+                          )}
+                        </>
+                      ) : (
+                        <button data-tutorial="quest-submit-btn" onClick={handleWizardSubmit} disabled={!qTitle.trim()} style={{ flex: 1, padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : "rgba(10,10,24,0.6)", color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 3, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 6px 30px ${theme.glow}` : "none", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: "none" }}>{editingQuestId ? `✦ ${tr("quests.forge.submitSave")} ✦` : `✦ ${tr("quests.forge.submitAccept")} ✦`}</button>
+                      )}
                     </div>
                   )}
 
