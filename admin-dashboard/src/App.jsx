@@ -48,7 +48,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
       if (u) {
-        if (u.uid === '4FPoiwjIDneGrJqgYDZLPbPOJZu2' && u.email === 'jwuckert2@gmail.com') {
+        if (u.uid === 'iY9F97jYZihbq9Lb1kA7rKwZjy53' && u.email === 'jwuckert2@gmail.com') {
           setUser(u);
           setLoading(false);
           fetchAllUsers();

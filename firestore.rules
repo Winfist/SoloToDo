@@ -3,10 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Admin function to check UID
     function isAdmin() {
-      return request.auth != null && request.auth.uid == '4FPoiwjIDneGrJqgYDZLPbPOJZu2';
+      return request.auth != null && request.auth.uid == 'iY9F97jYZihbq9Lb1kA7rKwZjy53';
     }
 
-    // Admin Override: Allow full access to UID 4FPoiwjIDneGrJqgYDZLPbPOJZu2
+    // Admin Override: Allow full access to UID iY9F97jYZihbq9Lb1kA7rKwZjy53
     match /{document=**} {
       allow read, write: if isAdmin();
     }

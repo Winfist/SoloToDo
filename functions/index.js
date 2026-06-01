@@ -299,7 +299,7 @@ exports.generateQuestDescription = onCall(CALL_OPTIONS, async (request) => {
 
 exports.adminSendPushNotification = onCall(CALL_OPTIONS, async (request) => {
   const callerUid = requireAuth(request);
-  const adminUid = "4FPoiwjIDneGrJqgYDZLPbPOJZu2"; // SoloToDo Admin UID
+  const adminUid = "iY9F97jYZihbq9Lb1kA7rKwZjy53"; // SoloToDo Admin UID
 
   if (callerUid !== adminUid && !process.env.FUNCTIONS_EMULATOR) {
     throw new HttpsError("permission-denied", "Nur der System Administrator kann Push-Direktiven senden.");
@@ -393,7 +393,7 @@ async function fullDeleteUser(uid) {
 
 exports.adminDeleteUser = onCall(CALL_OPTIONS, async (request) => {
   const callerUid = requireAuth(request);
-  const adminUid = "4FPoiwjIDneGrJqgYDZLPbPOJZu2"; // SoloToDo Admin UID
+  const adminUid = "iY9F97jYZihbq9Lb1kA7rKwZjy53"; // SoloToDo Admin UID
 
   if (callerUid !== adminUid && !process.env.FUNCTIONS_EMULATOR) {
     throw new HttpsError("permission-denied", "Nur der System Administrator kann User löschen.");
