@@ -92,6 +92,15 @@
   background: rgba(5, 8, 18, 0.9);
 }
 
+/* Auto-scroll headroom: when a tall target is scrolled into view during the
+   tutorial, leave room above/below so the coachmark and skip never crowd it. */
+[data-tutorial='quest-board'],
+[data-tutorial='today-command'],
+[data-tutorial='quest-form'] {
+  scroll-margin-top: 96px;
+  scroll-margin-bottom: 140px;
+}
+
 
 /* ── Confetti (celebration steps) ── */
 .tutorial-confetti {

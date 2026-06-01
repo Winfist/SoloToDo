@@ -63,10 +63,12 @@ function updateRectState(setter, nextRect) {
   setter((prev) => (rectChanged(prev, nextRect) ? nextRect : prev));
 }
 
-function getSkipPlacement(targetRect, revealRect) {
-  const rect = revealRect || targetRect;
-  const nearBottom = Boolean(rect && rect.bottom > window.innerHeight - 145);
-  return nearBottom ? "top-left" : "bottom-left";
+function getSkipPlacementFromCoach(coachRect) {
+  // Keep the skip control on the opposite vertical half from the coachmark,
+  // so the two can never collide regardless of target size or scroll position.
+  if (!coachRect) return "bottom-left";
+  const midY = coachRect.top + coachRect.height / 2;
+  return midY < window.innerHeight / 2 ? "bottom-left" : "top-left";
 }
 
 function getRevealRect(step, targetElement, targetRect) {
@@ -375,6 +377,7 @@ function TooltipStep({
   onTypingComplete,
   onRequestFinishTyping,
   onContinue,
+  onLayout,
 }) {
   const { t } = useI18n();
   const [textDone, setTextDone] = useState(false);
@@ -419,6 +422,13 @@ function TooltipStep({
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, [step, targetRect, tooltipSize]);
+
+  useEffect(() => {
+    if (!onLayout) return;
+    const height = tooltipSize?.height || (step.type === "action" ? 214 : 198);
+    const width = tooltipSize?.width || Math.min(408, window.innerWidth - 36);
+    onLayout({ top: tooltipPos.top, left: tooltipPos.left, width, height });
+  }, [onLayout, tooltipPos.top, tooltipPos.left, tooltipSize, step.type]);
 
   useEffect(() => {
     if (!tooltipRef.current || typeof ResizeObserver === "undefined") return undefined;
@@ -497,6 +507,7 @@ export default function TutorialOverlay({
   const [blockedPulse, setBlockedPulse] = useState(false);
   const [textDone, setTextDone] = useState(false);
   const [typingSkipSignal, setTypingSkipSignal] = useState(0);
+  const [coachRect, setCoachRect] = useState(null);
   const observerRef = useRef(null);
   const rectIntervalRef = useRef(null);
   const actionCleanupRef = useRef(null);
@@ -508,10 +519,11 @@ export default function TutorialOverlay({
   const isActionStep = step?.type === "action";
   const actionTargetUnlocked = isActionStep && textDone && Boolean(targetRect);
   const actionCanPassThrough = actionTargetUnlocked;
-  const skipPlacement = isCinematic ? "top-right" : getSkipPlacement(targetRect, revealRect);
+  const skipPlacement = isCinematic ? "top-right" : getSkipPlacementFromCoach(coachRect);
 
   useEffect(() => {
     setTextDone(false);
+    setCoachRect(null);
   }, [step?.id]);
 
   const requestFinishTyping = useCallback(() => {
@@ -800,6 +812,7 @@ export default function TutorialOverlay({
           onTypingComplete={() => setTextDone(true)}
           onRequestFinishTyping={requestFinishTyping}
           onContinue={onAdvance}
+          onLayout={setCoachRect}
         />
       )}
 
