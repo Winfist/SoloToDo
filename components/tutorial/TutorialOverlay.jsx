@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "../../styles/tutorial.css";
 import { useI18n } from "../i18n/I18nProvider.jsx";
+import Sigil from "./Sigil.jsx";
 
 const CONFETTI_COLORS = ["#22d3ee", "#a855f7", "#fbbf24", "#f43f5e", "#34d399", "#818cf8"];
 const SPOTLIGHT_PADDING = 12;
@@ -60,11 +61,6 @@ function rectChanged(prev, next, threshold = 0.75) {
 
 function updateRectState(setter, nextRect) {
   setter((prev) => (rectChanged(prev, nextRect) ? nextRect : prev));
-}
-
-function frameRadius(rect, max = 18, divisor = 4.5) {
-  if (!rect) return 12;
-  return Math.min(max, Math.max(9, Math.min(rect.width, rect.height) / divisor));
 }
 
 function getSkipPlacement(targetRect, revealRect) {
@@ -204,33 +200,6 @@ function TypewriterText({ text = "", speed = 24, skipSignal = 0, onComplete }) {
   );
 }
 
-function SpotlightMask({ revealRect }) {
-  if (!revealRect) {
-    return <div className="tutorial-mask tutorial-mask--solid" aria-hidden="true" />;
-  }
-
-  const rect = clampRect(revealRect, 0);
-  const radius = Math.min(20, Math.max(10, Math.min(rect.width, rect.height) / 5));
-
-  return (
-    <svg className="tutorial-mask" width="100%" height="100%" aria-hidden="true">
-      <defs>
-        <mask id="tutorial-spotlight-mask">
-          <rect width="100%" height="100%" fill="white" />
-          <rect x={rect.left} y={rect.top} width={rect.width} height={rect.height} rx={radius} ry={radius} fill="black" />
-        </mask>
-        <radialGradient id="tutorial-vignette" cx="50%" cy="50%" r="78%">
-          <stop offset="0%" stopColor="rgba(6,9,20,0.06)" />
-          <stop offset="74%" stopColor="rgba(3,5,14,0.44)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0.74)" />
-        </radialGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="rgba(3, 6, 16, 0.64)" mask="url(#tutorial-spotlight-mask)" />
-      <rect width="100%" height="100%" fill="url(#tutorial-vignette)" mask="url(#tutorial-spotlight-mask)" />
-    </svg>
-  );
-}
-
 function TutorialClickCage({ targetRect, padding = SPOTLIGHT_PADDING, onBlockedClick }) {
   if (!targetRect) {
     return (
@@ -259,47 +228,9 @@ function TutorialClickCage({ targetRect, padding = SPOTLIGHT_PADDING, onBlockedC
   );
 }
 
-function FocusRing({ rect, action, strong, blockedPulse }) {
-  if (!rect) return null;
-
-  const padding = action ? SPOTLIGHT_PADDING : 8;
-  const top = rect.top - padding;
-  const left = rect.left - padding;
-  const width = rect.width + padding * 2;
-  const height = rect.height + padding * 2;
-  const radius = frameRadius({ width, height });
-
-  const className = action
-    ? [
-        "tutorial-target",
-        strong ? "tutorial-target--strong" : "",
-        blockedPulse ? "tutorial-target--blocked" : "",
-      ]
-    : ["tutorial-highlight", blockedPulse ? "tutorial-highlight--blocked" : ""];
-
-  return (
-    <div
-      className={className.filter(Boolean).join(" ")}
-      style={{ top, left, width, height, borderRadius: radius }}
-      aria-hidden="true"
-    />
-  );
-}
-
 function CinematicStep({ step, stepIndex, totalSteps, typingSkipSignal, onTypingComplete, onContinue, onRequestFinishTyping }) {
   const { t } = useI18n();
   const [textDone, setTextDone] = useState(false);
-  const particles = useMemo(() => {
-    return Array.from({ length: 14 }, (_, id) => ({
-      id,
-      width: 2 + Math.random() * 3,
-      left: 8 + Math.random() * 84,
-      top: 10 + Math.random() * 78,
-      delay: Math.random() * 2,
-      duration: 3 + Math.random() * 4,
-      opacity: 0.14 + Math.random() * 0.3,
-    }));
-  }, [step.id]);
 
   useEffect(() => {
     setTextDone(false);
@@ -319,53 +250,23 @@ function CinematicStep({ step, stepIndex, totalSteps, typingSkipSignal, onTyping
   }, [onContinue, onRequestFinishTyping, textDone]);
 
   return (
-    <div className="tutorial-cinematic" onClick={handleClick} role="dialog" aria-modal="true">
-      <div className="tutorial-cinematic__ambient" aria-hidden="true" />
-
-      {particles.map((particle) => (
-        <div
-          key={particle.id}
-          aria-hidden="true"
-          className="tutorial-cinematic__particle"
-          style={{
-            width: particle.width,
-            height: particle.width,
-            opacity: particle.opacity,
-            left: `${particle.left}%`,
-            top: `${particle.top}%`,
-            animationDuration: `${particle.duration}s`,
-            animationDelay: `${particle.delay}s`,
-          }}
-        />
-      ))}
-
-      <div className="tutorial-cinematic__emblem" aria-hidden="true">
-        <span className="tutorial-cinematic__emblem-ring tutorial-cinematic__emblem-ring--outer" />
-        <span className="tutorial-cinematic__emblem-ring tutorial-cinematic__emblem-ring--inner" />
-        <span className="tutorial-cinematic__emblem-ring tutorial-cinematic__emblem-ring--core" />
-        <span className="tutorial-cinematic__icon">{step.icon}</span>
+    <div className="sys-fullbleed sys-grain sys-vignette sys-cine sys-play" onClick={handleClick} role="dialog" aria-modal="true">
+      <div className="sys-cine__aur"><i className="a1" /><i className="a2" /></div>
+      <div className="sys-cine__beam" />
+      <div className="sys-cine__counter">{String(stepIndex + 1).padStart(2,"0")} / {String(totalSteps).padStart(2,"0")}</div>
+      <div className="sys-cine__hero">
+        <div className="sys-cine__halo" />
+        <Sigil size="hero" playKey={step.id} />
       </div>
-      <div className="tutorial-cinematic__eyebrow">{t("tutorial.hud.systemWindow")}</div>
-      <div className={`tutorial-cinematic__title ${step.isFinale ? "tutorial-cinematic__title--finale" : ""}`}>
-        {step.title}
-      </div>
-      <div className="tutorial-cinematic__text">
-        <TypewriterText
-          key={step.id}
-          text={step.text}
-          speed={step.isFinale ? 34 : 22}
-          skipSignal={typingSkipSignal}
-          onComplete={completeText}
-        />
+      <div className="sys-cine__eyebrow">{t("tutorial.hud.systemWindow")}</div>
+      <div className={`sys-cine__title ${step.isFinale ? "sys-cine__title--finale" : ""}`}>{step.title}</div>
+      <div className="sys-cine__rule" />
+      <div className="sys-cine__body">
+        <TypewriterText key={step.id} text={step.text} speed={step.isFinale ? 34 : 22} skipSignal={typingSkipSignal} onComplete={completeText} />
       </div>
       {textDone && (
-        <div className="tutorial-cinematic__continue">
-          {step.isFinale ? t("tutorial.actions.finish") : t("tutorial.actions.continue")}
-        </div>
+        <div className="sys-cine__continue">{step.isFinale ? t("tutorial.actions.finish") : t("tutorial.actions.continue")}</div>
       )}
-      <div className="tutorial-cinematic__counter">
-        {stepIndex + 1}/{totalSteps}
-      </div>
     </div>
   );
 }
@@ -397,6 +298,7 @@ function getTooltipPosition(step, targetRect, tooltipSize) {
     top: clampValue(window.innerHeight / 2 - height / 2, safeTop, safeBottom - height),
     left: clampValue(window.innerWidth / 2 - width / 2, safeLeft, safeRight - width),
     arrowDir: null,
+    arrowOffset: null,
   };
 
   if (!targetRect || step.position === "center") return center;
@@ -412,7 +314,7 @@ function getTooltipPosition(step, targetRect, tooltipSize) {
   const gap = 24;
 
   const makeCandidate = (pos) => {
-    if (pos === "center") return { ...center, arrowDir: null, pos };
+    if (pos === "center") return { ...center, arrowDir: null, arrowOffset: null, pos };
 
     let top = center.top;
     let left = center.left;
@@ -428,10 +330,17 @@ function getTooltipPosition(step, targetRect, tooltipSize) {
       arrowDir = pos === "top" ? "down" : "up";
     }
 
+    const clampedTop = clampValue(top, safeTop, safeBottom - height);
+    const clampedLeft = clampValue(left, safeLeft, safeRight - width);
+    const arrowOffset = pos === "left" || pos === "right"
+      ? clampValue(targetRect.top + targetRect.height / 2 - clampedTop - 7, 16, height - 30)
+      : clampValue(targetRect.left + targetRect.width / 2 - clampedLeft - 7, 16, width - 30);
+
     return {
-      top: clampValue(top, safeTop, safeBottom - height),
-      left: clampValue(left, safeLeft, safeRight - width),
+      top: clampedTop,
+      left: clampedLeft,
       arrowDir,
+      arrowOffset,
       pos,
     };
   };
@@ -462,7 +371,6 @@ function TooltipStep({
   stepIndex,
   totalSteps,
   targetRect,
-  sequence,
   typingSkipSignal,
   onTypingComplete,
   onRequestFinishTyping,
@@ -470,18 +378,33 @@ function TooltipStep({
 }) {
   const { t } = useI18n();
   const [textDone, setTextDone] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [presented, setPresented] = useState({ step, stepIndex });
   const tooltipRef = useRef(null);
   const [tooltipSize, setTooltipSize] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState(() => getTooltipPosition(step, targetRect, tooltipSize));
+  const [tooltipPos, setTooltipPos] = useState(() => getTooltipPosition(step, targetRect, null));
+  const presentedStep = presented.step;
+  const presentedStepIndex = presented.stepIndex;
 
   useEffect(() => {
     setTextDone(false);
-  }, [step.id]);
+  }, [presentedStep.id]);
+
+  useEffect(() => {
+    if (step.id === presentedStep.id) return undefined;
+    setIsTransitioning(true);
+    const timer = window.setTimeout(() => {
+      setPresented({ step, stepIndex });
+      setIsTransitioning(false);
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [presentedStep.id, step, stepIndex]);
 
   const completeText = useCallback(() => {
+    if (presentedStep.id !== step.id) return;
     setTextDone(true);
     onTypingComplete?.();
-  }, [onTypingComplete]);
+  }, [onTypingComplete, presentedStep.id, step.id]);
 
   const handleTooltipClick = useCallback((event) => {
     if (textDone) return;
@@ -514,48 +437,45 @@ function TooltipStep({
     return () => observer.disconnect();
   }, [step.id]);
 
-  const isActionStep = step.type === "action";
-  const waitingForTarget = Boolean(step.target && !targetRect);
+  const isActionStep = presentedStep.type === "action";
+  const waitingForTarget = Boolean(presentedStep.target && !targetRect);
   const actionText = waitingForTarget
     ? t("tutorial.actions.targetPreparing")
-    : step.action === "input"
+    : presentedStep.action === "input"
       ? t("tutorial.actions.inputHint")
       : t("tutorial.actions.actionLocked");
-
-  const percent = totalSteps ? ((stepIndex + 1) / totalSteps) * 100 : 0;
-  const protocol = sequence?.id === "onboarding"
-    ? t("tutorial.hud.awakeningProtocol")
-    : t("tutorial.hud.unlockProtocol");
+  const coachClassName = [
+    "sys-coach",
+    tooltipPos.arrowDir ? `sys-coach--arrow-${tooltipPos.arrowDir}` : "sys-coach--center",
+    isTransitioning ? "hide" : "",
+  ].filter(Boolean).join(" ");
+  const coachStyle = {
+    top: tooltipPos.top,
+    left: tooltipPos.left,
+    ...(tooltipPos.arrowOffset === null ? {} : { "--sys-coach-arrow-offset": `${tooltipPos.arrowOffset}px` }),
+  };
 
   return (
-    <div ref={tooltipRef} className="tutorial-tooltip" style={{ top: tooltipPos.top, left: tooltipPos.left }} key={step.id} onClick={handleTooltipClick}>
-      {tooltipPos.arrowDir && <div className={`tutorial-arrow tutorial-arrow--${tooltipPos.arrowDir}`} aria-hidden="true" />}
-      <div className="tutorial-tooltip__card" role="dialog" aria-live="polite">
-        <div className="tutorial-tooltip__eyebrow">
-          <span className="tutorial-tooltip__system-tag">SYSTEM</span>
-          <span className="tutorial-tooltip__protocol">{protocol}</span>
-          <span className="tutorial-tooltip__step-counter">
-            <b>{String(stepIndex + 1).padStart(2, "0")}</b> / {String(totalSteps).padStart(2, "0")}
-          </span>
-        </div>
-        <div className="tutorial-tooltip__title">{step.title}</div>
-        <div className="tutorial-tooltip__text">
-          <TypewriterText key={step.id} text={step.text} speed={18} skipSignal={typingSkipSignal} onComplete={completeText} />
-        </div>
-        <div className="tutorial-tooltip__progress" aria-hidden="true">
-          <span style={{ width: `${percent}%` }} />
-        </div>
-        <div className="tutorial-tooltip__actions">
-          {isActionStep ? (
-            <div className="tutorial-tooltip__action-hint">{actionText}</div>
-          ) : (
-            textDone && (
-              <button className="tutorial-tooltip__continue-btn" onClick={(event) => { event.stopPropagation(); onContinue(); }}>
-                {t("tutorial.actions.next")}
-              </button>
-            )
-          )}
-        </div>
+    <div ref={tooltipRef} className={coachClassName} style={coachStyle} onClick={handleTooltipClick} role="dialog" aria-live="polite">
+      {tooltipPos.arrowDir && <span className="sys-coach__arrow" aria-hidden="true" />}
+      <div className="sys-coach__eyebrow">
+        <Sigil size="mark" playKey={presentedStep.id} />
+        <span className="sys-coach__tag">SYSTEM</span>
+        <span className="sys-coach__count"><b>{String(presentedStepIndex + 1).padStart(2,"0")}</b> / {String(totalSteps).padStart(2,"0")}</span>
+      </div>
+      <div className="sys-coach__title">{presentedStep.title}</div>
+      <div className="sys-coach__text">
+        <TypewriterText key={presentedStep.id} text={presentedStep.text} speed={18} skipSignal={typingSkipSignal} onComplete={completeText} />
+      </div>
+      <div className="sys-coach__foot">
+        {totalSteps <= 8 && (
+          <div className="sys-coach__dots">
+            {Array.from({ length: totalSteps }).map((_, i) => <i key={i} className={i === presentedStepIndex ? "on" : ""} />)}
+          </div>
+        )}
+        {isActionStep
+          ? <div className="sys-coach__hint">{actionText}</div>
+          : (textDone && <button className="sys-coach__btn" onClick={(e) => { e.stopPropagation(); onContinue(); }}>{t("tutorial.actions.next")}</button>)}
       </div>
     </div>
   );
@@ -588,7 +508,7 @@ export default function TutorialOverlay({
   const isActionStep = step?.type === "action";
   const actionTargetUnlocked = isActionStep && textDone && Boolean(targetRect);
   const actionCanPassThrough = actionTargetUnlocked;
-  const skipPlacement = getSkipPlacement(targetRect, revealRect);
+  const skipPlacement = isCinematic ? "top-right" : getSkipPlacement(targetRect, revealRect);
 
   useEffect(() => {
     setTextDone(false);
@@ -608,7 +528,7 @@ export default function TutorialOverlay({
       const preventScroll = (e) => {
         e.preventDefault();
       };
-      
+
       const preventKeyScroll = (e) => {
         const keys = ["Space", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"];
         if (keys.includes(e.code)) {
@@ -617,7 +537,7 @@ export default function TutorialOverlay({
           e.preventDefault();
         }
       };
-      
+
       window.addEventListener("wheel", preventScroll, { passive: false });
       window.addEventListener("touchmove", preventScroll, { passive: false });
       window.addEventListener("keydown", preventKeyScroll, { passive: false });
@@ -707,12 +627,44 @@ export default function TutorialOverlay({
 
     let observer = null;
     let attachTimer = null;
+    let advanceObserver = null;
+    let advanceTimer = null;
+    let advanceFallbackTimer = null;
     let completed = false;
+    let completionPending = false;
 
-    const complete = () => {
+    const advance = () => {
       if (completed) return;
       completed = true;
-      window.setTimeout(() => onActionComplete?.(step.id), step.action === "input" ? 240 : 120);
+      advanceObserver?.disconnect();
+      advanceObserver = null;
+      window.clearTimeout(advanceFallbackTimer);
+      advanceTimer = window.setTimeout(
+        () => onActionComplete?.(step.id),
+        Number.isFinite(step.advanceDelayMs) ? step.advanceDelayMs : step.action === "input" ? 240 : 120
+      );
+    };
+
+    const canAdvance = () => (
+      (!step.advanceWhenTarget || document.querySelector(step.advanceWhenTarget)) &&
+      (!step.advanceWhenAbsent || !document.querySelector(step.advanceWhenAbsent))
+    );
+
+    const complete = () => {
+      if (completed || completionPending) return;
+      completionPending = true;
+      if (canAdvance()) {
+        advance();
+        return;
+      }
+      advanceObserver = new MutationObserver(() => {
+        if (canAdvance()) advance();
+      });
+      advanceObserver.observe(document.body, { childList: true, subtree: true });
+      advanceFallbackTimer = window.setTimeout(
+        advance,
+        Number.isFinite(step.advanceWaitTimeoutMs) ? step.advanceWaitTimeoutMs : 5000
+      );
     };
 
     const attach = () => {
@@ -755,13 +707,28 @@ export default function TutorialOverlay({
     }, 180);
 
     return () => {
+      const cancelPendingAdvance = !completed;
       completed = true;
       window.clearTimeout(attachTimer);
+      if (cancelPendingAdvance) window.clearTimeout(advanceTimer);
+      window.clearTimeout(advanceFallbackTimer);
       observer?.disconnect();
+      advanceObserver?.disconnect();
       actionCleanupRef.current?.();
       actionCleanupRef.current = null;
     };
-  }, [step?.id, step?.type, step?.action, step?.target, isActive, onActionComplete]);
+  }, [
+    step?.id,
+    step?.type,
+    step?.action,
+    step?.target,
+    step?.advanceDelayMs,
+    step?.advanceWhenTarget,
+    step?.advanceWhenAbsent,
+    step?.advanceWaitTimeoutMs,
+    isActive,
+    onActionComplete,
+  ]);
 
   useEffect(() => {
     setShowConfetti(false);
@@ -792,22 +759,24 @@ export default function TutorialOverlay({
   return (
     <>
       <div
-        className={`tutorial-backdrop tutorial-backdrop--${phase} ${actionCanPassThrough ? "tutorial-backdrop--pass-through" : ""}`}
+        className={`tutorial-backdrop tutorial-backdrop--${phase} ${!isCinematic && !revealRect ? "tutorial-backdrop--solid" : ""} ${actionCanPassThrough ? "tutorial-backdrop--pass-through" : ""}`}
         onClick={handleBackdropClick}
-      >
-        <SpotlightMask revealRect={isCinematic ? null : revealRect} />
-      </div>
+      />
 
       {isActionStep && (
         <TutorialClickCage targetRect={actionTargetUnlocked ? targetRect : null} onBlockedClick={handleBlockedClick} />
       )}
 
-      {!isCinematic && targetRect && (
-        <FocusRing
-          rect={targetRect}
-          action={isActionStep}
-          strong={step.pulseIntensity === "strong"}
-          blockedPulse={blockedPulse}
+      {!isCinematic && revealRect && (
+        <div
+          className={[
+            "sys-spot",
+            isActionStep ? "sys-spot--action" : "",
+            step.pulseIntensity === "strong" ? "sys-spot--strong" : "",
+            blockedPulse ? "sys-spot--blocked" : "",
+          ].filter(Boolean).join(" ")}
+          style={{ left: revealRect.left, top: revealRect.top, width: revealRect.width, height: revealRect.height }}
+          aria-hidden="true"
         />
       )}
 
@@ -827,7 +796,6 @@ export default function TutorialOverlay({
           stepIndex={currentStep}
           totalSteps={totalSteps}
           targetRect={targetRect}
-          sequence={sequence}
           typingSkipSignal={typingSkipSignal}
           onTypingComplete={() => setTextDone(true)}
           onRequestFinishTyping={requestFinishTyping}

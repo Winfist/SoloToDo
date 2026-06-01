@@ -253,6 +253,8 @@ export const TUTORIAL_SEQUENCES = {
         position: "bottom",
         scrollTo: true,
         pulseIntensity: "strong",
+        advanceWhenTarget: "[data-tutorial='stats-overview']",
+        advanceWhenAbsent: "[data-page-transition='active']",
       },
       {
         id: "stats_overview",
