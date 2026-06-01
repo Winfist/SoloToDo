@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "daba2fe7c2224b65",
+        "id": "64273062dbea1f2b",
         "type": "tabs",
         "children": [
           {
-            "id": "52d363a66ba43b46",
+            "id": "86dc77be16ad8de9",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph-Ansicht"
+              "type": "markdown",
+              "state": {
+                "file": "README.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "README"
             }
           }
         ]
@@ -179,8 +183,34 @@
       "bases:Neue Base erstellen": false
     }
   },
-  "active": "52d363a66ba43b46",
+  "active": "86dc77be16ad8de9",
   "lastOpenFiles": [
+    "CHANGELOG.md",
+    "2026-04-08.md",
+    "public_deploy/icons/cha_conversation.png",
+    "public_deploy/icons/diff_boss.png",
+    "public/Solo Grind.mp3",
+    "public/icon/coin.png",
+    "public/backgrounds/quest_bg_standard.png",
+    "public/backgrounds/quest_bg_boss.png",
+    "public/backgrounds/habit_banner_epic.png",
+    "public/backgrounds/emergency_hero.png",
+    "pictures/App Icon/fc36f626-a4f4-456e-9eff-8507faa85616.png",
+    "Obsidian_Vault/06_Terminal_Commands.md",
+    "Obsidian_Vault/00_Dashboard.md",
+    "Obsidian_Vault/05_Templates/Quest_Template.md",
+    "Obsidian_Vault/05_Templates/Feature_Template.md",
+    "Obsidian_Vault/05_Templates/Daily_Note_Template.md",
+    "Obsidian_Vault/04_Dev_Logs/ToDos.md",
+    "Obsidian_Vault/04_Dev_Logs/Dashboard_Doppelungen_Audit.md",
+    "Obsidian_Vault/03_Architecture/Firebase_Schema.md",
+    "Obsidian_Vault/03_Architecture/Coding_Guidelines.md",
+    "Obsidian_Vault/02_RPG_Mechanics/Hunter_Codex.md",
+    "Obsidian_Vault/01_System_Prompts/Claude_GDD.md",
+    "absl/utility.md",
+    "absl/status.md",
+    "absl",
+    "node_modules/@capacitor/cli/node_modules/fs-extra/README.md",
     "dist/assets/web-Dq0jcPU9.js",
     "dist/assets/web-CnuyxAja.js",
     "dist/assets/web-CnGPkszK.js",
@@ -189,23 +219,10 @@
     "dist/assets/SoulLinkView-CFWXKHk6.js",
     "dist/assets/soulLinkFirebase-DVBuFG4c.js",
     "dist/assets/ShadowRegressionCinematic-D_pK0cs8.js",
-    "dist/assets/SeasonView-BxvGDZQy.js",
-    "dist/assets/RewardedAdModal-DzVPg7vI.js",
-    "dist/assets/QuestCompletionCinematic-Bavj18XB.js",
     "node_modules/@apphosting/build/node_modules/commander/Readme.md",
-    "Obsidian_Vault/06_Terminal_Commands.md",
-    "Obsidian_Vault/02_RPG_Mechanics/Hunter_Codex.md",
     "Unbenannt.canvas",
-    "2026-04-08.md",
-    "Obsidian_Vault/00_Dashboard.md",
-    "Obsidian_Vault/05_Templates/Quest_Template.md",
-    "Obsidian_Vault/05_Templates/Feature_Template.md",
-    "Obsidian_Vault/05_Templates/Daily_Note_Template.md",
-    "Obsidian_Vault/04_Dev_Logs/ToDos.md",
     "docs/jwt/decrypt/functions/jwtDecrypt.md",
     "node_modules/body-parser/node_modules/debug/README.md",
-    "Obsidian_Vault/01_System_Prompts/Claude_GDD.md",
-    "Obsidian_Vault/02_RPG_Mechanics/Leveling_Curve.md",
-    "Obsidian_Vault/03_Architecture/Coding_Guidelines.md"
+    "Obsidian_Vault/02_RPG_Mechanics/Leveling_Curve.md"
   ]
 }

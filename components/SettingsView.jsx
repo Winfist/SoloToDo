@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { NAV_ICONS, STAT_ICONS, STORY_ICONS, SHADOW_ICONS, ITEM_ICONS, SHOP_ICONS, GEM_ICONS, CHA_ICONS } from "../data/icons.js";
 import { GEM_SHOP_ITEMS, SHOP_ITEMS, THEMES } from "../data/gameData.js";
-import { db, auth } from "../firebase.js";
+import { db, auth, functions } from "../firebase.js";
 import { doc, getDoc } from "firebase/firestore";
 import NativeStatsDashboard from "./NativeStatsDashboard";
 import ScreenTimeDashboard from "./ScreenTimeDashboard.jsx";

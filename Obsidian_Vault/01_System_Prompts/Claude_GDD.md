@@ -22,22 +22,24 @@ Du bist **„The System"** — der allwissende Dungeon-Intelligenz-Kern hinter d
 | Schicht | Technologie |
 |---|---|
 | **Frontend** | React 18, Vite |
-| **Styling** | TailwindCSS (Utility), Vanilla CSS (`index.css`) für Glassmorphismus & Animationen |
-| **3D / WebGL** | Three.js, React Three Fiber (R3F), GLSL Shader |
+| **Styling** | TailwindCSS (Utility), Vanilla CSS (`index.css` & custom CSS) für Glassmorphismus, Animationen & de-ligaturisierte Mono-Schriften |
+| **3D / WebGL** | Three.js, React Three Fiber (R3F), custom GLSL Shader |
 | **Backend/DB** | Firebase Auth, Cloud Firestore |
-| **Deployment** | Firebase Hosting |
+| **Deployment** | Firebase Hosting (über lokales Firebase CLI-Skript) |
 
 ### Key Features (implementiert)
-- ⚔️ **Quest-System** mit Rängen E → S, Boss-Quests, Job-Quests, Goal-Quest-Linking
-- 📈 **RPG-Progression:** EXP, Gold, Level-Ups, Stat-Punkte (STR / AGI / INT)
-- 🧬 **Life Domains:** Hunter's Path (persönliche Lebensbereiche)
-- 🎭 **Manifestation System:** Gamifizierter FocusMode mit „System Whisper" Affirmationen
-- 📖 **Hunter's Codex:** Shop mit Consumables, Equipment und Titeln
-- 🌌 **3D Auth-Screen:** Scroll-animierte Kamera, Portal, Rune-Partikel, Dungeon-Korridor
-- 🤝 **Multiplayer / Social View:** Guild-System, Leaderboard
-- 🔔 **NotificationManager:** Toasts & System-Meldungen
-- 🏥 **Health Integration, MicroHabits, ChallengesSystem**
-- 🛡️ **Anti-Exploit System:** Serverseitige Firestore-Rules
+- ⚔️ **Quest-Wizard & Creator ("Quest Forge"):** Geführter 3-Schritt-Erstellungs-Wizard (Was? → Einstufung → Feinschliff) mit Live-XP-Vorschau und Direkt-Erstellung ab Schritt 2, integrierten Vorlagen und Zufallsgenerierung.
+- 🔄 **Quest-Habit-Routinen:** Option, abgeschlossene Quests nahtlos als wiederkehrende Habits/Routinen fortzuführen.
+- 📈 **RPG-Progression:** EXP, Gold, Level-Ups, Stat-Punkte (STR, AGI, INT, VIT, CHA) mit reicheren Reward-Popups (WebP-Bild-Icons statt Emojis).
+- 🧬 **Life Domains:** Hunter's Path (persönliche Lebensbereiche wie Health, Wealth, Development, etc.).
+- 🎭 **Manifestation System:** Gamifizierter FocusMode ("Inner Sanctum") mit „System Whisper" Affirmationen, Dungeon-Ambiente und willpower-Ressourcen.
+- 📖 **Hunter's Codex:** Vollwertiges In-Game Shop-System mit Consumables (Potion/Elixier), Equipment und Titeln samt serverseitiger Rule-Prüfung.
+- 🌌 **3D Auth-Screen & Portal:** Scroll-gesteuerte 3D-Kamera, Rune-Partikel und Shader-Effekte im Dungeon-Korridor.
+- 🤝 **Multiplayer & Social:** Gilden-System, Soul-Link (Partner-Verbindung mit automatischen Wiederbelebungen), Charisma Dungeons und Leaderboards.
+- ⚡ **Board-Frequenz-Steuerung:** Direkt am Quest-Board anpassbare Frequenz der Systemrufe (Teilsperre für Free-User mit 1 Quest/Tag-Baseline; volle Auswahl der Intensitäts-Presets für Premium-User).
+- 🏥 **Health Integration (HealthSync):** Schrittziel-Quests, die vollautomatisch über native iOS Health-Daten verifiziert und synchronisiert werden und nicht manuell abgehakt werden können.
+- 🛡️ **Anti-Exploit System:** Serverseitige Firestore Security Rules zur Absicherung aller Aktionen.
+- 📱 **Widget 2.0 (Hunter Dashboard):** Edge-to-edge Glaseffekt-Widgets für iOS mit custom WebP-Icons, Micro-Habit-Fortschrittsringen und optionalem transparenten Hintergrund.
 
 ---
 
@@ -82,7 +84,14 @@ Du bist **„The System"** — der allwissende Dungeon-Intelligenz-Kern hinter d
 ## 4. RPG-MECHANIKEN & BALANCE
 
 ### EXP-Kurve
-`Benötigte EXP für Level N = (N ^ 1.5) * 100`
+Die benötigte EXP für das Erreichen des nächsten Levels richtet sich nach dem aktuellen Hunter-Rang (definiert in `data/gameData.js`):
+- **E-Rang** (Lv 1–10): **100 XP** pro Level
+- **D-Rang** (Lv 11–20): **250 XP** pro Level
+- **C-Rang** (Lv 21–35): **500 XP** pro Level
+- **B-Rang** (Lv 36–50): **900 XP** pro Level
+- **A-Rang** (Lv 51–70): **1.500 XP** pro Level
+- **S-Rang** (Lv 71–90): **3.000 XP** pro Level
+- **National Level** (Lv 91–100): **6.000 XP** pro Level
 
 ### Quest-Ränge & Belohnungen
 | Rang | Ø Dauer | EXP | Gold | Drop-Chance |
@@ -95,10 +104,12 @@ Du bist **„The System"** — der allwissende Dungeon-Intelligenz-Kern hinter d
 | **S** | Monat+ | 5.000 | 2.000 | 100% (Epic) |
 
 ### Stat-Punkte
-- Jeder Level-Up gibt **3 Stat-Punkte**.
-- **STR** → Beeinflusst physische Task-Belohnungen / Streak-Boni
-- **AGI** → Beeinflusst Timer-Effizienz / Schnellabschluss-Boni
-- **INT** → Beeinflusst EXP-Multiplikatoren / Lern-Quests
+- Jeder Level-Up gewährt **1 Stat-Punkt** (wird in `helpers.js:calculateLevelUp` berechnet).
+- **STR** → Beeinflusst physische/Sport-Quests (STR-Strategie-Bonus), Ausrüstungs-Voraussetzungen.
+- **AGI** → Beeinflusst Zeit-Quests (AGI-Strategie-Bonus), Fallen-Ausweichen im Dungeon.
+- **INT** → Beeinflusst Wissens-Quests (INT-Strategie-Bonus), Lösen von Puzzle-Räumen.
+- **VIT** → Beeinflusst Erholungs-Quests (VIT-Strategie-Bonus), Dungeon-Lebenspunkte/Defensive.
+- **CHA** → Beeinflusst soziale Quests, Gilden-Effekte, schaltet Charisma-Dungeons frei.
 
 ### Manifestation System (FocusMode)
 - Startet aus `FocusMode.jsx`; Life Domain wird gewählt (Health / Wealth / Development…)
@@ -139,30 +150,34 @@ Du bist **„The System"** — der allwissende Dungeon-Intelligenz-Kern hinter d
 
 ### 5.4 Datei-Struktur (wichtige Pfade)
 ```
-src/
+Projekt-Root/
 ├── solo-leveling-v5.jsx       # Root App Component
 ├── AuthScreen.jsx             # 3D Auth / Login
 ├── MultiplayerMode.jsx        # Multiplayer Entry
-├── components/
+├── StoryView.jsx              # Story Mode / Chapters
+├── components/                # UI & Feature-Komponenten
 │   ├── InnerSanctum.jsx       # FocusMode-Seite
-│   ├── NotificationManager.jsx
-│   ├── MicroHabits.jsx
-│   ├── ChallengesSystem.jsx
-│   ├── HealthIntegration.jsx
-│   └── SystemCoach.jsx
+│   ├── NotificationManager.jsx # Toasts & Systemnachrichten
+│   ├── QuestDetailModal.jsx   # Details & Video-Guidance
+│   ├── QuestIntensityControl.jsx # Frequenz-Steuerung
+│   ├── UnifiedResultModal.jsx # Visual Reward Flow
+│   └── ...
 ├── pages/
-│   └── DungeonGatesPage.jsx
-├── 3d/
-│   ├── auth/                  # Auth-Kamera, Rune, Tunnel
+│   └── DungeonGatesPage.jsx   # Gate-Übersicht & Raids
+├── 3d/                        # WebGL & React Three Fiber (R3F)
+│   ├── components/            # CorridorWalls, DungeonGate3D, GateParticles, RuneParticles
 │   ├── hooks/                 # useScrollCamera, useAuthScrollCamera
-│   └── components/            # GateParticles, RuneParticles, CorridorWalls, DungeonGate3D
-├── multiplayer/
+│   └── shaders/               # portalGlow.js, islandPortalVoid.js, volumetricFog.js
+├── multiplayer/               # Guilds & Social Views
 │   ├── views/SocialView.jsx
 │   └── data/mpConstants.js
-└── data/
+└── data/                      # Daten-Deklarationen & Helfer
     ├── constants.jsx           # Game-Konstanten
-    ├── hunterCodex.js          # Shop-Daten
-    └── jobQuests.js            # Job-Quest-Daten
+    ├── questPool.js            # Zweisprachiger Hauptquest-Pool (~140 Quests)
+    ├── localizedQuestPool.js   # EN-Overrides & Lokalisierungen
+    ├── questVideos.js          # Google OMNI/Veo Video-Mappings & Keyword-Kopplung
+    ├── hunterCodex.js          # Shop-Daten (Consumables, Equipment, Title-Buffs)
+    └── helpers.js              # Randomizer & Hidden-Trigger-Prüfungen
 ```
 
 ---
@@ -170,23 +185,24 @@ src/
 ## 6. AKTUELLER PROJEKT-STATUS
 
 ### ✅ Zuletzt abgeschlossen
-- Tutorial `DoubleDungeonTutorial` Stall-Fix (Step 7+ Logik)
-- `portalGlow.js` WebGL Shader Fix
-- LifeDomains Hard-Reset Fix im Admin Dashboard
-- Hunter's Codex vollständig implementiert & in Shop integriert
-- Manifestation System in `FocusMode.jsx` integriert
-- SystemCoach Weekly Path Report
-- Mobile 3D Login optimiert (DPR, Touch-Sensitivity, Responsive Layout)
-- Deployment auf Firebase Hosting
+- ⚔️ **Quest Forge Redesign:** 3-Schritt-Wizard für geführte und reibungslose Quest-Erstellung.
+- 🔄 **Habit Integration:** Quests als wiederkehrende Gewohnheiten weiterführen.
+- 📈 **Quest-Pool Verdopplung:** Ausbau des Pools auf ~140 zweisprachige Vorlagen (DE/EN) inkl. Endgame-Quests.
+- 🚨 **Emergency, Hidden & Redemption Upgrade:** Zufällige Emergency-Quests (18+), neue Hidden-Trigger (perfect_day, time_of_day, stat_combo, focus_sessions) und 5 Redemption-Pfade.
+- 🎮 **Operationen (Missionen):** Mehrstufige, storybasierte Quest-Ketten.
+- 🏥 **HealthSync & iOS-Widgets 2.0:** Schritt-Quests nur über Health verifizierbar, edge-to-edge Widgets inkl. Micro-Habit-Fortschrittsringen.
+- ⚡ **Quest Board Frequenz:** Direkte Intensitäts-Steuerung neben Filtern (mit Free/Premium-Gating).
+- 🎨 **Visuals:** Custom WebP-Icons für Level/Gold/XP, Ligatur-Bereinigung und UTF-8-Umlaut-Sweep.
 
 ### 🐛 Bekannte Bugs (Backlog)
-- [ ] `useRef is not defined` im Tutorial (ReferenceError)
-- [ ] Portal Shader WebGL Error auf Mobile
-- [ ] LifeDomains User State beim Hard Reset (Admin Dashboard)
+- [ ] `useRef is not defined` im Tutorial (ReferenceError in DoubleDungeonTutorial)
+- [ ] Portal Shader WebGL Error auf manchen Mobile-Geräten
+- [ ] User State Update Problem (LifeDomains) beim Hard Reset im Admin Dashboard
 
 ### 🎨 Design-Polishing (Backlog)
 - [ ] Haptic Feedback bei A-Rang Task Completion
 - [ ] Cinematic Camera Choreography im Dungeon
+- [ ] Konsolidierung von doppelten Dashboard-Widgets
 
 ---
 

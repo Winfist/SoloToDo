@@ -21,3 +21,20 @@ Diese Datei definiert die Regeln für AI-Agenten und die eigene Code/Entwicklung
 ## 3. Firebase (Backend)
 *   **Anti-Cheat-Methodik:** Frontend UI versteckt Optionen, aber **Firestore Security Rules** verhindern den Hack aktiv.
 *   Kein Dokument löschen, immer ein `isDeleted: true` oder `status: "archived"` setzen für "Weiches Löschen" (wichtig für den Activity-Graph & Analytics).
+
+## 4. WebGL & Shader-Sicherheit
+*   **Fehler-Toleranz:** Alle 3D/WebGL Shader (z. B. `portalGlow.js`) müssen Fehler abfangen. Wenn ein Shader auf manchen Mobile-Browsern (z. B. alten iOS-WebViews) fehlschlägt, muss dies im `onError`-Ereignis des Canvas- oder Video-Elements abgefangen und der Player oder Effekt sauber ausgeblendet werden, anstatt die App abstürzen zu lassen.
+*   **Kein State-Update in useFrame:** Updates im Render-Loop zwingend über direkte `ref`-Mutationen vollziehen. React-Zustände (`useState`) dürfen nicht zyklisch in `useFrame` aktualisiert werden.
+
+## 5. i18n & Lokalisierung (DE/EN)
+*   **Paritäts-Regel:** SoloToDo ist vollständig zweisprachig. Jeder neu angelegte Text-Key in `data/locales/de.js` muss zwingend ein Pendant mit identischer Struktur in `data/locales/en.js` besitzen.
+*   **Umlaute:** Strings in den Sprachdateien müssen saubere UTF-8-Umlaute verwenden (z. B. `Ä`, `Ö`, `Ü`, `ä`, `ö`, `ü`, `ß`). Keine Escapes oder Unicode-Hex-Einträge mischen.
+
+## 6. Quest-Pool & Validierung
+*   **Konsistente IDs:** Bestehende Quest-IDs in `data/questPool.js` (z. B. `qp_str_01`) dürfen nicht geändert werden (Rückwärtskompatibilität).
+*   **Validierungsskripte ausführen:** Vor jedem Commit, der Quests oder Übersetzungen anfasst, muss das Validierungsskript ausgeführt werden:
+    ```bash
+    npm run validate:quests
+    ```
+    Das Skript prüft die Struktur der Quests, fehlende EN-Übersetzungen und ID-Kollisionen.
+

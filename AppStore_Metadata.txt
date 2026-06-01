@@ -1,0 +1,81 @@
+=========================================================
+APP STORE & GOOGLE PLAY METADATEN - SoloToDo
+=========================================================
+Hier findest du alle wichtigen Texte und Informationen, 
+die du zum Publishen deiner App in den Stores benötigst.
+
+TIPP: Halte dich an die maximalen Zeichenlängen (siehe Klammern).
+
+---------------------------------------------------------
+1. APP NAME & UNTERTITEL
+---------------------------------------------------------
+App Name (max. 30 Zeichen):
+SoloToDo: RPG Habit Tracker
+
+Unteritel / Kurzbeschreibung (max. 30 Zeichen für Apple, 80 für Google):
+Gamified To-Do & Ziele Planer
+
+---------------------------------------------------------
+2. WERBETEXT / PROMO-TEXT (Apple: max. 170 Zeichen)
+---------------------------------------------------------
+Dieser Text wird im App Store direkt unter den Screenshots angezeigt, ohne dass man auf "Mehr lesen" klicken muss.
+
+Werde zum S-Rank Hunter deines Alltags! Schließe epische Quests ab, besiege Prokrastination und maximiere deine Stats. Dein Leben ist das ultimative RPG.
+
+---------------------------------------------------------
+3. KEYWORDS / SCHLÜSSELWÖRTER (Apple: max. 100 Zeichen)
+---------------------------------------------------------
+Wichtig: Nur durch Kommas trennen, KEINE Leerzeichen nach dem Komma!
+
+to-do,habit tracker,rpg,produktivität,gamification,ziele,planer,motivation,quests,aufgaben,alltag
+
+---------------------------------------------------------
+4. APP BESCHREIBUNG (max. 4000 Zeichen)
+---------------------------------------------------------
+Dein Leben ist ein Spiel – es wird Zeit, vom E-Rang zum S-Rank Hunter aufzusteigen.
+
+SoloToDo ist nicht einfach nur eine weitere To-Do-Liste. Es ist dein persönliches RPG-Abenteuer, in dem DU der Hauptcharakter bist. Verwandle langweilige Alltagsaufgaben in epische Quests, sammle Erfahrungspunkte (XP) und besiege den gefährlichsten Endboss von allen: die Prokrastination.
+
+EGAL OB HAUSHALT, ARBEIT ODER FITNESS
+Jede erledigte Aufgabe bringt dich weiter. Sammle Gold, steige im Level auf und schalte mächtige Belohnungen frei. Mit jedem "Level Up" stärkst du nicht nur deine In-Game-Stats, sondern baust dir im echten Leben eiserne Gewohnheiten auf.
+
+FEATURES:
+• Tägliche Quests: Trage deine To-Dos ein und erledige sie wie Missionen in einem Dungeon Gate.
+• Stats maximieren: Steigere deine Stärke, Intelligenz und Vitalität basierend auf deinen tatsächlichen Aufgaben.
+• Loot & Belohnungen: Verdiene In-Game-Währung für harte Arbeit und gönne dir selbst echte Belohnungen.
+• Erwecke deine Schatten: Baue dir ein Arsenal an produktiven Gewohnheiten auf (deine "Schattenarmee"), die dich jeden Tag automatisch unterstützen.
+• Bosskämpfe: Setze dir große Wochen- und Monatsziele und bekämpfe sie in epischen Boss-Schlachten.
+
+WARUM SOLOTODO?
+Herkömmliche Planer sind langweilig. SoloToDo nutzt psychologische Gamification, um deinen Dopamin-Haushalt auf die richtigen Dinge zu programmieren. Du wirst förmlich süchtig danach, deine Dailies zu clearen und produktiv zu sein!
+
+Rise & Grind. Dein Abenteuer beginnt jetzt. 
+Lade SoloToDo herunter und werde zum Herrscher über deine Zeit!
+
+---------------------------------------------------------
+5. WEITERE BENÖTIGTE DATEN FÜR DEN RELEASE
+---------------------------------------------------------
+Kategorie: Produktivität / Lifestyle
+Altersfreigabe: 4+ (Apple) / USK 0 (Google)
+
+URLs, die du später brauchst (bitte noch anlegen, z.B. auf einer simplen Website oder Notion-Page):
+- Support URL: https://solo-todo.web.app/support
+- Datenschutzerklärung (Privacy Policy): Pflicht! https://solo-todo.web.app/datenschutz.html
+- Marketing URL: https://solo-todo.web.app
+
+Urheberrecht (Copyright):
+© 2026 John Wuckert
+
+---------------------------------------------------------
+6. IMPRESSUM (FÜR DIE WEBSEITE & GOOGLE PLAY)
+---------------------------------------------------------
+Diese Angaben musst du im Google Play Store Entwickler-Konto hinterlegen
+und auf deiner Webseite (https://solo-todo.web.app/impressum.html) einbinden:
+
+Angaben gemäß § 5 TMG:
+John Wuckert
+Amalienweg 5
+70794 Filderstadt
+
+Kontakt:
+E-Mail: jwuckert2@gmail.com

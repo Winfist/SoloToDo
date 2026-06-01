@@ -351,6 +351,44 @@ exports.adminSendPushNotification = onCall(CALL_OPTIONS, async (request) => {
   }
 });
 
+// ─── Shared: Full User Deletion ───────────────────────────────────────────────
+
+async function fullDeleteUser(uid) {
+  try {
+    // 1. Delete subcollections first
+    const userRef = admin.firestore().collection("users").doc(uid);
+    
+    // Delete questHistory
+    const histSnap = await userRef.collection("questHistory").get();
+    if (!histSnap.empty) {
+      const batch1 = admin.firestore().batch();
+      histSnap.docs.forEach(doc => batch1.delete(doc.ref));
+      await batch1.commit();
+    }
+
+    // Delete questArchive
+    const archiveSnap = await userRef.collection("questArchive").get();
+    if (!archiveSnap.empty) {
+      const batch2 = admin.firestore().batch();
+      archiveSnap.docs.forEach(doc => batch2.delete(doc.ref));
+      await batch2.commit();
+    }
+
+    // 2. Delete main Firestore document
+    await userRef.delete();
+
+    // 3. Delete from Firebase Auth
+    await admin.auth().deleteUser(uid).catch(err => {
+      if (err.code !== 'auth/user-not-found') {
+        throw err;
+      }
+    });
+  } catch (error) {
+    console.error(`Fehler bei fullDeleteUser für UID ${uid}:`, error);
+    throw new HttpsError("internal", "User konnte nicht vollständig gelöscht werden: " + error.message);
+  }
+}
+
 // ─── Feature G: Admin Delete User ──────────────────────────────────────────────
 
 exports.adminDeleteUser = onCall(CALL_OPTIONS, async (request) => {
@@ -367,23 +405,16 @@ exports.adminDeleteUser = onCall(CALL_OPTIONS, async (request) => {
     throw new HttpsError("invalid-argument", "targetUid ist erforderlich.");
   }
 
-  try {
-    // 1. Delete from Firebase Auth
-    await admin.auth().deleteUser(targetUid).catch(err => {
-      // Ignore if user doesn't exist in Auth anymore, we still want to delete DB
-      if (err.code !== 'auth/user-not-found') {
-        throw err;
-      }
-    });
+  await fullDeleteUser(targetUid);
+  return { success: true };
+});
 
-    // 2. Delete from Firestore
-    await admin.firestore().collection("users").doc(targetUid).delete();
+// ─── Feature G2: User Delete Own Account ───────────────────────────────────────
 
-    return { success: true };
-  } catch (error) {
-    console.error("Fehler beim Löschen des Users:", error);
-    throw new HttpsError("internal", "User konnte nicht vollständig gelöscht werden: " + error.message);
-  }
+exports.deleteMyAccount = onCall(CALL_OPTIONS, async (request) => {
+  const callerUid = requireAuth(request);
+  await fullDeleteUser(callerUid);
+  return { success: true };
 });
 
 // ─── Feature H: Anti-Cheat Sanity Check ────────────────────────────────────────

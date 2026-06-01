@@ -26,7 +26,8 @@ Dieser Obsidian-Vault dient als Master-Referenz für das Game Design, Datenbank-
 
 ## 🕹️ Hunter Log (Dev)
 - 📝 [[ToDos|Aktuelle Quests (Backlog & ToDos)]]
-- 📅 [[06_Daily_Hunter_Logs/Index|Daily Logs (Tagebuch)]]
+- 💻 [[06_Terminal_Commands|Terminal Commands (Cheatsheet)]]
+- 📑 [[05_Templates/Feature_Template|Templates (Features & Quests)]]
 
 ***
 *Erinnere dich: "Nur ich kann leveln!"*
