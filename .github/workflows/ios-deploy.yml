@@ -5,8 +5,15 @@ on:
     branches:
       - main
       - master
-      - codex/interactive-ios-widgets-ci
   workflow_dispatch:
+
+# Serialize deploys. The beta lane revokes ALL distribution certificates and
+# then creates a fresh one, so two runs in parallel revoke each other's signing
+# certificate mid-flight -> "Certificate Revoked" upload failures. Only the
+# latest run for a ref proceeds; older in-progress runs are cancelled.
+concurrency:
+  group: ios-deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build_ios:
