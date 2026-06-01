@@ -744,7 +744,17 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
 
     const createHabit = useCallback((newHabit) => {
         let quest = null;
-        if (newHabit.frequency === "daily" || newHabit.frequency === "weekly") {
+        let updatedQuests = state.quests || [];
+        if (newHabit.linkToExistingQuestId) {
+            newHabit.linkedQuestId = newHabit.linkToExistingQuestId;
+            updatedQuests = updatedQuests.map(q => {
+                if (q.id === newHabit.linkToExistingQuestId) {
+                    return { ...q, linkedHabitId: newHabit.id };
+                }
+                return q;
+            });
+            delete newHabit.linkToExistingQuestId;
+        } else if (newHabit.frequency === "daily" || newHabit.frequency === "weekly") {
             const questId = genId();
             newHabit.linkedQuestId = questId;
             let timeLimit = undefined;
@@ -760,8 +770,9 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
                 linkedHabitId: newHabit.id,
                 ...(timeLimit ? { timeLimit } : {})
             };
+            updatedQuests = [...updatedQuests, quest];
         }
-        persist({ ...state, habits: [...habits, newHabit], ...(quest ? { quests: [...(state.quests || []), quest] } : {}) });
+        persist({ ...state, habits: [...habits, newHabit], quests: updatedQuests });
         notify(`Neuer Habit: "${newHabit.title}" erstellt!`, "info");
     }, [state, persist, notify, habits]);
 

@@ -316,6 +316,11 @@ export default function QuestDetailModal({
               {(quest.stackCount > 1 || quest.stackItems?.length > 1) && (
                 <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 6, background: "rgba(251,191,36,0.1)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.28)", fontFamily: "'JetBrains Mono',monospace", fontWeight: 900 }}>x{quest.stackCount || quest.stackItems?.length}</span>
               )}
+              {quest.linkedHabitId && (
+                <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 6, background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)", fontFamily: "'JetBrains Mono',monospace", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                  🔄 HABIT AKTIV
+                </span>
+              )}
             </div>
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748b", fontSize: 20, cursor: "pointer", padding: 4 }}>✕</button>
@@ -717,6 +722,16 @@ export default function QuestDetailModal({
             >
               {t("modals.questDetail.complete")}
             </button>
+            {!quest.linkedHabitId && onCreateHabitFromQuest && (
+              <button
+                onClick={() => { onClose(); onCreateHabitFromQuest(quest); }}
+                style={{ gridColumn: "1 / -1", padding: "10px", borderRadius: 8, background: `linear-gradient(135deg, ${primary}1e, rgba(255,255,255,0.02))`, border: `1px solid ${primary}66`, color: primary, fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = `linear-gradient(135deg, ${primary}33, ${primary}11)`; }}
+                onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(135deg, ${primary}1e, rgba(255,255,255,0.02))`; }}
+              >
+                🔄 ALS HABIT TRACKEN
+              </button>
+            )}
             {onDelete && (
               <button
                 onClick={() => { onClose(); onDelete(quest.id); }}

@@ -18,6 +18,7 @@ import { isFeatureUnlocked } from '../data/featureUnlocks.js';
 import { hasFocusQuestAbility, getFocusQuestXpBonus, getMomentumBonus, getQuestTimerReduction } from '../data/artifactHelpers.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getQuestVerificationPolicy } from '../data/questVerification.js';
+import { getYesterdayKey } from '../data/dateUtils.js';
 
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
@@ -267,8 +268,26 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   if (quest.linkedHabitId && state.habits) {
     newHabits = state.habits.map(h => {
       if (h.id === quest.linkedHabitId && !h.history?.[today]?.completed) {
-        const hNewStreak = state.lastActiveDate === today ? h.streak : (h.streak + 1);
-        return { ...h, streak: hNewStreak, bestStreak: Math.max(h.bestStreak || 0, hNewStreak), totalCompletions: (h.totalCompletions || 0) + 1, history: { ...h.history, [today]: { completed: true, xp: 0, gold: 0 } } };
+        const wasCompletedYesterday = !!h.history?.[getYesterdayKey()]?.completed;
+        const newStreak = wasCompletedYesterday ? (h.currentStreak || 0) + 1 : 1;
+        return {
+          ...h,
+          currentStreak: newStreak,
+          streak: newStreak,
+          bestStreak: Math.max(h.bestStreak || 0, newStreak),
+          totalCompletions: (h.totalCompletions || 0) + 1,
+          scheduledDays: (h.scheduledDays || 0) + (h.history?.[today]?.scheduled ? 0 : 1),
+          history: {
+            ...h.history,
+            [today]: {
+              completed: true,
+              completedAt: new Date().toISOString(),
+              xp: 0,
+              gold: 0,
+              ...(h.verification === "counter" ? { counterValue: h.targetCount } : {})
+            }
+          }
+        };
       }
       return h;
     });

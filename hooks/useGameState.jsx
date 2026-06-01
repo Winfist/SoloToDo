@@ -48,6 +48,14 @@ import {
   withRestoredQuest,
 } from '../data/questPlanning.js';
 
+const QUEST_TO_HABIT_CATEGORY = {
+  str: "fitness",
+  int: "learning",
+  vit: "health",
+  agi: "productivity",
+  cha: "social",
+};
+
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
 }
@@ -314,6 +322,18 @@ export function useGameState(initialHunterName, onLogout) {
   const [qCat, setQCat] = useState("agi");
   const [qType, setQType] = useState("side");
   const [qSyncHabit, setQSyncHabit] = useState(false);
+  const [qHabitCategory, setQHabitCategory] = useState("fitness");
+  const [qHabitFrequency, setQHabitFrequency] = useState("daily");
+  const [qHabitVerification, setQHabitVerification] = useState("manual");
+  const [qHabitTargetMinutes, setQHabitTargetMinutes] = useState(15);
+  const [qHabitTargetCount, setQHabitTargetCount] = useState(1);
+
+  useEffect(() => {
+    if (qCat && QUEST_TO_HABIT_CATEGORY[qCat]) {
+      setQHabitCategory(QUEST_TO_HABIT_CATEGORY[qCat]);
+    }
+  }, [qCat]);
+
   const [qDescription, setQDescription] = useState("");
   const [qSubQuests, setQSubQuests] = useState([]);
   const [qSaveToPool, setQSaveToPool] = useState(false);
@@ -1182,6 +1202,11 @@ export function useGameState(initialHunterName, onLogout) {
     setQTags("");
     setQDueDate("");
     setQSyncHabit(false);
+    setQHabitCategory("fitness");
+    setQHabitFrequency("daily");
+    setQHabitVerification("manual");
+    setQHabitTargetMinutes(15);
+    setQHabitTargetCount(1);
     setQPriority("medium");
     setQEnergy("medium");
     setQContext("");
@@ -1440,6 +1465,11 @@ export function useGameState(initialHunterName, onLogout) {
     const reminderPreset = source.reminderPreset ?? (useForm ? qReminderPreset : "none");
     const reminderAt = source.reminderAt ?? (useForm ? qReminderAt : "");
     const syncHabit = source.syncHabit ?? (useForm ? qSyncHabit : false);
+    const habitCategory = source.habitCategory ?? (useForm ? qHabitCategory : "fitness");
+    const habitFrequency = source.habitFrequency ?? (useForm ? qHabitFrequency : "daily");
+    const habitVerification = source.habitVerification ?? (useForm ? qHabitVerification : "manual");
+    const habitTargetMinutes = source.habitTargetMinutes ?? (useForm ? qHabitTargetMinutes : 15);
+    const habitTargetCount = source.habitTargetCount ?? (useForm ? qHabitTargetCount : 1);
     return {
       title,
       description,
@@ -1456,8 +1486,16 @@ export function useGameState(initialHunterName, onLogout) {
       category: source.category || qCat || "agi",
       difficulty: source.difficulty || qDiff || "normal",
       fromTemplate: source.fromTemplate || qFromTemplate || undefined,
+      habitCategory,
+      habitFrequency,
+      habitVerification,
+      habitTargetMinutes,
+      habitTargetCount,
     };
-  }, [qTitle, qDescription, qSubQuests, qTags, qType, qDueDate, qPriority, qEnergy, qContext, qReminderPreset, qReminderAt, qSyncHabit, qCat, qDiff, qFromTemplate, normalizeTags, normalizeSubQuestInput]);
+  }, [
+    qTitle, qDescription, qSubQuests, qTags, qType, qDueDate, qPriority, qEnergy, qContext, qReminderPreset, qReminderAt, qSyncHabit, qCat, qDiff, qFromTemplate, normalizeTags, normalizeSubQuestInput,
+    qHabitCategory, qHabitFrequency, qHabitVerification, qHabitTargetMinutes, qHabitTargetCount
+  ]);
 
   const createQuestsFromInputs = useCallback((inputs = [], options = {}) => {
     if (!state || !Array.isArray(inputs) || inputs.length === 0) return [];
@@ -1604,7 +1642,7 @@ export function useGameState(initialHunterName, onLogout) {
       d.setDate(d.getDate() + daysUntilMonday); d.setHours(23, 59, 59, 999);
       timeLimit = d.toISOString();
     }
-    const habitId = ((data.type === "daily" || data.type === "weekly") && data.syncHabit) ? genId() : null;
+    const habitId = data.syncHabit ? genId() : null;
     let finalDiff = data.difficulty;
     const tLower = data.title.toLowerCase();
     const isSimple = tLower.includes("liegest\u00FCtz") || tLower.includes("situp") || tLower.includes("kniebeuge") || tLower.includes("wasser");
@@ -1670,8 +1708,11 @@ export function useGameState(initialHunterName, onLogout) {
       const linkedHabit = {
         id: habitId,
         title: data.title,
-        category: data.category,
-        frequency: data.type,
+        category: data.habitCategory,
+        frequency: data.habitFrequency,
+        verification: data.habitVerification,
+        ...(data.habitVerification === "timer" ? { targetMinutes: Number(data.habitTargetMinutes) || 15 } : {}),
+        ...(data.habitVerification === "counter" ? { targetCount: Number(data.habitTargetCount) || 1 } : {}),
         history: {},
         streak: 0,
         bestStreak: 0,
@@ -2586,6 +2627,16 @@ export function useGameState(initialHunterName, onLogout) {
     setQType,
     qSyncHabit,
     setQSyncHabit,
+    qHabitCategory,
+    setQHabitCategory,
+    qHabitFrequency,
+    setQHabitFrequency,
+    qHabitVerification,
+    setQHabitVerification,
+    qHabitTargetMinutes,
+    setQHabitTargetMinutes,
+    qHabitTargetCount,
+    setQHabitTargetCount,
     qDescription,
     setQDescription,
     qSubQuests,

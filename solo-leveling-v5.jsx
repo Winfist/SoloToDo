@@ -201,6 +201,16 @@ function App({ initialHunterName, onLogout }) {
     setQType,
     qSyncHabit,
     setQSyncHabit,
+    qHabitCategory,
+    setQHabitCategory,
+    qHabitFrequency,
+    setQHabitFrequency,
+    qHabitVerification,
+    setQHabitVerification,
+    qHabitTargetMinutes,
+    setQHabitTargetMinutes,
+    qHabitTargetCount,
+    setQHabitTargetCount,
     qDescription,
     setQDescription,
     qSubQuests,
@@ -499,7 +509,7 @@ function App({ initialHunterName, onLogout }) {
     if (!detailQuest) return null;
     return (state?.quests || []).find(q => q.id === detailQuest.id) || detailQuest;
   }, [detailQuest, state?.quests]);
-  const openHabitFromCompletedQuest = useCallback((quest) => {
+  const openHabitFromQuest = useCallback((quest) => {
     if (!quest) return;
     setHabitDraft({
       sourceQuestId: quest.id,
@@ -507,6 +517,7 @@ function App({ initialHunterName, onLogout }) {
       category: QUEST_TO_HABIT_CATEGORY[quest.category] || "productivity",
       frequency: "daily",
       verification: "manual",
+      ...(!quest.completed ? { linkToExistingQuestId: quest.id } : {})
     });
     setView("dashboard");
   }, [setView]);
@@ -1270,6 +1281,7 @@ function App({ initialHunterName, onLogout }) {
                 onCompleteSubQuest={completeSubQuest}
                 onAddAttachment={addQuestAttachment}
                 onDeleteAttachment={removeQuestAttachment}
+                onCreateHabitFromQuest={can('habit_tracker') ? openHabitFromQuest : null}
                 onSaveNotes={(id, notes) => {
                   const updated = {
                     ...state,
@@ -1884,7 +1896,7 @@ function App({ initialHunterName, onLogout }) {
               {
                 view === "analytics" && (
                   <React.Suspense fallback={null}>
-                    <AnalyticsDashboard state={state} gameState={state} theme={theme} onCreateHabitFromQuest={can('habit_tracker') ? openHabitFromCompletedQuest : null} />
+                    <AnalyticsDashboard state={state} gameState={state} theme={theme} onCreateHabitFromQuest={can('habit_tracker') ? openHabitFromQuest : null} />
                   </React.Suspense>
                 )
               }
@@ -2506,19 +2518,202 @@ function App({ initialHunterName, onLogout }) {
                         </div>
 
                         {/* HABIT SYNC */}
-                        {(qType === "daily" || qType === "weekly") && can('habit_tracker') && (
-                          <label style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 14, background: qSyncHabit ? `${theme.primary}0c` : "rgba(255,255,255,0.02)", border: `1px solid ${qSyncHabit ? theme.primary + "33" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", transition: "all 0.2s", marginBottom: 14 }}>
-                            <div onClick={() => setQSyncHabit(!qSyncHabit)} style={{
-                              width: 22, height: 22, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                              background: qSyncHabit ? theme.primary + "22" : "transparent",
-                              border: `2px solid ${qSyncHabit ? theme.primary : "#334155"}`,
-                              color: theme.primary, fontSize: 13, transition: "all 0.2s"
-                            }}>{qSyncHabit ? "✓" : ""}</div>
-                            <div>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>{tr("quests.forge.habitLink")}</div>
-                              <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{tr("quests.forge.habitLinkDesc")}</div>
+                        {can('habit_tracker') && (
+                          <>
+                            <div
+                              onClick={() => setQSyncHabit(!qSyncHabit)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "12px 16px",
+                                borderRadius: 14,
+                                background: qSyncHabit ? `${theme.primary}0c` : "rgba(255,255,255,0.02)",
+                                border: `1px solid ${qSyncHabit ? theme.primary + "33" : "rgba(255,255,255,0.06)"}`,
+                                cursor: "pointer",
+                                transition: "all 0.2s",
+                                marginBottom: 14
+                              }}
+                            >
+                              <div style={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: 8,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: qSyncHabit ? theme.primary + "22" : "transparent",
+                                border: `2px solid ${qSyncHabit ? theme.primary : "#334155"}`,
+                                color: theme.primary,
+                                fontSize: 13,
+                                transition: "all 0.2s"
+                              }}>{qSyncHabit ? "✓" : ""}</div>
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: qSyncHabit ? theme.primary : "#e2e8f0" }}>{tr("quests.forge.habitLink")}</div>
+                                <div style={{ fontSize: 9, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{tr("quests.forge.habitLinkDesc")}</div>
+                              </div>
                             </div>
-                          </label>
+
+                            {qSyncHabit && (
+                              <div style={{
+                                background: "rgba(4,4,12,0.6)",
+                                border: `1px dashed ${theme.primary}44`,
+                                borderRadius: 14,
+                                padding: "16px 16px 12px 16px",
+                                marginBottom: 14,
+                                animation: "fadeIn 0.25s ease",
+                              }}>
+                                {/* Micro-copy header */}
+                                <div style={{ fontSize: 10, color: theme.primary, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                                  <span>⚡ HABIT ROUTINE WIZARD</span>
+                                  <span style={{ fontSize: 8, color: "#64748b" }}>|</span>
+                                  <span style={{ color: "#64748b" }}>Routine erstellen für langfristige Erfolge</span>
+                                </div>
+
+                                {/* Habit Category */}
+                                <div style={{ marginBottom: 12 }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>KATEGORIE</div>
+                                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                                    {FORGE_HABIT_CATEGORIES.map(c => (
+                                      <button
+                                        key={c.key}
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setQHabitCategory(c.key); }}
+                                        style={{
+                                          padding: "6px 8px",
+                                          borderRadius: 8,
+                                          fontSize: 10,
+                                          fontWeight: qHabitCategory === c.key ? 800 : 500,
+                                          background: qHabitCategory === c.key ? `${c.color}22` : "rgba(255,255,255,0.02)",
+                                          border: `1px solid ${qHabitCategory === c.key ? c.color : "rgba(255,255,255,0.06)"}`,
+                                          color: qHabitCategory === c.key ? c.color : "#94a3b8",
+                                          cursor: "pointer",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          gap: 4,
+                                          transition: "all 0.15s ease",
+                                        }}
+                                      >
+                                        <span>{c.icon}</span> {c.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Habit Frequency */}
+                                <div style={{ marginBottom: 12 }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>HÄUFIGKEIT</div>
+                                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 4 }}>
+                                    {FORGE_HABIT_FREQUENCIES.map(f => (
+                                      <button
+                                        key={f.key}
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setQHabitFrequency(f.key); }}
+                                        style={{
+                                          padding: "6px 4px",
+                                          borderRadius: 8,
+                                          fontSize: 9,
+                                          fontWeight: qHabitFrequency === f.key ? 800 : 500,
+                                          background: qHabitFrequency === f.key ? `${theme.primary}18` : "rgba(255,255,255,0.02)",
+                                          border: `1px solid ${qHabitFrequency === f.key ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`,
+                                          color: qHabitFrequency === f.key ? theme.primary : "#94a3b8",
+                                          cursor: "pointer",
+                                          transition: "all 0.15s ease",
+                                        }}
+                                      >
+                                        {f.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Habit Verification Type */}
+                                <div style={{ marginBottom: 12 }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>MESSMETHODE</div>
+                                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                                    {FORGE_HABIT_VERIFICATIONS.map(v => (
+                                      <button
+                                        key={v.key}
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setQHabitVerification(v.key); }}
+                                        style={{
+                                          padding: "6px 8px",
+                                          borderRadius: 8,
+                                          fontSize: 10,
+                                          fontWeight: qHabitVerification === v.key ? 800 : 500,
+                                          background: qHabitVerification === v.key ? `${theme.primary}18` : "rgba(255,255,255,0.02)",
+                                          border: `1px solid ${qHabitVerification === v.key ? theme.primary + "66" : "rgba(255,255,255,0.06)"}`,
+                                          color: qHabitVerification === v.key ? theme.primary : "#94a3b8",
+                                          cursor: "pointer",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          gap: 4,
+                                          transition: "all 0.15s ease",
+                                        }}
+                                      >
+                                        <span>{v.icon}</span> {v.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Target Inputs for Timer/Counter */}
+                                {qHabitVerification === "timer" && (
+                                  <div style={{ marginBottom: 6, animation: "fadeIn 0.2s ease" }}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>DAUER (MINUTEN)</div>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max="720"
+                                      value={qHabitTargetMinutes}
+                                      onClick={e => e.stopPropagation()}
+                                      onChange={e => setQHabitTargetMinutes(Math.max(1, parseInt(e.target.value) || 1))}
+                                      style={{
+                                        width: "100%",
+                                        padding: "8px 12px",
+                                        borderRadius: 8,
+                                        background: "rgba(255,255,255,0.03)",
+                                        border: `1px solid rgba(255,255,255,0.1)`,
+                                        color: "#e2e8f0",
+                                        fontFamily: "'JetBrains Mono',monospace",
+                                        fontSize: 11,
+                                        outline: "none",
+                                        boxSizing: "border-box"
+                                      }}
+                                    />
+                                  </div>
+                                )}
+
+                                {qHabitVerification === "counter" && (
+                                  <div style={{ marginBottom: 6, animation: "fadeIn 0.2s ease" }}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", marginBottom: 6 }}>WIE OFT AM TAG? (REPS)</div>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max="999"
+                                      value={qHabitTargetCount}
+                                      onClick={e => e.stopPropagation()}
+                                      onChange={e => setQHabitTargetCount(Math.max(1, parseInt(e.target.value) || 1))}
+                                      style={{
+                                        width: "100%",
+                                        padding: "8px 12px",
+                                        borderRadius: 8,
+                                        background: "rgba(255,255,255,0.03)",
+                                        border: `1px solid rgba(255,255,255,0.1)`,
+                                        color: "#e2e8f0",
+                                        fontFamily: "'JetBrains Mono',monospace",
+                                        fontSize: 11,
+                                        outline: "none",
+                                        boxSizing: "border-box"
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </>
                         )}
                         </>
                         )}
@@ -2561,7 +2756,31 @@ function App({ initialHunterName, onLogout }) {
                             style={{ flex: 1, padding: "15px", borderRadius: 16, fontSize: 14, fontWeight: 900, background: qTitle.trim() ? `linear-gradient(135deg,${theme.primary},${theme.secondary})` : "rgba(10,10,24,0.6)", color: qTitle.trim() ? "#fff" : "#334155", letterSpacing: 2, fontFamily: "'Cinzel',serif", boxShadow: qTitle.trim() ? `0 6px 30px ${theme.glow}` : "none", cursor: qTitle.trim() ? "pointer" : "not-allowed", border: "none" }}
                           >{tr("quests.forge.next")} ›</button>
                           {wizardStep === 2 && (
-                            <button onClick={handleWizardSubmit} disabled={!qTitle.trim()} title={tr("quests.forge.createNow")} style={{ padding: "15px 14px", borderRadius: 16, fontSize: 12, fontWeight: 900, background: "transparent", border: `1px solid ${theme.primary}55`, color: theme.accent || theme.primary, fontFamily: "'Cinzel',serif", cursor: qTitle.trim() ? "pointer" : "not-allowed" }}>✦</button>
+                            <button
+                              onClick={handleWizardSubmit}
+                              disabled={!qTitle.trim()}
+                              title={tr("quests.forge.createNow")}
+                              style={{
+                                padding: "15px 16px",
+                                borderRadius: 16,
+                                fontSize: 10,
+                                fontWeight: 900,
+                                background: "rgba(255,255,255,0.02)",
+                                border: `1px solid ${theme.primary}55`,
+                                color: theme.accent || theme.primary,
+                                fontFamily: "'Cinzel',serif",
+                                letterSpacing: 1,
+                                cursor: qTitle.trim() ? "pointer" : "not-allowed",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                transition: "all 0.2s"
+                              }}
+                              onMouseEnter={e => { if (qTitle.trim()) e.currentTarget.style.background = `${theme.primary}18`; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
+                            >
+                              ⚡ SOFORT ERSTELLEN
+                            </button>
                           )}
                         </>
                       ) : (
