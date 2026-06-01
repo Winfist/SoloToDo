@@ -57,3 +57,6 @@ functions/logs*.txt
 
 # Brainstorming companion scratch files
 .superpowers/
+
+# Isolated feature worktrees
+.worktrees/
