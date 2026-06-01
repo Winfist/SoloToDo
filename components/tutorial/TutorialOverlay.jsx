@@ -508,6 +508,7 @@ export default function TutorialOverlay({
   const [textDone, setTextDone] = useState(false);
   const [typingSkipSignal, setTypingSkipSignal] = useState(0);
   const [coachRect, setCoachRect] = useState(null);
+  const [transitionActive, setTransitionActive] = useState(false);
   const observerRef = useRef(null);
   const rectIntervalRef = useRef(null);
   const actionCleanupRef = useRef(null);
@@ -565,6 +566,17 @@ export default function TutorialOverlay({
     }
     setPhase("exiting");
     return undefined;
+  }, [isActive]);
+
+  // Hide the overlay while a full-screen page transition (e.g. portal enter) is
+  // playing, so the animation is seen unobstructed. The step's advanceWhenAbsent
+  // on [data-page-transition='active'] resumes the tutorial once it finishes.
+  useEffect(() => {
+    if (!isActive) { setTransitionActive(false); return undefined; }
+    const check = () => setTransitionActive(Boolean(document.querySelector("[data-page-transition='active']")));
+    check();
+    const id = window.setInterval(check, 90);
+    return () => window.clearInterval(id);
   }, [isActive]);
 
   useEffect(() => {
@@ -769,6 +781,7 @@ export default function TutorialOverlay({
   }, [requestFinishTyping]);
 
   if (!isActive || !step) return null;
+  if (transitionActive) return null;
 
   return (
     <>
