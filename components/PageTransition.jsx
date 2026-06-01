@@ -479,6 +479,7 @@ export default function PageTransition({
 
   return (
     <div
+      data-page-transition="active"
       style={{
         position: "fixed",
         inset: 0,

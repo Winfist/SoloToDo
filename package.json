@@ -16,7 +16,9 @@
     "test:hidden": "node scripts/test-hidden.mjs",
     "test:redemption": "node scripts/test-redemption.mjs",
     "test:quest-planning": "node scripts/test-quest-planning.mjs",
-    "test:quest-verification": "node scripts/test-quest-verification.mjs"
+    "test:quest-verification": "node scripts/test-quest-verification.mjs",
+    "test:sigil": "node scripts/test-sigil-geometry.mjs",
+    "test:icons": "node scripts/test-feature-icons.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",

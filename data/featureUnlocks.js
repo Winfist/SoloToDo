@@ -226,3 +226,5 @@ export function getLevelCrossingUnlock(oldLevel, newLevel) {
     message: TIER_UNLOCK_MESSAGES[tier] || null,
   };
 }
+
+export { getFeatureIconName } from "../components/tutorial/featureIconMap.js";

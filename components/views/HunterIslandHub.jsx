@@ -49,7 +49,6 @@ const ONBOARDING_APPS_MODE_STEPS = new Set([
 ]);
 const ONBOARDING_STATS_PORTAL_STEPS = new Set([
   "explain_portal_mode",
-  "try_swipe_portal",
   "open_hunter_stats",
 ]);
 

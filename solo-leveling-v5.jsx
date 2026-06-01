@@ -503,6 +503,18 @@ function App({ initialHunterName, onLogout }) {
     setShowCreate(true);
   }, [premiumModalFeature, setShowCreate, showPremiumModal, tutorialNeedsQuestForge]);
 
+  useEffect(() => {
+    if (tutorialRuntimeState.activeTutorialId !== "onboarding") return;
+    const tutorialWizardSteps = {
+      quest_title_input: 1,
+      quest_difficulty: 2,
+      quest_category: 2,
+      submit_quest: 3,
+    };
+    const tutorialWizardStep = tutorialWizardSteps[tutorialRuntimeState.stepId];
+    if (tutorialWizardStep) setWizardStep(tutorialWizardStep);
+  }, [tutorialRuntimeState.activeTutorialId, tutorialRuntimeState.stepId]);
+
   const [detailQuest, setDetailQuest] = React.useState(null);
   const [habitDraft, setHabitDraft] = React.useState(null);
   const liveDetailQuest = useMemo(() => {
@@ -1124,7 +1136,6 @@ function App({ initialHunterName, onLogout }) {
               oldRank={prevRank}
               onClose={() => {
                 setLevelUp(null);
-                triggerLetterbox("LEVEL UP", 2500, getRank(levelUp.level || levelUp).color || "#22d3ee");
                 if (animationControllerRef.current.active) advanceAnimationQueue();
               }}
             />

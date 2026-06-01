@@ -15,6 +15,7 @@ import { getToday as getLocalToday, formatLocalDateTime } from "./dateUtils.js";
 import { getQuestDescription } from "./questUtils.js";
 import { getQuestPresentation } from "./questPresentation.js";
 import { useI18n } from "../components/i18n/I18nProvider.jsx";
+import Sigil from "../components/tutorial/Sigil.jsx";
 
 // â”€â”€â”€ RE-EXPORTS FROM SPLIT MODULES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export {
@@ -302,15 +303,15 @@ function LevelUpCinematic({ levelData, rank, oldRank, onClose }) {
   const isRankUp = oldRank && oldRank.name !== rank.name;
   useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, [onClose]);
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", animation: "levelUpBg 4s ease forwards", background: "rgba(0,0,0,0.93)" }}>
-      <div style={{ position: "absolute", width: 500, height: 500, background: `conic-gradient(from 0deg,transparent,${rank.color}08,transparent,${rank.color}05,transparent)`, animation: "levelUpRays 8s linear infinite", borderRadius: "50%" }} />
-      <div style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", border: `2px solid ${rank.color}44`, animation: "ringExpand 1.5s ease-out forwards" }} />
-      <div style={{ textAlign: "center", position: "relative" }}>
-        <div style={{ fontSize: 11, letterSpacing: 6, color: rank.color, fontFamily: "'JetBrains Mono',monospace", animation: "levelUpText 1.2s ease-out forwards", marginBottom: 12, opacity: 0 }}>{isRankUp ? "RANK UP" : "LEVEL UP"}</div>
-        <div style={{ fontSize: 96, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 60px ${rank.color},0 0 120px ${rank.color}66`, animation: "levelUpText 1s ease-out 0.15s forwards", opacity: 0, lineHeight: 1 }}>{level}</div>
-        <div style={{ fontSize: 18, color: rank.color, fontFamily: "'Cinzel',serif", letterSpacing: 4, animation: "levelUpRank 1.8s ease-out forwards", opacity: 0, marginTop: 12, textShadow: `0 0 20px ${rank.glow}` }}>{rank.label}</div>
-        {earnedPoints > 0 && <div style={{ fontSize: 15, color: "#fff", fontFamily: "'JetBrains Mono',monospace", marginTop: 18, animation: "levelUpRank 2s ease-out forwards", opacity: 0 }}>+ {earnedPoints} Stat-Punkte</div>}
-        {isRankUp && <div style={{ marginTop: 20, padding: "8px 24px", borderRadius: 20, background: `linear-gradient(135deg,${rank.color}22,${rank.color}11)`, border: `1px solid ${rank.color}44`, fontSize: 12, color: rank.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, animation: "levelUpRank 2s ease-out forwards", opacity: 0 }}>✨ NEW RANK ACHIEVED ✨</div>}
+    <div onClick={onClose} className="sys-fullbleed sys-grain sys-vignette sys-lvl sys-play">
+      <div className="sys-cine__aur"><i className="a1" /><i className="a2" /></div>
+      <div className="sys-lvl__content">
+        <div className="sys-lvl__crest"><Sigil size="crest" playKey={level} /></div>
+        <div className="sys-lvl__eyebrow">{isRankUp ? "RANK UP" : "LEVEL UP"}</div>
+        <div className="sys-lvl__num">{level}</div>
+        <div className="sys-lvl__rank">{rank.label}</div>
+        {earnedPoints > 0 && <div className="sys-lvl__pts">+ {earnedPoints} Statuspunkte</div>}
+        {isRankUp && <div className="sys-lvl__badge">NEUER RANG: {rank.name}</div>}
       </div>
     </div>
   );
