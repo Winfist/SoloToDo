@@ -101,6 +101,17 @@
   scroll-margin-bottom: 140px;
 }
 
+/* Hard scroll-lock while the tutorial is active (body.sys-tutorial-lock).
+   The app scrolls on inner overflow:auto containers, and iOS WKWebView leaks
+   momentum past a window-level touchmove preventDefault. touch-action:none on
+   every scroller blocks USER panning but still allows the tutorial's own
+   programmatic scrollIntoView (which overflow:hidden would have broken). */
+body.sys-tutorial-lock { overscroll-behavior: none !important; }
+body.sys-tutorial-lock [style*="overflow"] {
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+}
+
 
 /* ── Confetti (celebration steps) ── */
 .tutorial-confetti {
@@ -183,7 +194,7 @@
 }
 
 .sys-sigil { overflow: visible; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--theme-primary) 45%, transparent)); }
-.sys-sigil--hero  { width: 196px; height: 196px; }
+.sys-sigil--hero  { width: 212px; height: 212px; }
 .sys-sigil--crest { width: 104px; height: 104px; }
 .sys-sigil--mark  { width: 18px;  height: 18px; }
 .sys-sigil .draw { fill: none; stroke: var(--sys-line); stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 0; }
@@ -210,21 +221,21 @@
   .sys-play .sys-sigil .draw { animation: none !important; stroke-dashoffset: 0 !important; }
 }
 
-.sys-cine { z-index: 9532; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: max(env(safe-area-inset-top, 0px), 30px) 24px max(env(safe-area-inset-bottom, 0px), 32px); text-align: center; animation: sysFade .5s var(--sys-ease) both; }
+.sys-cine { z-index: 9532; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: max(env(safe-area-inset-top, 0px), 40px) 24px max(env(safe-area-inset-bottom, 0px), 40px); text-align: center; animation: sysFade .5s var(--sys-ease) both; }
 .sys-cine__aur { position: absolute; inset: -30%; z-index: 0; }
 .sys-cine__aur i { position: absolute; border-radius: 50%; display: block; filter: blur(50px); }
 .sys-cine__aur .a1 { width: 52%; height: 52%; top: 0; left: 6%; background: radial-gradient(circle, color-mix(in srgb, var(--theme-primary) 55%, transparent), transparent 70%); opacity: .5; animation: sysDrift 21s ease-in-out infinite; }
 .sys-cine__aur .a2 { width: 44%; height: 44%; top: 18%; right: 2%; background: radial-gradient(circle, rgba(150,110,255,.45), transparent 70%); opacity: .45; animation: sysDrift 28s ease-in-out infinite reverse; }
 .sys-cine__beam { position: absolute; top: -6%; left: 50%; transform: translateX(-50%); width: 78px; height: 64%; z-index: 1; background: linear-gradient(180deg, color-mix(in srgb, var(--theme-primary) 32%, transparent), transparent 78%); filter: blur(13px); opacity: 0; }
 .sys-play .sys-cine__beam { animation: sysFade 1.4s ease 1s both, sysBeam 5s ease-in-out 2.4s infinite; }
-.sys-cine__hero { position: relative; z-index: 3; flex: 1; width: 100%; display: grid; place-items: center; }
-.sys-cine__halo { position: absolute; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, var(--sys-glow), transparent 68%); filter: blur(8px); animation: sysBreath 4s ease-in-out infinite; }
-.sys-cine__eyebrow { z-index: 3; font: 700 9px/1 'JetBrains Mono', monospace; letter-spacing: 3.6px; color: var(--sys-accent); margin-bottom: 12px; }
-.sys-cine__title { z-index: 3; font: 700 21px/1.12 'Cinzel', serif; letter-spacing: 1.6px; color: var(--sys-ink); }
-.sys-cine__title--finale { font-size: 30px; letter-spacing: 8px; }
-.sys-cine__rule { z-index: 3; width: 30px; height: 1px; background: linear-gradient(90deg, transparent, var(--sys-accent), transparent); margin: 13px auto; }
-.sys-cine__body { z-index: 3; max-width: 212px; font: 300 11px/1.7 'Outfit', sans-serif; color: var(--sys-text); }
-.sys-cine__continue { z-index: 3; margin-top: 22px; font: 700 8.5px/1 'JetBrains Mono', monospace; letter-spacing: 2.5px; color: var(--sys-accent); }
+.sys-cine__hero { position: relative; z-index: 3; flex: 0 0 auto; width: 100%; display: grid; place-items: center; margin-bottom: 12px; }
+.sys-cine__halo { position: absolute; width: 152px; height: 152px; border-radius: 50%; background: radial-gradient(circle, var(--sys-glow), transparent 68%); filter: blur(8px); animation: sysBreath 4s ease-in-out infinite; }
+.sys-cine__eyebrow { z-index: 3; font: 700 10.5px/1 'JetBrains Mono', monospace; letter-spacing: 3.8px; color: var(--sys-accent); margin-bottom: 14px; }
+.sys-cine__title { z-index: 3; font: 700 27px/1.14 'Cinzel', serif; letter-spacing: 1.8px; color: var(--sys-ink); }
+.sys-cine__title--finale { font-size: 35px; letter-spacing: 9px; }
+.sys-cine__rule { z-index: 3; width: 34px; height: 1px; background: linear-gradient(90deg, transparent, var(--sys-accent), transparent); margin: 16px auto; }
+.sys-cine__body { z-index: 3; max-width: 290px; font: 300 14.5px/1.65 'Outfit', sans-serif; color: var(--sys-text); }
+.sys-cine__continue { z-index: 3; margin-top: 28px; font: 700 10px/1 'JetBrains Mono', monospace; letter-spacing: 2.6px; color: var(--sys-accent); }
 .sys-cine__counter { position: absolute; top: max(env(safe-area-inset-top,0px),17px); left: 19px; z-index: 7; font: 700 8px/1 'JetBrains Mono', monospace; letter-spacing: 1.6px; color: var(--sys-muted); }
 .sys-play .sys-cine__eyebrow { animation: sysFadeUp .7s ease 1.7s both; }
 .sys-play .sys-cine__title { animation: sysLineIn .7s var(--sys-ease) 1.95s both; }

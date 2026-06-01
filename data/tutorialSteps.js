@@ -83,7 +83,7 @@ export const TUTORIAL_SEQUENCES = {
         action: "click",
         position: "top",
         scrollTo: true,
-        scrollBlock: "start",
+        scrollBlock: "center",
         pulseIntensity: "strong",
       },
       {

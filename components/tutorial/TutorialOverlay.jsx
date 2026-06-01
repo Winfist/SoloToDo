@@ -550,12 +550,14 @@ export default function TutorialOverlay({
         }
       };
 
+      document.body.classList.add("sys-tutorial-lock");
       window.addEventListener("wheel", preventScroll, { passive: false });
       window.addEventListener("touchmove", preventScroll, { passive: false });
       window.addEventListener("keydown", preventKeyScroll, { passive: false });
 
       return () => {
         window.clearTimeout(timer);
+        document.body.classList.remove("sys-tutorial-lock");
         window.removeEventListener("wheel", preventScroll);
         window.removeEventListener("touchmove", preventScroll);
         window.removeEventListener("keydown", preventKeyScroll);
