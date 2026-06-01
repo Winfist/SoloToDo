@@ -1122,7 +1122,7 @@ export const de = {
       },
       quest_title_input: {
         title: "QUEST-NAME",
-        text: "Gib deiner Aufgabe einen klaren Namen, zum Beispiel 30 Minuten lesen oder 10 Liegestütze.",
+        text: "Eigene Quests bekommen einen klaren Namen. Für dieses Tutorial würfeln wir oben rechts eine sinnvolle Beispiel-Quest aus.",
       },
       quest_difficulty: {
         title: "SCHWIERIGKEIT",

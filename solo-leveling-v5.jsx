@@ -2102,6 +2102,7 @@ function App({ initialHunterName, onLogout }) {
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         {/* RANDOMIZER BUTTON */}
                         <button
+                          data-tutorial="quest-randomizer-btn"
                           title={tr("quests.forge.randomIdea")}
                           onClick={() => {
                             const pool = QUEST_POOL;

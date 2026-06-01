@@ -791,7 +791,11 @@ export default function TutorialOverlay({
       />
 
       {isActionStep && (
-        <TutorialClickCage targetRect={actionTargetUnlocked ? targetRect : null} onBlockedClick={handleBlockedClick} />
+        <TutorialClickCage
+          targetRect={actionTargetUnlocked ? targetRect : null}
+          padding={Number.isFinite(step.clickPadding) ? step.clickPadding : SPOTLIGHT_PADDING}
+          onBlockedClick={handleBlockedClick}
+        />
       )}
 
       {!isCinematic && revealRect && (

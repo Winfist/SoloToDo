@@ -1122,7 +1122,7 @@ export const en = {
       },
       quest_title_input: {
         title: "QUEST NAME",
-        text: "Give your task a clear name, for example 30 minutes reading or 10 push-ups.",
+        text: "Custom Quests get a clear name. For this tutorial, use the die in the top right to roll a useful example Quest.",
       },
       quest_difficulty: {
         title: "DIFFICULTY",
