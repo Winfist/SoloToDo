@@ -604,7 +604,30 @@ export default function TutorialOverlay({
     if (isActive) {
       setPhase("entering");
       const timer = window.setTimeout(() => setPhase("visible"), 50);
-      return () => window.clearTimeout(timer);
+
+      const preventScroll = (e) => {
+        e.preventDefault();
+      };
+      
+      const preventKeyScroll = (e) => {
+        const keys = ["Space", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"];
+        if (keys.includes(e.code)) {
+          const tag = e.target.tagName?.toLowerCase();
+          if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+          e.preventDefault();
+        }
+      };
+      
+      window.addEventListener("wheel", preventScroll, { passive: false });
+      window.addEventListener("touchmove", preventScroll, { passive: false });
+      window.addEventListener("keydown", preventKeyScroll, { passive: false });
+
+      return () => {
+        window.clearTimeout(timer);
+        window.removeEventListener("wheel", preventScroll);
+        window.removeEventListener("touchmove", preventScroll);
+        window.removeEventListener("keydown", preventKeyScroll);
+      };
     }
     setPhase("exiting");
     return undefined;
@@ -632,7 +655,7 @@ export default function TutorialOverlay({
 
       if (step.scrollTo && !scrolled) {
         scrolled = true;
-        element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        element.scrollIntoView({ behavior: "smooth", block: step.scrollBlock || "center", inline: "center" });
       }
 
       const nextTargetRect = readRect(element);

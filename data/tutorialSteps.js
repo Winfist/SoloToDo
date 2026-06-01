@@ -70,6 +70,7 @@ export const TUTORIAL_SEQUENCES = {
         text: "Hier landen deine offenen Quests. System-Quests kommen automatisch dazu, eigene Quests erstellst du selbst.",
         position: "top",
         scrollTo: true,
+        scrollBlock: "start",
       },
       {
         id: "click_create_quest",
@@ -82,6 +83,7 @@ export const TUTORIAL_SEQUENCES = {
         action: "click",
         position: "top",
         scrollTo: true,
+        scrollBlock: "start",
         pulseIntensity: "strong",
       },
       {
@@ -95,6 +97,7 @@ export const TUTORIAL_SEQUENCES = {
         action: "input",
         position: "bottom",
         scrollTo: true,
+        scrollBlock: "start",
       },
       {
         id: "quest_difficulty",
@@ -127,6 +130,7 @@ export const TUTORIAL_SEQUENCES = {
         action: "click",
         position: "top",
         scrollTo: true,
+        scrollBlock: "start",
         pulseIntensity: "strong",
       },
       {
@@ -260,6 +264,7 @@ export const TUTORIAL_SEQUENCES = {
         text: "Hier siehst du Radar, Power Level und Gesamtfortschritt. Das zeigt dir, wie dein Hunter-Profil gerade verteilt ist.",
         position: "bottom",
         scrollTo: true,
+        scrollBlock: "start",
       },
       {
         id: "stats_attributes",
@@ -271,6 +276,7 @@ export const TUTORIAL_SEQUENCES = {
         text: "Jede Kategorie hat einen Wert. Wenn du Stat-Punkte bekommst, kannst du hier gezielt STR, INT, VIT, AGI oder CHA verbessern.",
         position: "top",
         scrollTo: true,
+        scrollBlock: "start",
       },
       {
         id: "return_dashboard",
@@ -320,6 +326,7 @@ export const TUTORIAL_SEQUENCES = {
         text: "Hier baust du Routinen auf. Habits helfen dir, kleine Wiederholungen sichtbar zu machen.",
         position: "top",
         scrollTo: true,
+        scrollBlock: "start",
       },
       {
         id: "emergency_quests",
