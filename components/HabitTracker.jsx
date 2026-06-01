@@ -880,7 +880,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
                         <div style={{ marginBottom: 12, animation: "float 3s ease-in-out infinite" }}><img src={HABIT_ICONS.manual} alt="Habits" style={{ width: 52, height: 52, objectFit: "contain", opacity: 0.3, filter: `drop-shadow(0 0 12px ${theme?.primary || "#22d3ee"}44)` }} /></div>
                         <div style={{ fontSize: 13, color: "#64748b", fontFamily: "'Cinzel',serif", marginBottom: 8 }}>Keine Habits vorhanden</div>
                         <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>Erstelle deine erste Gewohnheit</div>
-                        <button onClick={openCreate} style={{
+                        <button data-tutorial="habit-add" onClick={openCreate} style={{
                             padding: "10px 24px", borderRadius: 12, fontSize: 11, fontWeight: 700,
                             background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
                             color: theme?.accent || "#67e8f9", border: `1px solid ${theme?.primary || "#22d3ee"}44`,
@@ -907,7 +907,7 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
 
             {/* Add button */}
             {todayHabits.length > 0 && (
-                <button onClick={openCreate} style={{
+                <button data-tutorial="habit-add" onClick={openCreate} style={{
                     width: "100%", padding: 13, borderRadius: 14, fontSize: 11, fontWeight: 700,
                     background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}10,transparent)`,
                     color: theme?.accent || "#67e8f9",

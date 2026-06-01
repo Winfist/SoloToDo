@@ -857,6 +857,12 @@ function App({ initialHunterName, onLogout }) {
 
   // ─── TUTORIAL SYSTEM ─────────────────────────────────────────
   const tutorialRef = useRef(null);
+  // DEV-only: trigger any tier tutorial without leveling, for testing.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return undefined;
+    window.__triggerTier = (n) => tutorialRef.current?.triggerTierTutorial(n);
+    return () => { delete window.__triggerTier; };
+  }, []);
   const prevLevelRef = useRef(null);
   const levelTrackerReadyRef = useRef(false);
   const lifeDomainsReady = Boolean(state?.hunterName && (state.lifeDomains || []).length >= 3);
