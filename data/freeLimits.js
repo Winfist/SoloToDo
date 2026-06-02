@@ -65,6 +65,14 @@ export function canEquipRarity({ premiumActive = false, rarity = "common" } = {}
   return { ok, maxRarity: FREE_LIMITS.equipmentMaxRarity };
 }
 
+// Can a (free) user awaken another shadow? Premium = unlimited.
+export function canAddShadow({ premiumActive = false, shadowCount = 0 } = {}) {
+  if (premiumActive) return { ok: true, remaining: Infinity };
+  const count = Math.max(0, Number(shadowCount) || 0);
+  const remaining = Math.max(0, FREE_LIMITS.shadowsMax - count);
+  return { ok: remaining > 0, remaining };
+}
+
 // Pure per-feature quota status. `state` supplies the daily counter; `premiumActive` from caller.
 export function getQuotaStatus(featureKey, { premiumActive = false, state = {} } = {}) {
   const cfg = QUOTA_CONFIG[featureKey];
