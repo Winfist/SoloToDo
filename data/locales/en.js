@@ -663,6 +663,7 @@ export const en = {
     soulLinkCreateFailed: "Soul Link could not be created.",
     charismaAlreadyActive: "This chain is already active.",
     charismaAlreadyCompleted: "This chain has already been completed.",
+    charismaDailyCap: "Daily Charisma Dungeon limit reached. Hunter Pro removes the cap.",
     charismaStarted: "{name} started! Floor 1 of {total}: {title}",
     soulLinkCodeUnavailable: "Code not found or already full.",
     soulLinkConnected: "Soul Link connected with {name}!",

@@ -25,7 +25,7 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getFocusStats } from '../data/lifeDomains.js';
-import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot } from '../data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
@@ -105,6 +105,8 @@ function createFreshHunterState(name) {
     dailyUserQuestsCreated: 0,
     extraDailySlots: 0,
     dailyUserXP: 0,
+    dailyDungeonsRun: 0,
+    dailyCharismaRun: 0,
     dungeons: [],
     lastDungeonRefresh: null,
     todayModifier: getDailyModifier(),
@@ -636,6 +638,8 @@ export function useGameState(initialHunterName, onLogout) {
             s.dailyUserQuestsCreated = 0;
             s.extraDailySlots = 0;
             s.dailyUserXP = 0;
+            s.dailyDungeonsRun = 0;
+            s.dailyCharismaRun = 0;
             s.questReplacements = { date: today, used: 0, replacedKeys: [] };
             s.integrityScore = Math.min(100, (s.integrityScore !== undefined ? s.integrityScore : 100) + 20);
           }
@@ -2280,6 +2284,8 @@ export function useGameState(initialHunterName, onLogout) {
     if (!unlocked.includes(chainId)) { notify(ltState(state, "questActions.charismaNotUnlocked"), "warning"); return; }
     if (state.charismaDungeons?.activeChains?.[chainId]) { notify(ltState(state, "questActions.charismaAlreadyActive"), "info"); return; }
     if (state.charismaDungeons?.completedChains?.includes(chainId)) { notify(ltState(state, "questActions.charismaAlreadyCompleted"), "info"); return; }
+    const chQuota = getQuotaStatus("charisma_dungeons", { premiumActive: getPremiumStatus(state?.premium).active, state });
+    if (!chQuota.allowed) { notify(ltState(state, "questActions.charismaDailyCap"), "warning"); return; }
     const step = chain.steps[0];
     const quest = {
       id: genId(),
@@ -2298,6 +2304,7 @@ export function useGameState(initialHunterName, onLogout) {
     persist({
       ...state,
       quests: [...state.quests, quest],
+      dailyCharismaRun: (state.dailyCharismaRun || 0) + 1,
       charismaDungeons: {
         ...state.charismaDungeons,
         activeChains: { ...(state.charismaDungeons?.activeChains || {}), [chainId]: { currentStep: 1, startedAt: getToday() } }
