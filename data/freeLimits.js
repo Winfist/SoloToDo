@@ -53,6 +53,18 @@ export const QUOTA_CONFIG = {
   charisma_dungeons: { counter: "dailyCharismaRun", limitKey: "charismaDungeonsPerDay" },
 };
 
+// Ascending rarity tiers. Free users may equip up to FREE_LIMITS.equipmentMaxRarity.
+export const RARITY_ORDER = ["common", "uncommon", "rare", "epic", "legendary"];
+
+// Can a (free) user equip an item of this rarity? Premium = any. Unknown rarity = allowed (safety).
+export function canEquipRarity({ premiumActive = false, rarity = "common" } = {}) {
+  if (premiumActive) return { ok: true, maxRarity: null };
+  const idx = RARITY_ORDER.indexOf(String(rarity));
+  const maxIdx = RARITY_ORDER.indexOf(FREE_LIMITS.equipmentMaxRarity);
+  const ok = idx === -1 ? true : idx <= maxIdx;
+  return { ok, maxRarity: FREE_LIMITS.equipmentMaxRarity };
+}
+
 // Pure per-feature quota status. `state` supplies the daily counter; `premiumActive` from caller.
 export function getQuotaStatus(featureKey, { premiumActive = false, state = {} } = {}) {
   const cfg = QUOTA_CONFIG[featureKey];

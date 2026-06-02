@@ -1,4 +1,4 @@
-import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG } from "../data/freeLimits.js";
+import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG, canEquipRarity, RARITY_ORDER } from "../data/freeLimits.js";
 
 let failures = 0;
 const assert = (condition, message) => {
@@ -68,6 +68,15 @@ assert(q.remaining === 0 && q.allowed === false, "free dungeons blocked at 3 run
 // premium dungeons unlimited
 q = getQuotaStatus("dungeons", { premiumActive: true, state: { dailyDungeonsRun: 99 } });
 assert(q.limit === Infinity && q.allowed === true, "premium dungeons unlimited");
+
+// ── canEquipRarity ──
+assert(RARITY_ORDER.indexOf("common") < RARITY_ORDER.indexOf("legendary"), "rarity order ascends");
+assert(canEquipRarity({ premiumActive: false, rarity: "common" }).ok === true, "free can equip common");
+assert(canEquipRarity({ premiumActive: false, rarity: "rare" }).ok === true, "free can equip rare");
+assert(canEquipRarity({ premiumActive: false, rarity: "epic" }).ok === false, "free cannot equip epic");
+assert(canEquipRarity({ premiumActive: false, rarity: "legendary" }).ok === false, "free cannot equip legendary");
+assert(canEquipRarity({ premiumActive: true, rarity: "legendary" }).ok === true, "premium can equip legendary");
+assert(canEquipRarity({ premiumActive: false, rarity: "weird" }).ok === true, "unknown rarity allowed (safety)");
 
 if (failures) { console.error(`\n${failures} assertion(s) failed.`); process.exit(1); }
 console.log("test-free-limits: all assertions passed.");
