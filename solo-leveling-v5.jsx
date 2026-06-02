@@ -87,7 +87,7 @@ import { TaskScanModal } from './components/TaskScanModal.jsx';
 import { AIChatWidget } from './components/AIChatWidget.jsx';
 import QuestDetailModal from './components/QuestDetailModal.jsx';
 import PremiumAccessModal from './components/PremiumAccessModal.jsx';
-import { getDailyQuestCreationStatus, getPremiumFeatureForRoute } from './data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumFeatureForRoute, getQuotaStatus } from './data/premium.js';
 import { getQuestVerificationPolicy } from './data/questVerification.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
@@ -1204,7 +1204,15 @@ function App({ initialHunterName, onLogout }) {
           {preview3DDungeon && (
             <DungeonGatesPage
               dungeon={preview3DDungeon}
-              onEnterGate={(dungeon) => { setPreview3DDungeon(null); const fee = DUNGEON_ENTRY_FEES[dungeon.rank] || 0; if (fee > 0) persist({ ...state, gold: state.gold - fee }); setActiveDungeon(dungeon); setBattlePendingStart(true); }}
+              onEnterGate={(dungeon) => {
+                const dq = getQuotaStatus("dungeons", { premiumActive: premiumStatus?.active, state });
+                if (!dq.allowed) { openPremiumModal("dungeons"); return; }
+                setPreview3DDungeon(null);
+                const fee = DUNGEON_ENTRY_FEES[dungeon.rank] || 0;
+                persist({ ...state, gold: fee > 0 ? state.gold - fee : state.gold, dailyDungeonsRun: (state.dailyDungeonsRun || 0) + 1 });
+                setActiveDungeon(dungeon);
+                setBattlePendingStart(true);
+              }}
               onClose={() => setPreview3DDungeon(null)}
             />
           )}
@@ -1329,7 +1337,7 @@ function App({ initialHunterName, onLogout }) {
             )}
 
             {/* CHARISMA DUNGEONS VIEW */}
-            {premiumStatus?.active && showCharismaView && (
+            {showCharismaView && (
               <CharismaDungeonsView
                 state={state} theme={theme}
                 startCharismaChain={startCharismaChain}
