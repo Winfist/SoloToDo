@@ -1,7 +1,8 @@
 import { getLocaleObject, resolveLocale } from "./i18n.js";
+import { computeQuestCreationStatus } from "./freeLimits.js";
+export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot } from "./freeLimits.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-export const FREE_DAILY_QUEST_LIMIT = 1;
 
 export const PREMIUM_PRODUCT = {
   id: "hunter_pro",
@@ -247,19 +248,11 @@ export function isPremiumWidgetModule(moduleKey) {
 
 export function getDailyQuestCreationStatus(state, nowMs = Date.now()) {
   const premiumStatus = getPremiumStatus(state?.premium, nowMs);
-  const createdCount = Number(state?.dailyUserQuestsCreated || 0);
-  const paidExtraSlots = Number(state?.extraDailySlots || 0);
-  const limit = premiumStatus.active ? Infinity : FREE_DAILY_QUEST_LIMIT + Math.max(0, paidExtraSlots);
-  const remaining = premiumStatus.active ? Infinity : Math.max(0, limit - createdCount);
-  return {
+  return computeQuestCreationStatus({
     premiumActive: premiumStatus.active,
-    createdCount,
-    freeLimit: FREE_DAILY_QUEST_LIMIT,
-    paidExtraSlots,
-    limit,
-    remaining,
-    canCreate: premiumStatus.active || createdCount < limit,
-  };
+    createdCount: Number(state?.dailyUserQuestsCreated || 0),
+    extraDailySlots: Number(state?.extraDailySlots || 0),
+  });
 }
 
 export const BETA_PREMIUM_CODES = [
