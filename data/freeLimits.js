@@ -82,6 +82,59 @@ export function canSwitchJob({ premiumActive = false, targetJob = null, currentJ
   return { ok: true };
 }
 
+export const AI_FREE_TRIAL_REQUIREMENTS = {
+  minLevel: 3,
+  minCompletedQuests: 5,
+};
+
+// Can this account start an interactive AI generation? Free credits unlock only
+// after early progress and are capped both per day and per account.
+export function getAIFreeGenerationStatus({ premiumActive = false, state = {}, today = "" } = {}) {
+  if (premiumActive) {
+    return { allowed: true, premiumActive: true, reason: "premium", remainingTotal: Infinity };
+  }
+
+  const level = Math.max(1, Number(state?.level) || 1);
+  const completedQuests = Math.max(
+    0,
+    Number(state?.totalQuestsCompleted) || 0,
+    Array.isArray(state?.completedQuests) ? state.completedQuests.length : 0
+  );
+  const used = Math.max(0, Number(state?.ai?.freeCreditsUsed) || 0);
+  const lastUsedDate = String(state?.ai?.lastFreeCreditDate || "");
+  const todayKey = String(today || state?.lastActiveDate || "");
+  const remainingTotal = Math.max(0, FREE_LIMITS.aiFreeCreditsTotal - used);
+
+  if (level < AI_FREE_TRIAL_REQUIREMENTS.minLevel) {
+    return { allowed: false, premiumActive: false, reason: "level", remainingTotal };
+  }
+  if (completedQuests < AI_FREE_TRIAL_REQUIREMENTS.minCompletedQuests) {
+    return { allowed: false, premiumActive: false, reason: "quests", remainingTotal };
+  }
+  if (remainingTotal <= 0) {
+    return { allowed: false, premiumActive: false, reason: "total", remainingTotal: 0 };
+  }
+  if (todayKey && lastUsedDate === todayKey) {
+    return { allowed: false, premiumActive: false, reason: "daily", remainingTotal };
+  }
+  return { allowed: true, premiumActive: false, reason: "available", remainingTotal };
+}
+
+// Record a successful interactive AI generation. Failed calls and Pro calls
+// leave the free-credit state untouched.
+export function applyAIFreeGenerationUsage(state = {}, { premiumActive = false, today = "" } = {}) {
+  const status = getAIFreeGenerationStatus({ premiumActive, state, today });
+  if (!status.allowed || premiumActive) return state;
+  return {
+    ...state,
+    ai: {
+      ...(state.ai || {}),
+      freeCreditsUsed: (Number(state?.ai?.freeCreditsUsed) || 0) + 1,
+      lastFreeCreditDate: String(today || state?.lastActiveDate || ""),
+    },
+  };
+}
+
 // Pure per-feature quota status. `state` supplies the daily counter; `premiumActive` from caller.
 export function getQuotaStatus(featureKey, { premiumActive = false, state = {} } = {}) {
   const cfg = QUOTA_CONFIG[featureKey];

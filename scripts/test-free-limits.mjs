@@ -1,4 +1,4 @@
-import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG, canEquipRarity, RARITY_ORDER, canAddShadow, canSwitchJob } from "../data/freeLimits.js";
+import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG, canEquipRarity, RARITY_ORDER, canAddShadow, canSwitchJob, getAIFreeGenerationStatus, applyAIFreeGenerationUsage } from "../data/freeLimits.js";
 
 let failures = 0;
 const assert = (condition, message) => {
@@ -90,6 +90,26 @@ assert(canSwitchJob({ premiumActive: false, targetJob: "berserker", currentJob: 
 assert(canSwitchJob({ premiumActive: false, targetJob: "berserker", currentJob: "berserker", currentJobLevel: 5 }).ok === true, "same job no-op ok");
 assert(canSwitchJob({ premiumActive: false, targetJob: "archmage", currentJob: "berserker", currentJobLevel: 0 }).ok === true, "free switch while current lv0 ok");
 assert(canSwitchJob({ premiumActive: false, targetJob: "archmage", currentJob: "berserker", currentJobLevel: 1 }).ok === false, "free cannot switch after leveling");
+
+// -- getAIFreeGenerationStatus --
+const aiReadyState = { level: 3, totalQuestsCompleted: 5, ai: { freeCreditsUsed: 0, lastFreeCreditDate: null } };
+let ai = getAIFreeGenerationStatus({ premiumActive: false, state: aiReadyState, today: "2026-06-02" });
+assert(ai.allowed === true && ai.remainingTotal === 3, "eligible free account starts with 3 AI credits");
+ai = getAIFreeGenerationStatus({ premiumActive: false, state: { ...aiReadyState, level: 2 }, today: "2026-06-02" });
+assert(ai.allowed === false && ai.reason === "level", "AI taste requires level 3");
+ai = getAIFreeGenerationStatus({ premiumActive: false, state: { ...aiReadyState, totalQuestsCompleted: 4 }, today: "2026-06-02" });
+assert(ai.allowed === false && ai.reason === "quests", "AI taste requires 5 completed quests");
+ai = getAIFreeGenerationStatus({ premiumActive: false, state: { ...aiReadyState, ai: { freeCreditsUsed: 1, lastFreeCreditDate: "2026-06-02" } }, today: "2026-06-02" });
+assert(ai.allowed === false && ai.reason === "daily", "free account can spend at most one AI credit per day");
+ai = getAIFreeGenerationStatus({ premiumActive: false, state: { ...aiReadyState, ai: { freeCreditsUsed: 3, lastFreeCreditDate: "2026-06-01" } }, today: "2026-06-02" });
+assert(ai.allowed === false && ai.reason === "total", "free account stops after 3 total AI credits");
+ai = getAIFreeGenerationStatus({ premiumActive: true, state: { level: 1, totalQuestsCompleted: 0 }, today: "2026-06-02" });
+assert(ai.allowed === true && ai.remainingTotal === Infinity, "premium AI access is unlimited");
+
+let next = applyAIFreeGenerationUsage(aiReadyState, { premiumActive: false, today: "2026-06-02" });
+assert(next.ai.freeCreditsUsed === 1 && next.ai.lastFreeCreditDate === "2026-06-02", "successful free AI usage consumes one credit");
+assert(applyAIFreeGenerationUsage(next, { premiumActive: false, today: "2026-06-02" }) === next, "blocked same-day usage does not mutate state");
+assert(applyAIFreeGenerationUsage(aiReadyState, { premiumActive: true, today: "2026-06-02" }) === aiReadyState, "premium usage does not mutate free-credit state");
 
 if (failures) { console.error(`\n${failures} assertion(s) failed.`); process.exit(1); }
 console.log("test-free-limits: all assertions passed.");

@@ -1,6 +1,6 @@
 import { getLocaleObject, resolveLocale } from "./i18n.js";
 import { computeQuestCreationStatus } from "./freeLimits.js";
-export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddShadow, canSwitchJob } from "./freeLimits.js";
+export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddShadow, canSwitchJob, getAIFreeGenerationStatus, applyAIFreeGenerationUsage } from "./freeLimits.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
