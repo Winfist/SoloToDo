@@ -1,6 +1,6 @@
 import { getLocaleObject, resolveLocale } from "./i18n.js";
 import { computeQuestCreationStatus } from "./freeLimits.js";
-export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot } from "./freeLimits.js";
+export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus } from "./freeLimits.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -90,9 +90,9 @@ export const PREMIUM_FEATURES = {
   },
   dungeons: {
     eyebrow: "GATE ACCESS",
-    title: "Dungeon Gates sind Hunter Pro",
-    desc: "Betritt Gates, besiege Bosse und schalte tiefere RPG-Fortschritte frei.",
-    bullets: ["Dungeon Gates", "Boss-Runs", "Loot Progress"],
+    title: "Mehr Dungeon Gates sind Hunter Pro",
+    desc: "Free-Hunter koennen 3 Gates pro Tag betreten. Hunter Pro hebt dieses Tageslimit auf.",
+    bullets: ["3 Gates/Tag gratis", "Unbegrenzt mit Pro", "Boss-Runs & Loot"],
   },
   story_mode: {
     eyebrow: "HUNTER ARCHIVE",
@@ -144,9 +144,9 @@ export const PREMIUM_FEATURES = {
   },
   charisma_dungeons: {
     eyebrow: "SOCIAL GATES",
-    title: "Charisma Dungeons sind Hunter Pro",
-    desc: "Trainiere soziale Quest-Ketten mit mehr Struktur und Fortschritt.",
-    bullets: ["Social Chains", "CHA Progress", "Gespraechs-Training"],
+    title: "Mehr Charisma Dungeons sind Hunter Pro",
+    desc: "Starte 1 Charisma-Kette pro Tag gratis. Hunter Pro macht soziales Training unbegrenzt.",
+    bullets: ["1 Kette/Tag gratis", "Unbegrenzt mit Pro", "CHA Progress"],
   },
   advanced_widgets: {
     eyebrow: "WIDGET CORE",
@@ -206,7 +206,6 @@ export function getLocalizedPremiumProduct(localeOrMode = "auto") {
 
 export const PREMIUM_ROUTE_FEATURES = {
   analytics: "advanced_analytics",
-  dungeon: "dungeons",
   story: "story_mode",
   equipment: "equipment",
   shadows: "shadow_army",
@@ -215,7 +214,6 @@ export const PREMIUM_ROUTE_FEATURES = {
   protocol_overlay: "dawn_dusk",
   seasons_overlay: "seasons",
   soullink_overlay: "soul_link",
-  charisma_overlay: "charisma_dungeons",
 };
 
 export const PREMIUM_DASHBOARD_WIDGET_KEYS = [
