@@ -25,7 +25,7 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getFocusStats } from '../data/lifeDomains.js';
-import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canSwitchJob } from '../data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canSwitchJob, applyAIFreeGenerationUsage } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
@@ -423,6 +423,18 @@ export function useGameState(initialHunterName, onLogout) {
       }).catch(() => { });
     }
   }, []);
+
+  const recordAIFreeGeneration = useCallback(() => {
+    const current = stateRef.current;
+    if (!current) return false;
+    const next = applyAIFreeGenerationUsage(current, {
+      premiumActive: getPremiumStatus(current.premium).active,
+      today: getToday(),
+    });
+    if (next === current) return false;
+    persist(next);
+    return true;
+  }, [persist]);
 
   // Real-time Cloud Sync — BUG FIX #1: Timestamp-based conflict resolution
   // Instead of ignoring cloud data entirely when local state exists, we compare
@@ -2795,6 +2807,7 @@ export function useGameState(initialHunterName, onLogout) {
     iapSupported: isIapSupported(),
     premiumStatus,
     questCreationStatus,
+    recordAIFreeGeneration,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     // Screen Time gamification

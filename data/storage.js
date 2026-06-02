@@ -455,6 +455,14 @@ function mergeStateProgress(primary, fallback) {
     customThemeData: preferenceSource.customThemeData || primary.customThemeData || fallback.customThemeData,
     settings: mergedSettings,
     premium: choosePremium(primary.premium, fallback.premium),
+    ai: {
+      ...(fallback.ai || {}),
+      ...(primary.ai || {}),
+      freeCreditsUsed: Math.max(toFiniteNumber(primary.ai?.freeCreditsUsed), toFiniteNumber(fallback.ai?.freeCreditsUsed)),
+      lastFreeCreditDate: String(primary.ai?.lastFreeCreditDate || "") >= String(fallback.ai?.lastFreeCreditDate || "")
+        ? primary.ai?.lastFreeCreditDate || null
+        : fallback.ai?.lastFreeCreditDate || null,
+    },
     completedTutorials: unionValues(primary.completedTutorials, fallback.completedTutorials),
     tutorialCompleted: Boolean(primary.tutorialCompleted || fallback.tutorialCompleted),
     stats: mergeNumericMaps(primary.stats, fallback.stats),
@@ -818,6 +826,7 @@ export function migrateState(oldState) {
   s.xp = s.xp || 0;
   s.premium = { ...DEFAULT_STATE.premium, ...(oldState.premium || {}) };
   s.premium.betaCodesRedeemed = oldState.premium?.betaCodesRedeemed || [];
+  s.ai = { ...DEFAULT_STATE.ai, ...(oldState.ai || {}) };
 
   s.stats = { ...DEFAULT_STATE.stats, ...(oldState.stats || {}) };
   s.shadowArmy = { ...DEFAULT_STATE.shadowArmy, ...(oldState.shadowArmy || {}) };

@@ -187,6 +187,8 @@ export const DEFAULT_STATE = {
     coachEnabled: true,
     verifiedQuests: 0,
     scannedTasks: 0,
+    freeCreditsUsed: 0,
+    lastFreeCreditDate: null,
   },
   settings: {
     language: "de",
