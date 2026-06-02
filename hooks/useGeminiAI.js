@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
 import { getStateLocale, translate } from "../data/i18n.js";
+import { buildAIQuestRequest } from "../data/aiQuestProfile.js";
 
 // Helper: Resize and convert to Base64 to prevent 413 Payload Too Large
 const compressFileToBase64 = (file) => {
@@ -175,21 +176,8 @@ export function useGeminiAI(state) {
     setIsLoading(true);
     setError(null);
     try {
-      const stats = state.stats || {};
-      const level = state.level || 1;
-      const recentQuests = (state.completedQuests || [])
-        .slice(-10)
-        .map((q) => q.title)
-        .filter(Boolean);
-
-      // Find weakest stat
-      const statValues = Object.entries(stats);
-      const weakestStat = statValues.length > 0
-        ? statValues.sort((a, b) => a[1] - b[1])[0][0]
-        : null;
-
       const fn = httpsCallable(functions, "generateDynamicQuests");
-      const result = await fn({ stats, level, weakestStat, recentQuests, language });
+      const result = await fn(buildAIQuestRequest(state, language));
       return result.data; // { quests }
     } catch (err) {
       handleError(err);

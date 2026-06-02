@@ -1,0 +1,136 @@
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { buildAIQuestProfile, buildAIQuestRequest } from "../data/aiQuestProfile.js";
+
+const require = createRequire(import.meta.url);
+const { sanitizeAIQuestProfile, sanitizeGeneratedAIQuests } = require("../functions/aiQuestProfile.js");
+const { GENERATE_QUESTS_PROMPT } = require("../functions/geminiPrompts.js");
+
+const state = {
+  hunterName: "Must not leave the client",
+  email: "private@example.com",
+  lifeDomains: ["fitness", "career", "mindset", "bogus", "fitness"],
+  stats: { str: 9, int: 3, vit: 7, agi: 6, cha: 8, injected: 999 },
+  level: 12,
+  quests: [
+    { title: "Prepare interview notes", category: "int" },
+    { title: "System patrol", category: "str", isSystem: true },
+  ],
+  completedQuests: [
+    {
+      title: "Run 5 km",
+      category: "str",
+      difficulty: "normal",
+      notes: "private completion notes",
+      actualDurationMs: 32 * 60000,
+      feltDifficulty: "challenging",
+    },
+    {
+      title: "Review budget",
+      category: "int",
+      difficulty: "easy",
+      categoryFeedback: "good fit",
+    },
+  ],
+  customQuestPool: {
+    recentlyUsed: ["Prepare interview notes", "Call recruiter", "Call recruiter"],
+  },
+  goals: [
+    {
+      title: "Land a stronger role",
+      category: "career",
+      description: "private goal description",
+      milestones: [
+        { title: "Update portfolio", completed: true },
+        { title: "Send three applications", completed: false },
+      ],
+    },
+  ],
+  habits: [
+    {
+      title: "Morning mobility",
+      category: "fitness",
+      frequency: "daily",
+      active: true,
+      currentStreak: 4,
+      totalCompletions: 18,
+      history: { "2026-06-01": true },
+    },
+  ],
+  focus: {
+    totalMinutes: 440,
+    totalSessions: 16,
+    daily: {
+      "2026-05-25": { totalMinutes: 5000 },
+      "2026-05-26": { totalMinutes: 20 },
+      "2026-05-27": { totalMinutes: 30 },
+      "2026-05-28": { totalMinutes: 40 },
+      "2026-05-29": { totalMinutes: 50 },
+      "2026-05-30": { totalMinutes: 60 },
+      "2026-05-31": { totalMinutes: 70 },
+      "2026-06-01": { totalMinutes: 80 },
+    },
+    recentSessions: [{ title: "private raw session" }],
+  },
+  screenTime: { totalMinutes: 999 },
+};
+
+const profile = buildAIQuestProfile(state);
+assert.deepEqual(profile.lifeDomains, ["fitness", "career", "mindset"]);
+assert.deepEqual(profile.focusStats, ["str", "vit", "agi", "int", "cha"]);
+assert.equal(profile.categoryCompletions.str, 1);
+assert.equal(profile.recentCompletedQuests[0].title, "Review budget");
+assert.equal(profile.recentCompletedQuests[1].actualDurationMinutes, 32);
+assert.deepEqual(profile.customQuestPatterns, ["Prepare interview notes", "Review budget", "Run 5 km", "Call recruiter"]);
+assert.equal(profile.activeGoals[0].nextMilestone, "Send three applications");
+assert.equal(profile.activeHabits[0].currentStreak, 4);
+assert.equal(profile.focusSummary.recentMinutes, 350);
+
+const serializedProfile = JSON.stringify(profile);
+for (const privateValue of [
+  "Must not leave the client",
+  "private@example.com",
+  "private completion notes",
+  "private goal description",
+  "private raw session",
+  "999",
+]) {
+  assert(!serializedProfile.includes(privateValue), `profile must omit private value: ${privateValue}`);
+}
+
+const request = buildAIQuestRequest(state, "en");
+assert.deepEqual(Object.keys(request.stats), ["str", "int", "vit", "agi", "cha"]);
+assert.equal(request.weakestStat, "int");
+assert.equal(request.language, "en");
+
+const safeProfile = sanitizeAIQuestProfile({
+  ...profile,
+  lifeDomains: [...profile.lifeDomains, "bogus"],
+  customQuestPatterns: Array.from({ length: 12 }, (_, index) => `Pattern ${index}`),
+  activeHabits: [{ title: "A".repeat(200), currentStreak: 99999 }],
+});
+assert.deepEqual(safeProfile.lifeDomains, ["fitness", "career", "mindset"]);
+assert.equal(safeProfile.customQuestPatterns.length, 8);
+assert.equal(safeProfile.activeHabits[0].title.length, 140);
+assert.equal(safeProfile.activeHabits[0].currentStreak, 10000);
+
+const prompt = GENERATE_QUESTS_PROMPT(request.stats, request.level, request.weakestStat, request.recentQuests, safeProfile, "en");
+assert(prompt.includes("untrusted user-authored data"));
+assert(prompt.includes("fitness"));
+assert(prompt.includes("Pattern 0"));
+assert(prompt.includes("at least 2 Quests must connect"));
+
+const generatedQuests = sanitizeGeneratedAIQuests([
+  { title: { invalid: true }, category: "invalid", difficulty: "boss", desc: "D".repeat(600), subQuests: [{ title: "" }, { title: "Step" }] },
+  { title: "Second" },
+  { title: "Third" },
+  { title: "Fourth" },
+]);
+assert.equal(generatedQuests.length, 3);
+assert.equal(generatedQuests[0].title, "System-Quest");
+assert.equal(generatedQuests[0].category, "str");
+assert.equal(generatedQuests[0].difficulty, "normal");
+assert.equal(generatedQuests[0].desc.length, 500);
+assert.deepEqual(generatedQuests[0].subQuests, [{ title: "Step" }]);
+
+console.log("test-ai-quest-profile: all assertions passed.");

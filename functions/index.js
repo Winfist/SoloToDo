@@ -8,6 +8,13 @@ const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { checkAndIncrementRateLimit } = require("./rateLimiter");
 const { callGemini, callGeminiWithImage, callGeminiWithImages, parseJSON } = require("./geminiService");
 const {
+  clampInteger,
+  sanitizeAIQuestProfile,
+  sanitizeGeneratedAIQuests,
+  sanitizeQuestStats,
+  sanitizeRecentQuestTitles,
+} = require("./aiQuestProfile");
+const {
   VERIFY_QUEST_PROMPT,
   EXTRACT_TASKS_PROMPT,
   EXTRACT_SCREEN_TIME_PROMPT,
@@ -198,7 +205,7 @@ exports.extractScreenTime = onCall(CALL_OPTIONS, async (request) => {
 
 exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
   const uid = requireAuth(request);
-  const { stats, level, weakestStat, recentQuests } = request.data;
+  const { stats, level, weakestStat, recentQuests, profile } = request.data;
   const language = normalizeLanguage(request.data?.language);
 
   if (!stats || !level) {
@@ -207,23 +214,16 @@ exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
 
   await checkAndIncrementRateLimit(uid);
 
-  const prompt = GENERATE_QUESTS_PROMPT(stats, level, weakestStat, recentQuests, language);
+  const safeStats = sanitizeQuestStats(stats);
+  const safeLevel = clampInteger(level, 1, 1000);
+  const safeWeakestStat = ["str", "int", "vit", "agi", "cha"].includes(weakestStat) ? weakestStat : null;
+  const safeRecentQuests = sanitizeRecentQuestTitles(recentQuests);
+  const safeProfile = sanitizeAIQuestProfile(profile);
+  const prompt = GENERATE_QUESTS_PROMPT(safeStats, safeLevel, safeWeakestStat, safeRecentQuests, safeProfile, language);
   const raw = await callGemini(prompt);
   const result = parseJSON(raw, { quests: [] });
 
-  const quests = Array.isArray(result.quests)
-    ? result.quests.slice(0, 3).map((q) => ({
-      title: String(q.title || "System-Quest"),
-      category: ["str", "int", "vit", "agi", "cha"].includes(q.category) ? q.category : "str",
-      difficulty: ["easy", "normal", "hard"].includes(q.difficulty) ? q.difficulty : "normal",
-      desc: String(q.desc || ""),
-      subQuests: Array.isArray(q.subQuests)
-        ? q.subQuests.slice(0, 5).map((s) => ({ title: String(s.title || s) }))
-        : [],
-      isSystem: true,
-      aiGenerated: true,
-    }))
-    : [];
+  const quests = sanitizeGeneratedAIQuests(result.quests);
 
   return { quests };
 });
