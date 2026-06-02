@@ -1,7 +1,7 @@
 # Free / Pro Rebalance — "Voll spielbar + Limits" — Design Spec
 
 - **Date:** 2026-06-02
-- **Status:** Approved direction (brainstorm), pending spec review
+- **Status:** Approved — ready for implementation planning (§11 decisions confirmed 2026-06-02)
 - **Author:** John + Claude
 - **Related:** `2026-06-01-tier-levelup-tutorials-design.md` (level-gating context)
 
@@ -91,8 +91,7 @@ Events**. No Pro wall, no quota beyond the quest cap.
   Cinematic). *Ready-made themes/transitions stay the gem-earnable path — see §7.*
 - **Premium Widgets:** Biometrics, Vision Board. *(Screen Time parked — see §8.)*
 - **Ad-free Gem Flow:** free watches an ad for the daily gem bonus; Pro skips it.
-- **Story** — premium narrative content with no natural quota; leaning Pro-only
-  (open decision, see §11.3).
+- **Story** — premium narrative content with no natural quota; **Pro-only** (confirmed).
 
 **Pro pitch (5 pillars):** Unbegrenzt · KI-Forge · Pro-Insights · Dein Look · Werbefrei.
 
@@ -146,7 +145,7 @@ The quest cap only matters if it can't be trivially bypassed. Two leaks found in
 2. **Self-created quests grant full XP at user-chosen difficulty.** 10 quests on "Boss"
    (100 XP) ≈ 1000 base XP/day ≈ 10 levels at E-rank. The only brake is per-difficulty
    `waitHours` (Boss = 2h), itself skippable via `gem_quest_skip` (5 gems).
-   → **Fix (OPTIONAL / deferred — decision parked):** give self-created quests **reduced
+   → **Fix (OPTIONAL — confirmed deferred, not phase 1):** give self-created quests **reduced
    XP**, with the meaningful XP coming from System quests, dungeons, and (Pro) verified
    quests. Listed here so it's captured; **not committed in phase 1** — we ship guardrail #1
    first and only add this if the cap still leaks in practice. (Touches `computeXpGain`.)
@@ -164,8 +163,7 @@ so the user has earned some progress first:
 
 - **Max 1 per day** (no two on the same day).
 - **Unlocked at Level 3** (where `ai_task_scan` / `ai_quest_desc` first appear in
-  `featureUnlocks.js`) **and** after **≥ N completed quests** (N TBD during planning;
-  proposal: 5).
+  `featureUnlocks.js`) **and** after **≥ 5 completed quests** (confirmed).
 - Tracked via `state.ai.freeCreditsUsed` + `lastFreeCreditDate`. After 3 used → the AI
   entry points route to the Premium modal (`contextFeature` = the relevant AI feature).
 
@@ -212,7 +210,7 @@ free users themes (Crimson 400 gold, Void 80 gems) and page transitions (35–22
 
 | File | Change |
 |---|---|
-| `data/premium.js` | Add `FREE_LIMITS`; remove RPG-depth routes from `PREMIUM_ROUTE_FEATURES` (dungeon, equipment, shadows, jobs, story?, charisma); drop `soul_link` from Pro; update `getDailyQuestCreationStatus` for the slot cap; trim `PREMIUM_FEATURES` + benefit copy (cosmetics, screen_time); add `requireQuota` helper. |
+| `data/premium.js` | Add `FREE_LIMITS`; remove RPG-depth routes from `PREMIUM_ROUTE_FEATURES` (dungeon, equipment, shadows, jobs, charisma); keep `story` Pro; drop `soul_link` from Pro; update `getDailyQuestCreationStatus` for the slot cap; trim `PREMIUM_FEATURES` + benefit copy (cosmetics, screen_time); add `requireQuota` helper. |
 | `data/featureUnlocks.js` | No level changes; remains the "when it appears" source. |
 | `solo-leveling-v5.jsx` | `navigateToWithAccess` / `requirePremium` / the bounce `useEffect` (~L826) — for quota features, replace "block + bounce" with "allow entry; enforce quota inside the feature." Keep hard gating only for Bucket C. |
 | `hooks/useGameState.jsx` | New daily counters + reset in the rollover block; quota checks on dungeon run / shadow extract / equip / job pick; AI free-credit tracking; (optional) reduced self-quest XP in `computeXpGain`. |
@@ -230,12 +228,12 @@ Designed and built **after** this rebalance lands, as its own spec → plan → 
 
 ---
 
-## 11. Open decisions to confirm during planning
+## 11. Decisions (confirmed 2026-06-02)
 
-1. **Reduced self-quest XP (§5.2):** ship in phase 1, or defer until the cap proves leaky?
-   *(Current spec: deferred.)*
-2. **`N` completed quests** before the AI taste unlocks (§6). *(Proposal: 5.)*
-3. **Story** — stays free (level-gated only) or remains Pro? Currently in the Pro routes;
-   it has no natural quota. *(Lean: keep Pro, it's premium narrative content.)*
-4. **Events** — confirmed free? (Bundled with Social in §3; user approved Social explicitly,
-   Events by extension.)
+1. **Reduced self-quest XP (§5.2):** **deferred** — not in phase 1. Ship guardrail #1
+   (slot-purchase cap) first; revisit only if the 10/day cap still leaks in practice.
+2. **AI free taste (§6):** unlocks after **≥ 5 completed quests** (plus Level 3, max 1/day,
+   3 total).
+3. **Story:** **Pro-only** — premium narrative content, no natural quota; stays in
+   `PREMIUM_ROUTE_FEATURES`.
+4. **Events:** **free** (Bucket A), alongside Soul Link / Social.
