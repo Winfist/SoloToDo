@@ -1413,6 +1413,7 @@ export const de = {
       day7Bonus: "Tag-7-Bonus! +{gems} Gems (Streak: {streak} Tage)",
       dailyGemBonus: "+{gems} Daily Gem Bonus (Streak: {streak})",
       notEnoughGems: "Nicht genug Gems!",
+      extraSlotCapped: "Tageslimit fuer Extra-Slots erreicht. Hunter Pro hebt das Limit auf.",
       alreadyBought: "Bereits gekauft!",
       dungeonsRefreshed: "Neue Dungeons generiert!",
       boosterTitle: "BOOSTER AKTIVIERT",

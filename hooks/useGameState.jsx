@@ -25,7 +25,7 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getFocusStats } from '../data/lifeDomains.js';
-import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode } from '../data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
@@ -2056,6 +2056,14 @@ export function useGameState(initialHunterName, onLogout) {
     let consumableEffects = {};
     if (item.type === "consumable") {
       if (item.id === "extra_slot") {
+        const slot = canPurchaseExtraSlot({
+          premiumActive: getPremiumStatus(state?.premium).active,
+          extraDailySlots: state.extraDailySlots || 0,
+        });
+        if (!slot.ok) {
+          notify(ltState(state, "shop.notifications.extraSlotCapped"), "warning");
+          return;
+        }
         consumableEffects = { extraDailySlots: (state.extraDailySlots || 0) + 1 };
       }
       if (item.id === "potion_heal") {
@@ -2539,6 +2547,14 @@ export function useGameState(initialHunterName, onLogout) {
     } else if (item.type === "consumable") {
       // Handle specific consumables
       if (item.id === "gem_extra_slot") {
+        const slot = canPurchaseExtraSlot({
+          premiumActive: getPremiumStatus(state?.premium).active,
+          extraDailySlots: state.extraDailySlots || 0,
+        });
+        if (!slot.ok) {
+          notify(ltState(state, "shop.notifications.extraSlotCapped"), "warning");
+          return;
+        }
         effects.extraDailySlots = (state.extraDailySlots || 0) + 1;
       } else if (item.id === "gem_dungeon_refresh") {
         effects.dungeons = generateDungeons(getRank(state.level || 1).name);
