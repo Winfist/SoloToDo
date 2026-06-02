@@ -87,7 +87,7 @@ import { TaskScanModal } from './components/TaskScanModal.jsx';
 import { AIChatWidget } from './components/AIChatWidget.jsx';
 import QuestDetailModal from './components/QuestDetailModal.jsx';
 import PremiumAccessModal from './components/PremiumAccessModal.jsx';
-import { getDailyQuestCreationStatus, getPremiumFeatureForRoute, getQuotaStatus } from './data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumFeatureForRoute, getQuotaStatus, getAIFreeGenerationStatus } from './data/premium.js';
 import { getQuestVerificationPolicy } from './data/questVerification.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
@@ -318,6 +318,7 @@ function App({ initialHunterName, onLogout }) {
     iapSupported,
     premiumStatus,
     questCreationStatus,
+    recordAIFreeGeneration,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     handleNotificationClick,
@@ -737,14 +738,43 @@ function App({ initialHunterName, onLogout }) {
   const geminiAI = useGeminiAI(state);
   const [verificationTarget, setVerificationTarget] = useState(null);
   const [showTaskScan, setShowTaskScan] = useState(false);
+  const aiGenerationStatus = useMemo(() => getAIFreeGenerationStatus({
+    premiumActive: premiumStatus?.active,
+    state,
+    today: getToday(),
+  }), [
+    premiumStatus?.active,
+    state?.level,
+    state?.totalQuestsCompleted,
+    state?.completedQuests?.length,
+    state?.ai?.freeCreditsUsed,
+    state?.ai?.lastFreeCreditDate,
+    state?.lastActiveDate,
+  ]);
+
+  const requireAIGeneration = useCallback((feature, onAllowed) => {
+    if (aiGenerationStatus.allowed) {
+      onAllowed?.();
+      return true;
+    }
+    openPremiumModal(feature);
+    return false;
+  }, [aiGenerationStatus.allowed, openPremiumModal]);
+
+  const runAIGeneration = useCallback(async (feature, generate) => {
+    if (!requireAIGeneration(feature)) return null;
+    const result = await generate?.();
+    if (result) recordAIFreeGeneration?.();
+    return result;
+  }, [recordAIFreeGeneration, requireAIGeneration]);
 
   const canOfferPhotoVerification = useCallback((quest) => (
-    premiumStatus?.active
+    aiGenerationStatus.allowed
     && can('ai_verification')
     && state?.ai?.verificationEnabled
     && state?.ai?.enabled
     && getQuestVerificationPolicy(quest).mode === "photo"
-  ), [can, state?.ai?.enabled, state?.ai?.verificationEnabled, premiumStatus?.active]);
+  ), [aiGenerationStatus.allowed, can, state?.ai?.enabled, state?.ai?.verificationEnabled]);
 
   // Intercept completion only for curated single-photo quests.
   const handleCompleteQuest = useCallback((questId, rect) => {
@@ -1251,6 +1281,7 @@ function App({ initialHunterName, onLogout }) {
             <QuestVerifyModal
               quest={verificationTarget.quest}
               geminiAI={geminiAI}
+              runAIGeneration={runAIGeneration}
               onComplete={finishVerificationTarget}
               onSkip={() => finishVerificationTarget(false)}
             />
@@ -1260,6 +1291,7 @@ function App({ initialHunterName, onLogout }) {
           {showTaskScan && (
             <TaskScanModal
               geminiAI={geminiAI}
+              runAIGeneration={runAIGeneration}
               onConfirm={(tasks) => {
                 createQuestsFromInputs(tasks.map(t => ({
                   title: t.title,
@@ -1605,6 +1637,8 @@ function App({ initialHunterName, onLogout }) {
                   geminiAI={geminiAI}
                   premiumStatus={premiumStatus}
                   requirePremium={requirePremium}
+                  requireAIGeneration={requireAIGeneration}
+                  aiGenerationStatus={aiGenerationStatus}
                   openPremiumModal={openPremiumModal}
                   requireQuestSlot={requireQuestSlot}
                   togglePinnedQuest={togglePinnedQuest}
@@ -2383,9 +2417,9 @@ function App({ initialHunterName, onLogout }) {
                             {/* PHOTO IMPORT PLACEHOLDER */}
                             {can('ai_task_scan') && (
                               <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
-                                <div onClick={() => { if (can('ai_task_scan')) requirePremium("ai_task_scan", () => { setShowTaskScan(true); setShowCreate(false); }); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${premiumStatus?.active ? theme.primary + "55" : "rgba(168,85,247,0.55)"}`, background: premiumStatus?.active ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : "linear-gradient(90deg, rgba(168,85,247,0.18), rgba(34,211,238,0.05))", opacity: can('ai_task_scan') ? 1 : 0.45, cursor: can('ai_task_scan') ? "pointer" : "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
+                                <div onClick={() => { if (can('ai_task_scan')) requireAIGeneration("ai_task_scan", () => { setShowTaskScan(true); setShowCreate(false); }); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${premiumStatus?.active ? theme.primary + "55" : "rgba(168,85,247,0.55)"}`, background: premiumStatus?.active ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : "linear-gradient(90deg, rgba(168,85,247,0.18), rgba(34,211,238,0.05))", opacity: can('ai_task_scan') ? 1 : 0.45, cursor: can('ai_task_scan') ? "pointer" : "not-allowed", boxShadow: `inset 0 0 10px ${theme.primary}11` }}>
                                   <span style={{ fontSize: 14 }}>📸</span>
-                                  <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: premiumStatus?.active ? theme.primary : "#c084fc", fontWeight: 700, letterSpacing: 1 }}>{premiumStatus?.active ? "FOTO-SCAN" : "PRO SCAN"}</span>
+                                  <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: premiumStatus?.active ? theme.primary : "#c084fc", fontWeight: 700, letterSpacing: 1 }}>{aiGenerationStatus.allowed ? "FOTO-SCAN" : "PRO SCAN"}</span>
                                 </div>
                               </div>
 
@@ -2399,16 +2433,14 @@ function App({ initialHunterName, onLogout }) {
                                   <button
                                     disabled={geminiAI.isLoading}
                                     onClick={async () => {
-                                      requirePremium("ai_quest_desc", async () => {
-                                        const result = await geminiAI.generateQuestDesc(qTitle, qCat);
-                                        if (!result) return;
-                                        if (result.description) setQDescription(result.description.slice(0, 300));
-                                        if (result.subQuests?.length > 0) setQSubQuests(result.subQuests.slice(0, 5).map(s => ({ title: s })));
-                                      });
+                                      const result = await runAIGeneration("ai_quest_desc", () => geminiAI.generateQuestDesc(qTitle, qCat));
+                                      if (!result) return;
+                                      if (result.description) setQDescription(result.description.slice(0, 300));
+                                      if (result.subQuests?.length > 0) setQSubQuests(result.subQuests.slice(0, 5).map(s => ({ title: s })));
                                     }}
                                     style={{ background: geminiAI.isLoading ? "rgba(0,200,255,0.04)" : `rgba(0,200,255,0.1)`, border: `1px solid ${geminiAI.isLoading ? "rgba(0,200,255,0.12)" : "rgba(0,200,255,0.4)"}`, borderRadius: 3, color: geminiAI.isLoading ? "#2a4455" : "#00c8ff", padding: "3px 9px", fontFamily: "'JetBrains Mono','Courier New',monospace", fontSize: 8, letterSpacing: 2, cursor: geminiAI.isLoading ? "default" : "pointer", textTransform: "uppercase", boxShadow: geminiAI.isLoading ? "none" : "0 0 8px rgba(0,200,255,0.2)", transition: "all 0.2s" }}
                                   >
-                                    {geminiAI.isLoading ? "· · ·" : premiumStatus?.active ? "> KI.GEN" : "> PRO"}
+                                    {geminiAI.isLoading ? "· · ·" : aiGenerationStatus.allowed ? "> KI.GEN" : "> PRO"}
                                   </button>
                                 )}
                               </div>

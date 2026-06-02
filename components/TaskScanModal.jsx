@@ -18,7 +18,7 @@ const PHASE = {
   RESULTS: "results",
 };
 
-export function TaskScanModal({ geminiAI, onConfirm, onClose }) {
+export function TaskScanModal({ geminiAI, runAIGeneration, onConfirm, onClose }) {
   const { t } = useI18n();
   const [phase, setPhase] = useState(PHASE.UPLOAD);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -36,7 +36,7 @@ export function TaskScanModal({ geminiAI, onConfirm, onClose }) {
   async function handleScan() {
     if (!selectedFile) return;
     setPhase(PHASE.SCANNING);
-    const res = await geminiAI.scanTaskPhoto(selectedFile);
+    const res = await runAIGeneration("ai_task_scan", () => geminiAI.scanTaskPhoto(selectedFile));
     if (!res || !res.tasks?.length) {
       // Nothing detected or error — go back to upload
       setPhase(PHASE.UPLOAD);

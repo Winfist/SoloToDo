@@ -14,7 +14,7 @@ const PHASE = {
   RESULT: "result",       // Show verified / rejected
 };
 
-export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
+export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI, runAIGeneration }) {
   const { t } = useI18n();
   const [phase, setPhase] = useState(PHASE.CHOICE);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -36,12 +36,12 @@ export function QuestVerifyModal({ quest, onComplete, onSkip, geminiAI }) {
     const questSteps = (quest.subQuests || [])
       .map(step => typeof step === "string" ? step : step?.title)
       .filter(Boolean);
-    const res = await geminiAI.verifyQuest(selectedFile, {
+    const res = await runAIGeneration("ai_verification", () => geminiAI.verifyQuest(selectedFile, {
       questTitle: quest.title,
       questDesc: getQuestDescription(quest),
       questSteps,
       evidenceKind: getQuestVerificationPolicy(quest).evidenceKind,
-    });
+    }));
     if (!res) {
       // On error (rate limit, network) — treat as skipped
       onSkip();

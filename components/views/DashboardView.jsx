@@ -233,6 +233,8 @@ export default function DashboardView({
   geminiAI,
   premiumStatus,
   requirePremium,
+  requireAIGeneration,
+  aiGenerationStatus,
   openPremiumModal,
   requireQuestSlot,
   setDailyFocusQuest,
@@ -866,7 +868,7 @@ export default function DashboardView({
                     <button onClick={() => quickAddMode ? setQuickAddMode(false) : (requireQuestSlot ? requireQuestSlot(() => setQuickAddMode(true)) : setQuickAddMode(true))} style={{ minHeight: 36, borderRadius: 12, background: quickAddMode ? `${theme.primary}10` : "rgba(255,255,255,0.025)", color: quickAddMode ? theme.primary : "#64748b", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>QUICK +</button>
                   )}
                   {can('ai_task_scan') && setShowTaskScan && (
-                    <button onClick={() => requirePremium?.("ai_task_scan", () => setShowTaskScan(true))} style={{ minHeight: 36, borderRadius: 12, background: premiumStatus?.active ? "rgba(34,211,238,0.06)" : "rgba(168,85,247,0.08)", color: premiumStatus?.active ? theme.primary : "#c084fc", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>{premiumStatus?.active ? "SCAN" : "PRO SCAN"}</button>
+                    <button onClick={() => requireAIGeneration?.("ai_task_scan", () => setShowTaskScan(true))} style={{ minHeight: 36, borderRadius: 12, background: premiumStatus?.active ? "rgba(34,211,238,0.06)" : "rgba(168,85,247,0.08)", color: premiumStatus?.active ? theme.primary : "#c084fc", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>{aiGenerationStatus?.allowed ? "SCAN" : "PRO SCAN"}</button>
                   )}
                 </div>
 
