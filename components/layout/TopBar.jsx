@@ -45,11 +45,12 @@ function formatAmount(v) {
   return n.toLocaleString("de-DE");
 }
 
-function MenuRow({ icon, label, desc, color, badge, danger, onClick }) {
+function MenuRow({ icon, label, desc, color, badge, danger, tutorialKey, onClick }) {
   const [hover, setHover] = useState(false);
   return (
     <button
       onClick={onClick}
+      data-tutorial={tutorialKey}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -357,6 +358,7 @@ export default function TopBar({
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={L.menu}
             aria-expanded={menuOpen}
+            data-tutorial="topbar-menu"
             className="press-feedback"
             style={{
               flexShrink: 0,
@@ -420,7 +422,7 @@ export default function TopBar({
           >
             {/* Status header — power + streak */}
             {actions.map((a) => (
-              <MenuRow key={a.key} icon={a.icon} label={a.label} desc={a.desc} color={a.color} badge={a.badge} onClick={() => fire(a.key)} />
+              <MenuRow key={a.key} icon={a.icon} label={a.label} desc={a.desc} color={a.color} badge={a.badge} tutorialKey={`topbar-${a.key}`} onClick={() => fire(a.key)} />
             ))}
 
             {(actions.length > 0) && <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 4px" }} />}

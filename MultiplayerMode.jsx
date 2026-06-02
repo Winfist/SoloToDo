@@ -13,7 +13,7 @@ export default function MultiplayerMode({ playerState, onExitMP, onStateUpdate }
   const rankColor = getRankColor(rank);
 
   return (
-    <div style={{
+    <div data-tutorial="multiplayer-view" style={{
       minHeight: "100vh",
       background: MP_THEME.bg,
       color: "#f8fafc",

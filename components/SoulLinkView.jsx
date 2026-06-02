@@ -47,7 +47,7 @@ export default function SoulLinkView({
   };
 
   return (
-    <div style={{
+    <div data-tutorial="soullink-view" style={{
       position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.92)",
       display: "flex", flexDirection: "column", alignItems: "center",
       overflowY: "auto", padding: "1.5rem 1rem", fontFamily: "'Courier New', monospace"

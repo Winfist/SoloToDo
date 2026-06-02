@@ -1678,7 +1678,7 @@ function App({ initialHunterName, onLogout }) {
               {/* ◆◆◆ DUNGEONS ◆◆◆ */}
               {
                 view === "dungeon" && (
-                  <div style={{ animation: "fadeIn 0.35s ease" }}>
+                  <div data-tutorial="dungeon-view" style={{ animation: "fadeIn 0.35s ease" }}>
                     <div style={{ marginBottom: 16 }}>
                       <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>DUNGEON GATES</div>
                       <div style={{ fontSize: 12, color: "#334155", fontFamily: "'JetBrains Mono',monospace", display: "flex", alignItems: "center", gap: 5 }}>
@@ -1686,7 +1686,7 @@ function App({ initialHunterName, onLogout }) {
                       </div>
                     </div>
                     {activeDungeons.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)" }}><div style={{ marginBottom: 10 }}><GameIcon src={GATE_ICONS.normal} fallback="🚪" size={48} glow glowColor={theme.primary} animate="float" /></div><div style={{ fontSize: 14, color: "#475569" }}>{tr("systemHub.noActiveGates")}</div><div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>{tr("systemHub.gatesReturnTomorrow")}</div></div>}
-                    {activeDungeons.map((d, i) => <div key={d.instanceId} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={(dungeon) => { const fee = DUNGEON_ENTRY_FEES[dungeon.rank] || 0; if (fee > 0) persist({ ...state, gold: state.gold - fee }); setActiveDungeon(dungeon); }} modifier={modifier} playerGold={state.gold} /></div>)}
+                    {activeDungeons.map((d, i) => <div key={d.instanceId} data-tutorial={i === 0 ? "dungeon-gate" : undefined} style={{ marginBottom: 10, animation: `slideUp 0.35s ease ${i * 0.1}s both` }}><DungeonGate dungeon={d} playerStats={{ ...state.stats, ...Object.fromEntries(CATEGORIES.map(c => [c.key, (state.stats[c.key] || 0) + (equipBonuses[c.key + "Bonus"] || 0)])) }} theme={theme} onEnter={(dungeon) => { const fee = DUNGEON_ENTRY_FEES[dungeon.rank] || 0; if (fee > 0) persist({ ...state, gold: state.gold - fee }); setActiveDungeon(dungeon); }} modifier={modifier} playerGold={state.gold} /></div>)}
                     {(state.dungeons || []).filter(d => d.cleared).length > 0 && (
                       <div style={{ marginTop: 20 }}>
                         <div style={{ fontSize: 10, letterSpacing: 3, color: "#334155", fontFamily: "'JetBrains Mono',monospace", marginBottom: 10 }}>HEUTE ABSOLVIERT</div>
@@ -1882,7 +1882,7 @@ function App({ initialHunterName, onLogout }) {
               {/* ◆◆◆ ACHIEVEMENTS ◆◆◆ */}
               {
                 view === "achievements" && (
-                  <div style={{ animation: "fadeIn 0.35s ease" }}>
+                  <div data-tutorial="achievements-view" style={{ animation: "fadeIn 0.35s ease" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                       <div>
                         <div style={{ fontSize: 10, letterSpacing: 3, color: "#64748b", fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>ACHIEVEMENTS</div>
@@ -2124,7 +2124,12 @@ function App({ initialHunterName, onLogout }) {
                 onOpenSoulLink={() => setShowSoulLink(true)}
                 shellTopOffset={headerOffset}
                 shellBottomOffset="60px"
-                tutorialStepId={tutorialRuntimeState.activeTutorialId === "onboarding" ? tutorialRuntimeState.stepId : null}
+                tutorialStepId={
+                  tutorialRuntimeState.activeTutorialId === "onboarding" ||
+                    tutorialRuntimeState.activeTutorialId?.startsWith("tier_")
+                    ? tutorialRuntimeState.stepId
+                    : null
+                }
               />
             </div>
           )}

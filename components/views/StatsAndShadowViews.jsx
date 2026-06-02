@@ -128,7 +128,7 @@ export function ShadowArmyView({
   const { t, locale } = useI18n();
   const { shadowClasses, shadowTiers, namedShadows: localizedNamedShadows } = React.useMemo(() => getLocalizedCatalog(locale), [locale]);
   return (
-    <div style={{ animation: "fadeIn 0.35s ease" }}>
+    <div data-tutorial="shadow-view" style={{ animation: "fadeIn 0.35s ease" }}>
       {/* Monarch's Banner */}
       <div style={{ position: "relative", background: "linear-gradient(160deg,rgba(4,3,12,0.99) 0%,rgba(16,6,32,0.97) 100%)", border: "1px solid #7c3aed44", borderRadius: 20, padding: "22px 20px 16px", marginBottom: 16, overflow: "hidden", boxShadow: "0 8px 40px rgba(124,58,237,0.12), inset 0 1px 0 rgba(167,139,250,0.06)" }}>
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 340, height: 340, background: "conic-gradient(from 0deg,transparent 0%,#7c3aed04 8%,transparent 16%)", animation: "monarchRays 25s linear infinite", pointerEvents: "none" }} />

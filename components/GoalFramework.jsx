@@ -428,7 +428,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
     }, [state, persist, notify]);
 
     return (
-        <div style={{ animation: "fadeIn 0.35s ease" }}>
+        <div data-tutorial="goals-view" style={{ animation: "fadeIn 0.35s ease" }}>
             {showCreate && <CreateGoalModal onClose={closeCreate} onSave={handleCreate} theme={theme} />}
             {editingGoal && <CreateGoalModal onClose={closeEdit} onSave={handleEdit} initialGoal={editingGoal} theme={theme} />}
 
@@ -437,6 +437,22 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                     <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", textShadow: `0 0 20px ${theme?.primary || "#22d3ee"}33` }}>Main Quests</div>
                     <div style={{ fontSize: 11, color: "#64748b", marginTop: 2, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>ZIELE · MEILENSTEINE</div>
                 </div>
+                <button
+                    onClick={openCreate}
+                    data-tutorial="goal-create"
+                    aria-label="Neues Ziel erstellen"
+                    style={{
+                        width: 38, height: 38, borderRadius: 12,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
+                        color: theme?.accent || "#67e8f9",
+                        border: `1px solid ${theme?.primary || "#22d3ee"}44`,
+                        fontSize: 22, lineHeight: 1, cursor: "pointer",
+                        boxShadow: `0 0 18px ${theme?.primary || "#22d3ee"}12`,
+                    }}
+                >
+                    +
+                </button>
             </div>
 
             {activeGoals.length > 0 && (
@@ -461,7 +477,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                         <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
                             Ein guter Hunter kämpft für ein höheres Ziel.
                         </div>
-                        <button onClick={openCreate} style={{
+                        <button onClick={openCreate} data-tutorial="goal-create" style={{
                             padding: "10px 24px", borderRadius: 12, fontSize: 11, fontWeight: 700,
                             background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
                             color: theme?.accent || "#67e8f9", border: `1px solid ${theme?.primary || "#22d3ee"}44`,

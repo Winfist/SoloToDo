@@ -46,6 +46,14 @@ const ONBOARDING_PORTAL_MODE_STEPS = new Set([
 const ONBOARDING_APPS_MODE_STEPS = new Set([
   "explain_app_grid",
   "switch_to_portal",
+  "tier3_open_island",
+  "tier3_open_achievements",
+  "tier5_open_island",
+  "tier5_open_shadows",
+  "tier6_open_island",
+  "tier6_open_jobs",
+  "tier7_open_island",
+  "tier7_open_soullink",
 ]);
 const ONBOARDING_STATS_PORTAL_STEPS = new Set([
   "explain_portal_mode",

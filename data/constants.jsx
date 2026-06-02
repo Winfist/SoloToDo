@@ -2168,7 +2168,7 @@ function JobsView({ state, onSwitch, onActivate, theme }) {
   const currentJob = state.jobs?.current;
 
   return (
-    <div style={{ animation: "fadeIn 0.5s ease" }}>
+    <div data-tutorial="jobs-view" style={{ animation: "fadeIn 0.5s ease" }}>
       <div style={{ marginBottom: 24, padding: "0 4px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
           <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
