@@ -46,3 +46,19 @@ export function canPurchaseExtraSlot({ premiumActive = false, extraDailySlots = 
   const remaining = Math.max(0, FREE_LIMITS.purchasableSlotsPerDay - purchased);
   return { ok: remaining > 0, remaining };
 }
+
+// featureKey → which daily counter field + which FREE_LIMITS key caps it.
+export const QUOTA_CONFIG = {
+  dungeons:          { counter: "dailyDungeonsRun", limitKey: "dungeonsPerDay" },
+  charisma_dungeons: { counter: "dailyCharismaRun", limitKey: "charismaDungeonsPerDay" },
+};
+
+// Pure per-feature quota status. `state` supplies the daily counter; `premiumActive` from caller.
+export function getQuotaStatus(featureKey, { premiumActive = false, state = {} } = {}) {
+  const cfg = QUOTA_CONFIG[featureKey];
+  if (!cfg) return { tracked: false, premiumActive, used: 0, limit: Infinity, remaining: Infinity, allowed: true };
+  const used = Math.max(0, Number(state?.[cfg.counter]) || 0);
+  const limit = premiumActive ? Infinity : Number(FREE_LIMITS[cfg.limitKey]) || 0;
+  const remaining = premiumActive ? Infinity : Math.max(0, limit - used);
+  return { tracked: true, premiumActive, used, limit, remaining, allowed: premiumActive || used < limit };
+}

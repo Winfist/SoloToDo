@@ -1,4 +1,4 @@
-import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot } from "../data/freeLimits.js";
+import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG } from "../data/freeLimits.js";
 
 let failures = 0;
 const assert = (condition, message) => {
@@ -49,6 +49,25 @@ assert(canPurchaseExtraSlot({ premiumActive: false, extraDailySlots: 0 }).ok ===
 assert(canPurchaseExtraSlot({ premiumActive: false, extraDailySlots: 5 }).ok === false, "free blocked at 5 bought");
 assert(canPurchaseExtraSlot({ premiumActive: false, extraDailySlots: 4 }).remaining === 1, "1 slot remaining at 4 bought");
 assert(canPurchaseExtraSlot({ premiumActive: true, extraDailySlots: 99 }).ok === true, "premium never blocked");
+
+// ── getQuotaStatus ──
+assert(QUOTA_CONFIG.dungeons.limitKey === "dungeonsPerDay", "dungeons maps to dungeonsPerDay");
+
+// untracked feature → always allowed, infinite
+let q = getQuotaStatus("not_a_feature", { premiumActive: false, state: {} });
+assert(q.tracked === false && q.allowed === true && q.remaining === Infinity, "unknown feature is unlimited");
+
+// free dungeons, none used
+q = getQuotaStatus("dungeons", { premiumActive: false, state: {} });
+assert(q.limit === 3 && q.remaining === 3 && q.allowed === true, "free dungeons start at 3/3");
+
+// free dungeons, at cap
+q = getQuotaStatus("dungeons", { premiumActive: false, state: { dailyDungeonsRun: 3 } });
+assert(q.remaining === 0 && q.allowed === false, "free dungeons blocked at 3 run");
+
+// premium dungeons unlimited
+q = getQuotaStatus("dungeons", { premiumActive: true, state: { dailyDungeonsRun: 99 } });
+assert(q.limit === Infinity && q.allowed === true, "premium dungeons unlimited");
 
 if (failures) { console.error(`\n${failures} assertion(s) failed.`); process.exit(1); }
 console.log("test-free-limits: all assertions passed.");
