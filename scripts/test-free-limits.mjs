@@ -1,4 +1,4 @@
-import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG, canEquipRarity, RARITY_ORDER, canAddShadow } from "../data/freeLimits.js";
+import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG, canEquipRarity, RARITY_ORDER, canAddShadow, canSwitchJob } from "../data/freeLimits.js";
 
 let failures = 0;
 const assert = (condition, message) => {
@@ -83,6 +83,13 @@ assert(canAddShadow({ premiumActive: false, shadowCount: 0 }).ok === true, "free
 assert(canAddShadow({ premiumActive: false, shadowCount: 4 }).remaining === 1, "1 shadow slot left at 4");
 assert(canAddShadow({ premiumActive: false, shadowCount: 5 }).ok === false, "free blocked at 5 shadows");
 assert(canAddShadow({ premiumActive: true, shadowCount: 99 }).ok === true, "premium unlimited shadows");
+
+// ── canSwitchJob ──
+assert(canSwitchJob({ premiumActive: true, targetJob: "archmage", currentJob: "berserker", currentJobLevel: 9 }).ok === true, "premium can always switch");
+assert(canSwitchJob({ premiumActive: false, targetJob: "berserker", currentJob: null, currentJobLevel: 0 }).ok === true, "free first pick ok");
+assert(canSwitchJob({ premiumActive: false, targetJob: "berserker", currentJob: "berserker", currentJobLevel: 5 }).ok === true, "same job no-op ok");
+assert(canSwitchJob({ premiumActive: false, targetJob: "archmage", currentJob: "berserker", currentJobLevel: 0 }).ok === true, "free switch while current lv0 ok");
+assert(canSwitchJob({ premiumActive: false, targetJob: "archmage", currentJob: "berserker", currentJobLevel: 1 }).ok === false, "free cannot switch after leveling");
 
 if (failures) { console.error(`\n${failures} assertion(s) failed.`); process.exit(1); }
 console.log("test-free-limits: all assertions passed.");

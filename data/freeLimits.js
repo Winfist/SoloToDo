@@ -73,6 +73,15 @@ export function canAddShadow({ premiumActive = false, shadowCount = 0 } = {}) {
   return { ok: remaining > 0, remaining };
 }
 
+// Can a (free) user switch class? Free may switch freely until the current class earns XP
+// (level > 0); after that they are committed. Premium = always (multi-class + respec).
+export function canSwitchJob({ premiumActive = false, targetJob = null, currentJob = null, currentJobLevel = 0 } = {}) {
+  if (premiumActive) return { ok: true };
+  if (!currentJob || targetJob === currentJob) return { ok: true };
+  if ((Number(currentJobLevel) || 0) > 0) return { ok: false };
+  return { ok: true };
+}
+
 // Pure per-feature quota status. `state` supplies the daily counter; `premiumActive` from caller.
 export function getQuotaStatus(featureKey, { premiumActive = false, state = {} } = {}) {
   const cfg = QUOTA_CONFIG[featureKey];
