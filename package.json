@@ -21,6 +21,7 @@
     "test:icons": "node scripts/test-feature-icons.mjs",
     "test:free-limits": "node scripts/test-free-limits.mjs",
     "test:free-pro-phase4": "node scripts/test-free-pro-phase4.mjs",
+    "test:notification-presets": "node scripts/test-notification-presets.mjs",
     "test:ai-quest-profile": "node scripts/test-ai-quest-profile.mjs"
   },
   "dependencies": {

@@ -4,6 +4,7 @@ import { getToday, getLocalDateKey, formatLocalDateTime } from "../data/dateUtil
 import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { getStateLocale, translate } from "../data/i18n.js";
+import { canFireNotification, getNotificationPreset, isEssentialCategory } from "../data/notificationPresets.js";
 
 import { Capacitor } from '@capacitor/core';
 
@@ -82,6 +83,29 @@ function wasAlertSentToday(tag) {
     return false;
 }
 
+const NOTIFICATION_COUNT_KEY = "sl_notif_nonessential_count";
+
+function getNonEssentialNotificationCountToday(today = getToday()) {
+    try {
+        if (typeof localStorage === "undefined") return 0;
+        const raw = localStorage.getItem(NOTIFICATION_COUNT_KEY);
+        if (!raw) return 0;
+        const parsed = JSON.parse(raw);
+        return parsed?.date === today && Number.isInteger(parsed.count) ? parsed.count : 0;
+    } catch {
+        return 0;
+    }
+}
+
+function incrementNonEssentialNotificationCountToday(category, today = getToday()) {
+    if (isEssentialCategory(category)) return;
+    try {
+        if (typeof localStorage === "undefined") return;
+        const count = getNonEssentialNotificationCountToday(today) + 1;
+        localStorage.setItem(NOTIFICATION_COUNT_KEY, JSON.stringify({ date: today, count }));
+    } catch { }
+}
+
 // ── CHECK FUNCTIONS ──────────────────────────────────────────
 
 // NEW: General daily activity reminder — fires at 11, 14, or 17 Uhr if nothing done today
@@ -111,6 +135,7 @@ function checkDailyActivity(state) {
         title: nt(state, "notifications.dailyActivityTitle"),
         body: msg,
         tag: `daily-activity-${bucket}`,
+        category: "daily_activity",
     };
 }
 
@@ -128,6 +153,7 @@ function checkStreakProtection(state) {
         title: nt(state, "notifications.streakDangerTitle"),
         body: nt(state, "notifications.streakDangerBody", { streak, hours: hoursLeft }),
         tag: `streak-protection-${hour < 18 ? "early" : "late"}`,
+        category: "streak_protection",
     };
 }
 
@@ -140,6 +166,7 @@ function checkLateNightEnergy(state) {
         title: nt(state, "notifications.lateNightTitle"),
         body: nt(state, "notifications.lateNightBody", { title: quests[0].title }),
         tag: "late-night-energy",
+        category: "late_night",
     };
 }
 
@@ -152,6 +179,7 @@ function checkEmergencyQuest(state) {
         title: nt(state, "notifications.emergencyExpiringTitle"),
         body: nt(state, "notifications.emergencyExpiringBody", { title: state.emergencyQuest.title, minutes: Math.round(hoursLeft * 60) }),
         tag: "emergency-quest",
+        category: "emergency_expiry",
     };
 }
 
@@ -163,6 +191,7 @@ function checkEmergencyMorning(state) {
         title: nt(state, "notifications.emergencyMorningTitle"),
         body: nt(state, "notifications.emergencyMorningBody", { title: state.emergencyQuest.title }),
         tag: "emergency-morning",
+        category: "emergency_morning",
     };
 }
 
@@ -178,6 +207,7 @@ function checkHabitNudge(state) {
         title: nt(state, "notifications.habitOpenTitle"),
         body: nt(state, "notifications.habitOpenBody", { count: unfinished, plural: unfinished > 1 ? "s" : "" }),
         tag: "habit-nudge",
+        category: "habit_nudge",
     };
 }
 
@@ -190,6 +220,7 @@ function checkDungeonReset(state) {
         title: nt(state, "notifications.gatesTitle"),
         body: nt(state, "notifications.gatesBody"),
         tag: "dungeon-reset",
+        category: "gate_reset",
     };
 }
 
@@ -204,6 +235,7 @@ function checkCustomReminders(state) {
                 title: r.title || nt(state, "notifications.reminderTitle"),
                 body: quest ? nt(state, "notifications.reminderQuestBody", { title: quest.title }) : (r.body || nt(state, "notifications.reminderTitle")),
                 tag: `reminder-${r.id}`,
+                category: "custom_reminder",
                 reminderId: r.id,
                 questId: r.questId,
             };
@@ -226,6 +258,7 @@ function checkDueDateWarning(state) {
             ? nt(state, "notifications.overdueBody", { count: overdue.length, plural: overdue.length > 1 ? "s" : "", title: target.title })
             : nt(state, "notifications.dueTodayBody", { count: dueToday.length, plural: dueToday.length > 1 ? "s" : "", title: target.title }),
         tag: `due-date-${today}`,
+        category: "due_warning",
     };
 }
 
@@ -243,6 +276,7 @@ function checkDueDateUpcoming(state) {
         title: nt(state, "notifications.dueTomorrowTitle"),
         body: nt(state, "notifications.dueTomorrowBody", { title: dueTomorrow[0].title }),
         tag: `due-upcoming-${tomorrowKey}`,
+        category: "due_upcoming",
     };
 }
 
@@ -265,6 +299,7 @@ function checkKalenderRuneDeadlines(state) {
         title: nt(state, "notifications.runeDeadlineTitle"),
         body: nt(state, "notifications.runeDeadlineBody", { title: soon[0].title, days: soon[0].dueDate === in2Key ? 2 : 3 }),
         tag: `rune-deadline-${in3Key}`,
+        category: "rune_deadline",
     };
 }
 
@@ -288,6 +323,7 @@ function checkWeeklyQuestExpiry(state) {
             verb: expiring.length > 1 ? (getStateLocale(state) === "de" ? "laufen" : "expire") : (getStateLocale(state) === "de" ? "laeuft" : "expires"),
         }),
         tag: `weekly-expiry-${getToday()}`,
+        category: "weekly_expiry",
     };
 }
 
@@ -303,6 +339,7 @@ function checkWeeklySummary(state) {
         title: nt(state, "notifications.weeklySummaryTitle"),
         body: nt(state, "notifications.weeklySummaryBody", { quests: weekQuests, streak: state?.streak || 0, level: state?.level || 1 }),
         tag: "weekly-summary",
+        category: "weekly_summary",
     };
 }
 
@@ -327,15 +364,34 @@ export async function scheduleBackgroundNotifications(state) {
         let nextId = 1000;
         const today = getToday();
         const now = new Date();
+        const preset = getNotificationPreset(state);
+        const scheduledNonEssentialByDate = new Map();
 
         // Helper to add a notification only if schedule is in the future
-        const addNotif = (title, body, at) => {
-            if (at > now) {
-                notifications.push({
-                    id: nextId++, title, body,
-                    schedule: { at, allowWhileIdle: true },
-                    smallIcon: "ic_notification", sound: "default",
-                });
+        const addNotif = (title, body, at, category) => {
+            if (at <= now) return;
+
+            const dateKey = getLocalDateKey(at);
+            const alreadyFired = dateKey === today ? getNonEssentialNotificationCountToday(today) : 0;
+            const alreadyScheduled = scheduledNonEssentialByDate.get(dateKey) || 0;
+            if (!canFireNotification({
+                presetOrKey: preset,
+                category,
+                firedToday: alreadyFired + alreadyScheduled,
+                hour: at.getHours(),
+            })) {
+                console.log(`[SoloToDo] Skipped scheduled notification by preset: ${category}`);
+                return;
+            }
+
+            notifications.push({
+                id: nextId++, title, body,
+                schedule: { at, allowWhileIdle: true },
+                smallIcon: "ic_notification", sound: "default",
+                extra: { category },
+            });
+            if (!isEssentialCategory(category)) {
+                scheduledNonEssentialByDate.set(dateKey, alreadyScheduled + 1);
             }
         };
 
@@ -348,49 +404,49 @@ export async function scheduleBackgroundNotifications(state) {
             const d11 = new Date(); d11.setHours(11, 0, 0, 0);
             const d14 = new Date(); d14.setHours(14, 0, 0, 0);
             const d17 = new Date(); d17.setHours(17, 0, 0, 0);
-            addNotif(nt(state, "notifications.noActivityTitle"), nt(state, "notifications.noActivityBody"), d11);
-            addNotif(nt(state, "notifications.noQuestTitle"), nt(state, "notifications.noQuestBody"), d14);
-            addNotif(nt(state, "notifications.dayEndingTitle"), nt(state, "notifications.dayEndingBody"), d17);
+            addNotif(nt(state, "notifications.noActivityTitle"), nt(state, "notifications.noActivityBody"), d11, "daily_activity");
+            addNotif(nt(state, "notifications.noQuestTitle"), nt(state, "notifications.noQuestBody"), d14, "daily_activity");
+            addNotif(nt(state, "notifications.dayEndingTitle"), nt(state, "notifications.dayEndingBody"), d17, "daily_activity");
         }
 
         // Streak protection at 19:00
         if ((state?.streak || 0) >= 3 && !hasActivity) {
             const d19 = new Date(); d19.setHours(19, 0, 0, 0);
-            addNotif(nt(state, "notifications.streakDangerTitle"), nt(state, "notifications.streakDangerBody", { streak: state.streak, hours: 5 }), d19);
+            addNotif(nt(state, "notifications.streakDangerTitle"), nt(state, "notifications.streakDangerBody", { streak: state.streak, hours: 5 }), d19, "streak_protection");
         }
 
         // Late Night Energy Warning at 21:00
         const deepQuests = (state?.quests || []).filter(q => !q.completed && q.energy === "deep");
         if (deepQuests.length > 0) {
             const d21 = new Date(); d21.setHours(21, 0, 0, 0);
-            addNotif(nt(state, "notifications.lateNightTitle"), nt(state, "notifications.lateNightBody", { title: deepQuests[0].title }), d21);
+            addNotif(nt(state, "notifications.lateNightTitle"), nt(state, "notifications.lateNightBody", { title: deepQuests[0].title }), d21, "late_night");
         }
 
         // Habit reminder at 20:00
         const unfinished = (state?.habits || []).filter(h => h.active && !h.history?.[today]?.completed).length;
         if (unfinished > 0) {
             const d20 = new Date(); d20.setHours(20, 0, 0, 0);
-            addNotif(nt(state, "notifications.habitOpenTitle"), nt(state, "notifications.habitOpenBody", { count: unfinished, plural: unfinished > 1 ? "s" : "" }), d20);
+            addNotif(nt(state, "notifications.habitOpenTitle"), nt(state, "notifications.habitOpenBody", { count: unfinished, plural: unfinished > 1 ? "s" : "" }), d20, "habit_nudge");
         }
 
         // Emergency quest: 2h before expiry
         if (state?.emergencyQuest && !state.emergencyDone && !state.emergencyFailed) {
             const expires = new Date(state.emergencyQuest.timeLimit);
             const warnAt = new Date(expires.getTime() - 2 * 60 * 60 * 1000);
-            addNotif(nt(state, "notifications.emergencyExpiringTitle"), nt(state, "notifications.emergencyExpiringBody", { title: state.emergencyQuest.title, minutes: 120 }), warnAt);
+            addNotif(nt(state, "notifications.emergencyExpiringTitle"), nt(state, "notifications.emergencyExpiringBody", { title: state.emergencyQuest.title, minutes: 120 }), warnAt, "emergency_expiry");
         }
 
         // DueDate reminders at 9 AM on due day
         for (const q of (state?.quests || []).filter(q => !q.completed && q.dueDate)) {
             const dueAt = new Date(q.dueDate + "T09:00:00");
-            addNotif(nt(state, "notifications.dueTodayTitle"), nt(state, "notifications.dueTodayBody", { count: 1, plural: "", title: q.title }), dueAt);
+            addNotif(nt(state, "notifications.dueTodayTitle"), nt(state, "notifications.dueTodayBody", { count: 1, plural: "", title: q.title }), dueAt, "due_warning");
         }
 
         // Tomorrow morning dungeon reset at 8 AM
         const tomorrow8 = new Date();
         tomorrow8.setDate(tomorrow8.getDate() + 1);
         tomorrow8.setHours(8, 0, 0, 0);
-        addNotif(nt(state, "notifications.gatesTitle"), nt(state, "notifications.gatesBody"), tomorrow8);
+        addNotif(nt(state, "notifications.gatesTitle"), nt(state, "notifications.gatesBody"), tomorrow8, "gate_reset");
 
         if (notifications.length > 0) {
             await LocalNotifications.schedule({ notifications });
@@ -405,32 +461,40 @@ export async function scheduleBackgroundNotifications(state) {
 
 export function runReminderChecks(state) {
     console.log('[SoloToDo:Notif] Running reminder checks...');
+    const preset = getNotificationPreset(state);
 
     const checks = [
         checkCustomReminders,
+        checkEmergencyQuest,
         checkKalenderRuneDeadlines,   // Artifact: 3-day deadline warning
         checkDueDateWarning,
         checkDueDateUpcoming,
-        checkWeeklyQuestExpiry,
-        checkDailyActivity,       // NEW: fires throughout the day
-        checkStreakProtection,
-        checkLateNightEnergy,
-        checkEmergencyQuest,
         checkEmergencyMorning,
         checkHabitNudge,
         checkDungeonReset,
+        checkWeeklyQuestExpiry,
         checkWeeklySummary,
+        checkStreakProtection,
+        checkDailyActivity,       // NEW: fires throughout the day
+        checkLateNightEnergy,
     ];
 
     for (const check of checks) {
         const result = check(state);
         if (result) {
+            const firedToday = getNonEssentialNotificationCountToday();
+            const hour = new Date().getHours();
+            if (!canFireNotification({ presetOrKey: preset, category: result.category, firedToday, hour })) {
+                console.log(`[SoloToDo:Notif] Skipped by notification preset: ${result.category || result.tag}`);
+                continue;
+            }
             if (!result.reminderId && wasAlertSentToday(result.tag)) {
                 console.log(`[SoloToDo:Notif] Skipped (already sent): ${result.tag}`);
                 continue;
             }
             console.log(`[SoloToDo:Notif] Triggered: ${result.tag} → "${result.title}"`);
             sendNotification(result.title, result.body, result.tag);
+            incrementNonEssentialNotificationCountToday(result.category);
             return result;
         }
     }
@@ -518,6 +582,7 @@ export function NotificationBanner({ state, theme, onUpdateReminder, onReminderF
     }, [
         state?.streak,
         state?.emergencyQuest,
+        state?.settings?.notificationLevel,
         (state?.habits || []).length,
         (state?.quests || []).filter(q => !q.completed).length,
         (state?.reminders || []).map(r => `${r.id}:${r.fired}`).join("|"),
@@ -531,6 +596,7 @@ export function NotificationBanner({ state, theme, onUpdateReminder, onReminderF
     }, [
         state?.streak,
         state?.emergencyQuest?.id,
+        state?.settings?.notificationLevel,
         (state?.completedQuests || []).length,
         (state?.habits || []).filter(h => h.active).length,
         (state?.quests || []).filter(q => !q.completed && q.dueDate).length,

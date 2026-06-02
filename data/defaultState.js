@@ -194,6 +194,7 @@ export const DEFAULT_STATE = {
     language: "de",
     autoSystemTasks: false,
     questIntensity: "baby_gate",
+    notificationLevel: "standard",
     pageTransitionSpeed: 1,
   },
   widgetConfig: {

@@ -12,6 +12,7 @@ import QuestIntensityControl from "./QuestIntensityControl.jsx";
 import QuestPlanningControl from "./QuestPlanningControl.jsx";
 import { getPremiumFeatureForRoute, getPremiumStatus, isPremiumWidgetModule, PREMIUM_PRODUCT } from "../data/premium.js";
 import { LANGUAGE_OPTIONS, getLocaleLabel, normalizeLanguageMode, translate, writeBootstrapLanguage } from "../data/i18n.js";
+import { NOTIFICATION_PRESETS, formatNotificationPresetSummary, getNotificationPreset } from "../data/notificationPresets.js";
 import { useI18n } from "./i18n/I18nProvider.jsx";
 import { SCREEN_TIME_ENABLED } from "../data/featureFlags.js";
 
@@ -72,7 +73,7 @@ const THEME_FLAVOR = {
 const TRANSITION_FLAVOR = {
   domain_shift: "Der klassische System-Shift mit Mana-Sweep und sauberem HUD-Reveal.",
   shadow_step: "Ein lautloser Dash durch Schattenklingen und Nachbilder.",
-  red_gate: "Ein rotes Dungeon-Tor reisst die Oberfläche der App auf.",
+  red_gate: "Ein rotes Dungeon-Tor reißt die Oberfläche der App auf.",
   frost_seal: "Frostige Runen, Glasbruch und ein eiskalter Monarchen-Schnitt.",
   dragons_breath: "Drachenfeuer, Aschefunken und ein brennender Portal-Durchbruch.",
   celestial_judgment: "Goldene Lichtlanzen und Herrscher-Geometrie im First-Class-Look.",
@@ -137,7 +138,189 @@ function SettingRow({ label, desc, value, onChange, color, disabled, lockLevel, 
   );
 }
 
-// ─── PREMIUM LINE ICONS (cohesive set; replaces emoji section + widget-module icons) ──
+// Notification preset picker.
+function NotificationPresetControl({ state, persist, theme }) {
+  const selected = getNotificationPreset(state);
+
+  const selectPreset = (preset) => {
+    persist({
+      ...state,
+      settings: {
+        ...(state.settings || {}),
+        notificationLevel: preset.key,
+      },
+    });
+  };
+
+  return (
+    <div style={{
+      marginTop: 14,
+      padding: 14,
+      borderRadius: 12,
+      background: "linear-gradient(145deg, rgba(8,12,24,0.72), rgba(15,23,42,0.42))",
+      border: `1px solid ${selected.color}33`,
+      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 20px ${selected.color}10`,
+    }}>
+      <div style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 12,
+        marginBottom: 12,
+      }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{
+            fontSize: 9,
+            color: selected.color,
+            fontFamily: "'JetBrains Mono',monospace",
+            fontWeight: 900,
+            letterSpacing: 0,
+            textTransform: "uppercase",
+            marginBottom: 5,
+          }}>
+            Notification-Druck
+          </div>
+          <div style={{
+            fontSize: 14,
+            color: "#f8fafc",
+            fontFamily: "'Cinzel',serif",
+            fontWeight: 900,
+            lineHeight: 1.2,
+          }}>
+            {selected.label}
+          </div>
+          <div style={{
+            fontSize: 10,
+            color: "#64748b",
+            fontFamily: "'JetBrains Mono',monospace",
+            marginTop: 4,
+            lineHeight: 1.4,
+          }}>
+            {formatNotificationPresetSummary(selected)}
+          </div>
+        </div>
+        <div style={{
+          width: 34,
+          height: 34,
+          borderRadius: 10,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: selected.color,
+          background: `${selected.color}14`,
+          border: `1px solid ${selected.color}32`,
+          flexShrink: 0,
+        }}>
+          <SettingsIcon name="notifications" size={18} />
+        </div>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(128px, 1fr))",
+        gap: 8,
+      }}>
+        {NOTIFICATION_PRESETS.map(preset => {
+          const active = preset.key === selected.key;
+          return (
+            <button
+              key={preset.key}
+              onClick={() => selectPreset(preset)}
+              aria-pressed={active}
+              title={`${preset.label} - ${formatNotificationPresetSummary(preset)}`}
+              style={{
+                position: "relative",
+                overflow: "hidden",
+                minHeight: 112,
+                padding: 10,
+                borderRadius: 10,
+                border: `1px solid ${active ? preset.color + "88" : "rgba(255,255,255,0.07)"}`,
+                background: active ? `${preset.color}18` : "rgba(255,255,255,0.025)",
+                color: active ? "#f8fafc" : "#94a3b8",
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "transform 0.2s ease, border-color 0.2s ease, background 0.2s ease",
+                boxShadow: active ? `0 0 18px ${preset.color}22` : "none",
+              }}
+              onMouseEnter={event => {
+                event.currentTarget.style.transform = "translateY(-1px)";
+                event.currentTarget.style.borderColor = preset.color + "66";
+              }}
+              onMouseLeave={event => {
+                event.currentTarget.style.transform = "none";
+                event.currentTarget.style.borderColor = active ? preset.color + "88" : "rgba(255,255,255,0.07)";
+              }}
+            >
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                background: `linear-gradient(135deg, ${preset.color}18, transparent 58%)`,
+                opacity: active ? 1 : 0.35,
+              }} />
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  marginBottom: 8,
+                }}>
+                  <span style={{
+                    width: 9,
+                    height: 9,
+                    borderRadius: "50%",
+                    background: preset.color,
+                    boxShadow: active ? `0 0 10px ${preset.color}aa` : `0 0 6px ${preset.color}55`,
+                    flexShrink: 0,
+                  }} />
+                  <span style={{
+                    fontSize: 8,
+                    color: preset.color,
+                    fontFamily: "'JetBrains Mono',monospace",
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                  }}>
+                    {preset.tone}
+                  </span>
+                </div>
+                <div style={{
+                  fontSize: 12,
+                  fontWeight: 900,
+                  color: active ? "#f8fafc" : "#cbd5e1",
+                  fontFamily: "'Cinzel',serif",
+                  lineHeight: 1.2,
+                }}>
+                  {preset.label}
+                </div>
+                <div style={{
+                  fontSize: 9,
+                  color: preset.color,
+                  fontFamily: "'JetBrains Mono',monospace",
+                  fontWeight: 800,
+                  marginTop: 6,
+                  lineHeight: 1.35,
+                }}>
+                  {formatNotificationPresetSummary(preset)}
+                </div>
+                <div style={{
+                  fontSize: 10,
+                  color: "#64748b",
+                  lineHeight: 1.35,
+                  marginTop: 7,
+                }}>
+                  {preset.desc}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Premium line icons (cohesive set; replaces emoji section + widget-module icons).
 function SettingsIcon({ name, size = 18 }) {
   const c = {
     width: size, height: size, viewBox: "0 0 24 24", fill: "none",
@@ -1459,6 +1642,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         <SettingRow label="System-Nachrichten" desc="CLI-Nachrichten beim App-Start" value={getSetting("systemMessages", true)} onChange={() => toggleSetting("systemMessages", true)} theme={theme} />
         <SettingRow label="Haptisches Feedback" desc="Vibration bei Quest-Abschluss" value={getSetting("haptics", true)} onChange={() => toggleSetting("haptics", true)} theme={theme} />
         <SettingRow label="Quest-Completion Cinematic" desc="Epische Belohnungs-Animation" value={getSetting("questCinematic", true)} onChange={() => toggleSetting("questCinematic", true)} theme={theme} />
+        <NotificationPresetControl state={state} persist={persist} theme={theme} />
 
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 10, lineHeight: 1.4 }}>
