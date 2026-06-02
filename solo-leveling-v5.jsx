@@ -757,9 +757,20 @@ function App({ initialHunterName, onLogout }) {
       onAllowed?.();
       return true;
     }
+    // Free taste not yet EARNED (still below Lv3 / under 5 quests) → guide, don't sell.
+    if (aiGenerationStatus.reason === "quests" || aiGenerationStatus.reason === "level") {
+      notify(tr("premium.aiTasteNotYet"), "info");
+      return false;
+    }
+    // Today's free try used but credits remain → come back tomorrow (no purchase needed).
+    if (aiGenerationStatus.reason === "daily") {
+      notify(tr("premium.aiTasteDaily"), "info");
+      return false;
+    }
+    // All free tries spent → genuine paywall.
     openPremiumModal(feature);
     return false;
-  }, [aiGenerationStatus.allowed, openPremiumModal]);
+  }, [aiGenerationStatus.allowed, aiGenerationStatus.reason, openPremiumModal, notify, tr]);
 
   const runAIGeneration = useCallback(async (feature, generate) => {
     if (!requireAIGeneration(feature)) return null;

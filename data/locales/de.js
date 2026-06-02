@@ -1461,6 +1461,8 @@ export const de = {
     proTier: { value: "Full System", sub: "AI, Analytics, VFX" },
     heroTitle: "Mehr schaffen mit Hunter Pro",
     heroSubtitle: "Schalte alle KI-Funktionen, tiefe Auswertungen und Premium-Styles frei. Die Core-App bleibt kostenlos.",
+    aiTasteNotYet: "Deine 3 gratis KI-Versuche kommen nach etwas Fortschritt — ab Level 3 und 5 erledigten Quests.",
+    aiTasteDaily: "Heutiger gratis KI-Versuch verbraucht. Morgen gibt es den naechsten — oder mit Hunter Pro unbegrenzt.",
     benefitsTitle: "Das bekommst du mit Pro",
     benefitsActiveTitle: "In deinem Plan enthalten",
     benefitUnlimited: { title: "Unbegrenzte Quests", desc: "Erstelle so viele eigene Quests pro Tag, wie du willst - statt maximal 10 im Free-Modus." },

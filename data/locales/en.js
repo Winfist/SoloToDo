@@ -1506,6 +1506,8 @@ export const en = {
     proTier: { value: "Full System", sub: "AI, Analytics, VFX" },
     heroTitle: "Achieve more with Hunter Pro",
     heroSubtitle: "Unlock all AI features, deep analytics, and premium styles. The core app stays free.",
+    aiTasteNotYet: "Your 3 free AI tries unlock after a little progress — reach Level 3 and complete 5 quests.",
+    aiTasteDaily: "Today's free AI try is used. Come back tomorrow — or go unlimited with Hunter Pro.",
     benefitsTitle: "What you get with Pro",
     benefitsActiveTitle: "Included in your plan",
     benefitUnlimited: { title: "Unlimited Quests", desc: "Create as many custom Quests per day as you want - instead of a maximum of 10 in Free mode." },
