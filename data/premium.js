@@ -1,6 +1,6 @@
 import { getLocaleObject, resolveLocale } from "./i18n.js";
 import { computeQuestCreationStatus } from "./freeLimits.js";
-export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus } from "./freeLimits.js";
+export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity } from "./freeLimits.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -102,9 +102,9 @@ export const PREMIUM_FEATURES = {
   },
   equipment: {
     eyebrow: "ARSENAL CORE",
-    title: "Equipment ist Hunter Pro",
-    desc: "Verwalte Waffen, Items und Ausruestung fuer deinen Hunter-Build.",
-    bullets: ["Waffen", "Ausruestung", "Build-Power"],
+    title: "Epic & Legendary sind Hunter Pro",
+    desc: "Free-Hunter ruesten bis Rang Rare. Hunter Pro schaltet Epic- und Legendary-Gear frei.",
+    bullets: ["Bis Rare gratis", "Epic & Legendary mit Pro", "Build-Power"],
   },
   shadow_army: {
     eyebrow: "SHADOW COMMAND",
@@ -207,7 +207,6 @@ export function getLocalizedPremiumProduct(localeOrMode = "auto") {
 export const PREMIUM_ROUTE_FEATURES = {
   analytics: "advanced_analytics",
   story: "story_mode",
-  equipment: "equipment",
   shadows: "shadow_army",
   jobs: "jobs",
   challenges: "events",

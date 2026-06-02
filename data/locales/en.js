@@ -1460,6 +1460,7 @@ export const en = {
       dailyGemBonus: "+{gems} Daily Gem Bonus (Streak: {streak})",
       notEnoughGems: "Not enough Gems!",
       extraSlotCapped: "Daily extra-slot limit reached. Hunter Pro removes the cap.",
+      equipRarityLocked: "Epic & Legendary gear is Hunter Pro. Free Hunters equip up to Rare.",
       alreadyBought: "Already bought!",
       dungeonsRefreshed: "New Dungeons generated!",
       boosterTitle: "BOOSTER ACTIVATED",

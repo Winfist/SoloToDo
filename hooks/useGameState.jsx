@@ -25,7 +25,7 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getFocusStats } from '../data/lifeDomains.js';
-import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus } from '../data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
@@ -2099,7 +2099,17 @@ export function useGameState(initialHunterName, onLogout) {
     notify(ltState(state, "shop.notifications.purchased", { name: item.name }), item.id === "potion_heal" ? "success" : "gold");
   };
 
-  const equipItem = (item, slot) => { const newSlots = { ...state.equipment.slots, [slot]: item }; let next = { ...state, equipment: { ...state.equipment, slots: newSlots } }; next = processAchievements(next); persist(next); notify(ltState(state, "shop.notifications.equipped", { name: item.name }), "info"); };
+  const equipItem = (item, slot) => {
+    if (!canEquipRarity({ premiumActive: getPremiumStatus(state?.premium).active, rarity: item?.rarity }).ok) {
+      notify(ltState(state, "shop.notifications.equipRarityLocked"), "warning");
+      return;
+    }
+    const newSlots = { ...state.equipment.slots, [slot]: item };
+    let next = { ...state, equipment: { ...state.equipment, slots: newSlots } };
+    next = processAchievements(next);
+    persist(next);
+    notify(ltState(state, "shop.notifications.equipped", { name: item.name }), "info");
+  };
   const unequipItem = slot => persist({ ...state, equipment: { ...state.equipment, slots: { ...state.equipment.slots, [slot]: null } } });
 
   const switchJob = useCallback((jobKey) => {
