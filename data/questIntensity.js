@@ -27,7 +27,7 @@ export const QUEST_INTENSITY_PRESETS = [
     color: "#22d3ee",
     iconKey: "normal",
     tone: "Locker",
-    desc: "Alle acht Stunden ein neuer Auftrag. Gut fuer Alltag ohne Dauerstress.",
+    desc: "Alle acht Stunden ein neuer Auftrag. Gut für Alltag ohne Dauerstress.",
   },
   {
     key: "hunter_patrol",
@@ -40,7 +40,7 @@ export const QUEST_INTENSITY_PRESETS = [
     color: "#34d399",
     iconKey: "normal",
     tone: "Ausgewogen",
-    desc: "Alle vier Stunden ein Systemruf. Der Standard fuer spuerbaren Fortschritt.",
+    desc: "Alle vier Stunden ein Systemruf. Der Standard für spürbaren Fortschritt.",
   },
   {
     key: "red_gate",
@@ -53,7 +53,7 @@ export const QUEST_INTENSITY_PRESETS = [
     color: "#f59e0b",
     iconKey: "hard",
     tone: "Intensiv",
-    desc: "Alle drei Stunden Druck vom System. Fuer Tage, an denen du viel schaffen willst.",
+    desc: "Alle drei Stunden Druck vom System. Für Tage, an denen du viel schaffen willst.",
   },
   {
     key: "monarch_call",

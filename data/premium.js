@@ -30,7 +30,7 @@ export const PREMIUM_PRODUCT = {
     },
     {
       title: "Premium Customization",
-      desc: "Custom Theme Creator und visuelle Motion-FX fuer deine Hunter-Signatur.",
+      desc: "Custom Theme Creator und visuelle Motion-FX für deine Hunter-Signatur.",
     },
     {
       title: "Ad-Free Gem Flow",
@@ -43,13 +43,13 @@ export const PREMIUM_FEATURES = {
   unlimited_quests: {
     eyebrow: "QUEST CAPACITY",
     title: "Unbegrenzte Quests sind Hunter Pro",
-    desc: "Free-Hunter koennen pro Tag 10 eigene Quests erstellen. Hunter Pro hebt dieses Tageslimit auf.",
+    desc: "Free-Hunter können pro Tag 10 eigene Quests erstellen. Hunter Pro hebt dieses Tageslimit auf.",
     bullets: ["10 Free Quests pro Tag", "Unbegrenzt mit Pro", "Mehr Tagesplanung"],
   },
   ai_task_scan: {
     eyebrow: "AI QUEST FORGE",
     title: "Unbegrenzter Foto-Scan ist Hunter Pro",
-    desc: "Nach deiner verdienten Gratis-Kostprobe scannt Hunter Pro Notizen, Aufgabenblaetter und handschriftliche Listen unbegrenzt.",
+    desc: "Nach deiner verdienten Gratis-Kostprobe scannt Hunter Pro Notizen, Aufgabenblätter und handschriftliche Listen unbegrenzt.",
     bullets: ["3 KI-Tests gratis", "Task-Scanner", "Unbegrenzt mit Pro"],
   },
   ai_quest_desc: {
@@ -61,19 +61,19 @@ export const PREMIUM_FEATURES = {
   ai_verification: {
     eyebrow: "VERIFICATION CORE",
     title: "Unbegrenzte Foto-Verifikation ist Hunter Pro",
-    desc: "Nach deiner verdienten Gratis-Kostprobe prueft Hunter Pro passende abgeschlossene Quests per Foto unbegrenzt.",
+    desc: "Nach deiner verdienten Gratis-Kostprobe prüft Hunter Pro passende abgeschlossene Quests per Foto unbegrenzt.",
     bullets: ["3 KI-Tests gratis", "Foto-Beweis", "Unbegrenzt mit Pro"],
   },
   ai_dynamic_quests: {
     eyebrow: "DAILY SYSTEM",
     title: "Dynamische KI-Quests sind Hunter Pro",
-    desc: "Dein System generiert persoenliche Tagesquests passend zu Fortschritt, Fokus und Verhalten.",
+    desc: "Dein System generiert persönliche Tagesquests passend zu Fortschritt, Fokus und Verhalten.",
     bullets: ["Personalisierte Quests", "Daily Reset", "Mehr Abwechslung"],
   },
   quest_intensity: {
     eyebrow: "SYSTEMRUF CORE",
-    title: "Systemruf-Intensitaet ist Hunter Pro",
-    desc: "Steuere, wie oft dein System automatisch neue Forderungen ausloest und wie hart es dich pusht.",
+    title: "Systemruf-Intensität ist Hunter Pro",
+    desc: "Steuere, wie oft dein System automatisch neue Forderungen auslöst und wie hart es dich pusht.",
     bullets: ["Baby Gate bis Monarch Call", "Auto-Quest Rhythmus", "Aktive System-Caps"],
   },
   ai_coach: {
@@ -91,7 +91,7 @@ export const PREMIUM_FEATURES = {
   dungeons: {
     eyebrow: "GATE ACCESS",
     title: "Mehr Dungeon Gates sind Hunter Pro",
-    desc: "Free-Hunter koennen 3 Gates pro Tag betreten. Hunter Pro hebt dieses Tageslimit auf.",
+    desc: "Free-Hunter können 3 Gates pro Tag betreten. Hunter Pro hebt dieses Tageslimit auf.",
     bullets: ["3 Gates/Tag gratis", "Unbegrenzt mit Pro", "Boss-Runs & Loot"],
   },
   story_mode: {
@@ -103,7 +103,7 @@ export const PREMIUM_FEATURES = {
   equipment: {
     eyebrow: "ARSENAL CORE",
     title: "Epic & Legendary sind Hunter Pro",
-    desc: "Free-Hunter ruesten bis Rang Rare. Hunter Pro schaltet Epic- und Legendary-Gear frei.",
+    desc: "Free-Hunter rüsten bis Rang Rare. Hunter Pro schaltet Epic- und Legendary-Gear frei.",
     bullets: ["Bis Rare gratis", "Epic & Legendary mit Pro", "Build-Power"],
   },
   shadow_army: {
@@ -121,13 +121,13 @@ export const PREMIUM_FEATURES = {
   dawn_dusk: {
     eyebrow: "ROUTINE PROTOCOL",
     title: "Dawn / Dusk Protocol ist Hunter Pro",
-    desc: "Fuehre Morgen- und Abendroutinen als klare System-Protokolle.",
+    desc: "Führe Morgen- und Abendroutinen als klare System-Protokolle.",
     bullets: ["Morgenroutine", "Abendroutine", "Ritual-Fokus"],
   },
   seasons: {
     eyebrow: "WORLD EVENTS",
     title: "Seasons sind Hunter Pro",
-    desc: "Aktiviere saisonale Ereignisse und World-Event-Kontext fuer dein System.",
+    desc: "Aktiviere saisonale Ereignisse und World-Event-Kontext für dein System.",
     bullets: ["Seasons", "World Events", "Saison-Boni"],
   },
   charisma_dungeons: {
@@ -146,12 +146,12 @@ export const PREMIUM_FEATURES = {
     eyebrow: "SYSTEM DESIGN",
     title: "Custom Theme Creator ist Hunter Pro",
     desc: "Baue deine eigene Hunter-Signatur mit Farben, Glow und Interface-Aura.",
-    bullets: ["Eigene Farben", "Custom Glow", "Persoenlicher Look"],
+    bullets: ["Eigene Farben", "Custom Glow", "Persönlicher Look"],
   },
   premium_effects: {
     eyebrow: "CINEMATIC VFX",
     title: "Premium-Effekte sind Hunter Pro",
-    desc: "Aktiviere die auffaelligsten HUD-, Cursor- und Motion-Effekte fuer ein episches Interface.",
+    desc: "Aktiviere die auffälligsten HUD-, Cursor- und Motion-Effekte für ein episches Interface.",
     bullets: ["HUD Overlay", "Cursor Glow", "Cinematic Motion"],
   },
   widgets: {
@@ -163,7 +163,7 @@ export const PREMIUM_FEATURES = {
   premium_store: {
     eyebrow: "MONARCH STORE",
     title: "Premium-Store Optionen",
-    desc: "Hier werden spaeter Store-Kaeufe, Abo-Status und exklusive Hunter-Pro-Angebote gebuendelt.",
+    desc: "Hier werden später Store-Käufe, Abo-Status und exklusive Hunter-Pro-Angebote gebündelt.",
     bullets: ["Abo-Status", "Beta-Codes", "Store-Billing"],
   },
 };
@@ -277,7 +277,7 @@ export function redeemBetaPremiumCode(currentPremium, rawCode, nowMs = Date.now(
 
   const match = BETA_PREMIUM_CODES.find((entry) => normalizePremiumCode(entry.code) === normalized);
   if (!match) {
-    return { ok: false, message: "Dieser Beta-Code ist nicht gueltig." };
+    return { ok: false, message: "Dieser Beta-Code ist nicht gültig." };
   }
 
   const redeemedCodes = (currentPremium?.betaCodesRedeemed || []).map(normalizePremiumCode);
