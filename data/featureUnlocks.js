@@ -15,7 +15,7 @@ export const FEATURE_UNLOCKS = {
   quest_filters:      { level: 3,  tier: 1, label: "Quest-Filter",     desc: "Filtere deine aktiven Quests" },
   analytics:          { level: 3,  tier: 1, label: "Analytics",        desc: "Fortschritts-Auswertung" },
   ai_task_scan:       { level: 3,  tier: 1, label: "Task-Scanner",     desc: "Fotografiere deine Aufgaben" },
-  music:              { level: 3,  tier: 1, label: "Music Player",     desc: "Epische Hintergrundmusik" },
+  music:              { level: 1,  tier: 0, label: "Music Player",     desc: "Epische Hintergrundmusik" },
 
   // ─── STUFE 2 — Level 5: Ziele & Vision ──────────────────────
   goals:              { level: 5,  tier: 2, label: "Ziele",            desc: "Langfristige Visionen setzen" },
@@ -69,7 +69,7 @@ export const TIER_UNLOCK_MESSAGES = {
     lines: [
       "Neue Module erkannt.",
       "Habit-Tracking-System: ONLINE.",
-      "Notfall-Quests & Music Player: AKTIVIERT.",
+      "Notfall-Quests & Focus Mode: AKTIVIERT.",
       "Disziplin ist der Schlüssel, Hunter."
     ]
   },
@@ -77,7 +77,7 @@ export const TIER_UNLOCK_MESSAGES = {
     title: "SYSTEM EXPANSION",
     lines: [
       "Das Ziel-Modul wurde freigeschaltet.",
-      "Focus Mode: AKTIVIERT. Tiefe Konzentration möglich.",
+      "Langfristige Planung: AKTIVIERT.",
       "Vision Board & Micro-Habits: ONLINE.",
       "Der Weg wird klarer."
     ]
