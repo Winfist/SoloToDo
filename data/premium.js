@@ -1,6 +1,6 @@
 import { getLocaleObject, resolveLocale } from "./i18n.js";
 import { computeQuestCreationStatus } from "./freeLimits.js";
-export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddShadow, canSwitchJob, getAIFreeGenerationStatus, applyAIFreeGenerationUsage } from "./freeLimits.js";
+export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddShadow, canAddNamedShadow, canSwitchJob, getAIFreeGenerationStatus, applyAIFreeGenerationUsage } from "./freeLimits.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -22,7 +22,7 @@ export const PREMIUM_PRODUCT = {
     },
     {
       title: "AI Quest Forge",
-      desc: "Mehr KI-Quest-Generierung, Task-Scanner und Foto-Verifikation.",
+      desc: "Unbegrenzte KI-Quest-Hilfe, Task-Scanner und Foto-Verifikation nach deiner Gratis-Kostprobe.",
     },
     {
       title: "Advanced Analytics",
@@ -30,7 +30,7 @@ export const PREMIUM_PRODUCT = {
     },
     {
       title: "Premium Customization",
-      desc: "Exklusive Themes, Titel, Page-Transitions und visuelle System-Effekte.",
+      desc: "Custom Theme Creator und visuelle Motion-FX fuer deine Hunter-Signatur.",
     },
     {
       title: "Ad-Free Gem Flow",
@@ -43,26 +43,26 @@ export const PREMIUM_FEATURES = {
   unlimited_quests: {
     eyebrow: "QUEST CAPACITY",
     title: "Unbegrenzte Quests sind Hunter Pro",
-    desc: "Free-Hunter koennen pro Tag eine eigene Quest erstellen. Hunter Pro hebt dieses Tageslimit auf.",
-    bullets: ["1 Free Quest pro Tag", "Unbegrenzt mit Pro", "Mehr Tagesplanung"],
+    desc: "Free-Hunter koennen pro Tag 10 eigene Quests erstellen. Hunter Pro hebt dieses Tageslimit auf.",
+    bullets: ["10 Free Quests pro Tag", "Unbegrenzt mit Pro", "Mehr Tagesplanung"],
   },
   ai_task_scan: {
     eyebrow: "AI QUEST FORGE",
-    title: "Foto-Scan ist Hunter Pro",
-    desc: "Scanne Notizen, Aufgabenblaetter oder handschriftliche Listen und verwandle sie direkt in Quests.",
-    bullets: ["Task-Scanner", "Quest-Vorschlaege", "Schneller Tagesplan"],
+    title: "Unbegrenzter Foto-Scan ist Hunter Pro",
+    desc: "Nach deiner verdienten Gratis-Kostprobe scannt Hunter Pro Notizen, Aufgabenblaetter und handschriftliche Listen unbegrenzt.",
+    bullets: ["3 KI-Tests gratis", "Task-Scanner", "Unbegrenzt mit Pro"],
   },
   ai_quest_desc: {
     eyebrow: "AI QUEST FORGE",
-    title: "KI-Quest-Details sind Hunter Pro",
-    desc: "Lass dir Missionsdetails, Sub-Quests und klare Schritte fuer deine Aufgabe generieren.",
-    bullets: ["Quest-Beschreibung", "Sub-Quests", "Bessere Umsetzung"],
+    title: "Unbegrenzte KI-Quest-Details sind Hunter Pro",
+    desc: "Nach deiner verdienten Gratis-Kostprobe generiert Hunter Pro unbegrenzt Missionsdetails, Sub-Quests und klare Schritte.",
+    bullets: ["3 KI-Tests gratis", "Quest-Beschreibung", "Unbegrenzt mit Pro"],
   },
   ai_verification: {
     eyebrow: "VERIFICATION CORE",
-    title: "Foto-Verifikation ist Hunter Pro",
-    desc: "Beweise passende abgeschlossene Quests per Foto und erhalte ein strengeres, motivierendes System-Feedback.",
-    bullets: ["Foto-Beweis", "Integritaet", "Bonus-Feedback"],
+    title: "Unbegrenzte Foto-Verifikation ist Hunter Pro",
+    desc: "Nach deiner verdienten Gratis-Kostprobe prueft Hunter Pro passende abgeschlossene Quests per Foto unbegrenzt.",
+    bullets: ["3 KI-Tests gratis", "Foto-Beweis", "Unbegrenzt mit Pro"],
   },
   ai_dynamic_quests: {
     eyebrow: "DAILY SYSTEM",
@@ -118,12 +118,6 @@ export const PREMIUM_FEATURES = {
     desc: "Free-Hunter legen sich auf eine Klasse fest, sobald sie XP sammelt. Hunter Pro erlaubt Multi-Class und Respec.",
     bullets: ["1 Klasse gratis", "Multi-Class mit Pro", "Respec"],
   },
-  events: {
-    eyebrow: "EVENT BOARD",
-    title: "Events sind Hunter Pro",
-    desc: "Nutze Challenges, Missionen und besondere Ereignisse fuer mehr Abwechslung.",
-    bullets: ["Challenges", "Missionen", "Bonus-Ziele"],
-  },
   dawn_dusk: {
     eyebrow: "ROUTINE PROTOCOL",
     title: "Dawn / Dusk Protocol ist Hunter Pro",
@@ -136,12 +130,6 @@ export const PREMIUM_FEATURES = {
     desc: "Aktiviere saisonale Ereignisse und World-Event-Kontext fuer dein System.",
     bullets: ["Seasons", "World Events", "Saison-Boni"],
   },
-  soul_link: {
-    eyebrow: "LINK PROTOCOL",
-    title: "Soul Link ist Hunter Pro",
-    desc: "Verbinde dich mit einem Partner und halte gemeinsame Aktivitaet sichtbar.",
-    bullets: ["Partner-Link", "Streak-Sync", "Social Progress"],
-  },
   charisma_dungeons: {
     eyebrow: "SOCIAL GATES",
     title: "Mehr Charisma Dungeons sind Hunter Pro",
@@ -151,8 +139,8 @@ export const PREMIUM_FEATURES = {
   advanced_widgets: {
     eyebrow: "WIDGET CORE",
     title: "Advanced Widgets sind Hunter Pro",
-    desc: "Schalte Biometrics, Bildschirmzeit, Vision Board und weitere Premium-Module im Dashboard frei.",
-    bullets: ["Biometrics", "Bildschirmzeit", "Vision Board"],
+    desc: "Schalte Biometrics, Vision Board und weitere Premium-Module im Dashboard frei.",
+    bullets: ["Biometrics", "Vision Board", "Mehr Dashboard-Module"],
   },
   custom_theme: {
     eyebrow: "SYSTEM DESIGN",
@@ -169,7 +157,7 @@ export const PREMIUM_FEATURES = {
   widgets: {
     eyebrow: "WIDGET CORE",
     title: "Advanced Widgets sind Hunter Pro",
-    desc: "Schalte tiefere Widget-Module frei, die Health, Screen Time, Heatmaps und Shadow Army zeigen.",
+    desc: "Schalte tiefere Widget-Module frei, die Health, Heatmaps und Shadow Army zeigen.",
     bullets: ["Mehr Module", "Live Activities", "Heatmaps"],
   },
   premium_store: {
@@ -207,21 +195,17 @@ export function getLocalizedPremiumProduct(localeOrMode = "auto") {
 export const PREMIUM_ROUTE_FEATURES = {
   analytics: "advanced_analytics",
   story: "story_mode",
-  challenges: "events",
   protocol_overlay: "dawn_dusk",
   seasons_overlay: "seasons",
-  soullink_overlay: "soul_link",
 };
 
 export const PREMIUM_DASHBOARD_WIDGET_KEYS = [
   "health_summary",
-  "screen_time_summary",
   "vision_board",
 ];
 
 export const PREMIUM_WIDGET_MODULE_KEYS = [
   "health",
-  "screen_time",
   "deadline_alert",
   "system_message",
   "week_heatmap",

@@ -19,7 +19,8 @@
     "test:quest-verification": "node scripts/test-quest-verification.mjs",
     "test:sigil": "node scripts/test-sigil-geometry.mjs",
     "test:icons": "node scripts/test-feature-icons.mjs",
-    "test:free-limits": "node scripts/test-free-limits.mjs"
+    "test:free-limits": "node scripts/test-free-limits.mjs",
+    "test:free-pro-phase4": "node scripts/test-free-pro-phase4.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",

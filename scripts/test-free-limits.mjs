@@ -1,4 +1,4 @@
-import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG, canEquipRarity, RARITY_ORDER, canAddShadow, canSwitchJob, getAIFreeGenerationStatus, applyAIFreeGenerationUsage } from "../data/freeLimits.js";
+import { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, computeQuestCreationStatus, canPurchaseExtraSlot, getQuotaStatus, QUOTA_CONFIG, canEquipRarity, RARITY_ORDER, canAddShadow, canAddNamedShadow, canSwitchJob, getAIFreeGenerationStatus, applyAIFreeGenerationUsage } from "../data/freeLimits.js";
 
 let failures = 0;
 const assert = (condition, message) => {
@@ -83,6 +83,8 @@ assert(canAddShadow({ premiumActive: false, shadowCount: 0 }).ok === true, "free
 assert(canAddShadow({ premiumActive: false, shadowCount: 4 }).remaining === 1, "1 shadow slot left at 4");
 assert(canAddShadow({ premiumActive: false, shadowCount: 5 }).ok === false, "free blocked at 5 shadows");
 assert(canAddShadow({ premiumActive: true, shadowCount: 99 }).ok === true, "premium unlimited shadows");
+assert(canAddNamedShadow({ premiumActive: false }).ok === false, "free cannot awaken Named Shadows");
+assert(canAddNamedShadow({ premiumActive: true }).ok === true, "premium can awaken Named Shadows");
 
 // ── canSwitchJob ──
 assert(canSwitchJob({ premiumActive: true, targetJob: "archmage", currentJob: "berserker", currentJobLevel: 9 }).ok === true, "premium can always switch");

@@ -724,6 +724,7 @@ export default function HunterIslandHub({
   navigateToWithAccess,
   openPremiumModal,
   onOpenCharisma,
+  onOpenSoulLink,
   shellTopOffset = 0,
   shellBottomOffset = 0,
   tutorialStepId = null,
@@ -934,6 +935,27 @@ export default function HunterIslandHub({
           unlockLevel: 30,
           meta: "",
         },
+      can("soul_link")
+        ? {
+          key: "soullink_overlay",
+          routeKey: "soullink_overlay",
+          iconSrc: SHADOW_ICONS.knight,
+          label: "Soul Link",
+          color: "#a855f7",
+          meta: state?.soulLink?.partnerName || "Partner-Link",
+          isOverlay: true,
+          action: onOpenSoulLink,
+        }
+        : {
+          key: "soullink_overlay",
+          routeKey: "soullink_overlay",
+          iconSrc: SHADOW_ICONS.knight,
+          label: "Soul Link",
+          color: "#a855f7",
+          locked: true,
+          unlockLevel: 30,
+          meta: "",
+        },
     ].map(decorateItem);
 
     const transit = [
@@ -1006,6 +1028,7 @@ export default function HunterIslandHub({
     inventory.length,
     namedShadows.length,
     onOpenCharisma,
+    onOpenSoulLink,
     openQuests,
     rank?.name,
     readyAchievements,
@@ -1031,6 +1054,7 @@ export default function HunterIslandHub({
        else if (mod.key === "analytics") { styleIndex = 9; secondaryColor = "#14b8a6"; }
        else if (mod.key === "achievements") { styleIndex = 10; secondaryColor = "#d97706"; }
        else if (mod.key === "challenges") { styleIndex = 11; secondaryColor = "#dc2626"; }
+       else if (mod.key === "soullink_overlay") { styleIndex = 12; secondaryColor = "#7e22ce"; }
        return { ...mod, styleIndex, secondaryColor };
     });
   }, [sections]);

@@ -8,6 +8,7 @@ import { getLocalDateKey, getToday } from '../data/dateUtils.js';
 import { getLocaleObject, getStateLocale, translate } from '../data/i18n.js';
 import { getQuestPlanningSnapshot } from '../data/questPlanning.js';
 import { getQuestPresentation } from '../data/questPresentation.js';
+import { SCREEN_TIME_ENABLED } from '../data/featureFlags.js';
 
 const APP_GROUP = 'group.com.solotodo.app';
 const WIDGET_DATA_KEY = 'widgetData';
@@ -58,7 +59,7 @@ const WIDGET_MODULE_BASE = [
   { key: 'micro_habits', icon: '🧬', color: '#06b6d4' },
   { key: 'hunter_card', icon: '🏆', color: '#a855f7' },
   { key: 'health', icon: '❤️', color: '#ef4444' },
-  { key: 'screen_time', icon: '📱', color: '#f59e0b' },
+  ...(SCREEN_TIME_ENABLED ? [{ key: 'screen_time', icon: '📱', color: '#f59e0b' }] : []),
   { key: 'deadline_alert', icon: '⏰', color: '#dc2626' },
   { key: 'system_message', icon: '💬', color: '#6366f1' },
   { key: 'week_heatmap', icon: '📊', color: '#22c55e' },
@@ -401,10 +402,10 @@ function buildWidgetPayload(state) {
   };
 
   // Screen time
-  const screenTime = {
+  const screenTime = SCREEN_TIME_ENABLED ? {
     todayMinutes: state.screenTimeData?.todayMinutes || 0,
     limitMinutes: state.screenTimePreferences?.dailyLimitMinutes || 180,
-  };
+  } : null;
 
   // Shadow army
   const shadows = state.shadowArmy?.shadows || [];
@@ -531,7 +532,8 @@ function buildWidgetPayload(state) {
 
     // Config (so widget knows display preferences)
     config: {
-      modules: config.modules || DEFAULT_WIDGET_CONFIG.modules,
+      modules: (config.modules || DEFAULT_WIDGET_CONFIG.modules)
+        .filter(module => SCREEN_TIME_ENABLED || module !== 'screen_time'),
       maxQuests: config.maxQuests || 5,
       rotationEnabled: config.rotationEnabled === true,
       rotationIntervalMinutes: config.rotationIntervalMinutes || 5,

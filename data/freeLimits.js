@@ -73,6 +73,12 @@ export function canAddShadow({ premiumActive = false, shadowCount = 0 } = {}) {
   return { ok: remaining > 0, remaining };
 }
 
+// Named Shadows are a Pro distinction. Existing Named Shadows stay untouched;
+// this gate only controls awarding new ones.
+export function canAddNamedShadow({ premiumActive = false } = {}) {
+  return { ok: premiumActive };
+}
+
 // Can a (free) user switch class? Free may switch freely until the current class earns XP
 // (level > 0); after that they are committed. Premium = always (multi-class + respec).
 export function canSwitchJob({ premiumActive = false, targetJob = null, currentJob = null, currentJobLevel = 0 } = {}) {

@@ -10,6 +10,7 @@ import { getToday } from "./dateUtils.js";
 import { getStateLocale, resolveLocale, translate } from "./i18n.js";
 import { getQuestKey, normalizeQuestForStorage } from "./questUtils.js";
 import { getFocusStats } from "./lifeDomains.js";
+import { SCREEN_TIME_ENABLED } from "./featureFlags.js";
 
 // ─── JOB XP CONFIG ────────────────────────────────────────────
 export const JOB_XP_SOURCES = {
@@ -208,7 +209,7 @@ export function generateDailySystemQuests(count = 3, state = null) {
 
   // --- Inject Screen Time OCR Quest only when the feature is configured ---
   const screenTimeQuestKey = `screen_time_quest:${today}`;
-  if (state?.screenTimePreferences?.enabled && selected.length < count && !activeQuestKeys.has(screenTimeQuestKey)) {
+  if (SCREEN_TIME_ENABLED && state?.screenTimePreferences?.enabled && selected.length < count && !activeQuestKeys.has(screenTimeQuestKey)) {
     const limitMinutes = state?.screenTimePreferences?.dailyLimitMinutes || 120;
     const hours = Math.floor(limitMinutes / 60);
     const minutes = limitMinutes % 60;

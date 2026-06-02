@@ -1352,7 +1352,7 @@ function App({ initialHunterName, onLogout }) {
             )}
 
             {/* SOUL LINK VIEW */}
-            {premiumStatus?.active && showSoulLink && (
+            {showSoulLink && (
               <SoulLinkView
                 state={state} theme={theme}
                 createSoulLinkCode={createSoulLinkCode}
@@ -1458,7 +1458,7 @@ function App({ initialHunterName, onLogout }) {
                 case "hunterIsland": navigateTo("system"); break;
                 case "arsenal": navigateToWithAccess("equipment"); break;
                 case "guild": enterPortal(); break;
-                case "soulLink": requirePremium("soul_link", () => setShowSoulLink(true)); break;
+                case "soulLink": setShowSoulLink(true); break;
                 case "season": requirePremium("seasons", () => setShowSeasonView(true)); break;
                 case "music": setIsMusicPlaying((prev) => { const next = !prev; localStorage.setItem("soloMusicPlaying", next ? "true" : "false"); return next; }); break;
                 case "settings": navigateTo("settings"); break;
@@ -2110,6 +2110,7 @@ function App({ initialHunterName, onLogout }) {
                 navigateToWithAccess={navigateToWithAccess}
                 openPremiumModal={openPremiumModal}
                 onOpenCharisma={() => setShowCharismaView(true)}
+                onOpenSoulLink={() => setShowSoulLink(true)}
                 shellTopOffset={headerOffset}
                 shellBottomOffset="60px"
                 tutorialStepId={tutorialRuntimeState.activeTutorialId === "onboarding" ? tutorialRuntimeState.stepId : null}

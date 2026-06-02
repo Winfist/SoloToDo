@@ -27,6 +27,7 @@ import { getDailySystemQuestCount } from "../../data/questIntensity.js";
 import { getQuestPresentation } from "../../data/questPresentation.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import QuestIntensityControl from "../QuestIntensityControl.jsx";
+import { SCREEN_TIME_ENABLED } from "../../data/featureFlags.js";
 
 // ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
 const EDIT_MODE_CSS = `
@@ -253,7 +254,7 @@ export default function DashboardView({
   const handleInterceptComplete = useCallback((questId, rect) => {
     const allQuests = [...(filteredQuests || []), ...(state?.quests || [])];
     const q = allQuests.find(qu => qu.id === questId);
-    if (q && q.isScreenTime) {
+    if (SCREEN_TIME_ENABLED && q && q.isScreenTime) {
       setActiveScreenTimeQuest(q);
       setShowScreenTimeScanner(true);
       return;
@@ -1585,7 +1586,7 @@ export default function DashboardView({
         document.body
       )}
 
-      {showScreenTimeModal && typeof document !== "undefined" && createPortal(
+      {SCREEN_TIME_ENABLED && showScreenTimeModal && typeof document !== "undefined" && createPortal(
         <div
           onTouchMove={e => e.stopPropagation()}
           onWheel={e => e.stopPropagation()}
@@ -1709,7 +1710,7 @@ export default function DashboardView({
         </div>,
         document.body
       )}
-      {showScreenTimeScanner && activeScreenTimeQuest && (
+      {SCREEN_TIME_ENABLED && showScreenTimeScanner && activeScreenTimeQuest && (
         <ScreenTimeVerifyModal
           quest={activeScreenTimeQuest}
           geminiAI={geminiAI}

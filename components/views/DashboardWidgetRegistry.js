@@ -1,4 +1,5 @@
 import { translate } from "../../data/i18n.js";
+import { SCREEN_TIME_ENABLED } from "../../data/featureFlags.js";
 
 // Single source of truth for all dashboard widgets.
 // The visual dashboard renders carousel widgets as a compact summary strip.
@@ -9,7 +10,7 @@ export const DASHBOARD_WIDGETS = [
   { key: "streak_display", label: "Serie", icon: "STR", color: "#f97316", desc: "Optionale Serienkarte", requires: null, removable: true, carousel: true },
   { key: "daily_progress", label: "Tagesfortschritt", icon: "DAY", color: "#22c55e", desc: "Optionale Fortschrittskarte", requires: null, removable: true, carousel: true },
   { key: "health_summary", label: "Biometrics", icon: "BIO", color: "#38bdf8", desc: "Schritte und Schlaf", requires: null, removable: true, carousel: true },
-  { key: "screen_time_summary", label: "Bildschirmzeit", icon: "FOC", color: "#f59e0b", desc: "Limit und Trend", requires: null, removable: true, carousel: true },
+  ...(SCREEN_TIME_ENABLED ? [{ key: "screen_time_summary", label: "Bildschirmzeit", icon: "FOC", color: "#f59e0b", desc: "Limit und Trend", requires: null, removable: true, carousel: true }] : []),
   { key: "quests", label: "Quest Board", icon: "QST", color: "#f59e0b", desc: "Aktive Quests", requires: null, removable: false },
   { key: "gem_booster", label: "Gem Boosters", icon: "GEM", color: "#a855f7", desc: "Aktive Booster", requires: "gem_shop", removable: true },
   { key: "artifact_showcase", label: "Artifacts", icon: "ART", color: "#fbbf24", desc: "Entdeckte Relikte", requires: null, removable: true },
@@ -42,7 +43,6 @@ export const DEFAULT_DASHBOARD_LAYOUT = [
   "today_command",
   "quests",
   "health_summary",
-  "screen_time_summary",
   "vision_board",
   "gem_booster",
   "artifact_showcase",

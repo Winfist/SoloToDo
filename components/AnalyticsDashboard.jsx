@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { STAT_ICONS, MICRO_ICONS, HEALTH_ICONS, NAV_ICONS } from "../data/icons.js";
 import { CATEGORIES, DIFFICULTIES } from "../data/gameData.js";
 import { getToday, getLocalDateKey } from "../data/dateUtils.js";
+import { SCREEN_TIME_ENABLED } from "../data/featureFlags.js";
 import QuestDetailModal from "./QuestDetailModal.jsx";
 
 // ─── INLINE KEYFRAMES (injected once) ───
@@ -186,7 +187,7 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
     const [historyTime, setHistoryTime] = useState("all");
     const [historyCat, setHistoryCat] = useState("all");
     const [selectedQuest, setSelectedQuest] = useState(null);
-    const [insightRange, setInsightRange] = useState(state?.healthPreferences?.healthHistoryRange || state?.screenTimePreferences?.screenTimeHistoryRange || "7d");
+    const [insightRange, setInsightRange] = useState(state?.healthPreferences?.healthHistoryRange || (SCREEN_TIME_ENABLED ? state?.screenTimePreferences?.screenTimeHistoryRange : null) || "7d");
 
     // ── DATA ──
     const level = state?.level||1, streak = state?.streak||0, totalQ = state?.totalQuestsCompleted||0, focusMin = state?.focus?.totalMinutes||0;
@@ -266,25 +267,27 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
         const range = getInsightRange(insightRange);
         const healthRows = buildHealthRows(state, range.days, 0);
         const previousHealthRows = buildHealthRows(state, range.days, range.days);
-        const screenRows = buildScreenRows(state, range.days, 0);
-        const previousScreenRows = buildScreenRows(state, range.days, range.days);
+        const screenRows = SCREEN_TIME_ENABLED ? buildScreenRows(state, range.days, 0) : [];
+        const previousScreenRows = SCREEN_TIME_ENABLED ? buildScreenRows(state, range.days, range.days) : [];
         const health = summarizeHealthRows(healthRows);
         const previousHealth = summarizeHealthRows(previousHealthRows);
         const screen = summarizeScreenRows(screenRows);
         const previousScreen = summarizeScreenRows(previousScreenRows);
-        const focusScore = Math.round(
-            ((health.stepGoalDays / range.days) * 32) +
-            ((health.sleepGoalDays / range.days) * 34) +
-            ((screen.underLimitDays / range.days) * 34)
+        const focusScore = Math.round(SCREEN_TIME_ENABLED
+            ? ((health.stepGoalDays / range.days) * 32) +
+              ((health.sleepGoalDays / range.days) * 34) +
+              ((screen.underLimitDays / range.days) * 34)
+            : ((health.stepGoalDays / range.days) * 48) +
+              ((health.sleepGoalDays / range.days) * 52)
         );
         let signal = "Noch zu wenig Health- und Fokusdaten fuer ein klares Muster.";
         let signalColor = "#64748b";
         if (health.hasData || screen.hasData) {
             if (focusScore >= 78) { signal = "Regeneration und Fokus sind im Gleichgewicht. Der Tagesrhythmus traegt."; signalColor = "#22c55e"; }
             else if (health.avgSleep > 0 && health.avgSleep < 6) { signal = "Schlaf ist der Engpass. Mehr Erholung wuerde deine Quest-Leistung stabilisieren."; signalColor = "#a78bfa"; }
-            else if (screen.hasData && screen.avgMinutes > screen.limitAvg) { signal = "Bildschirmzeit drueckt auf den Fokus. Setze den Limit-Streak als Tagesziel."; signalColor = "#f59e0b"; }
+            else if (SCREEN_TIME_ENABLED && screen.hasData && screen.avgMinutes > screen.limitAvg) { signal = "Bildschirmzeit drueckt auf den Fokus. Setze den Limit-Streak als Tagesziel."; signalColor = "#f59e0b"; }
             else if (health.avgSteps < 5500 && health.hasData) { signal = "Bewegung ist niedrig. Ein kurzer Spaziergang hebt deine Grundenergie."; signalColor = "#38bdf8"; }
-            else { signal = "Basis stabil. Kleine Verbesserungen bei Schlaf, Schritten oder Screen-Time bringen jetzt Wirkung."; signalColor = primary; }
+            else { signal = SCREEN_TIME_ENABLED ? "Basis stabil. Kleine Verbesserungen bei Schlaf, Schritten oder Screen-Time bringen jetzt Wirkung." : "Basis stabil. Kleine Verbesserungen bei Schlaf und Schritten bringen jetzt Wirkung."; signalColor = primary; }
         }
         return {
             range,
@@ -531,7 +534,7 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
             <div style={mkCard(340)}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:14,flexWrap:"wrap"}}>
                     <div style={{marginBottom:0,flex:"1 1 220px"}}>
-                        {secT(<img src={HEALTH_ICONS.steps} alt="" style={{width:13,height:13,objectFit:"contain",filter:"drop-shadow(0 0 5px rgba(56,189,248,.55))"}}/>, "HEALTH + USAGE", "#38bdf8")}
+                        {secT(<img src={HEALTH_ICONS.steps} alt="" style={{width:13,height:13,objectFit:"contain",filter:"drop-shadow(0 0 5px rgba(56,189,248,.55))"}}/>, SCREEN_TIME_ENABLED ? "HEALTH + USAGE" : "HEALTH", "#38bdf8")}
                     </div>
                     <div style={{display:"flex",gap:5,padding:3,borderRadius:10,background:"rgba(255,255,255,0.035)",border:"1px solid rgba(255,255,255,0.06)"}}>
                         {INSIGHT_RANGES.map(range => (
@@ -549,8 +552,10 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
                     {[
                         { label:"AVG SCHRITTE", value:fmtNum(healthUsage.health.avgSteps), detail:`${healthUsage.health.stepGoalDays}/${healthUsage.range.days} Zieltage`, color:"#38bdf8", icon:HEALTH_ICONS.steps },
                         { label:"AVG SCHLAF", value:fmtHours(healthUsage.health.avgSleep), detail:`Trend ${healthUsage.sleepTrend}`, color:"#a78bfa", icon:HEALTH_ICONS.sleep },
-                        { label:"SCREEN AVG", value:fmtMin(healthUsage.screen.avgMinutes), detail:`Limit ${fmtMin(healthUsage.screen.limitAvg)}`, color:"#f59e0b", icon:NAV_ICONS.timer },
-                        { label:"FOKUS-TAGE", value:`${healthUsage.screen.underLimitDays}/${healthUsage.range.days}`, detail:`Trend ${healthUsage.screenTrend}`, color:"#22c55e", icon:NAV_ICONS.analytics },
+                        ...(SCREEN_TIME_ENABLED ? [
+                            { label:"SCREEN AVG", value:fmtMin(healthUsage.screen.avgMinutes), detail:`Limit ${fmtMin(healthUsage.screen.limitAvg)}`, color:"#f59e0b", icon:NAV_ICONS.timer },
+                            { label:"FOKUS-TAGE", value:`${healthUsage.screen.underLimitDays}/${healthUsage.range.days}`, detail:`Trend ${healthUsage.screenTrend}`, color:"#22c55e", icon:NAV_ICONS.analytics },
+                        ] : []),
                     ].map(item => (
                         <div key={item.label} style={{padding:"12px 10px",borderRadius:12,background:"linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01))",border:`1px solid ${item.color}1f`,minWidth:0}}>
                             <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8}}>
@@ -578,7 +583,7 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
                         </div>
                     </div>
 
-                    <div style={{padding:"13px",borderRadius:14,background:"rgba(245,158,11,0.045)",border:"1px solid rgba(245,158,11,0.12)"}}>
+                    {SCREEN_TIME_ENABLED && <div style={{padding:"13px",borderRadius:14,background:"rgba(245,158,11,0.045)",border:"1px solid rgba(245,158,11,0.12)"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:9}}>
                             <div style={{fontSize:9,color:"#fbbf24",fontFamily:mono,fontWeight:900,letterSpacing:2}}>FOCUS GUARD</div>
                             <span style={{fontSize:8,color:healthUsage.screen.avgMinutes>healthUsage.screen.limitAvg?"#f59e0b":"#22c55e",fontFamily:mono}}>{healthUsage.screen.avgMinutes>healthUsage.screen.limitAvg?"OVER LIMIT":"UNDER LIMIT"}</span>
@@ -594,7 +599,7 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
                                 <div style={{fontSize:15,color:"#fbbf24",fontWeight:900,fontFamily:"'Cinzel',serif"}}>{fmtMin(healthUsage.screen.worstDay?.totalMinutes || 0)}</div>
                             </div>
                         </div>
-                    </div>
+                    </div>}
                 </div>
 
                 <div style={{marginTop:10,padding:"12px 13px",borderRadius:14,background:`linear-gradient(135deg, ${healthUsage.signalColor}12, rgba(255,255,255,.025))`,border:`1px solid ${healthUsage.signalColor}24`,display:"flex",gap:12,alignItems:"center"}}>

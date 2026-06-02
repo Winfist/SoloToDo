@@ -19,7 +19,7 @@ import { hasFocusQuestAbility, getFocusQuestXpBonus, getMomentumBonus, getQuestT
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getQuestVerificationPolicy } from '../data/questVerification.js';
 import { getYesterdayKey } from '../data/dateUtils.js';
-import { isPremiumActive, canAddShadow } from '../data/premium.js';
+import { isPremiumActive, canAddShadow, canAddNamedShadow } from '../data/premium.js';
 
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
@@ -387,7 +387,10 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   }
 
   // Named shadow unlocks
-  const newNameds = checkNamedShadowUnlocks(next);
+  const newNameds = isFeatureUnlocked('named_shadows', next.level)
+    && canAddNamedShadow({ premiumActive: isPremiumActive(next.premium) }).ok
+    ? checkNamedShadowUnlocks(next)
+    : [];
   if (newNameds.length > 0) {
     newNameds.forEach(ns => {
       const namedShadow = {

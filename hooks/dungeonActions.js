@@ -9,6 +9,8 @@ import {
   calcShadowXpToNext, checkNamedShadowUnlocks, getJobBonuses
 } from '../data/helpers.js';
 import { rollArtifactDrop } from '../data/artifactHelpers.js';
+import { isFeatureUnlocked } from '../data/featureUnlocks.js';
+import { isPremiumActive, canAddNamedShadow } from '../data/premium.js';
 
 /**
  * Build the next state after a dungeon is finished.
@@ -88,7 +90,10 @@ export function buildFinishDungeonState(dungeon, result, state, processAchieveme
   }
 
   // Named shadow unlocks
-  const newNameds = checkNamedShadowUnlocks(next);
+  const newNameds = isFeatureUnlocked('named_shadows', next.level)
+    && canAddNamedShadow({ premiumActive: isPremiumActive(next.premium) }).ok
+    ? checkNamedShadowUnlocks(next)
+    : [];
   if (newNameds.length > 0) {
     newNameds.forEach(ns => {
       const namedShadow = {

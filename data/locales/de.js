@@ -1463,7 +1463,7 @@ export const de = {
     heroSubtitle: "Schalte alle KI-Funktionen, tiefe Auswertungen und Premium-Styles frei. Die Core-App bleibt kostenlos.",
     benefitsTitle: "Das bekommst du mit Pro",
     benefitsActiveTitle: "In deinem Plan enthalten",
-    benefitUnlimited: { title: "Unbegrenzte Quests", desc: "Erstelle so viele eigene Quests pro Tag, wie du willst - statt nur einer im Free-Modus." },
+    benefitUnlimited: { title: "Unbegrenzte Quests", desc: "Erstelle so viele eigene Quests pro Tag, wie du willst - statt maximal 10 im Free-Modus." },
     perMonth: "pro Monat",
     perYear: "pro Jahr",
     billedYearly: "ca. {perMonth} pro Monat, jährlich abgerechnet",
@@ -1485,9 +1485,9 @@ export const de = {
     activeLabel: "Aktiv",
     benefits: [
       { title: "KI-Coach Plus", desc: "Erweiterte Systemnachrichten, Quest-Hilfe und personalisierte Tagesimpulse." },
-      { title: "AI Quest Forge", desc: "Mehr KI-Quest-Generierung, Task-Scanner und Foto-Verifikation." },
+      { title: "AI Quest Forge", desc: "Unbegrenzte KI-Quest-Hilfe, Task-Scanner und Foto-Verifikation nach deiner Gratis-Kostprobe." },
       { title: "Advanced Analytics", desc: "Tiefere Auswertung von Streaks, Stats, Fokus, Habits und Quest-Verhalten." },
-      { title: "Premium Customization", desc: "Exklusive Themes, Titel, Page-Transitions und visuelle System-Effekte." },
+      { title: "Premium Customization", desc: "Custom Theme Creator und visuelle Motion-FX fuer deine Hunter-Signatur." },
       { title: "Ad-Free Gem Flow", desc: "Daily Gem Bonus ohne Werbe-Zwang, sobald Store-Billing aktiv ist." },
     ],
     features: {

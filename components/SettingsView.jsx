@@ -13,6 +13,7 @@ import QuestPlanningControl from "./QuestPlanningControl.jsx";
 import { getPremiumFeatureForRoute, getPremiumStatus, isPremiumWidgetModule, PREMIUM_PRODUCT } from "../data/premium.js";
 import { LANGUAGE_OPTIONS, getLocaleLabel, normalizeLanguageMode, translate, writeBootstrapLanguage } from "../data/i18n.js";
 import { useI18n } from "./i18n/I18nProvider.jsx";
+import { SCREEN_TIME_ENABLED } from "../data/featureFlags.js";
 
 // ─── NAV TAB REGISTRY ─────────────────────────────────────────
 // All possible bottom-navigation tabs the user can choose from.
@@ -1605,7 +1606,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         </div>
       </SettingsSection>
 
-      <SettingsSection title={t("settings.sections.screenTime")} icon={<SettingsIcon name="focus" />} color="#f59e0b" open={openSection === "screenTime"} onToggle={() => toggleSection("screenTime")} theme={theme}>
+      {SCREEN_TIME_ENABLED && <SettingsSection title={t("settings.sections.screenTime")} icon={<SettingsIcon name="focus" />} color="#f59e0b" open={openSection === "screenTime"} onToggle={() => toggleSection("screenTime")} theme={theme}>
         <div style={{ padding: "0 0 16px 0" }}>
           <ScreenTimeDashboard
             state={state}
@@ -1615,7 +1616,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             geminiAI={geminiAI}
           />
         </div>
-      </SettingsSection>
+      </SettingsSection>}
 
 
       {/* ════════════════════════════════════════════════════════════
@@ -1701,7 +1702,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
             { key: 'micro_habits', icon: 'dna', color: '#06b6d4' },
             { key: 'hunter_card', icon: 'trophy', color: '#a855f7' },
             { key: 'health', icon: 'health', color: '#ef4444' },
-            { key: 'screen_time', icon: 'phone', color: '#f59e0b' },
+            ...(SCREEN_TIME_ENABLED ? [{ key: 'screen_time', icon: 'phone', color: '#f59e0b' }] : []),
             { key: 'deadline_alert', icon: 'alarm', color: '#dc2626' },
             { key: 'system_message', icon: 'chat', color: '#6366f1' },
             { key: 'week_heatmap', icon: 'chart', color: '#22c55e' },

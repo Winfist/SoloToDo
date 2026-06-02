@@ -25,7 +25,7 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getFocusStats } from '../data/lifeDomains.js';
-import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canSwitchJob, applyAIFreeGenerationUsage } from '../data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddNamedShadow, canSwitchJob, applyAIFreeGenerationUsage } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
@@ -1990,7 +1990,10 @@ export function useGameState(initialHunterName, onLogout) {
       } catch (e) { /* graceful fallback */ }
     }
 
-    const newNameds = checkNamedShadowUnlocks(next);
+    const newNameds = isFeatureUnlocked('named_shadows', next.level)
+      && canAddNamedShadow({ premiumActive: getPremiumStatus(next.premium).active }).ok
+      ? checkNamedShadowUnlocks(next)
+      : [];
     if (newNameds.length > 0) {
       newNameds.forEach(ns => {
         const namedShadow = {
