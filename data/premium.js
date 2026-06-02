@@ -1,6 +1,6 @@
 import { getLocaleObject, resolveLocale } from "./i18n.js";
 import { computeQuestCreationStatus } from "./freeLimits.js";
-export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity } from "./freeLimits.js";
+export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddShadow } from "./freeLimits.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -108,9 +108,9 @@ export const PREMIUM_FEATURES = {
   },
   shadow_army: {
     eyebrow: "SHADOW COMMAND",
-    title: "Shadow Army ist Hunter Pro",
-    desc: "Erwecke Schatten, baue deine Armee aus und nutze staerkere Progressionssysteme.",
-    bullets: ["Schatten-Armee", "Formation", "Arise-System"],
+    title: "Mehr Schatten sind Hunter Pro",
+    desc: "Free-Hunter befehligen bis zu 5 Schatten. Hunter Pro hebt das Limit auf und schaltet Named Shadows frei.",
+    bullets: ["5 Schatten gratis", "Unbegrenzt + Named mit Pro", "Arise-System"],
   },
   jobs: {
     eyebrow: "CLASS SYSTEM",
@@ -207,7 +207,6 @@ export function getLocalizedPremiumProduct(localeOrMode = "auto") {
 export const PREMIUM_ROUTE_FEATURES = {
   analytics: "advanced_analytics",
   story: "story_mode",
-  shadows: "shadow_army",
   jobs: "jobs",
   challenges: "events",
   protocol_overlay: "dawn_dusk",

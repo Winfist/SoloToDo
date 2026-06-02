@@ -664,6 +664,7 @@ export const en = {
     charismaAlreadyActive: "This chain is already active.",
     charismaAlreadyCompleted: "This chain has already been completed.",
     charismaDailyCap: "Daily Charisma Dungeon limit reached. Hunter Pro removes the cap.",
+    shadowCapReached: "Shadow Army full (5). Hunter Pro lets you command unlimited shadows.",
     charismaStarted: "{name} started! Floor 1 of {total}: {title}",
     soulLinkCodeUnavailable: "Code not found or already full.",
     soulLinkConnected: "Soul Link connected with {name}!",

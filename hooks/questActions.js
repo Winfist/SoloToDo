@@ -19,6 +19,7 @@ import { hasFocusQuestAbility, getFocusQuestXpBonus, getMomentumBonus, getQuestT
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getQuestVerificationPolicy } from '../data/questVerification.js';
 import { getYesterdayKey } from '../data/dateUtils.js';
+import { isPremiumActive, canAddShadow } from '../data/premium.js';
 
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
@@ -131,10 +132,15 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   let newShadowArmy = { ...next.shadowArmy };
   let ariseData = null;
   if (quest.difficulty === "boss") {
-    const newShadow = createShadowFromQuest(quest, newLevel);
-    newShadowArmy = { ...newShadowArmy, shadows: [...(newShadowArmy.shadows || []), newShadow] };
-    ariseData = newShadow;
-    notifications.push({ msg: ltState(state, "questActions.shadowCreated", { title: quest.title, className: SHADOW_CLASSES[newShadow.class].name }), type: "shadow" });
+    const shadowGate = canAddShadow({ premiumActive: isPremiumActive(state.premium), shadowCount: (newShadowArmy.shadows || []).length });
+    if (shadowGate.ok) {
+      const newShadow = createShadowFromQuest(quest, newLevel);
+      newShadowArmy = { ...newShadowArmy, shadows: [...(newShadowArmy.shadows || []), newShadow] };
+      ariseData = newShadow;
+      notifications.push({ msg: ltState(state, "questActions.shadowCreated", { title: quest.title, className: SHADOW_CLASSES[newShadow.class].name }), type: "shadow" });
+    } else {
+      notifications.push({ msg: ltState(state, "questActions.shadowCapReached"), type: "info" });
+    }
   }
 
   if (soulLinkActive) notifications.push({ msg: ltState(state, "questActions.soulLinkActive"), type: "success" });
