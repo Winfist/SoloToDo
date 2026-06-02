@@ -1,6 +1,6 @@
 import { getLocaleObject, resolveLocale } from "./i18n.js";
 import { computeQuestCreationStatus } from "./freeLimits.js";
-export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddShadow } from "./freeLimits.js";
+export { FREE_LIMITS, FREE_DAILY_QUEST_LIMIT, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddShadow, canSwitchJob } from "./freeLimits.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -114,9 +114,9 @@ export const PREMIUM_FEATURES = {
   },
   jobs: {
     eyebrow: "CLASS SYSTEM",
-    title: "Jobs sind Hunter Pro",
-    desc: "Schalte Klassen, Spezialisierungen und zusaetzliche Build-Identitaet frei.",
-    bullets: ["Hunter-Klassen", "Job-XP", "Spezialisierung"],
+    title: "Klassenwechsel ist Hunter Pro",
+    desc: "Free-Hunter legen sich auf eine Klasse fest, sobald sie XP sammelt. Hunter Pro erlaubt Multi-Class und Respec.",
+    bullets: ["1 Klasse gratis", "Multi-Class mit Pro", "Respec"],
   },
   events: {
     eyebrow: "EVENT BOARD",
@@ -207,7 +207,6 @@ export function getLocalizedPremiumProduct(localeOrMode = "auto") {
 export const PREMIUM_ROUTE_FEATURES = {
   analytics: "advanced_analytics",
   story: "story_mode",
-  jobs: "jobs",
   challenges: "events",
   protocol_overlay: "dawn_dusk",
   seasons_overlay: "seasons",

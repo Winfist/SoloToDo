@@ -25,7 +25,7 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getFocusStats } from '../data/lifeDomains.js';
-import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity } from '../data/premium.js';
+import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canSwitchJob } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
@@ -2129,6 +2129,17 @@ export function useGameState(initialHunterName, onLogout) {
 
     if (req.minShadows && (state.shadowArmy?.shadows?.length || 0) < req.minShadows) {
       notify(`Mindestens ${req.minShadows} Shadows erforderlich.`, "info");
+      return;
+    }
+
+    const jobGate = canSwitchJob({
+      premiumActive: getPremiumStatus(state?.premium).active,
+      targetJob: jobKey,
+      currentJob: state.jobs?.current,
+      currentJobLevel: state.jobs?.levels?.[state.jobs?.current] || 0,
+    });
+    if (!jobGate.ok) {
+      notify("Klassenwechsel ist Hunter Pro - deine aktive Klasse ist festgelegt.", "warning");
       return;
     }
 
