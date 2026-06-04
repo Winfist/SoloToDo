@@ -880,20 +880,33 @@ export default function UnifiedResultModal({ flow, onContinue }) {
                   </div>
                 </div>
 
-                {/* Title — letter-by-letter reveal */}
+                {/* Title — letter-by-letter reveal, grouped per word so a long
+                    word (e.g. "ABGESCHLOSSEN") can never break mid-word. Each
+                    word is a non-wrapping flex item; only the inter-word space
+                    (columnGap) is a valid wrap point. */}
                 <div style={{
                   fontSize:24, fontWeight:900, color:'#fff',
                   fontFamily:"'Cinzel',serif", letterSpacing:3,
                   textShadow:`0 0 30px ${borderColor}88, 0 0 60px ${borderColor}33`,
-                  display:'flex', flexWrap:'wrap', position:'relative', zIndex:1,
+                  display:'flex', flexWrap:'wrap', columnGap:'0.4em', rowGap:'2px',
+                  position:'relative', zIndex:1,
                 }}>
-                  {titleLetters.map((letter, i) => (
-                    <span key={i} style={{
-                      display:'inline-block',
-                      animation:`urmLetterIn 400ms ease-out ${i*25}ms both`,
-                      minWidth: letter === ' ' ? '0.35em' : undefined,
-                    }}>{letter}</span>
-                  ))}
+                  {(() => {
+                    let li = 0; // continuous letter index → uninterrupted stagger
+                    return titleText.split(' ').filter(Boolean).map((word, wi) => (
+                      <span key={wi} style={{ display:'inline-block', whiteSpace:'nowrap' }}>
+                        {word.split('').map((ch) => {
+                          const idx = li++;
+                          return (
+                            <span key={idx} style={{
+                              display:'inline-block',
+                              animation:`urmLetterIn 400ms ease-out ${idx*25}ms both`,
+                            }}>{ch}</span>
+                          );
+                        })}
+                      </span>
+                    ));
+                  })()}
                 </div>
 
                 {/* Subtitle */}

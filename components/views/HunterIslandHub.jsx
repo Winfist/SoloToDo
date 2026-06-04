@@ -1424,6 +1424,10 @@ const HUNTER_ISLAND_CSS = `
   width: 100%;
   max-width: 920px;
   margin: 0 auto;
+  /* Extra clearance so the Portal/Apps toggle is never tucked under the
+     fixed app header (position:fixed; z-index:100). --hi-shell-top only
+     reserves a tight ~20px gap, which the header's blur/border can eat. */
+  padding-top: 16px;
   pointer-events: none;
 }
 .hi-mode-toggle {
