@@ -23,6 +23,20 @@ const firebaseConfig = {
   measurementId: "G-RCBGS0F6N4"
 };
 
+// Safari/iOS blocks cross-domain OAuth: ITP partitions storage between the app
+// origin (solo-todo.web.app) and a different auth handler origin
+// (solo-todo.firebaseapp.com), which breaks both signInWithPopup (cross-origin
+// iframe delay drops the user gesture → popup-blocked) and signInWithRedirect
+// (pending-redirect state can't be read back → user lands on login again).
+// Fix: when served from a Firebase Hosting domain, point authDomain at that SAME
+// origin so the OAuth handler stays first-party. Dev (localhost) keeps the
+// default — the Hosting __/auth handler isn't served by the vite dev server —
+// and native (capacitor://localhost) doesn't use the web auth handler at all.
+if (typeof window !== "undefined" &&
+    /\.(web\.app|firebaseapp\.com)$/.test(window.location.hostname)) {
+  firebaseConfig.authDomain = window.location.hostname;
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 

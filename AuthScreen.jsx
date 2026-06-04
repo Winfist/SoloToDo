@@ -22,6 +22,8 @@ import {
   updateProfile,
   signOut,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithCredential,
   GoogleAuthProvider,
   OAuthProvider,
@@ -38,6 +40,9 @@ function isNativePlatform() {
 }
 
 const IS_CAPACITOR = isNativePlatform();
+// Mobile browsers block popups — use redirect flow instead
+const IS_MOBILE_BROWSER = !IS_CAPACITOR && typeof navigator !== "undefined" &&
+  /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const AUTH_RETRY_DELAY_MS = 700;
 const RECENT_REGISTRATION_RECOVERY_MS = 5 * 60 * 1000;
 
@@ -503,7 +508,19 @@ export default function AuthScreen({ onAuthSuccess }) {
   const msg3Ref = useRef(null);
   const vignetteRef = useRef(null);
 
-
+  // Handle redirect result after mobile OAuth (Google/Apple redirect flow)
+  useEffect(() => {
+    if (!IS_MOBILE_BROWSER) return;
+    getRedirectResult(auth).then((result) => {
+      if (!result) return;
+      setHunterName(result.user.displayName || "Hunter");
+      setShowSuccess(true);
+    }).catch((err) => {
+      if (err.code && err.code !== "auth/no-auth-event") {
+        setErrors({ server: err.message });
+      }
+    });
+  }, []);
 
   // Called every frame by AuthTunnelScene — only DOM manipulation, no setState
   const handleProgress = useCallback((p) => {
@@ -623,10 +640,14 @@ export default function AuthScreen({ onAuthSuccess }) {
         setHunterName(displayName);
         setShowSuccess(true);
       } else {
-        // Web: popup-based sign-in
+        // Web: popup on desktop, redirect on mobile (Safari blocks popups)
         const provider = new GoogleAuthProvider();
         provider.addScope("email");
         provider.addScope("profile");
+        if (IS_MOBILE_BROWSER) {
+          await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+          return; // result handled by getRedirectResult on next load
+        }
         const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
         setHunterName(result.user.displayName || "Hunter");
         setShowSuccess(true);
@@ -658,10 +679,14 @@ export default function AuthScreen({ onAuthSuccess }) {
         setHunterName(displayName);
         setShowSuccess(true);
       } else {
-        // Web: popup-based sign-in
+        // Web: popup on desktop, redirect on mobile (Safari blocks popups)
         const provider = new OAuthProvider('apple.com');
         provider.addScope("email");
         provider.addScope("name");
+        if (IS_MOBILE_BROWSER) {
+          await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
+          return; // result handled by getRedirectResult on next load
+        }
         const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
         setHunterName(result.user.displayName || "Hunter");
         setShowSuccess(true);
