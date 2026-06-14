@@ -1151,7 +1151,7 @@ export const OPERATIONS = [
     id: "op_shadow_protocol",
     title: "Operation Schatten-Protokoll",
     category: "str",
-    desc: "Der ultimative Belastungstest für den wahren Schatten-Monarchen.",
+    desc: "Der ultimative Belastungstest für den wahren Monarchen.",
     steps: [
       { difficulty: "easy", title: "Protokoll Stufe 1: 50 Liegestütze und 15 Min Dehnen direkt nach dem Aufwachen" },
       { difficulty: "normal", title: "Protokoll Stufe 2: Absolviere einen 10 km Lauf oder 1 Stunde intensives Cardio-Training" },

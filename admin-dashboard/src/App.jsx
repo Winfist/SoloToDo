@@ -9,6 +9,7 @@ import {
 
 // ── Premium helpers (mirror data/premium.js logic) ──
 const DAY_MS = 24 * 60 * 60 * 1000;
+const ADMIN_UID = 'iY9F97jYZihbq9Lb1kA7rKwZjy53';
 function getUserPremiumStatus(premium) {
   if (!premium) return { active: false, tier: 'free', source: 'none', daysRemaining: 0, activeUntilLabel: null };
   // Explicitly revoked by admin → never active
@@ -48,7 +49,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
       if (u) {
-        if (u.uid === 'iY9F97jYZihbq9Lb1kA7rKwZjy53' && u.email === 'jwuckert2@gmail.com') {
+        if (u.uid === ADMIN_UID) {
           setUser(u);
           setLoading(false);
           fetchAllUsers();

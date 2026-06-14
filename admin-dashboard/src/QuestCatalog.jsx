@@ -73,7 +73,7 @@ berserker:{name:"Berserker",color:"#ef4444",quests:["Trial of Wrath","Unstoppabl
 archmage:{name:"Archmage",color:"#3b82f6",quests:["Pursuit of Knowledge","Scholarly Mind","Arcane Mastery","Mind Over Matter","Grand Archmage"]},
 guardian:{name:"Guardian",color:"#22c55e",quests:["Shield Bearer","Enduring Spirit","Immovable Object","Iron Will","Eternal Guardian"]},
 assassin:{name:"Assassin",color:"#f59e0b",quests:["Swift Blade","Treasure Hunter","Shadow Dance","Phantom Strike","Master Assassin"]},
-monarch:{name:"Monarch",color:"#a855f7",quests:["Lord of Shadows","Army Builder","Commander","Sovereign","Shadow Monarch"]},
+monarch:{name:"Monarch",color:"#a855f7",quests:["Lord of Shadows","Army Builder","Commander","Sovereign","True Monarch"]},
 necromancer:{name:"Necromancer",color:"#6366f1",quests:["Death's Apprentice","Soul Harvester","Master of the Dead","Lord of the Undead","True Necromancer"]},
 };
 

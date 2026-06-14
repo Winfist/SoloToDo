@@ -14,7 +14,8 @@ import {
   assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, generateComebackSystemQuest, generateStarterQuests, getJobBonuses, checkAllJobsLevel5,
   saveState, loadState, migrateState, cacheStateLocally, resolveStateConflict, calculateLevelUp, awardJobXp, saveQuestArchiveEntry,
-  generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests
+  generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests,
+  REDEMPTION_QUESTS_REQUIRED, shouldTriggerShadowRegression
 } from '../data/constants';
 import { JOBS } from '../data/jobs.js';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
@@ -578,22 +579,28 @@ export function useGameState(initialHunterName, onLogout) {
               const previousStreak = s.streak || 0;
               s.streak = 0;
               const hadDailies = s.quests?.some(q => q.type === "daily" && !q.completed);
-              if (diff >= 2 && hadDailies && !s.penaltyZone?.active) {
-                s.penaltyZone = { active: true, redemptionLeft: 5, questsCompletedInPenalty: 0 };
-                // Shadow Regression: heroic comeback instead of shameful penalty
-                if (!s.shadowRegression?.active) {
-                  const redemptionQs = generateRedemptionQuests(s.level || 1, s);
-                  s.shadowRegression = {
-                    active: true,
-                    previousStreak,
-                    redemptionQuests: redemptionQs.map(q => q.id),
-                    questsCompleted: 0,
-                    completedAt: null,
-                    regressionHistory: s.shadowRegression?.regressionHistory || []
-                  };
-                  s.quests = [...(s.quests || []), ...redemptionQs];
-                  setTimeout(() => setShowShadowRegression(true), 800);
-                }
+              // Shadow Regression: heroic comeback instead of shameful penalty.
+              // Only when there was an actual streak to lose — players without
+              // a streak have nothing to redeem and get no punishment screen.
+              if (shouldTriggerShadowRegression({
+                daysMissed: diff,
+                previousStreak,
+                hadOpenDailies: hadDailies,
+                penaltyZoneActive: s.penaltyZone?.active,
+                regressionActive: s.shadowRegression?.active,
+              })) {
+                s.penaltyZone = { active: true, redemptionLeft: REDEMPTION_QUESTS_REQUIRED, questsCompletedInPenalty: 0 };
+                const redemptionQs = generateRedemptionQuests(s.level || 1, s);
+                s.shadowRegression = {
+                  active: true,
+                  previousStreak,
+                  redemptionQuests: redemptionQs.map(q => q.id),
+                  questsCompleted: 0,
+                  completedAt: null,
+                  regressionHistory: s.shadowRegression?.regressionHistory || []
+                };
+                s.quests = [...(s.quests || []), ...redemptionQs];
+                setTimeout(() => setShowShadowRegression(true), 800);
               }
             }
             s.quests = s.quests?.map(q => q.type === "daily" && !q.isSystem ? { ...q, completed: false } : q) || [];

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1080,height=1920"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Cinzel:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#02030a;color:#f8fafc;font-family:'Inter',sans-serif}
+.clip{position:absolute;inset:0;overflow:hidden}.scene{position:absolute;inset:0;overflow:hidden}
+#vignette{pointer-events:none;background:radial-gradient(ellipse 80% 62% at 50% 45%,transparent 40%,rgba(0,0,0,.55) 100%)}
+#grain{pointer-events:none;opacity:.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px 180px}
+#s0{background:radial-gradient(circle at 50% 46%,#06121a 0%,#03060d 45%,#010308 100%)}
+#hookFlash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(94,234,212,.55),rgba(45,212,191,.18) 35%,transparent 65%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+#hookBig{position:absolute;left:56px;right:56px;top:42%;text-align:center;font:900 88px 'Cinzel';line-height:1.05;color:#f8fafc;text-shadow:0 6px 30px rgba(0,0,0,.9),0 0 60px rgba(20,40,46,.5);opacity:0}
+#hookBig .ac{color:#5eead4}
+.bg-vid{position:absolute;width:1080px;height:1920px;object-fit:cover}
+#s1{opacity:0}
+#videoFadeIn{position:absolute;inset:0;background:#02030a;z-index:2}
+.scrim-b{position:absolute;left:0;right:0;bottom:0;height:640px;z-index:3;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(2,3,10,.5) 45%,rgba(2,3,10,.9))}
+#xpPop{position:absolute;left:0;right:0;text-align:center;top:46%;font:800 64px 'JetBrains Mono';letter-spacing:1px;color:#fcd34d;text-shadow:0 0 40px rgba(252,211,77,.6),0 4px 16px rgba(0,0,0,.9);z-index:6;opacity:0}
+#peakLine{position:absolute;left:60px;right:60px;text-align:center;bottom:430px;font:900 84px 'Cinzel';letter-spacing:4px;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.9),0 0 70px rgba(252,211,77,.45);z-index:6;opacity:0}
+#s4{opacity:0;background:radial-gradient(circle at 50% 44%,#0a0712 0%,#040208 55%,#010104 100%)}
+#ctaFlash{position:absolute;inset:0;z-index:7;background:radial-gradient(circle at 50% 46%,#fff,rgba(252,211,77,.5) 20%,rgba(124,58,237,.18) 46%,transparent 64%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+#iconGlow{position:absolute;left:50%;top:660px;width:680px;height:680px;margin-left:-340px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.45),rgba(124,58,237,.12) 45%,transparent 70%);opacity:0;pointer-events:none}
+#icon{position:absolute;left:50%;top:740px;width:300px;height:300px;margin-left:-150px;border-radius:66px;opacity:0;box-shadow:0 50px 100px rgba(0,0,0,.7),0 0 90px rgba(124,58,237,.5)}
+#wordmark{position:absolute;left:0;right:0;top:1080px;text-align:center;font:800 80px 'Inter';letter-spacing:2px;color:#f8fafc;text-shadow:0 6px 30px rgba(0,0,0,.8);opacity:0}
+#wordmark span{color:#c4b5fd}
+#soon{position:absolute;left:0;right:0;top:1205px;text-align:center;font:800 28px 'JetBrains Mono';letter-spacing:7px;color:#5eead4;opacity:0}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="8" data-fps="30" data-width="1080" data-height="1920">
+
+  <section id="s0" class="clip scene" data-start="0" data-duration="1.35" data-track-index="0" data-layout-allow-overflow>
+    <div id="hookFlash"></div>
+    <div id="hookBig">DEIN LEBEN =<br>EIN <span class="ac">SPIEL.</span></div>
+  </section>
+
+  <video id="kivideo" class="clip bg-vid" src="assets/ki_video_fixed.mp4" muted data-start="1.2" data-media-start="1.8" data-duration="5.2" data-track-index="1"></video>
+
+  <section id="s1" class="clip scene" data-start="1.2" data-duration="5.3" data-track-index="2" data-layout-allow-overflow>
+    <div id="videoFadeIn"></div>
+    <div class="scrim-b"></div>
+    <div id="xpPop">+250 XP</div>
+    <div id="peakLine">ERWACHE.</div>
+  </section>
+
+  <section id="s4" class="clip scene" data-start="6.38" data-duration="1.62" data-track-index="4" data-layout-allow-overflow>
+    <div id="ctaFlash"></div>
+    <div id="iconGlow"></div>
+    <img id="icon" src="assets/app_icon.png" alt=""/>
+    <div id="wordmark">Solo<span>ToDo</span></div>
+    <div id="soon">BALD VERFÜGBAR</div>
+  </section>
+</div>
+
+<div id="vignette" class="clip" data-start="0" data-duration="8" data-track-index="8"></div>
+<div id="grain" class="clip" data-start="0" data-duration="8" data-track-index="9"></div>
+
+<script>
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+
+/* hook 0–1.35 */
+tl.fromTo("#hookFlash",{opacity:0},{opacity:0.9,duration:0.08,ease:"power2.in"},0.1);
+tl.to("#hookFlash",{opacity:0,duration:0.5,ease:"power2.out"},0.2);
+tl.fromTo("#hookBig",{opacity:0,scale:1.28,filter:"blur(13px)"},{opacity:1,scale:1,filter:"blur(0px)",duration:0.42,ease:"power3.out"},0.15);
+tl.to("#hookBig",{opacity:0,scale:1.06,duration:0.26,ease:"power2.in"},1.02);
+
+/* footage 1.2–6.4 */
+tl.set("#s1",{opacity:1},1.18);
+tl.fromTo("#videoFadeIn",{opacity:1},{opacity:0,duration:0.42,ease:"power2.inOut"},1.2);
+tl.fromTo("#xpPop",{opacity:0,y:36,scale:0.7},{opacity:1,y:0,scale:1,duration:0.45,ease:"back.out(1.6)"},1.7);
+tl.to("#xpPop",{opacity:0,y:-60,duration:0.45,ease:"power2.in"},2.65);
+tl.fromTo("#peakLine",{opacity:0,scale:0.94,y:18,filter:"blur(8px)"},{opacity:1,scale:1,y:0,filter:"blur(0px)",duration:0.6,ease:"expo.out"},4.85);
+tl.to("#peakLine",{opacity:0,duration:0.26,ease:"power2.in"},6.2);
+tl.to("#s1",{opacity:0,duration:0.16,ease:"power2.in"},6.34);
+
+/* logo 6.38–8.0 */
+tl.set("#s4",{opacity:1},6.38);
+tl.fromTo("#ctaFlash",{opacity:0},{opacity:0.9,duration:0.12,ease:"power2.in"},6.4);
+tl.to("#ctaFlash",{opacity:0,duration:0.55,ease:"power2.out"},6.52);
+tl.fromTo("#iconGlow",{opacity:0,scale:0.7},{opacity:1,scale:1,duration:0.7,ease:"power2.out",transformOrigin:"50% 50%"},6.5);
+tl.to("#iconGlow",{opacity:0.7,scale:1.06,duration:1.3,ease:"sine.inOut",transformOrigin:"50% 50%"},7.2);
+tl.fromTo("#icon",{scale:0.6,opacity:0,filter:"blur(12px)"},{scale:1,opacity:1,filter:"blur(0px)",duration:0.6,ease:"back.out(1.4)",transformOrigin:"50% 50%"},6.45);
+tl.fromTo("#wordmark",{opacity:0,y:18,letterSpacing:"14px"},{opacity:1,y:0,letterSpacing:"2px",duration:0.6,ease:"expo.out"},6.95);
+tl.fromTo("#soon",{opacity:0,y:10},{opacity:1,y:0,duration:0.45,ease:"power2.out"},7.45);
+
+/* hard-kills */
+tl.set("#hookBig",{opacity:0,visibility:"hidden"},1.32);
+tl.set("#xpPop",{opacity:0,visibility:"hidden"},3.15);
+
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

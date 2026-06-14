@@ -1259,7 +1259,7 @@ function App({ initialHunterName, onLogout }) {
           )}
           {selectedShadow && <ShadowDetailModal shadow={selectedShadow} theme={theme} gold={state.gold} onClose={() => setSelectedShadow(null)} onDeploy={deployShadow} onUndeploy={undeployShadow} onEvolve={evolveShadow} />}
 
-          {/* SHADOW MONARCH'S GATE — PAGE TRANSITION */}
+          {/* SHADOW GATE — PAGE TRANSITION */}
           <React.Suspense fallback={null}>
             <PageTransition
               isActive={isPageTransitioning}
@@ -2097,7 +2097,7 @@ function App({ initialHunterName, onLogout }) {
                       <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
                       <div style={{ fontSize: 11, color: "#334155" }}>Erstelle Quests auf dem Heute-Tab.</div>
                     </div>
-                  ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleCompleteQuest} onEdit={startEditingQuest} onDelete={deleteQuest} />)}
+                  ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleCompleteQuest} onCompleteSubQuest={completeSubQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onOpenDetail={setDetailQuest} />)}
                 </div>
               </div>
             )

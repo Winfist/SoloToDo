@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1080,height=1920"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Cinzel:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#02030a;color:#f8fafc;font-family:'Inter',sans-serif}
+.clip{position:absolute;inset:0;overflow:hidden}
+.scene{position:absolute;inset:0;overflow:hidden}
+
+/* ============ GLOBAL GRADE ============ */
+#vignette{pointer-events:none;background:radial-gradient(ellipse 78% 60% at 50% 44%,transparent 38%,rgba(0,0,0,.5) 100%)}
+#grain{pointer-events:none;opacity:.055;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px}
+
+/* ============ B0 — HOOK ============ */
+#s0{background:radial-gradient(circle at 50% 46%,#06121a 0%,#03060d 45%,#010308 100%)}
+.mote{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(110,231,213,.65);box-shadow:0 0 10px rgba(94,234,212,.7)}
+#s0Content{position:absolute;inset:0}
+
+#term{position:absolute;left:0;right:0;top:30%;text-align:center;font:600 30px 'JetBrains Mono';color:#5eead4;letter-spacing:2px;opacity:.95}
+#term .ch{opacity:0}
+#cursor{display:inline-block;width:15px;color:#5eead4}
+
+.orb-wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:360px;height:360px}
+#orb{position:absolute;inset:30px;border-radius:50%;border:2px solid rgba(94,234,212,.55);display:grid;place-items:center;
+  box-shadow:0 0 90px rgba(45,212,191,.32),inset 0 0 70px rgba(45,212,191,.22);
+  background:radial-gradient(circle,rgba(10,34,42,.55),rgba(2,6,12,.15) 70%)}
+#orbRingOuter{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(94,234,212,.28)}
+#orbRingInner{position:absolute;inset:64px;border-radius:50%;border:1px solid rgba(94,234,212,.22)}
+.orb-core{font:700 70px 'JetBrains Mono';letter-spacing:7px;color:#ccfbf1;text-shadow:0 0 34px rgba(45,212,191,.85)}
+#orbFlash{position:absolute;left:50%;top:50%;width:1400px;height:1400px;margin:-700px 0 0 -700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(204,251,241,.9),rgba(45,212,191,.35) 28%,transparent 60%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+#shock{position:absolute;left:50%;top:50%;width:360px;height:360px;margin:-180px 0 0 -180px;border-radius:50%;border:2px solid rgba(94,234,212,.6);opacity:0;pointer-events:none}
+
+#sysLabel{position:absolute;left:0;right:0;top:65.5%;text-align:center;font:700 22px 'JetBrains Mono';letter-spacing:9px;color:#5eead4;opacity:0}
+#hookLine{position:absolute;left:60px;right:60px;top:69%;text-align:center;font:900 76px 'Cinzel';line-height:1.08;color:#f8fafc;
+  text-shadow:0 6px 28px rgba(0,0,0,.9),0 0 60px rgba(20,40,46,.6);opacity:0}
+#sysClass{position:absolute;left:0;right:0;top:80%;text-align:center;font:600 24px 'JetBrains Mono';letter-spacing:5px;color:#64748b;opacity:0}
+#sysClass .rank{color:#94a3b8;font-weight:800}
+
+.corner{position:absolute;width:54px;height:54px;border:2px solid rgba(94,234,212,.0);opacity:0}
+#cornerTL{left:54px;top:120px;border-right:none;border-bottom:none}
+#cornerTR{right:54px;top:120px;border-left:none;border-bottom:none}
+#cornerBL{left:54px;bottom:120px;border-right:none;border-top:none}
+#cornerBR{right:54px;bottom:120px;border-left:none;border-top:none}
+
+/* ============ DEVICE FRAME ============ */
+.device{position:absolute;left:50%;top:300px;width:604px;height:1308px;margin-left:-302px;border-radius:70px;
+  background:linear-gradient(160deg,#2a3344,#0c1119);border:3px solid #3b4659;
+  box-shadow:0 70px 130px rgba(0,0,0,.7),0 0 0 7px rgba(0,0,0,.55),inset 0 0 0 2px rgba(148,163,184,.12)}
+.device:before{content:"";position:absolute;top:22px;left:50%;width:164px;height:32px;margin-left:-82px;border-radius:999px;background:#000;z-index:4}
+.device-screen{position:absolute;inset:16px;border-radius:56px;overflow:hidden;background:#03060d}
+.screen-img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+
+/* ============ B1 — PRÄMISSE ============ */
+#s1{opacity:0;background:#03060d}
+#s1 .bg-img{position:absolute;inset:0;background:center/cover no-repeat;opacity:.16;filter:saturate(1.1)}
+#s1 .veil{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(45,212,191,.08),transparent 45%),linear-gradient(180deg,rgba(2,3,10,.5),#02030a 85%)}
+#premiseLabel{position:absolute;left:0;right:0;top:128px;text-align:center;font:700 22px 'JetBrains Mono';letter-spacing:8px;color:#5eead4;opacity:0}
+#premiseLine{position:absolute;left:60px;right:60px;top:170px;text-align:center;font:800 50px 'Cinzel';color:#f8fafc;line-height:1.1;text-shadow:0 6px 22px rgba(0,0,0,.85);opacity:0}
+
+/* ============ B2 — DOPAMIN ============ */
+#s2{opacity:0;background:#02030a}
+.dcard{position:absolute;inset:0;overflow:hidden;opacity:0}
+.dcard img{position:absolute;left:0;top:0;width:1080px;display:block}
+#dshine{position:absolute;left:0;top:38%;width:420px;height:300px;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.14) 45%,rgba(255,255,255,.24) 50%,rgba(255,255,255,.14) 55%,transparent);
+  filter:blur(7px);opacity:0;pointer-events:none;mix-blend-mode:screen}
+.scrim-b{position:absolute;left:0;right:0;bottom:0;height:680px;z-index:5;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(2,3,10,.5) 42%,rgba(2,3,10,.95))}
+.scrim-t{position:absolute;left:0;right:0;top:0;height:460px;z-index:5;pointer-events:none;
+  background:linear-gradient(180deg,rgba(2,3,10,.88),transparent)}
+.dopa-cap{position:absolute;left:60px;right:60px;bottom:296px;z-index:6;text-align:center;font:800 52px 'Cinzel';color:#f8fafc;
+  text-shadow:0 4px 16px rgba(0,0,0,.95);letter-spacing:.5px;opacity:0}
+.dopa-cap b{color:#5eead4}
+
+/* ============ B3 — POWER ============ */
+#s3{opacity:0;background:#02030a}
+#s3 .bg-img{position:absolute;inset:0;background:center/cover no-repeat;opacity:.2;filter:saturate(1.05)}
+#s3 .veil{position:absolute;inset:0;background:radial-gradient(circle at 50% 70%,rgba(124,58,237,.22),transparent 45%),linear-gradient(180deg,rgba(2,3,10,.45),#02030a 82%)}
+#portalImg{position:absolute;left:0;top:0;width:1080px;display:block;opacity:0}
+#portalFlash{position:absolute;inset:0;z-index:7;background:radial-gradient(circle at 50% 50%,#fff,rgba(196,164,255,.6) 25%,rgba(124,58,237,.2) 50%,transparent 72%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+.summon-ring{position:absolute;left:50%;bottom:300px;width:720px;height:200px;margin-left:-360px;border-radius:50%;
+  border:3px solid rgba(168,85,247,.4);box-shadow:0 0 110px rgba(124,58,237,.6),inset 0 0 90px rgba(168,85,247,.3);opacity:0;transform:scale(.5)}
+.shadow-fig{position:absolute;bottom:300px;opacity:0}
+.shadow-fig img{height:100%;object-fit:contain;filter:drop-shadow(0 0 42px rgba(168,85,247,.8)) drop-shadow(0 40px 60px rgba(0,0,0,.9))}
+.power-line{position:absolute;left:50px;right:50px;z-index:6;text-align:center;font:800 62px 'Cinzel';color:#f8fafc;
+  text-shadow:0 4px 20px rgba(0,0,0,.95);opacity:0}
+#powerLine1{bottom:392px}
+#powerLine2{top:15%}
+#powerLine2 b{color:#c4b5fd}
+
+/* ============ B4 — CTA ============ */
+#s4{opacity:0;background:radial-gradient(circle at 50% 42%,#0a0712 0%,#040208 55%,#010104 100%)}
+#ctaFlash{position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,#fff,rgba(196,164,255,.5) 22%,transparent 60%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+#iconGlow{position:absolute;left:50%;top:620px;width:680px;height:680px;margin-left:-340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(124,58,237,.45),rgba(124,58,237,.12) 45%,transparent 70%);opacity:0;pointer-events:none}
+#icon{position:absolute;left:50%;top:700px;width:300px;height:300px;margin-left:-150px;border-radius:66px;opacity:0;
+  box-shadow:0 50px 100px rgba(0,0,0,.7),0 0 90px rgba(124,58,237,.5)}
+#wordmark{position:absolute;left:0;right:0;top:1040px;text-align:center;font:800 78px 'Inter';letter-spacing:2px;color:#f8fafc;
+  text-shadow:0 6px 30px rgba(0,0,0,.8);opacity:0}
+#wordmark span{color:#c4b5fd}
+#soon{position:absolute;left:0;right:0;top:1160px;text-align:center;font:800 26px 'JetBrains Mono';letter-spacing:7px;color:#5eead4;opacity:0}
+#badges{position:absolute;left:50%;bottom:300px;display:flex;gap:26px;margin-left:-308px;opacity:0}
+.badge{width:290px;height:92px;border-radius:18px;background:rgba(15,18,30,.8);border:1.5px solid rgba(148,163,184,.28);
+  backdrop-filter:blur(14px);display:flex;align-items:center;gap:16px;padding:0 24px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.badge svg{width:38px;height:38px;flex-shrink:0;fill:#fff}
+.badge-t{display:flex;flex-direction:column}
+.badge-soon{font:700 13px 'Inter';letter-spacing:1px;color:#94a3b8}
+.badge-name{font:800 23px 'Inter';color:#fff;margin-top:2px}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="15" data-fps="30" data-width="1080" data-height="1920">
+
+  <!-- ===================== B0 — HOOK (0.0–3.4) ===================== -->
+  <section id="s0" class="clip scene" data-start="0" data-duration="3.4" data-track-index="0" data-layout-allow-overflow>
+    <div id="motes"></div>
+    <div id="s0Content">
+      <div class="corner" id="cornerTL"></div>
+      <div class="corner" id="cornerTR"></div>
+      <div class="corner" id="cornerBL"></div>
+      <div class="corner" id="cornerBR"></div>
+
+      <div id="term"><span id="termtext"></span><span id="cursor">_</span></div>
+
+      <div class="orb-wrap">
+        <div id="orbRingOuter"></div>
+        <div id="orb"><div id="orbRingInner"></div><div class="orb-core">SYS</div></div>
+        <div id="shock"></div>
+      </div>
+      <div id="orbFlash"></div>
+
+      <div id="sysLabel">SYSTEMFENSTER</div>
+      <div id="hookLine">DU WURDEST<br>AUSGEWÄHLT.</div>
+      <div id="sysClass">KLASSIFIZIERUNG&nbsp;&nbsp;·&nbsp;&nbsp;<span class="rank">E-RANG</span></div>
+    </div>
+  </section>
+
+  <!-- ===================== B1 — PRÄMISSE (3.0–5.4) ===================== -->
+  <section id="s1" class="clip scene" data-start="3.0" data-duration="2.4" data-track-index="1" data-layout-allow-overflow>
+    <div class="bg-img" style="background-image:url('assets/bg_portal.png')"></div>
+    <div class="veil"></div>
+    <div id="premiseLabel">SYSTEM</div>
+    <div id="premiseLine">Dein Leben ist<br>jetzt ein Spiel.</div>
+    <div id="phone1" class="device">
+      <div class="device-screen"><img class="screen-img" src="assets/screens/home_status.png" alt=""/></div>
+    </div>
+  </section>
+
+  <!-- ===================== B2 — DOPAMIN (5.0–8.7) ===================== -->
+  <section id="s2" class="clip scene" data-start="5.0" data-duration="3.7" data-track-index="2" data-layout-allow-overflow>
+    <div id="d1" class="dcard"><img src="assets/screens/quest_complete.png" style="transform:translateY(-300px)" alt=""/><div id="dshine"></div></div>
+    <div id="d2" class="dcard"><img id="d2img" src="assets/screens/quest_list.png" alt=""/></div>
+    <div id="d3" class="dcard"><img src="assets/screens/quest_detail.png" style="transform:translateY(-150px)" alt=""/></div>
+    <div class="scrim-b"></div>
+    <div id="dopaCap1" class="dopa-cap">Erledigen<br>= <b>Level Up.</b></div>
+    <div id="dopaCap2" class="dopa-cap">Jede Aufgabe<br>wird zur <b>Quest.</b></div>
+  </section>
+
+  <!-- ===================== B3 — POWER (8.4–11.6) ===================== -->
+  <section id="s3" class="clip scene" data-start="8.4" data-duration="3.2" data-track-index="3" data-layout-allow-overflow>
+    <div class="bg-img" style="background-image:url('assets/bg_dungeon.png')"></div>
+    <div class="veil"></div>
+    <img id="portalImg" src="assets/screens/portal_red.png" alt=""/>
+    <div class="summon-ring" id="ring"></div>
+    <div id="fig-knight" class="shadow-fig" style="left:18px;height:392px;z-index:1"><img src="assets/shadow_knight.webp"/></div>
+    <div id="fig-mage" class="shadow-fig" style="right:18px;height:392px;z-index:1"><img src="assets/shadow_mage.webp"/></div>
+    <div id="fig-igris" class="shadow-fig" style="left:158px;height:486px;z-index:2"><img src="assets/shadow_igris.webp"/></div>
+    <div id="fig-beru" class="shadow-fig" style="right:158px;height:462px;z-index:2"><img src="assets/shadow_beru.webp"/></div>
+    <div id="fig-bellion" class="shadow-fig" style="left:50%;margin-left:-310px;height:624px;z-index:3"><img src="assets/shadow_bellion.webp"/></div>
+    <div class="scrim-t"></div>
+    <div class="scrim-b"></div>
+    <div id="powerLine1" class="power-line">Vom E-Rang …</div>
+    <div id="powerLine2" class="power-line">… zum <b>Monarchen.</b></div>
+    <div id="portalFlash"></div>
+  </section>
+
+  <!-- ===================== B4 — CTA (11.4–15.0) ===================== -->
+  <section id="s4" class="clip scene" data-start="11.4" data-duration="3.6" data-track-index="4" data-layout-allow-overflow>
+    <div id="iconGlow"></div>
+    <img id="icon" src="assets/app_icon.png" alt=""/>
+    <div id="wordmark">Solo<span>ToDo</span></div>
+    <div id="soon">BALD VERFÜGBAR</div>
+    <div id="badges">
+      <div class="badge">
+        <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        <div class="badge-t"><span class="badge-soon">Bald im</span><span class="badge-name">App Store</span></div>
+      </div>
+      <div class="badge">
+        <svg viewBox="0 0 24 24"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-1.7l2.834 1.64a1 1 0 0 1 0 1.706l-2.834 1.64-2.56-2.56 2.56-2.426zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/></svg>
+        <div class="badge-t"><span class="badge-soon">Bald bei</span><span class="badge-name">Google Play</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Global grade layers (top tracks) -->
+<div id="vignette" class="clip" data-start="0" data-duration="15" data-track-index="9"></div>
+<div id="grain" class="clip" data-start="0" data-duration="15" data-track-index="10"></div>
+
+<script>
+/* ---------- deterministic helpers (no Math.random / Date.now) ---------- */
+// Floating motes — fixed positions/offsets for reproducible renders.
+(function(){
+  const pts = [
+    [180,420,0,2.4],[860,360,1,2.8],[300,1480,2,2.2],[760,1520,0,3.0],
+    [120,980,1,2.6],[940,1040,2,2.0],[520,260,0,2.9],[640,1700,1,2.3],
+    [240,720,2,2.7],[820,800,0,2.1],[420,1240,1,2.5],[700,1180,2,2.8],
+    [160,1300,0,2.4],[900,1380,1,2.6]
+  ];
+  const wrap = document.getElementById('motes');
+  pts.forEach(p=>{
+    const m=document.createElement('div');
+    m.className='mote';
+    m.style.left=p[0]+'px'; m.style.top=p[1]+'px';
+    m.style.opacity=(0.25+0.12*p[2]);
+    m.dataset.drift=p[3];
+    wrap.appendChild(m);
+  });
+  // typewriter: split terminal text into per-char spans
+  const text='> system.verbindung // E-RANG erkannt';
+  const tt=document.getElementById('termtext');
+  for(const c of text){
+    const s=document.createElement('span');
+    s.className='ch'; s.textContent=(c===' ')?' ':c;
+    tt.appendChild(s);
+  }
+})();
+
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+
+/* ============ B0 — HOOK (0.0–3.4) ============ */
+tl.to(".mote",{y:"-=26",duration:3.4,ease:"sine.inOut"},0);
+tl.fromTo(".mote",{opacity:0},{opacity:1,duration:0.6,ease:"power1.out"},0);
+// terminal types in
+tl.to("#term .ch",{opacity:1,duration:0.02,stagger:0.028,ease:"none"},0.25);
+tl.to("#cursor",{opacity:0,duration:0.4,repeat:1,yoyo:true,ease:"steps(1)"},0.3);
+tl.to("#term",{opacity:0,duration:0.22,ease:"power2.in"},1.0);
+// corner brackets
+tl.to(".corner",{borderColor:"rgba(94,234,212,0.45)",opacity:1,duration:0.6,ease:"power2.out"},1.3);
+// ORB IGNITE
+tl.fromTo("#orbFlash",{opacity:0,scale:0.6},{opacity:1,scale:1,duration:0.14,ease:"power2.in"},0.95);
+tl.to("#orbFlash",{opacity:0,duration:0.55,ease:"power2.out"},1.09);
+tl.fromTo("#shock",{opacity:0,scale:0.6},{opacity:0.8,scale:1,duration:0.05},0.98);
+tl.to("#shock",{scale:3.4,opacity:0,duration:0.8,ease:"expo.out"},1.03);
+tl.fromTo("#orb",{scale:0.55,opacity:0,filter:"blur(14px)"},{scale:1,opacity:1,filter:"blur(0px)",duration:0.7,ease:"expo.out"},1.0);
+tl.fromTo(["#orbRingOuter","#orbRingInner"],{scale:0.8,opacity:0},{scale:1,opacity:1,duration:0.9,ease:"expo.out"},1.05);
+tl.to(".orb-wrap",{scale:1.04,duration:2.2,ease:"sine.inOut",transformOrigin:"50% 50%"},1.7);
+// labels + hook headline
+tl.fromTo("#sysLabel",{opacity:0,y:10},{opacity:1,y:0,duration:0.4,ease:"power2.out"},1.55);
+tl.fromTo("#hookLine",{opacity:0,scale:0.96,y:14,filter:"blur(7px)"},{opacity:1,scale:1,y:0,filter:"blur(0px)",duration:0.62,ease:"expo.out"},1.68);
+tl.fromTo("#sysClass",{opacity:0},{opacity:1,duration:0.3,ease:"power1.out"},2.35);
+tl.fromTo("#sysClass .rank",{color:"#94a3b8"},{color:"#fbbf24",duration:0.35,ease:"power2.out"},2.72);
+// exit hook
+tl.to("#s0Content",{opacity:0,duration:0.32,ease:"power2.in"},3.02);
+
+/* ============ B1 — PRÄMISSE (3.0–5.4) ============ */
+tl.set("#s1",{opacity:1},3.02);
+tl.fromTo("#phone1",{scale:1.5,y:150,opacity:0,filter:"blur(10px)",rotateY:9},{scale:1,y:0,opacity:1,filter:"blur(0px)",rotateY:0,duration:0.95,ease:"expo.out",transformOrigin:"50% 60%"},3.04);
+tl.to("#phone1",{scale:1.05,duration:2.3,ease:"sine.inOut",transformOrigin:"50% 45%"},3.7);
+tl.fromTo("#premiseLabel",{opacity:0,y:10},{opacity:1,y:0,duration:0.4,ease:"power2.out"},3.55);
+tl.fromTo("#premiseLine",{opacity:0,y:16,filter:"blur(6px)"},{opacity:1,y:0,filter:"blur(0px)",duration:0.55,ease:"expo.out"},3.7);
+tl.to(["#premiseLabel","#premiseLine"],{opacity:0,duration:0.3,ease:"power2.in"},4.85);
+tl.to("#s1",{opacity:0,duration:0.22,ease:"power2.in"},5.02);
+
+/* ============ B2 — DOPAMIN (5.0–8.7) ============ */
+tl.set("#s2",{opacity:1},5.0);
+// cut 1 — reward punch
+tl.fromTo("#d1",{opacity:0,scale:1.13},{opacity:1,scale:1,duration:0.5,ease:"expo.out",transformOrigin:"50% 45%"},5.0);
+tl.to("#d1",{scale:1.05,duration:1.1,ease:"sine.inOut",transformOrigin:"50% 45%"},5.5);
+tl.fromTo("#dshine",{opacity:0,x:-260},{opacity:1,x:0,duration:0.5,ease:"power1.in"},5.35);
+tl.to("#dshine",{x:760,opacity:0,duration:0.55,ease:"power1.out"},5.85);
+tl.fromTo("#dopaCap1",{opacity:0,y:16},{opacity:1,y:0,duration:0.45,ease:"power2.out"},5.2);
+tl.to(["#d1","#dopaCap1"],{opacity:0,duration:0.13,ease:"none"},6.2);
+// cut 2 — quest list scroll
+tl.fromTo("#d2",{opacity:0},{opacity:1,duration:0.12,ease:"none"},6.22);
+tl.fromTo("#d2img",{y:-130},{y:-640,duration:1.15,ease:"power1.inOut"},6.24);
+tl.to("#d2",{opacity:0,duration:0.13,ease:"none"},7.32);
+// cut 3 — daily status / progress
+tl.fromTo("#d3",{opacity:0,scale:1.09},{opacity:1,scale:1,duration:0.45,ease:"expo.out",transformOrigin:"50% 30%"},7.34);
+tl.to("#d3",{scale:1.05,duration:0.85,ease:"sine.inOut",transformOrigin:"50% 30%",overwrite:"auto"},7.85);
+tl.fromTo("#dopaCap2",{opacity:0,y:16},{opacity:1,y:0,duration:0.45,ease:"power2.out"},7.55);
+tl.to(["#d3","#dopaCap2"],{opacity:0,duration:0.3,ease:"power2.in"},8.42);
+tl.to("#s2",{opacity:0,duration:0.18,ease:"power2.in"},8.45);
+
+/* ============ B3 — POWER (8.4–11.6) ============ */
+tl.set("#s3",{opacity:1},8.4);
+tl.fromTo("#portalImg",{opacity:0},{opacity:1,duration:0.3,ease:"power2.out"},8.42);
+tl.fromTo("#portalImg",{scale:1.05},{scale:1.55,duration:1.3,ease:"power2.in",transformOrigin:"50% 48%"},8.42);
+tl.fromTo("#powerLine1",{opacity:0,y:14,filter:"blur(6px)"},{opacity:1,y:0,filter:"blur(0px)",duration:0.5,ease:"expo.out"},8.62);
+tl.to("#powerLine1",{opacity:0,duration:0.2,ease:"power2.in"},9.35);
+// flash wipe through the gate
+tl.fromTo("#portalFlash",{opacity:0},{opacity:1,duration:0.18,ease:"power2.in"},9.38);
+tl.to("#portalImg",{opacity:0,duration:0.1,ease:"none"},9.5);
+tl.to("#portalFlash",{opacity:0,duration:0.55,ease:"power2.out"},9.55);
+// shadow army rises
+tl.fromTo("#ring",{scale:0.4,opacity:0},{scale:1,opacity:1,duration:0.9,ease:"expo.out"},9.5);
+tl.to("#ring",{scale:1.12,duration:2.0,ease:"none"},10.4);
+tl.fromTo(["#fig-mage","#fig-knight"],{y:90,opacity:0,filter:"blur(8px)"},{y:0,opacity:1,filter:"blur(0px)",duration:0.7,ease:"power3.out"},9.6);
+tl.fromTo(["#fig-beru","#fig-igris"],{y:120,opacity:0,filter:"blur(8px)"},{y:0,opacity:1,filter:"blur(0px)",duration:0.7,ease:"power3.out"},9.8);
+tl.fromTo("#fig-bellion",{y:160,opacity:0,filter:"blur(10px)",scale:0.92},{y:0,opacity:1,filter:"blur(0px)",scale:1,duration:0.9,ease:"power3.out"},10.0);
+tl.to(".shadow-fig img",{scale:1.05,duration:1.9,ease:"none"},9.6);
+tl.fromTo("#powerLine2",{opacity:0,y:18,filter:"blur(7px)"},{opacity:1,y:0,filter:"blur(0px)",duration:0.6,ease:"expo.out"},10.4);
+tl.to(["#powerLine2","#ring"],{opacity:0,duration:0.18,ease:"power2.in"},11.2);
+tl.to(".shadow-fig",{opacity:0,y:-24,duration:0.18,ease:"power2.in"},11.2);
+tl.set([".shadow-fig","#powerLine2","#ring"],{opacity:0,visibility:"hidden"},11.4);
+tl.to("#s3",{opacity:0,duration:0.14,ease:"power2.in"},11.4);
+
+/* ============ B4 — CTA (11.4–15.0) ============ */
+tl.set("#s4",{opacity:1},11.4);
+tl.fromTo("#ctaFlash",{opacity:0},{opacity:0.85,duration:0.12,ease:"power2.in"},11.42);
+tl.to("#ctaFlash",{opacity:0,duration:0.6,ease:"power2.out"},11.55);
+tl.fromTo("#iconGlow",{opacity:0,scale:0.7},{opacity:1,scale:1,duration:0.8,ease:"power2.out",transformOrigin:"50% 50%"},11.55);
+tl.to("#iconGlow",{opacity:0.72,scale:1.08,duration:2.6,ease:"sine.inOut",transformOrigin:"50% 50%"},12.3);
+tl.fromTo("#icon",{scale:0.6,opacity:0,filter:"blur(12px)"},{scale:1,opacity:1,filter:"blur(0px)",duration:0.7,ease:"back.out(1.4)",transformOrigin:"50% 50%"},11.5);
+tl.to("#icon",{y:-12,duration:1.9,yoyo:true,repeat:1,ease:"sine.inOut"},12.3);
+tl.fromTo("#wordmark",{opacity:0,y:20,letterSpacing:"16px"},{opacity:1,y:0,letterSpacing:"2px",duration:0.7,ease:"expo.out"},12.0);
+tl.fromTo("#soon",{opacity:0,y:12},{opacity:1,y:0,duration:0.5,ease:"power2.out"},12.55);
+tl.fromTo("#badges",{opacity:0,y:26},{opacity:1,y:0,duration:0.7,ease:"expo.out"},13.0);
+
+/* ---- deterministic hard-kills (parallel render workers seek non-linearly) ---- */
+tl.set("#cursor",{opacity:0,visibility:"hidden"},1.2);
+tl.set("#s0Content",{visibility:"hidden"},3.38);
+tl.set(["#premiseLabel","#premiseLine"],{opacity:0,visibility:"hidden"},5.18);
+tl.set(["#d1","#dopaCap1"],{opacity:0,visibility:"hidden"},6.35);
+tl.set(["#d3","#dopaCap2"],{opacity:0,visibility:"hidden"},8.74);
+tl.set("#powerLine1",{opacity:0,visibility:"hidden"},9.58);
+tl.set("#portalImg",{opacity:0,visibility:"hidden"},9.62);
+
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

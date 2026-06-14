@@ -11,7 +11,7 @@ export default function SystemLoadingScreen({
   const { t } = useI18n();
   const isDataLoad = variant === "data";
   const iconSet = isDataLoad
-    ? [QUEST_ICONS.daily, STAT_ICONS.int, SHADOW_ICONS.igris]
+    ? [QUEST_ICONS.daily, STAT_ICONS.int, SHADOW_ICONS.vaelin]
     : [SYSTEM_ICONS.logo, GATE_ICONS.normal, STAT_ICONS.agi];
 
   return (

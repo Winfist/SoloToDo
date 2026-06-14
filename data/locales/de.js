@@ -189,7 +189,7 @@ export const de = {
     },
     ai: {
       description: "KI-gestützte Features: Quest-Fotos, Aufgaben-Scanner, KI-Coach und dynamische Quests.",
-      privacy: "DATENSCHUTZ & AGB: Durch die Aktivierung der KI-Features erklärst du dich damit einverstanden, dass questbezogene Texte und verifizierte Bilder an Google's Gemini API gesendet und verarbeitet werden. Wir speichern keine Bilder dauerhaft. Opt-Out ist jederzeit über diesen Schalter möglich.",
+      privacy: "DATENSCHUTZ & AGB: Durch die Aktivierung der KI-Features erklärst du dich damit einverstanden, dass questbezogene Texte und verifizierte Bilder über unsere Firebase Cloud Functions an OpenRouter und den dort ausgewählten KI-Modellanbieter gesendet und verarbeitet werden. Wir speichern Bilder nicht dauerhaft. Opt-Out ist jederzeit über diesen Schalter möglich.",
     },
     widget: {
       description: "Konfiguriere, welche Daten auf deinem iOS Home Screen und Lock Screen Widget angezeigt werden.",
@@ -299,6 +299,9 @@ export const de = {
     stagesLower: "Etappen",
     allStagesDone: "ALLE ETAPPEN ERLEDIGT ✓",
     completeBlockedTooltip: "Erst alle Etappen abschließen",
+    stageOf: "ETAPPE {current}/{total}",
+    stageNow: "JETZT",
+    completeStageTooltip: "Nächste Etappe abschließen",
     deficiencyMessage: "[SYSTEM-STRAFE] Vernachlässigung des Stats '{stat}' erkannt. Zwangstraining aktiviert.",
     screenTimeTitle: "Weniger als {time} Bildschirmzeit heute",
     screenTimeDesc: "Beweisfoto (Einstellungen -> Bildschirmzeit) hochladen und KI den Fokus verifizieren lassen.",
@@ -582,7 +585,7 @@ export const de = {
       },
       op_shadow_protocol: {
         title: "Operation Schatten-Protokoll",
-        desc: "Der ultimative Belastungstest für den wahren Schatten-Monarchen.",
+        desc: "Der ultimative Belastungstest für den wahren Monarchen.",
         steps: {
           1: { title: "Protokoll Stufe 1: 50 Liegestütze und 15 Min Dehnen direkt nach dem Aufwachen" },
           2: { title: "Protokoll Stufe 2: Absolviere einen 10 km Lauf oder 1 Stunde intensives Cardio-Training" },
@@ -910,6 +913,9 @@ export const de = {
       completeQuestTooltip: "Quest abschliessen",
       completeBlockedTooltip: "Erst Etappen abschliessen",
       completeConfirm: "JA?",
+      allDoneTitle: "Alle Aufträge erfüllt",
+      allDoneDesc: "Das System ruht. Stark gespielt heute.",
+      allDoneCount: "{count} HEUTE ABGESCHLOSSEN",
     },
     vision: {
       subtitle: "MANIFESTIERE DEIN SCHICKSAL",
@@ -1280,7 +1286,7 @@ export const de = {
   },
   ai: {
     rateDaily: "Tageslimit erreicht. Zurücksetzen um Mitternacht UTC.",
-    ratePause: "Kurze Pause (~{minutes} Min.). Gemini braucht kurz Luft.",
+    ratePause: "Kurze Pause (~{minutes} Min.). Der KI-Dienst braucht einen Moment.",
     resetHint: "({symbol} zum sofortigen Zurücksetzen)",
     unknownError: "Unbekannter Fehler.",
   },
@@ -1531,7 +1537,7 @@ export const de = {
     },
   },
   shadows: {
-    eyebrow: "SHADOW MONARCHIE",
+    eyebrow: "PHANTOM LEGION",
     title: "Schattenarmee",
     namedCount: "{count} Named Shadow{plural}",
     capacity: "/{capacity} KAPAZITÄT",
@@ -1590,7 +1596,7 @@ export const de = {
     authorize: "FREIGABE",
     save: "SPEICHERN",
     fallbackTitle: "LETZTER FALLBACK",
-    fallbackDesc: "Nur aktiv, weil das native Gate keine exportierbaren Minuten liefert. Das Bild wird an die bestehende Gemini-Bildpipeline geschickt.",
+    fallbackDesc: "Nur aktiv, weil das native Gate keine exportierbaren Minuten liefert. Das Bild wird über die bestehende KI-Bildpipeline verarbeitet.",
     checkScreenshot: "SCREENSHOT PRÜFEN",
     overwriteTitle: "Vorhandenen Tageswert überschreiben?",
     overwriteDesc: "Für {date} existiert bereits ein Wert. Entscheide, ob der neue Screenshot ihn ersetzen soll.",

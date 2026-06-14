@@ -24,16 +24,22 @@ const firebaseConfig = {
 };
 
 // Safari/iOS blocks cross-domain OAuth: ITP partitions storage between the app
-// origin (solo-todo.web.app) and a different auth handler origin
+// origin and a different auth handler origin
 // (solo-todo.firebaseapp.com), which breaks both signInWithPopup (cross-origin
 // iframe delay drops the user gesture → popup-blocked) and signInWithRedirect
 // (pending-redirect state can't be read back → user lands on login again).
-// Fix: when served from a Firebase Hosting domain, point authDomain at that SAME
-// origin so the OAuth handler stays first-party. Dev (localhost) keeps the
+// Fix: on known Firebase Hosting origins, point authDomain at that SAME origin
+// so the OAuth handler stays first-party. Dev (localhost) keeps the
 // default — the Hosting __/auth handler isn't served by the vite dev server —
 // and native (capacitor://localhost) doesn't use the web auth handler at all.
+const FIRST_PARTY_AUTH_HOSTS = new Set([
+  "solo-todo.web.app",
+  "solo-todo.firebaseapp.com",
+  "app.solotodo.de",
+]);
+
 if (typeof window !== "undefined" &&
-    /\.(web\.app|firebaseapp\.com)$/.test(window.location.hostname)) {
+    FIRST_PARTY_AUTH_HOSTS.has(window.location.hostname)) {
   firebaseConfig.authDomain = window.location.hostname;
 }
 
@@ -65,9 +71,18 @@ const functions = getFunctions(app, "europe-west1");
 
 // App Check — protects Cloud Functions from abuse
 // Requires VITE_RECAPTCHA_SITE_KEY in .env.local and App Check registered in Firebase Console
-if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+// Skipped in dev: localhost is not registered with reCAPTCHA, so every token
+// fetch fails and floods the console with appCheck/recaptcha-error retries —
+// requests went out without an App Check token either way. To test App Check
+// locally instead, set self.FIREBASE_APPCHECK_DEBUG_TOKEN = true here and
+// allowlist the printed token (Firebase Console → App Check → debug tokens).
+const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const hasConfiguredRecaptchaKey =
+  recaptchaSiteKey && recaptchaSiteKey !== "YOUR_RECAPTCHA_SITE_KEY";
+
+if (!isNative && !import.meta.env.DEV && hasConfiguredRecaptchaKey) {
   initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+    provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
     isTokenAutoRefreshEnabled: true,
   });
 }

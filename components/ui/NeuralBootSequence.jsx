@@ -2,6 +2,7 @@
 // BUG FIX #9: Uses localStorage with daily key so boot shows once per day,
 // not once per tab (sessionStorage) which caused repeats on new tabs.
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { getLocalDateKey } from "../../data/dateUtils.js";
 
 const BOOT_KEY_PREFIX = "sl_boot_shown_";
 
@@ -17,7 +18,7 @@ export default function NeuralBootSequence({ hunterName = "HUNTER", rankName = "
   // Already shown today? Uses localStorage with daily key for cross-tab persistence
   const alreadyShown = useMemo(() => {
     try {
-      const todayKey = BOOT_KEY_PREFIX + new Date().toISOString().slice(0, 10);
+      const todayKey = BOOT_KEY_PREFIX + getLocalDateKey();
       return localStorage.getItem(todayKey) === "true";
     }
     catch { return false; }
@@ -41,7 +42,7 @@ export default function NeuralBootSequence({ hunterName = "HUNTER", rankName = "
     }
 
     try {
-      const todayKey = BOOT_KEY_PREFIX + new Date().toISOString().slice(0, 10);
+      const todayKey = BOOT_KEY_PREFIX + getLocalDateKey();
       localStorage.setItem(todayKey, "true");
       // Clean up old boot keys (older than today)
       for (let i = localStorage.length - 1; i >= 0; i--) {

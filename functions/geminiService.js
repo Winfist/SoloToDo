@@ -31,7 +31,7 @@ async function callOpenRouter(messages) {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://solotodo.app", // Important for OpenRouter
+          "HTTP-Referer": "https://solo-todo.web.app", // Important for OpenRouter
           "X-Title": "SoloToDo",
           "Content-Type": "application/json"
         },

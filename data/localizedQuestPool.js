@@ -865,7 +865,7 @@ export const OPERATION_EN_OVERRIDES = {
   },
   op_shadow_protocol: {
     title: "Operation Shadow Protocol",
-    desc: "The ultimate stress test for the true Shadow Monarch.",
+    desc: "The ultimate stress test for the true Monarch.",
     steps: [
       { title: "Protocol Stage 1: 50 push-ups and 15 min stretching immediately after waking up" },
       { title: "Protocol Stage 2: Complete a 10 km run or 1 hour of intense cardio training" },

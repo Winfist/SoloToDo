@@ -984,6 +984,27 @@ export default function DashboardView({
 
               {/* ── QUEST LIST ── */}
               {dashboardLoadout.length === 0 ? (
+                planningSnapshot.completedToday > 0 ? (
+                  <div style={{ textAlign: "center", padding: "42px 20px 36px", background: theme.card, borderRadius: 16, border: "1px solid rgba(148,163,184,0.12)", backdropFilter: "blur(8px)", marginBottom: 24 }}>
+                    <div style={{ width: 56, height: 56, margin: "0 auto 14px", borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", background: `${theme.primary}08`, border: `1px solid ${theme.primary}22` }}>
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={theme.primary} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" />
+                      </svg>
+                    </div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#f8fafc", fontFamily: "'Outfit',sans-serif", marginBottom: 5 }}>{t("dashboard.board.allDoneTitle")}</div>
+                    <div style={{ fontSize: 12, color: "#7b8494", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif", marginBottom: 14 }}>{t("dashboard.board.allDoneDesc")}</div>
+                    <span style={{ display: "inline-block", padding: "5px 12px", borderRadius: 999, background: `${theme.primary}10`, border: `1px solid ${theme.primary}24`, color: theme.accent || theme.primary, fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.6 }}>
+                      {t("dashboard.board.allDoneCount", { count: planningSnapshot.completedToday })}
+                    </span>
+                    {planningSnapshot.questLog.length > 0 && (
+                      <div>
+                        <button onClick={() => navigateTo?.("quest_log")} style={{ marginTop: 14, padding: "8px 11px", borderRadius: 9, border: "1px solid rgba(148,163,184,0.16)", background: "rgba(148,163,184,0.06)", color: "#94a3b8", cursor: "pointer", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>
+                          QUEST-LOG ÖFFNEN ({planningSnapshot.questLog.length})
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <div style={{ textAlign: "center", padding: "40px 20px", background: theme.card, borderRadius: 14, border: `1px dashed ${theme.primary}15`, backdropFilter: "blur(8px)", marginBottom: 24 }}>
                   <div style={{ marginBottom: 10, animation: "float 3s ease-in-out infinite", display: "flex", justifyContent: "center" }}>
                     <img src="/icons/skill_attack.webp" alt="no quests" style={{ width: 44, height: 44, objectFit: "contain", opacity: 0.4, filter: "drop-shadow(0 0 10px rgba(100,116,139,0.4))" }} />
@@ -996,6 +1017,7 @@ export default function DashboardView({
                     </button>
                   )}
                 </div>
+                )
               ) : (
                 <div style={{ marginBottom: 24, display: "grid", gap: 12 }}>
                   {questBoardSections.map(section => (
@@ -1032,7 +1054,7 @@ export default function DashboardView({
                     </section>
                   ))}
                   {planningSnapshot.questLog.length > 0 && (
-                    <button onClick={() => navigateTo?.("quest_log")} style={{ width: "100%", padding: "11px 12px", borderRadius: 12, border: "1px solid rgba(148,163,184,0.13)", background: "rgba(100,116,139,0.08)", color: "#cbd5e1", cursor: "pointer", textAlign: "left" }}>
+                    <button onClick={() => navigateTo?.("quest_log")} style={{ width: "100%", minWidth: 0, maxWidth: "100%", contain: "inline-size", padding: "11px 12px", borderRadius: 12, border: "1px solid rgba(148,163,184,0.13)", background: "rgba(100,116,139,0.08)", color: "#cbd5e1", cursor: "pointer", textAlign: "left" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "#94a3b8", fontSize: 10, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>
                         <span>WEITERE QUESTS: {planningSnapshot.questLog.length}</span>
                         <span>QUEST-LOG ÖFFNEN</span>

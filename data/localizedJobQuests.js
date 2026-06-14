@@ -42,7 +42,7 @@ const EN_JOB_QUESTS = {
     necromancer_trial_3: { description: "Harvest the souls of the fallen." },
     necromancer_trial_5: { description: "The dead obey you." },
     necromancer_trial_7: { description: "Transcend death itself." },
-    necromancer_mastery: { description: "Become the heir to the Shadow Monarch." },
+    necromancer_mastery: { description: "Become the heir to the Shadow Throne." },
   }
 };
 

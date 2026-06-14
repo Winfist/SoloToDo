@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NAV_ICONS } from "../data/icons";
+import { REDEMPTION_QUESTS_REQUIRED, calcRestoredStreak } from "../data/protocolHelpers.js";
 
 // ═══════════════════════════════════════════════════════════════
 // SHADOW REGRESSION CINEMATIC
@@ -10,7 +11,7 @@ export default function ShadowRegressionCinematic({ state, onClose, theme }) {
   const [phase, setPhase] = useState("enter"); // "enter" | "main" | "exit"
   const regression = state?.shadowRegression || {};
   const previousStreak = regression.previousStreak || 0;
-  const restoredStreak = Math.floor(previousStreak * 0.5);
+  const restoredStreak = calcRestoredStreak(previousStreak);
   const completed = regression.questsCompleted || 0;
 
   useEffect(() => {
@@ -113,7 +114,7 @@ export default function ShadowRegressionCinematic({ state, onClose, theme }) {
           </div>
         </div>
         <div style={{ color: "#6b7280", fontSize: "0.7rem", marginTop: "0.5rem" }}>
-          Schließe 3 Redemption-Quests ab um {restoredStreak} Tage wiederzuerlangen
+          Schließe {REDEMPTION_QUESTS_REQUIRED} Redemption-Quests ab um {restoredStreak} Tage wiederzuerlangen
         </div>
       </div>
 

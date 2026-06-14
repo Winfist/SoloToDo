@@ -59,7 +59,7 @@ Kategorie: Produktivität / Lifestyle
 Altersfreigabe: 4+ (Apple) / USK 0 (Google)
 
 URLs, die du später brauchst (bitte noch anlegen, z.B. auf einer simplen Website oder Notion-Page):
-- Support URL: https://solo-todo.web.app/support
+- Support URL: https://solo-todo.web.app/support.html
 - Datenschutzerklärung (Privacy Policy): Pflicht! https://solo-todo.web.app/datenschutz.html
 - Marketing URL: https://solo-todo.web.app
 
@@ -72,10 +72,11 @@ Urheberrecht (Copyright):
 Diese Angaben musst du im Google Play Store Entwickler-Konto hinterlegen
 und auf deiner Webseite (https://solo-todo.web.app/impressum.html) einbinden:
 
-Angaben gemäß § 5 TMG:
+Angaben gemäß § 5 DDG:
 John Wuckert
 Amalienweg 5
 70794 Filderstadt
+Deutschland
 
 Kontakt:
-E-Mail: jwuckert2@gmail.com
+E-Mail: jwuckert2+STD@gmail.com

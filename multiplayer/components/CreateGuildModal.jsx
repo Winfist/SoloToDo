@@ -79,7 +79,7 @@ export default function CreateGuildModal({ onClose, onCreate }) {
               GILDENNAME
             </div>
             <input
-              value={name} onChange={e => setName(e.target.value)} placeholder="Shadow Monarchs..."
+              value={name} onChange={e => setName(e.target.value)} placeholder="Shadow Legion..."
               maxLength={24}
               style={{
                 width: "100%", padding: "12px 16px", borderRadius: 12,

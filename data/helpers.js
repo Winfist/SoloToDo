@@ -691,11 +691,19 @@ export function calcFormationBonus(shadowArmy, allShadowsActive = false) {
   return { dungeonBonus, xpBonus: xpBonus / 100, goldBonus: goldBonus / 100, streakShield };
 }
 
+// Pre-rebrand IDs still found in saves that haven't passed migrateState yet.
+const LEGACY_NAMED_ALIASES = { vaelin: "igris", xerath: "beru", kaelen: "bellion" };
+
 export function checkNamedShadowUnlocks(state) {
   const earned = [];
   const army = state.shadowArmy;
   if (!army) return earned;
-  const alreadyHas = id => army.shadows.some(s => s.id === id || s.namedId === id);
+  const alreadyHas = id => {
+    const legacy = LEGACY_NAMED_ALIASES[id];
+    return army.shadows.some(s =>
+      s.id === id || s.namedId === id || (legacy && (s.id === legacy || s.namedId === legacy))
+    );
+  };
 
   Object.values(NAMED_SHADOWS).forEach(ns => {
     if (alreadyHas(ns.id)) return;

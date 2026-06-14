@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { DEFAULT_STATE } from "./defaultState.js";
 import { calcShadowXpToNext, genId, getToday, getXpForLevel, recalculateLevelFromTotalXp } from "./helpers.js";
 import { normalizeQuestForStorage } from "./questUtils.js";
+import { migrateLegacyShadowIdentity, clearBogusShadowRegression } from "./shadowMigration.js";
 import { DEFAULT_QUEST_PLANNING } from "./questPlanning.js";
 import { syncWidgetData } from "../services/widgetDataService.js";
 
@@ -819,6 +820,30 @@ export function migrateState(oldState) {
     oldState.questPlanning = { ...DEFAULT_QUEST_PLANNING, ...(oldState.questPlanning || {}) };
     oldState.questArchive = Array.isArray(oldState.questArchive) ? oldState.questArchive : [];
     oldState.stateVersion = 3;
+  }
+
+  if (version < 4) {
+    // v3 → v4: IP rebrand — remap legacy named-shadow IDs (igris/beru/bellion),
+    // collapse duplicates the old unlock check created, refresh icon paths,
+    // and replace retired title strings.
+    const rebranded = migrateLegacyShadowIdentity(oldState);
+    if (rebranded !== oldState) {
+      oldState.shadowArmy = rebranded.shadowArmy;
+      oldState.selectedTitle = rebranded.selectedTitle;
+    }
+    oldState.stateVersion = 4;
+  }
+
+  if (version < 5) {
+    // v4 → v5: deactivate Shadow Regressions that fired without a streak to
+    // lose (previousStreak 0) and remove their injected redemption quests.
+    const healed = clearBogusShadowRegression(oldState);
+    if (healed !== oldState) {
+      oldState.shadowRegression = healed.shadowRegression;
+      oldState.penaltyZone = healed.penaltyZone;
+      oldState.quests = healed.quests;
+    }
+    oldState.stateVersion = 5;
   }
 
   const s = { ...DEFAULT_STATE, ...oldState };

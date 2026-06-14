@@ -12,7 +12,7 @@ import {
   checkHiddenQuestTriggers, generateChainedQuest, generateOperationStep, getDailyModifier
 } from '../data/helpers.js';
 import { OPERATIONS } from '../data/questPool.js';
-import { generateRedemptionQuests } from '../data/protocolHelpers.js';
+import { generateRedemptionQuests, REDEMPTION_QUESTS_REQUIRED, calcRestoredStreak } from '../data/protocolHelpers.js';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
 import { isFeatureUnlocked } from '../data/featureUnlocks.js';
 import { hasFocusQuestAbility, getFocusQuestXpBonus, getMomentumBonus, getQuestTimerReduction } from '../data/artifactHelpers.js';
@@ -161,8 +161,8 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   let regressionSystemMessage = null;
   if (newShadowRegression.active && quest.isRedemption) {
     newShadowRegression.questsCompleted = (newShadowRegression.questsCompleted || 0) + 1;
-    if (newShadowRegression.questsCompleted >= 5) {
-      const restoredStreak = Math.floor((newShadowRegression.previousStreak || 0) * 0.5);
+    if (newShadowRegression.questsCompleted >= REDEMPTION_QUESTS_REQUIRED) {
+      const restoredStreak = calcRestoredStreak(newShadowRegression.previousStreak);
       newShadowRegression = {
         ...newShadowRegression,
         active: false,
@@ -185,7 +185,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
       xpGain = Math.round(xpGain * 2);
       notifications.push({ msg: ltState(state, "questActions.regressionCompleted", { streak: restoredStreak }), type: "named" });
     } else {
-      const remaining = 5 - newShadowRegression.questsCompleted;
+      const remaining = REDEMPTION_QUESTS_REQUIRED - newShadowRegression.questsCompleted;
       notifications.push({ msg: ltState(state, "questActions.regressionProgress", { completed: newShadowRegression.questsCompleted, remaining }), type: "info" });
     }
   }
@@ -310,8 +310,12 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     }
   }
 
-  const finalStreak = (newShadowRegression.active === false && newShadowRegression.completedAt === today && !state.shadowRegression?.completedAt)
-    ? Math.floor((newShadowRegression.previousStreak || 0) * 0.5)
+  const regressionJustCompleted = newShadowRegression.active === false
+    && newShadowRegression.completedAt === today
+    && !state.shadowRegression?.completedAt
+    && state.shadowRegression?.active;
+  const finalStreak = regressionJustCompleted
+    ? calcRestoredStreak(newShadowRegression.previousStreak)
     : newStreak;
 
   const charismaChaBonus = next._charismaChaBonus || 0;
@@ -347,7 +351,8 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   next = {
     ...next,
     stats: newStats,
-    quests: updatedQuests,
+    // Once the regression completes (3 of 5), drop the unused redemption quests
+    quests: regressionJustCompleted ? updatedQuests.filter(q => q.completed || !q.isRedemption) : updatedQuests,
     reminders: (state.reminders || []).filter(r => r.questId !== questId),
     completedQuests: [...(state.completedQuests || []), newlyCompletedQuest],
     habits: newHabits,

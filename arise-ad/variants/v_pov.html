@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1080,height=1920"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Cinzel:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#02030a;color:#f8fafc;font-family:'Inter',sans-serif}
+.clip{position:absolute;inset:0;overflow:hidden}
+.scene{position:absolute;inset:0;overflow:hidden}
+
+/* ============ GLOBAL GRADE ============ */
+#vignette{pointer-events:none;background:radial-gradient(ellipse 80% 62% at 50% 45%,transparent 40%,rgba(0,0,0,.55) 100%)}
+#grain{pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px}
+
+/* ============ B0 — HOOK ============ */
+#s0{background:radial-gradient(circle at 50% 46%,#06121a 0%,#03060d 45%,#010308 100%)}
+.mote{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(110,231,213,.65);box-shadow:0 0 10px rgba(94,234,212,.7)}
+#s0Content{position:absolute;inset:0}
+#term{position:absolute;left:0;right:0;top:30%;text-align:center;font:600 30px 'JetBrains Mono';color:#5eead4;letter-spacing:2px}
+#term .ch{opacity:0}
+#cursor{display:inline-block;width:15px;color:#5eead4}
+.orb-wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:360px;height:360px}
+#orb{position:absolute;inset:30px;border-radius:50%;border:2px solid rgba(94,234,212,.55);display:grid;place-items:center;
+  box-shadow:0 0 90px rgba(45,212,191,.32),inset 0 0 70px rgba(45,212,191,.22);
+  background:radial-gradient(circle,rgba(10,34,42,.55),rgba(2,6,12,.15) 70%)}
+#orbRingOuter{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(94,234,212,.28)}
+#orbRingInner{position:absolute;inset:64px;border-radius:50%;border:1px solid rgba(94,234,212,.22)}
+.orb-core{font:700 70px 'JetBrains Mono';letter-spacing:7px;color:#ccfbf1;text-shadow:0 0 34px rgba(45,212,191,.85)}
+#orbFlash{position:absolute;left:50%;top:50%;width:1400px;height:1400px;margin:-700px 0 0 -700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(204,251,241,.9),rgba(45,212,191,.35) 28%,transparent 60%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+#shock{position:absolute;left:50%;top:50%;width:360px;height:360px;margin:-180px 0 0 -180px;border-radius:50%;border:2px solid rgba(94,234,212,.6);opacity:0;pointer-events:none}
+#sysLabel{position:absolute;left:0;right:0;top:65.5%;text-align:center;font:700 22px 'JetBrains Mono';letter-spacing:9px;color:#5eead4;opacity:0}
+#hookLine{position:absolute;left:60px;right:60px;top:69%;text-align:center;font:900 76px 'Cinzel';line-height:1.08;color:#f8fafc;
+  text-shadow:0 6px 28px rgba(0,0,0,.9),0 0 60px rgba(20,40,46,.6);opacity:0}
+#sysClass{position:absolute;left:0;right:0;top:80%;text-align:center;font:600 24px 'JetBrains Mono';letter-spacing:5px;color:#64748b;opacity:0}
+#sysClass .rank{color:#94a3b8;font-weight:800}
+.corner{position:absolute;width:54px;height:54px;border:2px solid rgba(94,234,212,0);opacity:0}
+#cornerTL{left:54px;top:120px;border-right:none;border-bottom:none}
+#cornerTR{right:54px;top:120px;border-left:none;border-bottom:none}
+#cornerBL{left:54px;bottom:120px;border-right:none;border-top:none}
+#cornerBR{right:54px;bottom:120px;border-left:none;border-top:none}
+#hookFlash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(94,234,212,.5),rgba(45,212,191,.16) 35%,transparent 65%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+#hookKicker{position:absolute;left:0;right:0;top:39%;text-align:center;font:700 24px 'JetBrains Mono';letter-spacing:8px;color:#5eead4;opacity:0}
+#hookBig{position:absolute;left:56px;right:56px;top:43.5%;text-align:center;font:900 82px 'Cinzel';line-height:1.07;color:#f8fafc;text-shadow:0 6px 30px rgba(0,0,0,.9),0 0 60px rgba(20,40,46,.5);opacity:0}
+#hookBig .ac{color:#5eead4}
+
+/* ============ B1 — FOOTAGE + SYSTEM OVERLAY ============ */
+.bg-vid{position:absolute;width:1080px;height:1920px;object-fit:cover}
+#s1{opacity:0}
+#videoFadeIn{position:absolute;inset:0;background:#02030a;z-index:2}
+.scrim-t{position:absolute;left:0;right:0;top:0;height:520px;z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(2,3,10,.82),transparent)}
+.scrim-b{position:absolute;left:0;right:0;bottom:0;height:640px;z-index:3;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(2,3,10,.5) 45%,rgba(2,3,10,.9))}
+.sys-label{position:absolute;left:0;right:0;text-align:center;font:700 22px 'JetBrains Mono';letter-spacing:9px;color:#5eead4;z-index:6;opacity:0}
+.sys-line{position:absolute;left:60px;right:60px;text-align:center;font:800 56px 'Cinzel';color:#f8fafc;line-height:1.12;text-shadow:0 4px 20px rgba(0,0,0,.95);z-index:6;opacity:0}
+#sysLabel1{bottom:560px}
+#sysLine1{bottom:430px}
+#xpPop{position:absolute;left:0;right:0;text-align:center;top:46%;font:800 64px 'JetBrains Mono';letter-spacing:1px;color:#fcd34d;text-shadow:0 0 40px rgba(252,211,77,.6),0 4px 16px rgba(0,0,0,.9);z-index:6;opacity:0}
+#peakLine{position:absolute;left:60px;right:60px;text-align:center;bottom:430px;font:900 84px 'Cinzel';letter-spacing:4px;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.9),0 0 70px rgba(252,211,77,.45);z-index:6;opacity:0}
+
+/* ============ B4 — CTA / LOGO ============ */
+#s4{opacity:0;background:radial-gradient(circle at 50% 42%,#0a0712 0%,#040208 55%,#010104 100%)}
+#ctaFlash{position:absolute;inset:0;z-index:7;background:radial-gradient(circle at 50% 46%,#fff,rgba(252,211,77,.5) 20%,rgba(124,58,237,.18) 46%,transparent 64%);mix-blend-mode:screen;opacity:0;pointer-events:none}
+#iconGlow{position:absolute;left:50%;top:620px;width:680px;height:680px;margin-left:-340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(124,58,237,.45),rgba(124,58,237,.12) 45%,transparent 70%);opacity:0;pointer-events:none}
+#icon{position:absolute;left:50%;top:700px;width:300px;height:300px;margin-left:-150px;border-radius:66px;opacity:0;
+  box-shadow:0 50px 100px rgba(0,0,0,.7),0 0 90px rgba(124,58,237,.5)}
+#wordmark{position:absolute;left:0;right:0;top:1040px;text-align:center;font:800 78px 'Inter';letter-spacing:2px;color:#f8fafc;text-shadow:0 6px 30px rgba(0,0,0,.8);opacity:0}
+#wordmark span{color:#c4b5fd}
+#soon{position:absolute;left:0;right:0;top:1160px;text-align:center;font:800 26px 'JetBrains Mono';letter-spacing:7px;color:#5eead4;opacity:0}
+#badges{position:absolute;left:50%;bottom:300px;display:flex;gap:26px;margin-left:-308px;opacity:0}
+.badge{width:290px;height:92px;border-radius:18px;background:rgba(15,18,30,.8);border:1.5px solid rgba(148,163,184,.28);
+  backdrop-filter:blur(14px);display:flex;align-items:center;gap:16px;padding:0 24px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.badge svg{width:38px;height:38px;flex-shrink:0;fill:#fff}
+.badge-t{display:flex;flex-direction:column}
+.badge-soon{font:700 13px 'Inter';letter-spacing:1px;color:#94a3b8}
+.badge-name{font:800 23px 'Inter';color:#fff;margin-top:2px}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="15" data-fps="30" data-width="1080" data-height="1920">
+
+  <!-- ===================== B0 — HOOK (0.0–3.4) ===================== -->
+  <section id="s0" class="clip scene" data-start="0" data-duration="3.4" data-track-index="0" data-layout-allow-overflow>
+    <div id="motes"></div>
+    <div id="s0Content">
+      <div class="corner" id="cornerTL"></div>
+      <div class="corner" id="cornerTR"></div>
+      <div class="corner" id="cornerBL"></div>
+      <div class="corner" id="cornerBR"></div>
+      <div id="hookFlash"></div>
+      <div id="hookKicker">[ SYSTEM ]</div>
+      <div id="hookBig">POV: Dein Leben ist<br>ab jetzt ein <span class="ac">RPG.</span></div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTAGE (3.0–12.0) ===================== -->
+  <video id="kivideo" class="clip bg-vid" src="assets/ki_slow.mp4" muted data-start="3.0" data-duration="9.0" data-track-index="1"></video>
+
+  <!-- ===================== B1 — SYSTEM OVERLAY (3.0–12.2) ===================== -->
+  <section id="s1" class="clip scene" data-start="3.0" data-duration="9.2" data-track-index="2" data-layout-allow-overflow>
+    <div id="videoFadeIn"></div>
+    <div class="scrim-t"></div>
+    <div class="scrim-b"></div>
+    <div id="sysLabel1" class="sys-label">SYSTEM</div>
+    <div id="sysLine1" class="sys-line">Dein Alltag<br>wird zur Quest.</div>
+    <div id="xpPop">+250 XP</div>
+    <div id="peakLine">ERWACHE.</div>
+  </section>
+
+  <!-- ===================== B4 — CTA / LOGO (11.8–15.0) ===================== -->
+  <section id="s4" class="clip scene" data-start="11.8" data-duration="3.2" data-track-index="4" data-layout-allow-overflow>
+    <div id="ctaFlash"></div>
+    <div id="iconGlow"></div>
+    <img id="icon" src="assets/app_icon.png" alt=""/>
+    <div id="wordmark">Solo<span>ToDo</span></div>
+    <div id="soon">BALD VERFÜGBAR</div>
+    <div id="badges">
+      <div class="badge">
+        <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        <div class="badge-t"><span class="badge-soon">Bald im</span><span class="badge-name">App Store</span></div>
+      </div>
+      <div class="badge">
+        <svg viewBox="0 0 24 24"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-1.7l2.834 1.64a1 1 0 0 1 0 1.706l-2.834 1.64-2.56-2.56 2.56-2.426zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/></svg>
+        <div class="badge-t"><span class="badge-soon">Bald bei</span><span class="badge-name">Google Play</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="vignette" class="clip" data-start="0" data-duration="15" data-track-index="8"></div>
+<div id="grain" class="clip" data-start="0" data-duration="15" data-track-index="9"></div>
+
+<script>
+(function(){
+  const pts = [
+    [180,420,0,2.4],[860,360,1,2.8],[300,1480,2,2.2],[760,1520,0,3.0],
+    [120,980,1,2.6],[940,1040,2,2.0],[520,260,0,2.9],[640,1700,1,2.3],
+    [240,720,2,2.7],[820,800,0,2.1],[420,1240,1,2.5],[700,1180,2,2.8],
+    [160,1300,0,2.4],[900,1380,1,2.6]
+  ];
+  const wrap = document.getElementById('motes');
+  pts.forEach(p=>{
+    const m=document.createElement('div'); m.className='mote';
+    m.style.left=p[0]+'px'; m.style.top=p[1]+'px'; m.style.opacity=(0.25+0.12*p[2]);
+    wrap.appendChild(m);
+  });
+})();
+
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+
+/* ============ B0 — HOOK (text) ============ */
+tl.to(".mote",{y:"-=26",duration:3.2,ease:"sine.inOut"},0);
+tl.fromTo(".mote",{opacity:0},{opacity:1,duration:0.6,ease:"power1.out"},0);
+tl.to(".corner",{borderColor:"rgba(94,234,212,0.45)",opacity:1,duration:0.6,ease:"power2.out"},0.4);
+tl.fromTo("#hookKicker",{opacity:0,y:10},{opacity:1,y:0,duration:0.45,ease:"power2.out"},0.45);
+tl.fromTo("#hookBig",{opacity:0,scale:0.95,y:16,filter:"blur(8px)"},{opacity:1,scale:1,y:0,filter:"blur(0px)",duration:0.72,ease:"expo.out"},0.8);
+tl.to("#hookBig",{scale:1.03,duration:1.9,ease:"sine.inOut",transformOrigin:"50% 50%"},1.7);
+tl.to("#s0Content",{opacity:0,duration:0.3,ease:"power2.in"},2.95);
+
+/* ============ FOOTAGE + OVERLAY (3.0–12.0) ============ */
+tl.set("#s1",{opacity:1},2.98);
+tl.fromTo("#videoFadeIn",{opacity:1},{opacity:0,duration:0.5,ease:"power2.inOut"},3.0);
+
+// premise line over the study footage
+tl.fromTo("#sysLabel1",{opacity:0,y:10},{opacity:1,y:0,duration:0.4,ease:"power2.out"},3.7);
+tl.fromTo("#sysLine1",{opacity:0,y:16,filter:"blur(6px)"},{opacity:1,y:0,filter:"blur(0px)",duration:0.6,ease:"expo.out"},3.85);
+tl.to(["#sysLabel1","#sysLine1"],{opacity:0,duration:0.35,ease:"power2.in"},5.3);
+
+// +XP accent as the book bursts with blue energy
+tl.fromTo("#xpPop",{opacity:0,y:40,scale:0.7},{opacity:1,y:0,scale:1,duration:0.5,ease:"back.out(1.6)"},5.9);
+tl.to("#xpPop",{opacity:0,y:-70,duration:0.5,ease:"power2.in"},6.9);
+
+// peak line over the golden climax
+tl.fromTo("#peakLine",{opacity:0,scale:0.94,y:18,filter:"blur(8px)"},{opacity:1,scale:1,y:0,filter:"blur(0px)",duration:0.7,ease:"expo.out"},10.5);
+tl.to("#peakLine",{opacity:0,duration:0.3,ease:"power2.in"},11.75);
+tl.to("#s1",{opacity:0,duration:0.2,ease:"power2.in"},11.85);
+
+/* ============ B4 — CTA / LOGO (11.8–15.0) ============ */
+tl.set("#s4",{opacity:1},11.82);
+tl.fromTo("#ctaFlash",{opacity:0},{opacity:0.9,duration:0.14,ease:"power2.in"},11.85);
+tl.to("#ctaFlash",{opacity:0,duration:0.65,ease:"power2.out"},12.0);
+tl.fromTo("#iconGlow",{opacity:0,scale:0.7},{opacity:1,scale:1,duration:0.8,ease:"power2.out",transformOrigin:"50% 50%"},11.95);
+tl.to("#iconGlow",{opacity:0.72,scale:1.08,duration:2.4,ease:"sine.inOut",transformOrigin:"50% 50%"},12.7);
+tl.fromTo("#icon",{scale:0.6,opacity:0,filter:"blur(12px)"},{scale:1,opacity:1,filter:"blur(0px)",duration:0.7,ease:"back.out(1.4)",transformOrigin:"50% 50%"},11.9);
+tl.to("#icon",{y:-12,duration:1.9,yoyo:true,repeat:1,ease:"sine.inOut"},12.7);
+tl.fromTo("#wordmark",{opacity:0,y:20,letterSpacing:"16px"},{opacity:1,y:0,letterSpacing:"2px",duration:0.7,ease:"expo.out"},12.35);
+tl.fromTo("#soon",{opacity:0,y:12},{opacity:1,y:0,duration:0.5,ease:"power2.out"},12.9);
+tl.fromTo("#badges",{opacity:0,y:26},{opacity:1,y:0,duration:0.7,ease:"expo.out"},13.3);
+
+/* ---- deterministic hard-kills (parallel render workers seek non-linearly) ---- */
+tl.set("#s0Content",{visibility:"hidden"},3.36);
+tl.set(["#sysLabel1","#sysLine1"],{opacity:0,visibility:"hidden"},5.7);
+tl.set("#xpPop",{opacity:0,visibility:"hidden"},7.45);
+
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

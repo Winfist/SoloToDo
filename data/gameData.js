@@ -88,36 +88,36 @@ export const SHADOW_TIERS = {
 };
 
 export const NAMED_SHADOWS = {
-  igris: {
-    id: "igris", name: "Igris", title: "The Bloodred Commander",
-    class: "knight", tier: 4, icon: "🩸", iconSrc: SHADOW_ICONS.igris,
+  vaelin: {
+    id: "vaelin", name: "Vaelin", title: "The Crimson Knight",
+    class: "knight", tier: 4, icon: "🩸", iconSrc: SHADOW_ICONS.vaelin,
     unlockCondition: { type: "dungeon_rank", dungeonRank: "A", desc: "A-Rank Dungeon besiegen" },
     uniqueAbility: { name: "Crimson Blade", effect: "Critical Strike +50% in Dungeons", icon: "⚔️", iconSrc: ITEM_ICONS.blade },
-    lore: "Einst ein loyaler Ritter, nun der treueste Schatten des Monarchen.",
+    lore: "Einst ein Ritter ohne Banner, nun die treueste Klinge deiner Legion.",
     glowColor: "#dc2626",
   },
   tank: {
-    id: "tank", name: "Tank", title: "The Iron Fortress",
+    id: "tank", name: "Bastion", title: "The Iron Fortress",
     class: "knight", tier: 4, icon: "🛡️", iconSrc: SHADOW_ICONS.knight,
     unlockCondition: { type: "stat", stat: "vit", value: 100, desc: "VIT 100 erreichen" },
     uniqueAbility: { name: "Unbreakable Defense", effect: "1x täglich: Dungeon-Schaden Immunität", icon: "🛡️", iconSrc: SKILL_ICONS.defense },
     lore: "Ein Koloss aus Schatten, unerschütterlich wie ein Berg.",
     glowColor: "#3b82f6",
   },
-  beru: {
-    id: "beru", name: "Beru", title: "The Ant King",
-    class: "assassin", tier: 4, icon: "🐜", iconSrc: SHADOW_ICONS.beru,
+  xerath: {
+    id: "xerath", name: "Xerath", title: "The Swarm Tyrant",
+    class: "assassin", tier: 4, icon: "🐜", iconSrc: SHADOW_ICONS.xerath,
     unlockCondition: { type: "dungeon_rank", dungeonRank: "S", desc: "S-Rank Dungeon besiegen" },
     uniqueAbility: { name: "Consume", effect: "Absorbiert 5% der Boss-Stats permanent", icon: "👅", iconSrc: ABILITY_ICONS.consume },
-    lore: "Der gefallene König der Ameisen, wiedergeboren als Schatten.",
+    lore: "Tyrann des Schwarms, bezwungen auf der Todesinsel und im Schatten neu geschmiedet.",
     glowColor: "#22c55e",
   },
-  bellion: {
-    id: "bellion", name: "Bellion", title: "The Grand Marshal",
-    class: "commander", tier: 5, icon: "⚜️", iconSrc: SHADOW_ICONS.bellion,
+  kaelen: {
+    id: "kaelen", name: "Kaelen", title: "The First General",
+    class: "commander", tier: 5, icon: "⚜️", iconSrc: SHADOW_ICONS.kaelen,
     unlockCondition: { type: "level", value: 90, desc: "Level 90 erreichen" },
     uniqueAbility: { name: "Army Command", effect: "Kann gesamte Shadow Army gleichzeitig kommandieren", icon: "👑", iconSrc: SHADOW_ICONS.commander },
-    lore: "Der oberste General des ursprünglichen Shadow Monarchen.",
+    lore: "Der erste General der Phantom-Legion, älter als der Nexus selbst.",
     glowColor: "#f59e0b",
   },
 };
@@ -136,8 +136,8 @@ export const ACHIEVEMENTS = [
   { id: "quests_100", name: "Legendärer Hunter", icon: "👑", iconSrc: NAV_ICONS.achievements, desc: "Schließe 100 Quests ab", cat: "quests", check: s => (s.totalQuestsCompleted || 0) >= 100, reward: { xp: 1000, gold: 500, title: "Legendary Hunter" } },
   { id: "boss_first", name: "Besieger", icon: "💀", iconSrc: DIFF_ICONS.boss, desc: "Schließe deine erste Boss-Quest ab", cat: "quests", check: s => (s.shadowArmy?.shadows || []).length >= 1, reward: { xp: 200, gold: 100 } },
   { id: "boss_5", name: "Schattenherr", icon: "🌑", iconSrc: SHADOW_ICONS.soldier, desc: "Beschwöre 5 Schatten", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).length >= 5, reward: { xp: 400, gold: 200 } },
-  { id: "boss_15", name: "Schattenmonarch", icon: "☠️", iconSrc: SHADOW_ICONS.commander, desc: "Beschwöre 15 Schatten", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).length >= 15, reward: { xp: 1500, gold: 600, title: "Shadow Monarch" } },
-  { id: "shadow_named", name: "Erste Berufung", icon: "🩸", iconSrc: SHADOW_ICONS.igris, desc: "Erwecke einen Named Shadow", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).some(sh => sh.isNamed), reward: { xp: 800, gold: 400, title: "Shadow Sovereign" } },
+  { id: "boss_15", name: "Schattenfürst", icon: "☠️", iconSrc: SHADOW_ICONS.commander, desc: "Beschwöre 15 Schatten", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).length >= 15, reward: { xp: 1500, gold: 600, title: "Lord of Shadows" } },
+  { id: "shadow_named", name: "Erste Berufung", icon: "🩸", iconSrc: SHADOW_ICONS.vaelin, desc: "Erwecke einen Named Shadow", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).some(sh => sh.isNamed), reward: { xp: 800, gold: 400, title: "Soulbinder" } },
   { id: "shadow_tier3", name: "Elite Armee", icon: "💜", iconSrc: SHADOW_ICONS.knight, desc: "Habe einen Tier-3 Shadow", cat: "shadows", check: s => (s.shadowArmy?.shadows || []).some(sh => sh.tier >= 3), reward: { xp: 600, gold: 300 } },
   { id: "formation_full", name: "Volles Kommando", icon: "🎖️", iconSrc: ROLE_ICONS.core, desc: "Fülle alle Formation-Slots", cat: "shadows", check: s => { const a = s.shadowArmy; if (!a) return false; const d = a.shadows.filter(sh => sh.isDeployed); return d.filter(sh => sh.deploymentSlot === "vanguard").length >= 3 && d.filter(sh => sh.deploymentSlot === "core").length >= 5; }, reward: { xp: 1000, gold: 500 } },
   { id: "streak_3", name: "Beständigkeit", icon: "🔥", iconSrc: STAT_ICONS.str, desc: "Erreiche einen 3-Tage Streak", cat: "streaks", check: s => (s.streak || 0) >= 3, reward: { xp: 100, gold: 50 } },
@@ -161,9 +161,9 @@ export const ACHIEVEMENTS = [
   { id: "equip_first", name: "Ausgerüstet", icon: "🗡️", iconSrc: ITEM_ICONS.armor, desc: "Equipe dein erstes Item", cat: "misc", check: s => Object.values(s.equipment?.slots || {}).some(v => v), reward: { xp: 100, gold: 50 } },
   { id: "story_ch1", name: "Erste Erweckung", icon: "📖", iconSrc: STORY_ICONS.scroll, desc: "Schließe Kapitel 1 ab", cat: "story", check: s => (s.story?.completedChapters || []).includes("ch1"), reward: { xp: 100, gold: 50 } },
   { id: "story_arc1", name: "Der schwächste Hunter", icon: "🗡️", iconSrc: STORY_ICONS.helmet, desc: "Schließe Arc 1 komplett ab", cat: "story", check: s => ["ch1", "ch2", "ch3"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 500, gold: 200, title: "Survivor" } },
-  { id: "story_arise", name: "ARISE", icon: "🌑", iconSrc: STORY_ICONS.arise, desc: "Schließe das ARISE-Kapitel ab", cat: "story", check: s => (s.story?.completedChapters || []).includes("ch7"), reward: { xp: 800, gold: 400, title: "Shadow Master" } },
-  { id: "story_arc3", name: "Der Schattenmonarch erwacht", icon: "👑", iconSrc: STORY_ICONS.blackheart, desc: "Schließe Arc 3 komplett ab", cat: "story", check: s => ["ch7", "ch8", "ch9"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 2000, gold: 1000 } },
-  { id: "story_complete", name: "Shadow Monarch", icon: "☠️", iconSrc: NAV_ICONS.achievements, desc: "Schließe die gesamte Story aus", cat: "story", check: s => ["ch1","ch2","ch3","ch4","ch5","ch6","ch7","ch8","ch9","ch10","ch11","ch12","ch13","ch14","ch15","ch16","ch17","ch18","ch19","ch20"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 25000, gold: 10000, gems: 50, title: "Shadow Monarch" } },
+  { id: "story_arise", name: "MANIFEST", icon: "🌑", iconSrc: STORY_ICONS.arise, desc: "Schließe das MANIFEST-Kapitel ab", cat: "story", check: s => (s.story?.completedChapters || []).includes("ch7"), reward: { xp: 800, gold: 400, title: "Shadow Master" } },
+  { id: "story_arc3", name: "Der Schattenfürst erwacht", icon: "👑", iconSrc: STORY_ICONS.blackheart, desc: "Schließe Arc 3 komplett ab", cat: "story", check: s => ["ch7", "ch8", "ch9"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 2000, gold: 1000 } },
+  { id: "story_complete", name: "Schattenfürst", icon: "☠️", iconSrc: NAV_ICONS.achievements, desc: "Schließe die gesamte Story aus", cat: "story", check: s => ["ch1","ch2","ch3","ch4","ch5","ch6","ch7","ch8","ch9","ch10","ch11","ch12","ch13","ch14","ch15","ch16","ch17","ch18","ch19","ch20"].every(id => (s.story?.completedChapters || []).includes(id)), reward: { xp: 25000, gold: 10000, gems: 50, title: "Lord of Shadows" } },
   { id: "health_link", name: "Vitalität Gekoppelt", icon: "❤️", iconSrc: HABIT_ICONS.health, desc: "Synchronisiere zum ersten Mal Health Tracker Daten", cat: "misc", check: s => !!s.healthSyncDate, reward: { xp: 300, gold: 100 } },
   { id: "challenge_first", name: "Rookie Herausforderer", icon: "🎖️", iconSrc: QUEST_ICONS.emergency, desc: "Schließe deine erste Community/Weekly Challenge ab", cat: "quests", check: s => (s.completedChallenges || []).length >= 1, reward: { xp: 400, gold: 150 } },
   { id: "challenge_master", name: "Veteran der Gilde", icon: "🌍", iconSrc: NAV_ICONS.guild, desc: "Schließe 5 Challenges ab", cat: "quests", check: s => (s.completedChallenges || []).length >= 5, reward: { xp: 1500, gold: 600, title: "Guild Veteran" } },
@@ -299,7 +299,7 @@ export const DUNGEON_TEMPLATES = [
 export const SHOP_ITEMS = [
   { id: "potion_heal", type: "consumable", name: "Elixir of Recovery", cost: 150, minRank: "E", iconSrc: ITEM_ICONS.potion, desc: "Heilt einen gebrochenen Streak sofort (Löscht Shadow Regression)" },
   { id: "extra_slot", type: "consumable", name: "Extra Task Slot", cost: 100, minRank: "E", iconSrc: QUEST_ICONS.daily, desc: "+1 Tagesaufgabe heute" },
-  { id: "title_shadow_monarch", type: "title", name: "Shadow Monarch", cost: 500, minRank: "D", iconSrc: SHOP_ICONS.title, desc: "Der König der Schatten" },
+  { id: "title_shadow_monarch", type: "title", name: "Schattenfürst", cost: 500, minRank: "D", iconSrc: SHOP_ICONS.title, desc: "Der König der Schatten" },
   { id: "title_arise", type: "title", name: "ARISE!", cost: 300, minRank: "D", iconSrc: SHOP_ICONS.title, desc: "Erwecke deine Armee" },
   { id: "title_s_hunter", type: "title", name: "S-Rank Hunter", cost: 1000, minRank: "B", iconSrc: SHOP_ICONS.title, desc: "Elite unter den Jägern" },
   { id: "title_sovereign", type: "title", name: "Sovereign", cost: 2000, minRank: "A", iconSrc: SHOP_ICONS.title, desc: "Herrscher über alles" },

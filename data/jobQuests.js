@@ -309,7 +309,7 @@ export const JOB_QUESTS = {
     },
     {
       id: "monarch_mastery",
-      name: "Shadow Monarch",
+      name: "True Monarch",
       description: "Werde zum wahren Monarchen.",
       levelRequired: 10,
       tasks: [
@@ -319,7 +319,7 @@ export const JOB_QUESTS = {
       ],
       rewards: {
         jobXp: 1000, xp: 5000, gold: 25000,
-        title: "Shadow Monarch",
+        title: "True Monarch",
         cosmetic: "monarch_crown_aura"
       }
     }
@@ -376,7 +376,7 @@ export const JOB_QUESTS = {
     {
       id: "necromancer_mastery",
       name: "True Necromancer",
-      description: "Werde zum Erben des Shadow Monarchen.",
+      description: "Werde zum Erben des Schattenthrons.",
       levelRequired: 10,
       tasks: [
         { type: "own_named_shadow", count: 4, current: 0 },

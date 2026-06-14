@@ -6,6 +6,24 @@ import { genId, getToday } from "./helpers.js";
 import { translate, getStateLocale } from "./i18n.js";
 
 // ─── SHADOW REGRESSION HELPERS ────────────────────────────────
+// 3 of the 5 offered quests complete the regression — matches the
+// three-act checklist in ShadowRegressionCinematic.
+export const REDEMPTION_QUESTS_REQUIRED = 3;
+
+export function calcRestoredStreak(previousStreak) {
+  return Math.ceil((previousStreak || 0) * 0.5);
+}
+
+// The regression is a comeback arc for a LOST streak — players who never
+// built a streak have nothing to redeem and must not see the punishment.
+export function shouldTriggerShadowRegression({ daysMissed, previousStreak, hadOpenDailies, penaltyZoneActive, regressionActive }) {
+  return daysMissed >= 2
+    && (previousStreak || 0) > 0
+    && !!hadOpenDailies
+    && !penaltyZoneActive
+    && !regressionActive;
+}
+
 export function generateRedemptionQuests(playerLevel, state = null) {
   const locale = getStateLocale(state);
   const categories = ["str", "int", "vit", "agi", "cha"];

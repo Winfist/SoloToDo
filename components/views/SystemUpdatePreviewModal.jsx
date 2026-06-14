@@ -56,7 +56,7 @@ const FEATURE_ICONS = {
   micro_habits: HABIT_ICONS.counter,
   multiplayer: NAV_ICONS.guild,
   music: NAV_ICONS.timer,
-  named_shadows: SHADOW_ICONS.igris,
+  named_shadows: SHADOW_ICONS.vaelin,
   quest_filters: QUEST_ICONS.daily,
   sanctum: HEALTH_ICONS.sleep,
   seasons: NAV_ICONS.events,

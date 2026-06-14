@@ -249,7 +249,7 @@ export default function InnerSanctum({ state, persist, notify, theme }) {
             <div className="sanctum-title">Monarch Core Lv. {sanctum.level}</div>
             <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 7, lineHeight: 1.4 }}>Willpower, Manifestationen und Focus-Verlauf</div>
           </div>
-          <GameIcon src={SHADOW_ICONS.bellion || STORY_ICONS.arise} fallback="M" size={58} glow glowColor={safeTheme.glow} animate="float" />
+          <GameIcon src={SHADOW_ICONS.kaelen || STORY_ICONS.arise} fallback="M" size={58} glow glowColor={safeTheme.glow} animate="float" />
         </div>
 
         <div style={{ position: "relative", zIndex: 1, marginTop: 17 }}>

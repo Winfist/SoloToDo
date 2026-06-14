@@ -29,7 +29,7 @@ const NAV_TAB_BASE = [
   { key: "analytics", iconSrc: "/icons/nav_analytics.webp", label: "Analytics", desc: "Fortschritts-Auswertung", requires: "analytics" },
   { key: "achievements", iconSrc: "/icons/nav_achievements.webp", label: "Erfolge", desc: "Meilensteine & Belohnungen", requires: "achievements" },
   { key: "challenges", iconSrc: "/icons/nav_events.webp", label: "Events", desc: "Challenges & Missionen", requires: "challenges" },
-  { key: "shadows", iconSrc: "/icons/shadow_soldier.webp", label: "Schatten", desc: "Shadow Army verwalten", requires: "shadow_army" },
+  { key: "shadows", iconSrc: "/icons/phantom_soldier.webp", label: "Schatten", desc: "Shadow Army verwalten", requires: "shadow_army" },
   { key: "equipment", iconSrc: "/icons/item_blade.webp", label: "Arsenal", desc: "Waffen & Rüstung", requires: "equipment" },
   { key: "jobs", iconSrc: "/icons/nav_jobs.webp", label: "Jobs", desc: "Hunter-Klassen", requires: "jobs" },
   { key: "shop", iconSrc: "/icons/nav_shop.webp", label: "Shop", desc: "Items & Themes kaufen", requires: "shop" },
@@ -1320,7 +1320,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
     const dlAnchorElem = document.createElement('a');
     dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", "solo-leveling-data.json");
+    dlAnchorElem.setAttribute("download", "solotodo-data.json");
     dlAnchorElem.click();
   };
 

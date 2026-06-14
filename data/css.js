@@ -74,7 +74,7 @@ input,select{font-family:inherit}
 @keyframes shimmer{0%{left:-100%}100%{left:200%}}
 @keyframes fireGlow{0%,100%{filter:drop-shadow(0 0 4px #f97316) drop-shadow(0 -2px 8px #fbbf24)}50%{filter:drop-shadow(0 0 10px #ef4444) drop-shadow(0 -4px 16px #f97316)}}
 
-/* ── SHADOW MONARCH'S GATE – CINEMA-GRADE PAGE TRANSITIONS ── */
+/* ── SHADOW GATE – CINEMA-GRADE PAGE TRANSITIONS ── */
 
 @keyframes slChromaticAberration{
   0%{backdrop-filter:blur(0px) brightness(1) saturate(1);opacity:0}
@@ -191,6 +191,19 @@ input,select{font-family:inherit}
 @keyframes slideDown{
   from{transform:translateY(-16px);opacity:0}
   to{transform:translateY(0);opacity:1}
+}
+@keyframes stageSlideIn{
+  from{transform:translateY(7px);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+@keyframes ringPulse{
+  0%{transform:scale(1)}
+  40%{transform:scale(1.14)}
+  100%{transform:scale(1)}
+}
+@keyframes stageNodeGlow{
+  0%,100%{opacity:0.55}
+  50%{opacity:1}
 }
 /* ── QUEST COMPLETION CINEMATIC ──────────────────────────────── */
 

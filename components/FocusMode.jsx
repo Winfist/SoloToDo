@@ -57,7 +57,7 @@ const FOCUS_MODES = {
     accent: "#86efac",
     aura: "rgba(34,197,94,0.26)",
     icon: STORY_ICONS.arise,
-    shadow: SHADOW_ICONS.bellion,
+    shadow: SHADOW_ICONS.kaelen,
     stat: "vit",
     xpRate: 1.7,
     isSanctum: true,
