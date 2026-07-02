@@ -23,7 +23,7 @@ export const DEFAULT_STATE = {
   completedTutorials: [],
   stats: { str: 0, int: 0, vit: 0, agi: 0, cha: 0 },
   statPoints: 0,
-  quests: [], completedQuests: [], streak: 0, lastActiveDate: null, lastWelcomeDate: null,
+  quests: [], completedQuests: [], streak: 0, lastActiveDate: null, lastCompletionDate: null, lastWelcomeDate: null,
   questArchive: [],
   questPlanning: {
     overloadPreset: "balanced",

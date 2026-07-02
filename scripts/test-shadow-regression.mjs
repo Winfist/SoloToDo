@@ -3,6 +3,7 @@ import {
   calcRestoredStreak,
   shouldTriggerShadowRegression,
   generateRedemptionQuests,
+  shouldRetainQuestAtReset,
 } from "../data/protocolHelpers.js";
 import { clearBogusShadowRegression } from "../data/shadowMigration.js";
 
@@ -63,6 +64,19 @@ assert(shouldTriggerShadowRegression({ ...base, penaltyZoneActive: true }) === f
   assert(clearBogusShadowRegression(inactive) === inactive, "inactive regression untouched (same reference)");
   assert(clearBogusShadowRegression(null) === null, "null state passes through");
 }
+
+// ── Daily reset retention: redemption quests must survive while the
+// regression runs, everything else keeps its previous reset semantics ──
+assert(shouldRetainQuestAtReset({ id: "u1" }, { regressionActive: false }) === true,
+  "user quest survives the daily reset");
+assert(shouldRetainQuestAtReset({ isSystem: true }, { regressionActive: true }) === false,
+  "pool system quest is cleared at reset");
+assert(shouldRetainQuestAtReset({ isSystem: true, isSeasonal: true }, { regressionActive: true }) === false,
+  "seasonal quest is cleared (season detection re-adds it)");
+assert(shouldRetainQuestAtReset({ isSystem: true, isRedemption: true }, { regressionActive: true }) === true,
+  "redemption quest survives while regression is active (core bug)");
+assert(shouldRetainQuestAtReset({ isSystem: true, isRedemption: true }, { regressionActive: false }) === false,
+  "stale redemption quest is cleared once regression is over");
 
 if (failures > 0) {
   console.error(`\n${failures} assertion(s) failed.`);

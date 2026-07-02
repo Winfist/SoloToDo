@@ -49,6 +49,7 @@ export {
   generateRedemptionQuests, isDawnWindow, isDuskWindow,
   calculateProtocolXp, generateSeasonalQuests,
   REDEMPTION_QUESTS_REQUIRED, calcRestoredStreak, shouldTriggerShadowRegression,
+  shouldRetainQuestAtReset,
 } from "./protocolHelpers.js";
 
 export {

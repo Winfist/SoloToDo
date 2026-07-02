@@ -15,7 +15,7 @@ import {
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, generateComebackSystemQuest, generateStarterQuests, getJobBonuses, checkAllJobsLevel5,
   saveState, loadState, migrateState, cacheStateLocally, resolveStateConflict, calculateLevelUp, awardJobXp, saveQuestArchiveEntry,
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests,
-  REDEMPTION_QUESTS_REQUIRED, shouldTriggerShadowRegression
+  REDEMPTION_QUESTS_REQUIRED, shouldTriggerShadowRegression, shouldRetainQuestAtReset
 } from '../data/constants';
 import { JOBS } from '../data/jobs.js';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
@@ -606,7 +606,7 @@ export function useGameState(initialHunterName, onLogout) {
             s.quests = s.quests?.map(q => q.type === "daily" && !q.isSystem ? { ...q, completed: false } : q) || [];
             // BUG FIX: Keep redemption quests alive if shadow regression is still active
             const regressionActive = s.shadowRegression?.active;
-            s.quests = (s.quests || []).filter(q => !q.isSystem && !q.isSeasonal && !(q.isRedemption && !regressionActive));
+            s.quests = (s.quests || []).filter(q => shouldRetainQuestAtReset(q, { regressionActive }));
             const overloaded = getQuestPlanningSnapshot(s).overloadStatus.overloaded;
             const comebackQuest = overloaded ? generateComebackSystemQuest(s) : null;
             const newSysQuests = overloaded

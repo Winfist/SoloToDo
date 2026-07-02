@@ -24,6 +24,13 @@ export function shouldTriggerShadowRegression({ daysMissed, previousStreak, hadO
     && !regressionActive;
 }
 
+// Daily reset clears system/seasonal quests but must NOT wipe the redemption
+// quests of a still-running regression (they are isSystem too).
+export function shouldRetainQuestAtReset(quest, { regressionActive = false } = {}) {
+  if (quest?.isRedemption) return !!regressionActive;
+  return !quest?.isSystem && !quest?.isSeasonal;
+}
+
 export function generateRedemptionQuests(playerLevel, state = null) {
   const locale = getStateLocale(state);
   const categories = ["str", "int", "vit", "agi", "cha"];

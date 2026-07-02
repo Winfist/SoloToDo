@@ -45,6 +45,9 @@ export function computeXpGain(quest, streakBonus, equipBonuses, skillBonuses, pe
   xp *= (typeCfg.xpMult || 1);
   xp *= (quest.chainMultiplier || 1);
   xp *= (quest.xpMult || 1);
+  // Eigeninitiative: own quests are the app's core content and must never
+  // pay out worse than system quests (they alone face soft cap + integrity).
+  if (!quest.isSystem) xp *= 1.1;
   return Math.round(xp);
 }
 
@@ -59,7 +62,9 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
 
   const today = getToday();
   const oldStreak = state.streak;
-  const newStreak = state.lastActiveDate === today ? oldStreak : (oldStreak + 1);
+  // Streak keys off its own completion date: boot stamps lastActiveDate=today
+  // before any completion, so that field can never drive the increment.
+  const newStreak = state.lastCompletionDate === today ? oldStreak : (oldStreak + 1);
   const streakBonusPct = Math.min(newStreak, 5) * 10;
   const equipBonuses = getEquipBonuses(state.equipment);
   const skillBonuses = getSkillBonuses(null, state.stats);
@@ -356,7 +361,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     reminders: (state.reminders || []).filter(r => r.questId !== questId),
     completedQuests: [...(state.completedQuests || []), newlyCompletedQuest],
     habits: newHabits,
-    streak: finalStreak, lastActiveDate: today, shadowArmy: newShadowArmy,
+    streak: finalStreak, lastActiveDate: today, lastCompletionDate: today, shadowArmy: newShadowArmy,
     totalQuestsCompleted: (state.totalQuestsCompleted || 0) + 1,
     penaltyZone: newPenalty, hiddenQuests: newHiddenQuests,
     dailyUserXP: (state.dailyUserXP || 0) + (!quest.isSystem ? xpGain : 0),
