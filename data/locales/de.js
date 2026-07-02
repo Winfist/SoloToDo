@@ -1709,6 +1709,8 @@ export const de = {
     dailyEvening: "Der Tag neigt sich dem Ende. Erledige mindestens eine Quest!",
     streakDangerTitle: "SYSTEM WARNUNG: STREAK IN GEFAHR",
     streakDangerBody: "Du hast heute noch nichts erreicht. Dein {streak}-Tage Streak endet in {hours}h!",
+    comebackTitle: "SYSTEM: Signal verloren",
+    comebackBody: "Seit 2 Tagen keine Aktivität registriert. Das System hält deine Rückkehr-Route offen, Hunter.",
     artifactDiscovered: "ARTIFACT: {icon} {name} entdeckt!",
     shadowSlotFull: "{slot} ist voll! (Max {max})",
     shadowDeployed: "Shadow in {slot} positioniert!",

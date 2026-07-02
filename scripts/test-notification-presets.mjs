@@ -8,6 +8,9 @@ import {
   canFireNotification,
   isEssentialCategory,
   formatNotificationPresetSummary,
+  INACTIVITY_COMEBACK_DAYS,
+  INACTIVITY_COMEBACK_HOUR,
+  computeInactivityComebackAt,
 } from "../data/notificationPresets.js";
 
 let failures = 0;
@@ -68,6 +71,23 @@ assert(canFireNotification({ presetOrKey: "funkstille", category: "due_warning",
 
 assert(formatNotificationPresetSummary(getNotificationPreset("standard")).includes("max 5/Tag"), "standard summary shows cap");
 assert(formatNotificationPresetSummary(getNotificationPreset("funkstille")).includes("Essentielles"), "funkstille summary shows essentials-only");
+
+// ── Inactivity comeback push (Reaktivierung nach 2 Tagen Abwesenheit) ──
+assert(INACTIVITY_COMEBACK_DAYS === 2, "comeback fires after 2 days of absence");
+assert(getCategoryTier("inactivity_comeback") === 1, "inactivity_comeback is a tier-1 nudge");
+assert(isCategoryEnabled("funkstille", "inactivity_comeback") === false, "funkstille users get no comeback push");
+assert(isCategoryEnabled("dezent", "inactivity_comeback") === true, "dezent users get the comeback push");
+assert(isCategoryEnabled("standard", "inactivity_comeback") === true, "standard users get the comeback push");
+assert(isCategoryEnabled("intensiv", "inactivity_comeback") === true, "intensiv users get the comeback push");
+{
+  const base = new Date("2026-07-02T23:50:00").getTime();
+  const at = computeInactivityComebackAt(base);
+  assert(at instanceof Date && at.getDate() === 4 && at.getHours() === INACTIVITY_COMEBACK_HOUR && at.getMinutes() === 0,
+    `comeback scheduled 2 days later at ${INACTIVITY_COMEBACK_HOUR}:00 (got ${at})`);
+  // Fire hour must lie outside EVERY preset's quiet hours so scheduling never silently drops it
+  assert(NOTIFICATION_PRESETS.every(p => !isWithinQuietHours(INACTIVITY_COMEBACK_HOUR, p)),
+    "comeback hour is outside all quiet-hour windows");
+}
 
 if (failures) {
   console.error(`\n${failures} assertion(s) failed.`);

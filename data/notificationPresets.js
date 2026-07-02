@@ -14,6 +14,7 @@ export const NOTIFICATION_CATEGORIES = {
   gate_reset: 1,
   weekly_expiry: 1,
   emergency_morning: 1,
+  inactivity_comeback: 1,
 
   daily_activity: 2,
   streak_protection: 2,
@@ -134,6 +135,21 @@ export function canFireNotification({ presetOrKey, presetKey, category, firedTod
   if (isWithinQuietHours(currentHour, preset)) return false;
   if (Number.isInteger(preset.dailyCap) && firedToday >= preset.dailyCap) return false;
   return true;
+}
+
+// ── Inactivity comeback ───────────────────────────────────────
+// Scheduled on every app open for "now + 2 days, 19:00". Because the
+// scheduler cancels all pending notifications on each open, it fires at
+// most ONCE per absence phase — the System registers the silence, it
+// never nags. 19:00 lies outside every preset's quiet-hour window.
+export const INACTIVITY_COMEBACK_DAYS = 2;
+export const INACTIVITY_COMEBACK_HOUR = 19;
+
+export function computeInactivityComebackAt(nowMs = Date.now()) {
+  const at = new Date(nowMs);
+  at.setDate(at.getDate() + INACTIVITY_COMEBACK_DAYS);
+  at.setHours(INACTIVITY_COMEBACK_HOUR, 0, 0, 0);
+  return at;
 }
 
 export function formatNotificationPresetSummary(presetOrKey) {

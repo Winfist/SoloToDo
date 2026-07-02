@@ -4,7 +4,7 @@ import { getToday, getLocalDateKey, formatLocalDateTime } from "../data/dateUtil
 import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { getStateLocale, translate } from "../data/i18n.js";
-import { canFireNotification, getNotificationPreset, isEssentialCategory } from "../data/notificationPresets.js";
+import { canFireNotification, getNotificationPreset, isEssentialCategory, computeInactivityComebackAt } from "../data/notificationPresets.js";
 
 import { Capacitor } from '@capacitor/core';
 
@@ -447,6 +447,16 @@ export async function scheduleBackgroundNotifications(state) {
         tomorrow8.setDate(tomorrow8.getDate() + 1);
         tomorrow8.setHours(8, 0, 0, 0);
         addNotif(nt(state, "notifications.gatesTitle"), nt(state, "notifications.gatesBody"), tomorrow8, "gate_reset");
+
+        // Inactivity comeback: fires ONLY if the user does not return for 2
+        // days — every app open cancels pending notifications and reschedules,
+        // so this is structurally capped at one per absence phase.
+        addNotif(
+            nt(state, "notifications.comebackTitle"),
+            nt(state, "notifications.comebackBody"),
+            computeInactivityComebackAt(),
+            "inactivity_comeback"
+        );
 
         if (notifications.length > 0) {
             await LocalNotifications.schedule({ notifications });

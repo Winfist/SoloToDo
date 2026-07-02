@@ -1772,6 +1772,8 @@ export const en = {
     dailyAfternoon: "No Quest completed today yet. Your streak is waiting!",
     dailyEvening: "The day is winding down. Complete at least one Quest!",
     streakDangerTitle: "SYSTEM WARNING: STREAK AT RISK",
+    comebackTitle: "SYSTEM: Signal lost",
+    comebackBody: "No activity registered for 2 days. The System is keeping your return route open, Hunter.",
     streakDangerBody: "You have not completed anything today. Your {streak}-day Streak ends in {hours}h!",
     artifactDiscovered: "ARTIFACT: {icon} {name} discovered!",
     shadowSlotFull: "{slot} is full! (Max {max})",
