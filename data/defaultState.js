@@ -42,6 +42,7 @@ export const DEFAULT_STATE = {
   equipment: { slots: { weapon: null, armor: null, ring1: null, ring2: null }, inventory: [] },
   artifacts: { discovered: [], totalFound: 0 },
   dailyFocusQuestId: null,
+  systemMark: null,
   dailyQuestCompletionCount: 0,
   questReplacements: { date: null, used: 0, replacedKeys: [] },
   penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },

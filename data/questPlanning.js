@@ -3,6 +3,11 @@ import { getToday } from "./dateUtils.js";
 export const QUEST_LOADOUT_CAP = 3;
 export const MAX_PINNED_QUESTS = 3;
 
+// ── Systemzeichen: once per day the System marks ONE forgotten own quest
+// (bonus XP, top of loadout) instead of rolling another pool quest. ──
+export const SYSTEM_MARK_COOLDOWN_DAYS = 3;
+export const SYSTEM_MARK_XP_MULT = 1.5;
+
 export const QUEST_OVERLOAD_PRESETS = {
   focused: {
     key: "focused",
@@ -93,10 +98,33 @@ function isFutureQuest(quest, today) {
   return Boolean(quest?.dueDate && String(quest.dueDate).slice(0, 10) > today);
 }
 
-function compareLoadoutQuests(a, b, planning, today, dailyFocusQuestId) {
+// The System's daily pick: the oldest own quest that has gone stale under the
+// user's overload preset and was not marked within the cooldown window.
+export function pickSystemMarkCandidate(state, nowMs = Date.now()) {
+  const today = getToday();
+  const planning = getQuestPlanningState(state);
+  const preset = getQuestOverloadPreset(planning.overloadPreset);
+  const staleBeforeMs = nowMs - preset.staleDays * 86400000;
+  const cooldownAfterMs = nowMs - SYSTEM_MARK_COOLDOWN_DAYS * 86400000;
+  return (state?.quests || [])
+    .filter(quest => quest && !quest.completed && !quest.isSystem
+      && quest.type !== "hidden" && !quest.isSeasonal
+      && !isMandatoryQuest(quest) && !isTrackedQuest(quest)
+      && !isArchivedQuest(state, quest.id)
+      && !isQuestDeferred(state, quest.id, nowMs)
+      && !isFutureQuest(quest, today)
+      && !planning.pinnedQuestIds.includes(quest.id)
+      && createdAtMs(quest) > 0 && createdAtMs(quest) <= staleBeforeMs
+      && Number(planning.lifecycleById?.[quest.id]?.lastMarkedAtMs || 0) <= cooldownAfterMs)
+    .sort((a, b) => createdAtMs(a) - createdAtMs(b))[0] || null;
+}
+
+function compareLoadoutQuests(a, b, planning, today, dailyFocusQuestId, systemMarkQuestId) {
   const pinIds = planning.pinnedQuestIds;
   const focusA = a.id === dailyFocusQuestId ? 0 : 1;
   const focusB = b.id === dailyFocusQuestId ? 0 : 1;
+  const markA = a.id === systemMarkQuestId ? 0 : 1;
+  const markB = b.id === systemMarkQuestId ? 0 : 1;
   const pinA = pinIds.includes(a.id) ? pinIds.indexOf(a.id) : Number.POSITIVE_INFINITY;
   const pinB = pinIds.includes(b.id) ? pinIds.indexOf(b.id) : Number.POSITIVE_INFINITY;
   const overdueA = a.dueDate && a.dueDate < today ? 0 : 1;
@@ -108,6 +136,7 @@ function compareLoadoutQuests(a, b, planning, today, dailyFocusQuestId) {
   const dueA = a.dueDate ? dateMs(a.dueDate) : Number.POSITIVE_INFINITY;
   const dueB = b.dueDate ? dateMs(b.dueDate) : Number.POSITIVE_INFINITY;
   return focusA - focusB
+    || markA - markB
     || pinA - pinB
     || overdueA - overdueB
     || chainA - chainB
@@ -132,14 +161,18 @@ export function getQuestPlanningSnapshot(state, now = Date.now()) {
   const normal = quests.filter(quest => !isMandatoryQuest(quest) && !isTrackedQuest(quest));
   const deferred = normal.filter(quest => isQuestDeferred(state, quest.id, nowMs) || isFutureQuest(quest, today));
   const actionable = normal.filter(quest => !isQuestDeferred(state, quest.id, nowMs) && !isFutureQuest(quest, today));
+  const mark = state?.systemMark;
+  const systemMarkQuestId = mark?.date === today && actionable.some(quest => quest.id === mark.questId)
+    ? mark.questId
+    : null;
   const loadoutCandidates = actionable
     .filter(quest => quest.type !== "hidden" && !quest.isSeasonal)
-    .sort((a, b) => compareLoadoutQuests(a, b, planning, today, state?.dailyFocusQuestId));
+    .sort((a, b) => compareLoadoutQuests(a, b, planning, today, state?.dailyFocusQuestId, systemMarkQuestId));
   const loadout = loadoutCandidates.slice(0, QUEST_LOADOUT_CAP);
   const loadoutIds = new Set(loadout.map(quest => quest.id));
   const questLog = actionable
     .filter(quest => !loadoutIds.has(quest.id))
-    .sort((a, b) => compareLoadoutQuests(a, b, planning, today, state?.dailyFocusQuestId));
+    .sort((a, b) => compareLoadoutQuests(a, b, planning, today, state?.dailyFocusQuestId, systemMarkQuestId));
   const staleBeforeMs = nowMs - preset.staleDays * 86400000;
   const staleOwnCount = actionable.filter(quest => !quest.isSystem && createdAtMs(quest) > 0 && createdAtMs(quest) <= staleBeforeMs).length;
   const overloaded = actionable.length >= preset.overloadCount || staleOwnCount >= preset.staleCount;
@@ -161,6 +194,7 @@ export function getQuestPlanningSnapshot(state, now = Date.now()) {
     actionable,
     todayTarget: Math.min(QUEST_LOADOUT_CAP, Math.max(completedToday, loadout.length)),
     completedToday,
+    systemMarkQuestId,
     overloadStatus: {
       level,
       warned,

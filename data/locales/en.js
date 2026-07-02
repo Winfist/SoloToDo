@@ -302,6 +302,7 @@ export const en = {
     stageOf: "STAGE {current}/{total}",
     stageNow: "NOW",
     completeStageTooltip: "Complete next stage",
+    systemMarkBadge: "SYSTEM MARK · +50% XP",
     deficiencyMessage: "[SYSTEM PENALTY] Neglect of stat '{stat}' detected. Forced training activated.",
     screenTimeTitle: "Less than {time} screen time today",
     screenTimeDesc: "Upload a proof screenshot from Screen Time / Digital Wellbeing and let AI verify your focus.",
@@ -634,6 +635,7 @@ export const en = {
   },
   questActions: {
     softCap: "Daily XP soft cap reached. Future custom Quests give -50%.",
+    systemMarkBonus: "SYSTEM MARK fulfilled — +50% XP.",
     integrityLow: "System integrity low. XP for custom Quests reduced.",
     jobLevelUp: "JOB LEVEL UP: {job} is now Level {level}!",
     shadowCreated: "{title} became a {className}!",
@@ -1835,6 +1837,7 @@ export const en = {
     protocolPerfect: "Full completion = PERFECT RUN reward.",
     statusCheckTitle: "STATUS CHECK",
     bootWelcome: "Welcome back, Hunter {name}.",
+    systemMarkLine: "System Mark: \"{title}\" has been marked — +50% XP today.",
     activeDailyQuests: "Active Daily Quests: {count}",
     emergencyMission: "EMERGENCY MISSION: {title}",
     emergencyDoubleReward: "Rewards doubled. Failure will not be tolerated.",

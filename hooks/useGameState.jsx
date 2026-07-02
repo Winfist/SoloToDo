@@ -43,6 +43,9 @@ import {
 } from '../services/questAttachmentStore.js';
 import {
   getQuestPlanningSnapshot,
+  getQuestPlanningState,
+  pickSystemMarkCandidate,
+  SYSTEM_MARK_XP_MULT,
   withArchivedQuest,
   withDeferredQuest,
   withPinnedQuest,
@@ -607,11 +610,32 @@ export function useGameState(initialHunterName, onLogout) {
             // BUG FIX: Keep redemption quests alive if shadow regression is still active
             const regressionActive = s.shadowRegression?.active;
             s.quests = (s.quests || []).filter(q => shouldRetainQuestAtReset(q, { regressionActive }));
+            // ── Systemzeichen: mark ONE forgotten own quest as today's system
+            // call (bonus XP, top of loadout). It SUBSTITUTES a pool quest —
+            // the System curates before it adds. ──
+            const markCandidate = pickSystemMarkCandidate(s, Date.now());
+            if (markCandidate) {
+              const planningNow = getQuestPlanningState(s);
+              s.systemMark = { questId: markCandidate.id, date: today, xpMult: SYSTEM_MARK_XP_MULT };
+              s.questPlanning = {
+                ...planningNow,
+                lifecycleById: {
+                  ...planningNow.lifecycleById,
+                  [markCandidate.id]: {
+                    ...(planningNow.lifecycleById[markCandidate.id] || {}),
+                    lastMarkedAtMs: Date.now(),
+                    markCount: (planningNow.lifecycleById[markCandidate.id]?.markCount || 0) + 1,
+                  },
+                },
+              };
+            } else {
+              s.systemMark = null;
+            }
             const overloaded = getQuestPlanningSnapshot(s).overloadStatus.overloaded;
-            const comebackQuest = overloaded ? generateComebackSystemQuest(s) : null;
+            const comebackQuest = overloaded && !markCandidate ? generateComebackSystemQuest(s) : null;
             const newSysQuests = overloaded
               ? (comebackQuest ? [comebackQuest] : [])
-              : generateDailySystemQuests(getDailySystemQuestCount(s), s);
+              : generateDailySystemQuests(Math.max(0, getDailySystemQuestCount(s) - (markCandidate ? 1 : 0)), s);
             s.quests = [...s.quests, ...newSysQuests];
             if (s.settings?.autoSystemTasks === true) {
               s.lastSystemTaskTime = Date.now();
@@ -707,6 +731,10 @@ export function useGameState(initialHunterName, onLogout) {
             ];
             const activeDailies = (readyState.quests || []).filter(q => q.type === "daily" && !q.completed);
             if (activeDailies.length > 0) statusLines.push(ltState(readyState, "systemCoach.activeDailyQuests", { count: activeDailies.length }));
+            if (readyState.systemMark?.date === today) {
+              const markedQuest = (readyState.quests || []).find(q => q.id === readyState.systemMark.questId && !q.completed);
+              if (markedQuest) statusLines.push(ltState(readyState, "systemCoach.systemMarkLine", { title: markedQuest.title }));
+            }
             // Emergency quest info (replaces the former separate modal)
             if (readyState.emergencyQuest && !readyState.emergencyDone && !readyState.emergencyFailed) {
               if (isNewEmergency) {

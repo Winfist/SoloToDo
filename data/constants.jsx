@@ -1029,7 +1029,7 @@ function StageRing({ total, done, accent, allDone }) {
   );
 }
 
-function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false, onTogglePin, isPinned = false }) {
+function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false, onTogglePin, isPinned = false, isSystemMark = false }) {
   const { t, locale } = useI18n();
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -1221,6 +1221,11 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             <span style={{ padding: "2px 7px", borderRadius: 7, color: questAccent, background: `${questAccent}12`, border: `1px solid ${questAccent}26`, fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.4 }}>
               {typeLabel}
             </span>
+            {isSystemMark && (
+              <span style={{ padding: "2px 7px", borderRadius: 7, color: "#38bdf8", background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.30)", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 0.4 }}>
+                {t("quests.systemMarkBadge")}
+              </span>
+            )}
             {stackCount > 1 && (
               <span style={{ padding: "2px 7px", borderRadius: 7, color: "#fbbf24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.28)", fontSize: 9, fontWeight: 900, fontFamily: "'JetBrains Mono',monospace" }}>
                 x{stackCount}

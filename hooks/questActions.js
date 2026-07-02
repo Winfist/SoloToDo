@@ -97,6 +97,13 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   let finalSysIntegrity = state.integrityScore !== undefined ? state.integrityScore : 100;
   const notifications = [];
 
+  // ── Systemzeichen: the System marked this forgotten own quest today ──
+  const hasSystemMarkBonus = state.systemMark?.questId === questId && state.systemMark?.date === today;
+  if (hasSystemMarkBonus) {
+    xpGain = Math.round(xpGain * (state.systemMark.xpMult || 1.5));
+    notifications.push({ msg: ltState(state, "questActions.systemMarkBonus"), type: "named" });
+  }
+
   if (!quest.isSystem) {
     if ((state.dailyUserXP || 0) > 200 + state.level * 5) {
       xpGain = Math.round(xpGain * 0.5);
@@ -373,6 +380,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     dailyQuestCompletionCount: (state.dailyQuestCompletionCount || 0) + 1,
     // Clear daily focus after completion
     ...(state.dailyFocusQuestId === questId ? { dailyFocusQuestId: null } : {}),
+    ...(hasSystemMarkBonus ? { systemMark: null } : {}),
     ...(charismaTitle ? { selectedTitle: charismaTitle } : {}),
     seasons: {
       ...(state.seasons || {}),

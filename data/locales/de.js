@@ -302,6 +302,7 @@ export const de = {
     stageOf: "ETAPPE {current}/{total}",
     stageNow: "JETZT",
     completeStageTooltip: "Nächste Etappe abschließen",
+    systemMarkBadge: "SYSTEMZEICHEN · +50% XP",
     deficiencyMessage: "[SYSTEM-STRAFE] Vernachlässigung des Stats '{stat}' erkannt. Zwangstraining aktiviert.",
     screenTimeTitle: "Weniger als {time} Bildschirmzeit heute",
     screenTimeDesc: "Beweisfoto (Einstellungen -> Bildschirmzeit) hochladen und KI den Fokus verifizieren lassen.",
@@ -634,6 +635,7 @@ export const de = {
   },
   questActions: {
     softCap: "Tägliches XP Soft-Cap erreicht. Künftige eigene Quests geben -50%.",
+    systemMarkBonus: "SYSTEMZEICHEN erfüllt — +50% XP.",
     integrityLow: "System-Integrität niedrig. XP für eigene Quests verringert.",
     jobLevelUp: "JOB LEVEL UP: {job} ist nun Level {level}!",
     shadowCreated: "{title} wurde zu einem {className}!",
@@ -1771,6 +1773,7 @@ export const de = {
     protocolPerfect: "Vollständiger Abschluss = PERFECT RUN Belohnung.",
     statusCheckTitle: "STATUS-CHECK",
     bootWelcome: "Willkommen zurück, Hunter {name}.",
+    systemMarkLine: "Systemzeichen: \"{title}\" wurde markiert — heute +50% XP.",
     activeDailyQuests: "Aktive Tages-Quests: {count}",
     emergencyMission: "NOTFALL-MISSION: {title}",
     emergencyDoubleReward: "Belohnungen verdoppelt. Versagen wird nicht toleriert.",

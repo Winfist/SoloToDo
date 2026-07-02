@@ -1043,6 +1043,7 @@ export default function DashboardView({
                             onOpenDetail={onOpenDetail}
                             onSetFocus={setDailyFocusQuest}
                             isDailyFocus={state.dailyFocusQuestId === q.id}
+                            isSystemMark={planningSnapshot.systemMarkQuestId === q.id}
                             hasAmulet={state.artifacts?.focusAmulet}
                             onTogglePin={togglePinnedQuest}
                             isPinned={planningState.pinnedQuestIds.includes(q.id)}
