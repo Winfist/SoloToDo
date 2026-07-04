@@ -15,7 +15,7 @@
 // }
 
 import { CATEGORIES, DIFFICULTIES, SHADOW_CLASSES } from '../data/gameData.js';
-import { genId } from '../data/helpers.js';
+import { genId, getToday } from '../data/helpers.js';
 import { getLocaleObject, getStateLocale, resolveLocale, translate } from '../data/i18n.js';
 import { STAT_ICONS, REWARD_ICONS } from '../data/icons.js';
 
@@ -125,6 +125,43 @@ function getQuestSystemLines(quest, ctx, locale) {
   if (streak >= 7) return fillMsg(pickFlowMsg(locale, "streak_mid"), { n: streak });
   if (streak >= 3) return fillMsg(pickFlowMsg(locale, "streak_low"), { n: streak });
   return pickFlowMsg(locale, "normal");
+}
+
+// ─── BUILD: DAY RECAP ─────────────────────────────────────────────────────────
+// Shown once per day, queued right after the reward flow of the completion
+// that crossed the day goal. Calm summary — closes the loop, no new mechanics.
+export function buildDayRecapFlow(state, localeOrMode = null) {
+  const locale = localeOrMode || getStateLocale(state);
+  const today = getToday();
+  const doneToday = (state.completedQuests || []).filter(q => String(q.completedAt || "").slice(0, 10) === today);
+  const xpToday = doneToday.reduce((sum, q) => sum + (Number(q.xpEarned) || 0), 0);
+  const goldToday = doneToday.reduce((sum, q) => sum + (Number(q.goldEarned) || 0), 0);
+  const streak = state.streak || 0;
+
+  return {
+    id: genFlowId(),
+    source: 'day_recap',
+    variant: 'standard',
+    summary: {
+      title: trFlow(locale, "dayRecap.title"),
+      subtitle: trFlow(locale, "dayRecap.subtitle"),
+      tone: 'gold',
+      systemLines: [
+        trFlow(locale, "dayRecap.line1"),
+        trFlow(locale, "dayRecap.line2"),
+      ],
+    },
+    rewards: [
+      { kind: 'stat', label: trFlow(locale, "dayRecap.quests"), value: `${doneToday.length}`, accent: '#22d3ee', icon: '✓' },
+      { kind: 'xp', label: trFlow(locale, "dayRecap.xp"), value: `+${xpToday} XP`, accent: '#a78bfa', icon: '⚔', iconSrc: REWARD_ICONS.xp },
+      { kind: 'gold', label: trFlow(locale, "dayRecap.gold"), value: `+${goldToday} G`, accent: '#fbbf24', icon: '◈', iconSrc: REWARD_ICONS.gold },
+      { kind: 'bonus', label: trFlow(locale, "dayRecap.streak"), value: trFlow(locale, "dayRecap.streakValue", { streak }), accent: '#f97316', icon: '🔥' },
+    ],
+    highlights: [],
+    animationQueue: [],
+    deferredUi: { xpFloat: null, passiveToasts: [], systemMessages: [], hiddenQuestModal: null, achievementPayloads: [] },
+    suppressDuplicates: { achievementsShownInModal: [] },
+  };
 }
 
 // ─── BUILD: REGULAR QUEST ─────────────────────────────────────────────────────

@@ -692,6 +692,17 @@ export const de = {
     focusTitle: "FOKUS-ERFOLG",
   },
   rewardFlows: {
+    dayRecap: {
+      title: "TAGESZIEL ERREICHT",
+      subtitle: "Alle Etappen für heute abgeschlossen.",
+      quests: "QUESTS HEUTE",
+      xp: "XP HEUTE",
+      gold: "GOLD HEUTE",
+      streak: "SERIE",
+      streakValue: "{streak} Tage",
+      line1: "Registriert. Das Tagessoll ist erfüllt.",
+      line2: "Das System erwartet dich morgen, Hunter.",
+    },
     labels: {
       xp: "ERFAHRUNGSPUNKTE",
       gold: "GOLD ERHALTEN",

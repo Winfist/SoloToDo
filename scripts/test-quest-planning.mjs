@@ -1,6 +1,7 @@
 import {
   QUEST_OVERLOAD_PRESETS,
   getQuestPlanningSnapshot,
+  shouldShowDayRecap,
   withArchivedQuest,
   withDeferredQuest,
   withRestoredQuest,
@@ -107,6 +108,33 @@ assert(getQuestPlanningSnapshot(archived.state).actionable.length === 0, "archiv
 const restored = withRestoredQuest(archived.state, "archive", Date.now() + 1);
 assert(restored.restoredQuest?.id === "archive", "restore must recover Quest content");
 assert(getQuestPlanningSnapshot(restored.state).actionable.length === 1, "restored Quest must become actionable again");
+
+// ── Day target must count remaining work, not shrink to what's done:
+// with 2 quests total, finishing the 1st must NOT show 1/1 = 100% ──
+{
+  const doneToday = { id: "done", title: "done", completedAt: today };
+  const twoOpen = state([quest("a"), quest("b")]);
+  assert(getQuestPlanningSnapshot(twoOpen).todayTarget === 2, "2 open quests → target 2");
+  const oneDoneOneOpen = state([quest("b")], { completedQuests: [doneToday] });
+  const snap = getQuestPlanningSnapshot(oneDoneOneOpen);
+  assert(snap.todayTarget === 2, `1 done + 1 open → target stays 2 (got ${snap.todayTarget})`);
+  assert(snap.completedToday === 1, "completedToday counts today's completion");
+  const manyOpen = state([quest("a"), quest("b"), quest("c"), quest("d"), quest("e")]);
+  assert(getQuestPlanningSnapshot(manyOpen).todayTarget === 3, "target caps at loadout size 3");
+}
+
+// ── Day recap fires exactly when the day goal is crossed, once per day ──
+{
+  const doneQ = (id) => ({ id, title: id, completedAt: today });
+  const before = state([quest("b")], { completedQuests: [doneQ("a")] });        // 1/2
+  const after = state([], { completedQuests: [doneQ("a"), doneQ("b")] });       // 2/2
+  assert(shouldShowDayRecap(before, after) === true, "crossing the day goal shows the recap");
+  assert(shouldShowDayRecap(before, { ...after, lastDayRecapDate: today }) === false,
+    "recap shows only once per day (lastDayRecapDate)");
+  const midway = state([quest("b"), quest("c")], { completedQuests: [doneQ("a")] }); // 1/3
+  assert(shouldShowDayRecap(state([quest("a"), quest("b"), quest("c")]), midway) === false,
+    "no recap while the goal is not reached");
+}
 
 // ── System-call summary: the Settings banner must show EFFECTIVE values ──
 {

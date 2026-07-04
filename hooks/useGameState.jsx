@@ -20,7 +20,7 @@ import {
 import { JOBS } from '../data/jobs.js';
 import { CHARISMA_CHAINS } from '../data/charismaDungeons.js';
 import { buildCompleteQuestState, buildCompleteEmergencyQuestState } from './questActions.js';
-import { buildQuestRewardFlow, buildEmergencyRewardFlow, buildDungeonRewardFlow, buildProtocolRewardFlow } from './rewardFlowBuilders.js';
+import { buildQuestRewardFlow, buildEmergencyRewardFlow, buildDungeonRewardFlow, buildProtocolRewardFlow, buildDayRecapFlow } from './rewardFlowBuilders.js';
 import { SEASONS, WORLD_EVENTS, detectCurrentSeason, getNextWorldEvent, getNextMonday } from '../data/seasons.js';
 import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER_UNLOCK_MESSAGES } from '../data/featureUnlocks.js';
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
@@ -46,6 +46,7 @@ import {
   getQuestPlanningSnapshot,
   getQuestPlanningState,
   pickSystemMarkCandidate,
+  shouldShowDayRecap,
   SYSTEM_MARK_XP_MULT,
   withArchivedQuest,
   withDeferredQuest,
@@ -978,8 +979,15 @@ export function useGameState(initialHunterName, onLogout) {
     const result = buildCompleteQuestState(questId, state, processAchievementsPure, gemBoosterMult, verificationBonus);
     if (!result) return;
 
-    persist(result.nextState);
+    const showDayRecap = shouldShowDayRecap(state, result.nextState);
+    const nextStateFinal = showDayRecap
+      ? { ...result.nextState, lastDayRecapDate: getToday() }
+      : result.nextState;
+    persist(nextStateFinal);
     trackEvent('quest_completed', { category: quest.category, difficulty: quest.difficulty, isSystem: !!quest.isSystem, streak: result.nextState.streak || 0 });
+    if (showDayRecap) {
+      trackEvent('day_goal_reached', { streak: result.nextState.streak || 0 });
+    }
     if (result.systemMarkCompleted) {
       trackEvent('system_mark_completed', { category: quest.category, difficulty: quest.difficulty, xpGain: result.xpGain });
     }
@@ -999,6 +1007,9 @@ export function useGameState(initialHunterName, onLogout) {
 
     const flow = buildQuestRewardFlow(result, state.level, rect, getStateLocale(state));
     enqueueRewardFlow(flow);
+    if (showDayRecap) {
+      enqueueRewardFlow(buildDayRecapFlow(nextStateFinal, getStateLocale(state)));
+    }
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);
 
   // Auto-complete the passive step-goal quest once Health reports the target.

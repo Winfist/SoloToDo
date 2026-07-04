@@ -43,6 +43,7 @@ export const DEFAULT_STATE = {
   artifacts: { discovered: [], totalFound: 0 },
   dailyFocusQuestId: null,
   systemMark: null,
+  lastDayRecapDate: null,
   dailyQuestCompletionCount: 0,
   questReplacements: { date: null, used: 0, replacedKeys: [] },
   penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },

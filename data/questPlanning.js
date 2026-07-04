@@ -196,7 +196,10 @@ export function getQuestPlanningSnapshot(state, now = Date.now()) {
     mandatory,
     tracked,
     actionable,
-    todayTarget: Math.min(QUEST_LOADOUT_CAP, Math.max(completedToday, loadout.length)),
+    // Remaining work counts toward the goal — the ring must never show 100%
+    // while quests are still open (old formula shrank the target to what was
+    // already done once fewer than CAP quests remained).
+    todayTarget: Math.min(QUEST_LOADOUT_CAP, completedToday + loadout.length),
     completedToday,
     systemMarkQuestId,
     overloadStatus: {
@@ -208,6 +211,18 @@ export function getQuestPlanningSnapshot(state, now = Date.now()) {
       preset,
     },
   };
+}
+
+// Day recap: fires exactly when a completion crosses the day goal, at most
+// once per day (nextState.lastDayRecapDate is stamped by the caller).
+export function shouldShowDayRecap(prevState, nextState, nowMs = Date.now()) {
+  if (!prevState || !nextState) return false;
+  if (nextState.lastDayRecapDate === getToday()) return false;
+  const before = getQuestPlanningSnapshot(prevState, nowMs);
+  const after = getQuestPlanningSnapshot(nextState, nowMs);
+  return after.todayTarget > 0
+    && after.completedToday >= after.todayTarget
+    && before.completedToday < after.todayTarget;
 }
 
 export function withPinnedQuest(state, questId) {

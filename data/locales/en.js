@@ -692,6 +692,17 @@ export const en = {
     focusTitle: "FOCUS SUCCESS",
   },
   rewardFlows: {
+    dayRecap: {
+      title: "DAY GOAL REACHED",
+      subtitle: "All stages for today completed.",
+      quests: "QUESTS TODAY",
+      xp: "XP TODAY",
+      gold: "GOLD TODAY",
+      streak: "STREAK",
+      streakValue: "{streak} days",
+      line1: "Registered. Today's quota is fulfilled.",
+      line2: "The System expects you tomorrow, Hunter.",
+    },
     labels: {
       xp: "EXPERIENCE POINTS",
       gold: "GOLD RECEIVED",
