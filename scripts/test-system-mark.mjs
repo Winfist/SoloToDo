@@ -121,6 +121,8 @@ function makeState(quests, overrides = {}) {
   assert(markedResult.xpGain === Math.round(plainResult.xpGain * SYSTEM_MARK_XP_MULT),
     `marked completion pays 1.5x XP (${markedResult.xpGain} vs ${plainResult.xpGain})`);
   assert(markedResult.nextState.systemMark === null, "mark is cleared after completion");
+  assert(markedResult.systemMarkCompleted === true, "result flags the mark completion (analytics hook)");
+  assert(plainResult.systemMarkCompleted === false, "unmarked completion is not flagged");
 }
 
 // ── Completion of a DIFFERENT quest leaves the mark untouched, no bonus ──

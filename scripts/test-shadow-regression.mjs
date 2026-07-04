@@ -6,6 +6,9 @@ import {
   shouldRetainQuestAtReset,
 } from "../data/protocolHelpers.js";
 import { clearBogusShadowRegression } from "../data/shadowMigration.js";
+import { buildCompleteQuestState } from "../hooks/questActions.js";
+import { DEFAULT_STATE } from "../data/defaultState.js";
+import { getToday } from "../data/helpers.js";
 
 let failures = 0;
 const assert = (condition, message) => {
@@ -77,6 +80,37 @@ assert(shouldRetainQuestAtReset({ isSystem: true, isRedemption: true }, { regres
   "redemption quest survives while regression is active (core bug)");
 assert(shouldRetainQuestAtReset({ isSystem: true, isRedemption: true }, { regressionActive: false }) === false,
   "stale redemption quest is cleared once regression is over");
+
+// ── Regression completion flow: finishing the 3rd redemption quest ends the
+// arc, restores half the streak, clears penalty, and flags the result so the
+// effect layer can log analytics without re-deriving the transition ──
+{
+  const passAchievements = (s) => ({ nextState: s, newAchievements: [] });
+  const makeRegressionState = (questsCompleted) => ({
+    ...structuredClone(DEFAULT_STATE),
+    streak: 0,
+    penaltyZone: { active: true, redemptionLeft: REDEMPTION_QUESTS_REQUIRED, questsCompletedInPenalty: 0 },
+    shadowRegression: {
+      active: true, previousStreak: 8, redemptionQuests: ["r1"],
+      questsCompleted, completedAt: null, regressionHistory: [],
+    },
+    quests: [{
+      id: "r1", title: "Schattenrückforderung", category: "str", difficulty: "hard",
+      type: "redemption", isSystem: true, isRedemption: true,
+      createdAt: getToday(), createdAtMs: Date.now() - 3600000,
+    }],
+  });
+
+  const finished = buildCompleteQuestState("r1", makeRegressionState(REDEMPTION_QUESTS_REQUIRED - 1), passAchievements);
+  assert(finished.regressionCompleted === true, "3rd redemption completion flags regressionCompleted");
+  assert(finished.nextState.shadowRegression.active === false, "regression deactivates on completion");
+  assert(finished.nextState.streak === calcRestoredStreak(8), `streak restored to half (got ${finished.nextState.streak})`);
+  assert(finished.nextState.penaltyZone.active === false, "penalty zone clears with the regression");
+
+  const midway = buildCompleteQuestState("r1", makeRegressionState(0), passAchievements);
+  assert(midway.regressionCompleted === false, "1st redemption completion does not flag the arc as done");
+  assert(midway.nextState.shadowRegression.active === true, "regression stays active midway");
+}
 
 if (failures > 0) {
   console.error(`\n${failures} assertion(s) failed.`);

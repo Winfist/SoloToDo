@@ -460,6 +460,10 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     oldLevel: state.level,
     newAchievements,
     newlyCompletedQuests: [newlyCompletedQuest],
+    // Transition flags for the effect layer (analytics) — derived here so
+    // callers never have to re-compute state diffs.
+    systemMarkCompleted: Boolean(hasSystemMarkBonus),
+    regressionCompleted: Boolean(regressionJustCompleted),
   };
 }
 

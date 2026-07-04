@@ -581,6 +581,7 @@ export function useGameState(initialHunterName, onLogout) {
               // BUG FIX: Store previousStreak BEFORE resetting to 0
               const previousStreak = s.streak || 0;
               s.streak = 0;
+              trackEvent('comeback_return', { daysMissed: diff, previousStreak });
               const hadDailies = s.quests?.some(q => q.type === "daily" && !q.completed);
               // Shadow Regression: heroic comeback instead of shameful penalty.
               // Only when there was an actual streak to lose — players without
@@ -603,6 +604,7 @@ export function useGameState(initialHunterName, onLogout) {
                   regressionHistory: s.shadowRegression?.regressionHistory || []
                 };
                 s.quests = [...(s.quests || []), ...redemptionQs];
+                trackEvent('regression_started', { previousStreak, daysMissed: diff });
                 setTimeout(() => setShowShadowRegression(true), 800);
               }
             }
@@ -616,6 +618,10 @@ export function useGameState(initialHunterName, onLogout) {
             const markCandidate = pickSystemMarkCandidate(s, Date.now());
             if (markCandidate) {
               const planningNow = getQuestPlanningState(s);
+              trackEvent('system_mark_assigned', {
+                questAgeDays: Math.max(0, Math.round((Date.now() - (markCandidate.createdAtMs || Date.now())) / 86400000)),
+                markCount: (planningNow.lifecycleById[markCandidate.id]?.markCount || 0) + 1,
+              });
               s.systemMark = { questId: markCandidate.id, date: today, xpMult: SYSTEM_MARK_XP_MULT };
               s.questPlanning = {
                 ...planningNow,
@@ -971,7 +977,13 @@ export function useGameState(initialHunterName, onLogout) {
     if (!result) return;
 
     persist(result.nextState);
-    trackEvent('quest_completed', { category: quest.category, difficulty: quest.difficulty, isSystem: !!quest.isSystem });
+    trackEvent('quest_completed', { category: quest.category, difficulty: quest.difficulty, isSystem: !!quest.isSystem, streak: result.nextState.streak || 0 });
+    if (result.systemMarkCompleted) {
+      trackEvent('system_mark_completed', { category: quest.category, difficulty: quest.difficulty, xpGain: result.xpGain });
+    }
+    if (result.regressionCompleted) {
+      trackEvent('regression_completed', { restoredStreak: result.nextState.streak || 0 });
+    }
 
     // ── Hybrid Storage: archive completed quest to subcollection ──
     if (auth.currentUser && result.newlyCompletedQuests) {
