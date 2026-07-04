@@ -133,7 +133,7 @@ export function buildQuestRewardFlow(result, oldLevel, rect, localeOrMode = null
     nextState, didLevelUp, earnedPoints, newLevel, xpGain, goldGain,
     ariseData, newNameds, soulLinkActive, notifications,
     newlyDiscoveredHQ, regressionSystemMessage, charismaDungeonSystemMessage,
-    quest, newAchievements,
+    quest, newAchievements, systemMarkCompleted,
   } = result;
   const locale = localeOrMode || getStateLocale(nextState);
 
@@ -152,6 +152,12 @@ export function buildQuestRewardFlow(result, oldLevel, rect, localeOrMode = null
   ];
   if (soulLinkActive) {
     rewards.push({ kind: 'bonus', label: trFlow(locale, "labels.soulLinkBonus"), value: '+25% XP', accent: '#f472b6', icon: '🔗' });
+  }
+  if (systemMarkCompleted) {
+    rewards.push({ kind: 'bonus', label: trFlow(locale, "labels.systemMarkBonus"), value: '+50% XP', accent: '#38bdf8', icon: '◎' });
+  }
+  if (!quest.isSystem) {
+    rewards.push({ kind: 'bonus', label: trFlow(locale, "labels.ownInitiative"), value: '+10% XP', accent: '#34d399', icon: '✦' });
   }
   if (didLevelUp) {
     rewards.push({ kind: 'level', label: trFlow(locale, "labels.levelUp"), value: `Level ${newLevel}`, accent: '#ffffff', icon: '★', special: true, iconSrc: REWARD_ICONS.level });

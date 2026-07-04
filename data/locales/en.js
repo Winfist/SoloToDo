@@ -697,6 +697,8 @@ export const en = {
       gold: "GOLD RECEIVED",
       statIncreased: "{stat} INCREASED",
       soulLinkBonus: "SOUL LINK BONUS",
+      systemMarkBonus: "SYSTEM MARK",
+      ownInitiative: "OWN INITIATIVE",
       levelUp: "LEVEL UP",
       emergencyXp: "EMERGENCY XP (2.5x)",
       emergencyGold: "EMERGENCY GOLD (2.5x)",

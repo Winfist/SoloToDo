@@ -7,6 +7,9 @@ export const MAX_PINNED_QUESTS = 3;
 // (bonus XP, top of loadout) instead of rolling another pool quest. ──
 export const SYSTEM_MARK_COOLDOWN_DAYS = 3;
 export const SYSTEM_MARK_XP_MULT = 1.5;
+// After this many fruitless marks the System stops re-marking a quest —
+// endless re-marking of an ignored quest is nagging, not curating.
+export const SYSTEM_MARK_MAX_MARKS = 2;
 
 export const QUEST_OVERLOAD_PRESETS = {
   focused: {
@@ -115,6 +118,7 @@ export function pickSystemMarkCandidate(state, nowMs = Date.now()) {
       && !isFutureQuest(quest, today)
       && !planning.pinnedQuestIds.includes(quest.id)
       && createdAtMs(quest) > 0 && createdAtMs(quest) <= staleBeforeMs
+      && Number(planning.lifecycleById?.[quest.id]?.markCount || 0) < SYSTEM_MARK_MAX_MARKS
       && Number(planning.lifecycleById?.[quest.id]?.lastMarkedAtMs || 0) <= cooldownAfterMs)
     .sort((a, b) => createdAtMs(a) - createdAtMs(b))[0] || null;
 }

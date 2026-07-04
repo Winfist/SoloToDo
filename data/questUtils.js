@@ -5,6 +5,21 @@ export const QUEST_FOCUS_SOFT_CAP = 7;
 export const FREE_DAILY_REPLACEMENT_LIMIT = 1;
 export const PRO_DAILY_REPLACEMENT_LIMIT = 4;
 
+// Pool re-offer window: a pool quest title only stays blocked while its last
+// completion is this recent. Blocking against the FULL history drains the
+// finite pool permanently for long-term players.
+export const POOL_REOFFER_AFTER_DAYS = 14;
+
+export function wasTitleCompletedRecently(completedQuests, title, nowMs = Date.now(), days = POOL_REOFFER_AFTER_DAYS) {
+  if (!Array.isArray(completedQuests) || !title) return false;
+  const cutoffMs = nowMs - days * 86400000;
+  return completedQuests.some(quest => {
+    if (quest?.title !== title) return false;
+    const completedMs = Number(quest.completedAtMs) || Date.parse(quest.completedAt || "");
+    return Number.isFinite(completedMs) && completedMs > cutoffMs;
+  });
+}
+
 function normalizeKeyPart(value) {
   return String(value || "")
     .normalize("NFD")

@@ -1,6 +1,7 @@
 import {
   pickSystemMarkCandidate,
   SYSTEM_MARK_COOLDOWN_DAYS,
+  SYSTEM_MARK_MAX_MARKS,
   SYSTEM_MARK_XP_MULT,
   getQuestPlanningSnapshot,
 } from "../data/questPlanning.js";
@@ -78,6 +79,33 @@ function makeState(quests, overrides = {}) {
   const picked = pickSystemMarkCandidate(state, now);
   assert(picked?.id === "older-unmarked", `cooldown skips recently marked quest (got ${picked?.id})`);
   assert(SYSTEM_MARK_COOLDOWN_DAYS === 3, "cooldown is 3 days");
+}
+
+// ── Respect limit: after 2 fruitless marks the System stops re-marking a
+// quest — endless re-marking of ignored quests is nagging, not curating ──
+{
+  const state = makeState([ownQuest("twice-ignored", 30), ownQuest("younger", 10)], {
+    questPlanning: {
+      overloadPreset: "balanced",
+      pinnedQuestIds: [],
+      deferredUntilById: {},
+      lifecycleById: { "twice-ignored": { lastMarkedAtMs: now - 10 * DAY, markCount: SYSTEM_MARK_MAX_MARKS } },
+    },
+  });
+  const picked = pickSystemMarkCandidate(state, now);
+  assert(picked?.id === "younger", `quest marked ${SYSTEM_MARK_MAX_MARKS}x is never re-marked (got ${picked?.id})`);
+  assert(SYSTEM_MARK_MAX_MARKS === 2, "respect limit is 2 marks");
+
+  const onceMarked = makeState([ownQuest("once-marked", 30)], {
+    questPlanning: {
+      overloadPreset: "balanced",
+      pinnedQuestIds: [],
+      deferredUntilById: {},
+      lifecycleById: { "once-marked": { lastMarkedAtMs: now - 10 * DAY, markCount: 1 } },
+    },
+  });
+  assert(pickSystemMarkCandidate(onceMarked, now)?.id === "once-marked",
+    "a single previous mark (outside cooldown) still allows one more try");
 }
 
 // ── Stale threshold follows the user's overload preset (focused = 3 days) ──

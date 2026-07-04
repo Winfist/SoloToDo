@@ -413,7 +413,7 @@ function AriseCinematic({ shadow, onClose }) {
         fontSize: "10px", color: "rgba(255,255,255,0.15)",
         fontFamily: "'JetBrains Mono', monospace", letterSpacing: 3
       }}>
-        ARISE SYSTEM v1.3.6 (FORCED UPDATE)
+        SOLOTODO SYSTEM v1.3.6 (FORCED UPDATE)
       </div>
     </div>
   );

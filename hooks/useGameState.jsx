@@ -34,7 +34,8 @@ import {
   getQuestKey,
   getQuestReplacementStatus,
   isQuestReplaceable,
-  normalizeQuestForStorage
+  normalizeQuestForStorage,
+  wasTitleCompletedRecently
 } from '../data/questUtils.js';
 import { getSystemQuestPoolForLocale } from '../data/localizedQuestPool.js';
 import {
@@ -687,6 +688,7 @@ export function useGameState(initialHunterName, onLogout) {
             s.dailyUserQuestsCreated = 0;
             s.extraDailySlots = 0;
             s.dailyUserXP = 0;
+            s.dailyQuestCompletionCount = 0;
             s.dailyDungeonsRun = 0;
             s.dailyCharismaRun = 0;
             s.questReplacements = { date: today, used: 0, replacedKeys: [] };
@@ -807,7 +809,7 @@ export function useGameState(initialHunterName, onLogout) {
       // Find tasks in QUEST_POOL not currently in state.quests and not in completedQuests
       const availablePool = QUEST_POOL.filter(q =>
         !currentState.quests.some(sq => sq.title === q.title) &&
-        !(currentState.completedQuests || []).some(cq => cq.title === q.title)
+        !wasTitleCompletedRecently(currentState.completedQuests, q.title, now)
       );
 
       if (availablePool.length > 0) {

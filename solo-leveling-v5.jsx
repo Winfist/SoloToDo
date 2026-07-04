@@ -2924,7 +2924,7 @@ function SetupScreen({ onFinish, theme }) {
         </div>
         {phase >= 1 && <div style={{ animation: "fadeIn 0.8s ease", fontSize: 9, letterSpacing: 6, color: "#7c3aed", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>SYSTEM ACTIVATED</div>}
         {phase >= 2 && <div style={{ animation: "slideUp 0.6s ease" }}>
-          <h1 style={{ fontSize: 42, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 6, marginBottom: 8, lineHeight: 1, animation: "glow 3s ease-in-out infinite" }}>ARISE</h1>
+          <h1 style={{ fontSize: 42, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", letterSpacing: 6, marginBottom: 8, lineHeight: 1, animation: "glow 3s ease-in-out infinite" }}>SOLOTODO</h1>
           <p style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, fontFamily: "'Outfit',sans-serif" }}>Ein neuer Hunter wurde erkannt.<br />Identifiziere dich.</p>
         </div>}
         {phase >= 3 && <div style={{ animation: "slideUp 0.6s ease", marginTop: 32 }}>

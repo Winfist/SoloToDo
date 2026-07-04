@@ -938,7 +938,7 @@ export default function AuthScreen({ onAuthSuccess }) {
 
       {/* Version watermark */}
       <div style={{ position: "fixed", bottom: isMobile ? 10 : 20, left: "50%", transform: "translateX(-50%)", fontSize: isMobile ? 7 : 9, color: "#1e2a3a", fontFamily: "'JetBrains Mono', monospace", letterSpacing: isMobile ? 1 : 2, zIndex: 5 }}>
-        ARISE SYSTEM v5.0
+        SOLOTODO SYSTEM v5.0
       </div>
     </div>
   );
