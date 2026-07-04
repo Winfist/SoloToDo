@@ -67,6 +67,7 @@ export { CSS } from "./css.js";
 
 // â”€â”€â”€ REACT UI COMPONENTS (remain here, referenced by JSX consumers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import { STAT_ICONS, SHADOW_ICONS, GATE_ICONS, ITEM_ICONS, QUEST_ICONS, DIFF_ICONS, ROLE_ICONS, STYLE_ICONS, DUNGEON_ICONS, BACKGROUNDS, STORY_ICONS, HABIT_ICONS, NAV_ICONS, MICRO_ICONS, SHOP_ICONS, SKILL_ICONS, SYSTEM_ICONS, BOSS_ICONS, ABILITY_ICONS, JOB_ICONS } from "./icons.js";
+import { SYSTEM_MARK_XP_MULT } from "./questPlanning.js";
 import { JOBS } from "./jobs.js";
 import { getRank as _getRank, getXpForLevel as _getXpForLevel, getRankIndex as _getRankIndex, genId as _genId, getToday as _getToday } from "./helpers.js";
 import { RANKS as _RANKS, DIFFICULTIES as _DIFFICULTIES, CATEGORIES as _CATEGORIES, STRATEGIES as _STRATEGIES, SHADOW_CLASSES as _SHADOW_CLASSES, SHADOW_TIERS as _SHADOW_TIERS, NAMED_SHADOWS as _NAMED_SHADOWS, FORMATION_SLOTS as _FORMATION_SLOTS, ACHIEVEMENTS as _ACHIEVEMENTS, SKILLS as _SKILLS, DUNGEON_MODIFIERS as _DUNGEON_MODIFIERS, FLOOR_TYPES as _FLOOR_TYPES, BOSS_PHASES as _BOSS_PHASES, EQUIPMENT_POOL as _EQUIPMENT_POOL, RARITY_COLORS as _RARITY_COLORS, RARITY_LABELS as _RARITY_LABELS, DUNGEON_TEMPLATES as _DUNGEON_TEMPLATES, SHOP_ITEMS as _SHOP_ITEMS, GEM_SHOP_ITEMS as _GEM_SHOP_ITEMS, THEMES as _THEMES, QUEST_TYPES_CONFIG as _QUEST_TYPES_CONFIG } from "./gameData.js";
@@ -1056,7 +1057,7 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
   const diff = DIFFICULTIES.find(d => d.key === quest.difficulty) || DIFFICULTIES[0];
   const cat = CATEGORIES.find(c => c.key === quest.category) || CATEGORIES[0];
   const typeCfg = QUEST_TYPES_CONFIG[quest.type] || QUEST_TYPES_CONFIG.side;
-  const xpGain = Math.round((diff?.xp || 50) * (quest.chainMultiplier || 1) * (typeCfg.xpMult || 1));
+  const xpGain = Math.round((diff?.xp || 50) * (quest.chainMultiplier || 1) * (typeCfg.xpMult || 1) * (isSystemMark ? SYSTEM_MARK_XP_MULT : 1));
   const goldGain = Math.round((diff?.gold || 25) * (quest.chainMultiplier || 1) * (typeCfg.goldMult || 1));
   const isHidden = quest.type === "hidden";
   const isSystemQuest = quest.isSystem === true;

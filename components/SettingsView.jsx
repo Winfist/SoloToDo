@@ -10,6 +10,7 @@ import { AdService } from "../services/adService.js";
 import { openLegalPage } from "../services/legalLinks.js";
 import QuestIntensityControl from "./QuestIntensityControl.jsx";
 import QuestPlanningControl from "./QuestPlanningControl.jsx";
+import { getSystemCallSummary } from "../data/questIntensity.js";
 import { getPremiumFeatureForRoute, getPremiumStatus, isPremiumWidgetModule, PREMIUM_PRODUCT } from "../data/premium.js";
 import { LANGUAGE_OPTIONS, getLocaleLabel, normalizeLanguageMode, translate, writeBootstrapLanguage } from "../data/i18n.js";
 import { NOTIFICATION_PRESETS, formatNotificationPresetSummary, getNotificationPreset } from "../data/notificationPresets.js";
@@ -1704,6 +1705,19 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
            SECTION 4B: AUFGABEN-AUTOMATION
          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <SettingsSection title={t("settings.sections.automation")} icon={<SettingsIcon name="automation" />} color="#22d3ee" open={openSection === "automation"} onToggle={() => toggleSection("automation")} theme={theme}>
+        {(() => {
+          const summary = getSystemCallSummary(state);
+          return (
+            <div style={{ padding: "11px 14px", borderRadius: 12, background: "rgba(56,189,248,0.05)", border: "1px solid rgba(56,189,248,0.16)" }}>
+              <div style={{ color: "#7dd3fc", fontSize: 11, fontWeight: 700, lineHeight: 1.5 }}>
+                {t(summary.callsPerDay === 1 ? "settings.systemCalls.summaryOne" : "settings.systemCalls.summaryMany", { calls: summary.callsPerDay, pause: summary.pauseAtOpenQuests })}
+              </div>
+              <div style={{ color: "#64748b", fontSize: 10, marginTop: 4, lineHeight: 1.5 }}>
+                {t("settings.systemCalls.ownPriority")}{summary.limitedByFree ? ` ${t("settings.systemCalls.freeLimited")}` : ""}
+              </div>
+            </div>
+          );
+        })()}
         <QuestIntensityControl state={state} persist={persist} theme={theme} premiumStatus={premiumStatus} onOpenPremium={onOpenPremium} />
         <QuestPlanningControl state={state} persist={persist} theme={theme} />
       </SettingsSection>

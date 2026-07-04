@@ -315,7 +315,7 @@ export default function QuestIntensityControl({ state, persist, theme, compact =
                 fontFamily: "'JetBrains Mono',monospace",
                 fontWeight: 900,
               }}>
-                SYSTEMRUF INTENSITÄT
+                WIE OFT RUFT DAS SYSTEM?
               </div>
               <div style={{
                 display: "flex",

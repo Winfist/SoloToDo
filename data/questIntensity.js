@@ -1,4 +1,5 @@
 import { isPremiumActive } from "./premium.js";
+import { getQuestOverloadPreset } from "./questPlanning.js";
 
 export const DEFAULT_QUEST_INTENSITY_KEY = "baby_gate";
 
@@ -97,6 +98,27 @@ export function getDailySystemQuestCount(value) {
 
 export function getQuestIntensityActiveCap(value) {
   return getEffectiveQuestIntensityPreset(value).activeCap;
+}
+
+// One plain-language answer to "wie stark greift das System ein?" — always
+// built from EFFECTIVE values (free users are pinned to baby_gate even when
+// a higher intensity is selected), so the Settings banner never lies.
+export function getSystemCallSummary(state, nowMs = Date.now()) {
+  const selected = getQuestIntensityPreset(state);
+  const effective = getEffectiveQuestIntensityPreset(state, nowMs);
+  const overload = getQuestOverloadPreset(state);
+  return {
+    selectedKey: selected.key,
+    effectiveKey: effective.key,
+    limitedByFree: selected.key !== effective.key,
+    callsPerDay: effective.dailyQuestCount,
+    intervalHours: effective.intervalHours,
+    intensityLabel: effective.label,
+    pauseAtOpenQuests: overload.overloadCount,
+    warnAtOpenQuests: overload.warningCount,
+    staleDays: overload.staleDays,
+    overloadLabel: overload.label,
+  };
 }
 
 export function formatQuestIntensityInterval(presetOrValue) {

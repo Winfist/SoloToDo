@@ -220,7 +220,7 @@ export function TodayCommandCenter({ state, theme, can, setShowFocusMode, snooze
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginTop: 16 }}>
         {[
           { label: t("dashboard.command.completed"), value: completedTodayCount, color: progressPct >= 100 ? "#22c55e" : theme.primary },
-          { label: t("dashboard.command.streak"), value: streakRisk ? t("dashboard.command.streakOpen") : t("dashboard.command.streakStable"), color: streakRisk ? "#f59e0b" : "#f97316" },
+          { label: t("dashboard.command.streak"), value: state.streak || 0, color: streakRisk ? "#f59e0b" : "#f97316" },
           { label: t("dashboard.command.habits"), value: habitsOpen, color: habitsOpen > 0 ? "#22c55e" : "#475569" },
         ].map(item => (
           <div key={item.label} style={{

@@ -10,6 +10,7 @@ import {
   getDailySystemQuestCount,
   getQuestIntensityActiveCap,
   getQuestIntensityIntervalMs,
+  getSystemCallSummary,
 } from "../data/questIntensity.js";
 
 const today = getToday();
@@ -106,5 +107,28 @@ assert(getQuestPlanningSnapshot(archived.state).actionable.length === 0, "archiv
 const restored = withRestoredQuest(archived.state, "archive", Date.now() + 1);
 assert(restored.restoredQuest?.id === "archive", "restore must recover Quest content");
 assert(getQuestPlanningSnapshot(restored.state).actionable.length === 1, "restored Quest must become actionable again");
+
+// ── System-call summary: the Settings banner must show EFFECTIVE values ──
+{
+  const freeMonarch = {
+    settings: { questIntensity: "monarch_call" },
+    premium: { tier: "free" },
+    questPlanning: { overloadPreset: "balanced" },
+  };
+  const s1 = getSystemCallSummary(freeMonarch);
+  assert(s1.effectiveKey === "baby_gate" && s1.callsPerDay === 1, "free user summary shows effective baby_gate (1 call/day)");
+  assert(s1.limitedByFree === true, "free user with higher selection is flagged as limited");
+  assert(s1.pauseAtOpenQuests === 10 && s1.staleDays === 7, "balanced preset: pause at 10, stale after 7 days");
+
+  const proMonarch = {
+    settings: { questIntensity: "monarch_call" },
+    premium: { tier: "hunter_pro", activeUntil: new Date(Date.now() + 86400000).toISOString() },
+    questPlanning: { overloadPreset: "focused" },
+  };
+  const s2 = getSystemCallSummary(proMonarch);
+  assert(s2.effectiveKey === "monarch_call" && s2.callsPerDay === 4, "pro user summary shows selected intensity (4 calls/day)");
+  assert(s2.limitedByFree === false, "pro user is not limited");
+  assert(s2.pauseAtOpenQuests === 7 && s2.staleDays === 3, "focused preset: pause at 7, stale after 3 days");
+}
 
 console.log("✓ Quest planning: loadout, overload, deferral and archive behavior verified");

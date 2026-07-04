@@ -7,8 +7,8 @@ export default function QuestPlanningControl({ state, persist, theme }) {
   const planning = getQuestPlanningState(state);
   const snapshot = getQuestPlanningSnapshot(state);
   const copy = locale === "en"
-    ? { title: "QUEST LOG PROTECTION", desc: "Choose when the System should reduce new calls.", open: "actionable Quests", stale: "stale own Quests" }
-    : { title: "QUEST-LOG SCHUTZ", desc: "Lege fest, wann das System neue Rufe reduziert.", open: "ausführbare Quests", stale: "alte eigene Quests" };
+    ? { title: "WHEN DOES THE SYSTEM HOLD BACK?", desc: "From this many open quests the System pauses new calls and marks forgotten own quests instead.", open: "actionable Quests", stale: "stale own Quests" }
+    : { title: "WANN HÄLT DAS SYSTEM SICH ZURÜCK?", desc: "Ab dieser Menge offener Quests pausiert das System neue Rufe und markiert stattdessen vergessene eigene Quests.", open: "ausführbare Quests", stale: "alte eigene Quests" };
 
   return (
     <div style={{ marginTop: 14, padding: 14, borderRadius: 16, background: "rgba(6,10,22,0.76)", border: "1px solid rgba(148,163,184,0.12)" }}>
