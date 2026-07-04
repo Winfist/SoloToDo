@@ -17,6 +17,7 @@
     "test:redemption": "node scripts/test-redemption.mjs",
     "test:streak": "node scripts/test-streak.mjs",
     "test:system-mark": "node scripts/test-system-mark.mjs",
+    "test:state-merge": "node scripts/test-state-merge.mjs",
     "test:quest-planning": "node scripts/test-quest-planning.mjs",
     "test:quest-verification": "node scripts/test-quest-verification.mjs",
     "test:sigil": "node scripts/test-sigil-geometry.mjs",

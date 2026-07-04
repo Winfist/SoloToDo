@@ -316,7 +316,13 @@ function choosePremium(primaryPremium = {}, fallbackPremium = {}) {
 
 function mergeQuests(primary = [], fallback = [], completedQuests = []) {
   const completedIds = new Set(arrayOf(completedQuests).map(q => q?.id).filter(Boolean));
-  const merged = mergeArrayByKey(primary, fallback, questKey);
+  // System quests are ephemeral: the daily reset wipes and regenerates them,
+  // so the newer (primary) state's set is authoritative. Union-ing them from
+  // the older state resurrects quests the reset already deleted and stacks
+  // duplicates across days ("zombie dailies"). Own quests keep full union
+  // semantics — real user content must survive cross-device merges.
+  const durableFallback = arrayOf(fallback).filter(quest => !quest?.isSystem);
+  const merged = mergeArrayByKey(primary, durableFallback, questKey);
   return merged
     .map(quest => completedIds.has(quest.id) ? { ...quest, completed: true } : quest)
     .filter(quest => !completedIds.has(quest.id) || quest.type === "daily");
