@@ -30,7 +30,7 @@
 
 ### Migration bestehender States
 
-Beim App-Start (bestehender Migrationsblock in `hooks/useGameState.jsx`): offene `type: "hidden"`-Quests im Board werden automatisch eingelöst — Belohnung gutschreiben, in `completed` verschieben, kurze Benachrichtigung. Kein User verliert Belohnungen; leere Karten verschwinden. Cross-Device: Migration ist idempotent (Board-Eintrag weg + `completed`-Eintrag vorhanden ⇒ nichts zu tun).
+Beim App-Start (bestehender Migrationsblock in `hooks/useGameState.jsx`): offene `type: "hidden"`-Quests im Board werden automatisch eingelöst — Belohnung gutschreiben, in `completed` verschieben, kurze Benachrichtigung. Zusätzlich werden `hiddenQuests.discovered`-Einträge **ohne** zugehörige Board-Quest (Alt-States) genauso eingelöst; `discovered` ist danach immer leer. Kein User verliert Belohnungen; leere Karten verschwinden. Cross-Device: Migration ist idempotent (Board-Eintrag weg + `completed`-Eintrag vorhanden ⇒ nichts zu tun).
 
 ### Sammel-Galerie „Geheimnisse"
 
@@ -48,7 +48,7 @@ Neues `scripts/test-quest-content.mjs`: iteriert über alle Quest-Erzeuger (Pool
 
 ### Erzeugung (deterministisch, offline-fähig)
 
-Beim täglichen Reset wird zusätzlich **eine Quest vom neuen Typ `goal`** erzeugt (eigener Badge im Board):
+Beim täglichen Reset wird zusätzlich **eine Quest vom neuen Typ `goal`** erzeugt (Pro: bis zu zwei, siehe Free/Pro; eigener Badge im Board):
 
 - Quelle: aktive Ziele aus dem GoalFramework (`state.goals`, Meilenstein offen). Bei mehreren Zielen Rotation nach „am längsten nicht bedient" (persistiert als `lastServedAt` je Ziel).
 - Ableitung aus dem **nächsten offenen Meilenstein**:
