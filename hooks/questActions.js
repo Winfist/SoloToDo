@@ -9,7 +9,7 @@ import {
   genId, getToday, calculateLevelUp, awardJobXp,
   calcFormationBonus, getEquipBonuses, getSkillBonuses, getJobBonuses,
   createShadowFromQuest, calcShadowXpToNext, checkNamedShadowUnlocks,
-  checkHiddenQuestTriggers, generateChainedQuest, generateOperationStep, getDailyModifier
+  checkHiddenQuestTriggers, redeemHiddenAchievements, generateChainedQuest, generateOperationStep, getDailyModifier
 } from '../data/helpers.js';
 import { OPERATIONS } from '../data/questPool.js';
 import { generateRedemptionQuests, REDEMPTION_QUESTS_REQUIRED, calcRestoredStreak } from '../data/protocolHelpers.js';
@@ -125,9 +125,9 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
   if (hasVerificationBonus) goldGain = Math.round(goldGain * 1.1);
 
   let next = calculateLevelUp(state, xpGain);
-  const didLevelUp = next._didLevelUp;
-  const earnedPoints = next._levelsGained;
-  const newLevel = next.level;
+  let didLevelUp = next._didLevelUp;
+  let earnedPoints = next._levelsGained;
+  let newLevel = next.level;
 
   next = awardJobXp({ ...next, gold: state.gold + goldGain, totalGoldEarned: (state.totalGoldEarned || 0) + goldGain }, "quest_complete", {
     category: quest.category,
@@ -390,18 +390,20 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
     }
   };
 
-  // Hidden quest triggers
-  const newlyDiscoveredHQ = isFeatureUnlocked('hidden_quests', next.level) ? checkHiddenQuestTriggers(next) : [];
-  if (newlyDiscoveredHQ.length > 0) {
-    const newDiscovered = [...(next.hiddenQuests.discovered || []), ...newlyDiscoveredHQ.map(hq => hq.id)];
-    next.hiddenQuests = { ...next.hiddenQuests, discovered: newDiscovered };
-    const hqAsQuests = newlyDiscoveredHQ.map(hq => ({
-      id: genId(), hiddenId: hq.id,
-      title: hq.title, category: hq.category, difficulty: hq.difficulty,
-      type: "hidden", createdAt: today,
-      xpMult: hq.reward.xpMult, goldMult: hq.reward.goldMult,
+  // Hidden quest triggers → Sofort-Achievements (kein Board-Eintrag)
+  const hqCandidates = isFeatureUnlocked('hidden_quests', next.level) ? checkHiddenQuestTriggers(next) : [];
+  let newlyDiscoveredHQ = [];
+  if (hqCandidates.length > 0) {
+    const redemption = redeemHiddenAchievements(next, hqCandidates.map(hq => hq.id));
+    next = redemption.state;
+    newlyDiscoveredHQ = redemption.redeemed;
+    didLevelUp = didLevelUp || redemption.didLevelUp;
+    earnedPoints = (earnedPoints || 0) + redemption.levelsGained;
+    newLevel = next.level;
+    newlyDiscoveredHQ.forEach(hq => notifications.push({
+      msg: ltState(state, "questActions.hiddenAchievement", { title: hq.title, xp: hq.grantedXp, gold: hq.grantedGold }),
+      type: "named",
     }));
-    next.quests = [...next.quests, ...hqAsQuests];
   }
 
   // Named shadow unlocks

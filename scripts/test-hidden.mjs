@@ -63,3 +63,23 @@ const r2 = redeemHiddenAchievements(r1.state, ["hq_thousand_cuts"]);
 if (r2.redeemed.length !== 0) { console.error("redeem must be idempotent"); process.exit(1); }
 
 console.log("✓ Hidden: Achievement-Redemption korrekt");
+
+// ── Integration: Quest-Abschluss löst Achievement sofort ein, kein Board-Eintrag ──
+import { buildCompleteQuestState } from "../hooks/questActions.js";
+import { DEFAULT_STATE } from "../data/defaultState.js";
+
+const passThrough = (s) => ({ nextState: s, newAchievements: [] });
+const intState = structuredClone(DEFAULT_STATE);
+intState.level = 99; // hidden_quests-Feature sicher freigeschaltet
+intState.settings = { ...(intState.settings || {}), language: "de" };
+intState.totalQuestsCompleted = 9; // Abschluss Nr. 10 triggert hq_thousand_cuts
+intState.hiddenQuests = { discovered: [], completed: [] };
+intState.quests = [{ id: "tq1", title: "Testquest", category: "int", difficulty: "easy", type: "side", isSystem: true, createdAt: "2023-01-01", createdAtMs: Date.now() - 3600000 }];
+const intResult = buildCompleteQuestState("tq1", intState, passThrough);
+if (!intResult) { console.error("buildCompleteQuestState returned null"); process.exit(1); }
+if (intResult.nextState.quests.some(q => q.type === "hidden")) { console.error("hidden board entry must not be created"); process.exit(1); }
+if (!intResult.nextState.hiddenQuests.completed.includes("hq_thousand_cuts")) { console.error("achievement not completed"); process.exit(1); }
+if (intResult.nextState.hiddenQuests.discovered.length !== 0) { console.error("discovered must stay empty"); process.exit(1); }
+const cutsRedeemed = intResult.newlyDiscoveredHQ.find(h => h.id === "hq_thousand_cuts");
+if (!cutsRedeemed || !cutsRedeemed.grantedXp || !cutsRedeemed.grantedGold) { console.error("newlyDiscoveredHQ must carry granted rewards"); process.exit(1); }
+console.log("✓ Hidden: Integration Sofort-Einlösung korrekt");

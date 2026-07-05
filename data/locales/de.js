@@ -665,6 +665,7 @@ export const de = {
     charismaAwakening: "Das System erkennt dein soziales Erwachen an.",
     charismaCompletedNotify: "CHARISMA DUNGEON ABGESCHLOSSEN: {name}! +{bonus} CHA permanent.",
     hiddenCompleted: "Verborgene Quest erfüllt! Legendäre Belohnung erhalten!",
+    hiddenAchievement: "Verborgener Erfolg freigeschaltet: {title} — +{xp} XP, +{gold} Gold!",
     codexMastered: "CODEX GEMEISTERT! Permanente Weisheit erlangt. +1 {stat}",
     namedShadowAwakened: "{name} - {title} - ist erwacht!",
     verificationBonus: "Beweis-Bonus: +20% XP & +10% Gold!",
