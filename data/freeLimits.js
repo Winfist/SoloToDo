@@ -53,6 +53,14 @@ export const QUOTA_CONFIG = {
   charisma_dungeons: { counter: "dailyCharismaRun", limitKey: "charismaDungeonsPerDay" },
 };
 
+// Ziel-Quest-Slot (Paket B): Kern free (1/Tag), Pro bekommt 2 — kein Infinity,
+// weil pro Slot ein eigenes aktives Ziel noetig ist.
+export const GOAL_QUEST_SLOTS = { free: 1, pro: 2 };
+
+export function getGoalQuestSlots({ premiumActive = false } = {}) {
+  return premiumActive ? GOAL_QUEST_SLOTS.pro : GOAL_QUEST_SLOTS.free;
+}
+
 // Ascending rarity tiers. Free users may equip up to FREE_LIMITS.equipmentMaxRarity.
 export const RARITY_ORDER = ["common", "uncommon", "rare", "epic", "legendary"];
 

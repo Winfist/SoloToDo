@@ -59,5 +59,11 @@ check(msAgain.completed === false, "idempotent: bereits abgeschlossen -> complet
 const msMissing = withMilestoneCompleted(base, "gX", "mX");
 check(msMissing.completed === false, "unbekanntes Ziel -> no-op");
 
+// Free/Pro-Slots
+import { getGoalQuestSlots, GOAL_QUEST_SLOTS } from "../data/freeLimits.js";
+check(GOAL_QUEST_SLOTS.free === 1 && GOAL_QUEST_SLOTS.pro === 2, "Slot-Konstanten 1/2");
+check(getGoalQuestSlots({ premiumActive: false }) === 1, "free -> 1 Slot");
+check(getGoalQuestSlots({ premiumActive: true }) === 2, "pro -> 2 Slots");
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ Goal-Quests: Ableitung, Rotation, Limits, Meilenstein-Abschluss korrekt");
