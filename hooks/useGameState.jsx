@@ -1872,7 +1872,7 @@ export function useGameState(initialHunterName, onLogout) {
       return;
     }
     const totalSteps = 3;
-    const firstQuest = normalizeQuestForStorage(generateChainedQuest(title, category, difficulty, 1, totalSteps));
+    const firstQuest = normalizeQuestForStorage(generateChainedQuest(title, category, difficulty, 1, totalSteps, options.desc || ""));
     persist({ ...state, quests: [...state.quests, firstQuest], dailyUserQuestsCreated: bypassDailyLimit ? questLimit.createdCount : questLimit.createdCount + 1 });
     notify(ltState(state, "quests.chainStarted", { steps: totalSteps }), "info");
   }, [state, persist, notify]);
@@ -2409,6 +2409,7 @@ export function useGameState(initialHunterName, onLogout) {
       category: "cha",
       difficulty: step.difficulty,
       type: "side",
+      desc: step.desc || chain.description || "",
       isSystem: true,
       isCharismaQuest: true,
       charismaChainId: chainId,

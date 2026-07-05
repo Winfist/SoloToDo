@@ -943,10 +943,11 @@ export function generateEmergencyQuest(playerLevel, stateOrLanguage = null) {
   };
 }
 
-export function generateChainedQuest(baseTitle, category, difficulty, step, totalSteps) {
+export function generateChainedQuest(baseTitle, category, difficulty, step, totalSteps, desc = "") {
   return {
     id: genId(),
     title: baseTitle,
+    desc,
     category, difficulty,
     type: "chained",
     isSystem: true,

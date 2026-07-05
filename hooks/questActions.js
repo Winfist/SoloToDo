@@ -214,7 +214,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
       }
     }
     if (!nextStep) {
-      nextStep = generateChainedQuest(quest.title, quest.category, quest.difficulty, quest.chainStep + 1, quest.chainTotal);
+      nextStep = generateChainedQuest(quest.title, quest.category, quest.difficulty, quest.chainStep + 1, quest.chainTotal, quest.desc || quest.description || "");
     }
     extraQuests = [nextStep];
     notifications.push({ msg: ltState(state, "questActions.chainStep", { step: quest.chainStep, total: quest.chainTotal, multiplier: nextStep.chainMultiplier.toFixed(2) }), type: "info" });
@@ -236,6 +236,7 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
           id: genId(),
           title: ltState(state, "questActions.charismaQuestTitle", { name: chain.name, floor: nextStepIdx + 1, title: nextStepData.title }),
           category: "cha", difficulty: nextStepData.difficulty, type: "side",
+          desc: nextStepData.desc || chain.description || "",
           isSystem: true, isCharismaQuest: true, charismaChainId: chain.id,
           charismaStep: nextStepIdx + 1, xpMult: nextStepData.xpMult,
           createdAt: today, createdAtMs: Date.now(),
