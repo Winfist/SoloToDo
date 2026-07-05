@@ -1395,18 +1395,19 @@ function App({ initialHunterName, onLogout }) {
               <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 360, animation: "scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>
                 <div style={{ textAlign: "center", marginBottom: 20 }}>
                   <div style={{ marginBottom: 12 }}><GameIcon src={QUEST_ICONS.hidden} fallback="🔮" size={56} glow glowColor="#6366f1" animate="float" /></div>
-                  <div style={{ fontSize: 9, letterSpacing: 5, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>VERBORGENE QUEST ENTHÜLLT</div>
+                  <div style={{ fontSize: 9, letterSpacing: 5, color: "#6366f1", fontFamily: "'JetBrains Mono',monospace", marginBottom: 8 }}>{tr("quests.hiddenModal.heading")}</div>
                   <h2 style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "'Cinzel',serif", marginBottom: 6, textShadow: "0 0 30px #6366f188" }}>{showHiddenQuestModal.title}</h2>
                   <p style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>{showHiddenQuestModal.discoveryMsg}</p>
+                  {showHiddenQuestModal.desc && <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6, marginTop: 8 }}>{showHiddenQuestModal.desc}</p>}
                 </div>
                 <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid #6366f133", borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
                   <div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, marginBottom: 10 }}>BELOHNUNG</div>
                   <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-                    <div style={{ textAlign: "center" }}><div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>XP MULT</div><div style={{ fontSize: 22, fontWeight: 900, color: "#a78bfa", fontFamily: "'Cinzel',serif" }}>x{showHiddenQuestModal.reward?.xpMult || 3}</div></div>
-                    <div style={{ textAlign: "center" }}><div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>GOLD MULT</div><div style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24", fontFamily: "'Cinzel',serif" }}>x{showHiddenQuestModal.reward?.goldMult || 2}</div></div>
+                    <div style={{ textAlign: "center" }}><div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.hiddenModal.xpGained")}</div><div style={{ fontSize: 22, fontWeight: 900, color: "#a78bfa", fontFamily: "'Cinzel',serif" }}>+{showHiddenQuestModal.grantedXp ?? `x${showHiddenQuestModal.reward?.xpMult || 3}`}</div></div>
+                    <div style={{ textAlign: "center" }}><div style={{ fontSize: 9, color: "#475569", fontFamily: "'JetBrains Mono',monospace" }}>{tr("quests.hiddenModal.goldGained")}</div><div style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24", fontFamily: "'Cinzel',serif" }}>+{showHiddenQuestModal.grantedGold ?? `x${showHiddenQuestModal.reward?.goldMult || 2}`}</div></div>
                   </div>
                 </div>
-                <button onClick={() => setShowHiddenQuestModal(null)} className="press-feedback" style={{ width: "100%", padding: 14, borderRadius: 12, fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg,#6366f122,#6366f110)", color: "#a5b4fc", border: "1px solid #6366f144", fontFamily: "'Cinzel',serif", letterSpacing: 2, transition: "all 0.3s" }}>QUEST ANNEHMEN</button>
+                <button onClick={() => setShowHiddenQuestModal(null)} className="press-feedback" style={{ width: "100%", padding: 14, borderRadius: 12, fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg,#6366f122,#6366f110)", color: "#a5b4fc", border: "1px solid #6366f144", fontFamily: "'Cinzel',serif", letterSpacing: 2, transition: "all 0.3s" }}>{tr("quests.hiddenModal.claim")}</button>
               </div>
             </div>
           )}

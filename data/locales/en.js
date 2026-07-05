@@ -408,6 +408,12 @@ export const en = {
         desc: "Gratitude buffer completely depleted. Express explicit appreciation to three people in your life today.",
       },
     },
+    hiddenModal: {
+      heading: "HIDDEN ACHIEVEMENT UNLOCKED",
+      xpGained: "XP GAINED",
+      goldGained: "GOLD GAINED",
+      claim: "REWARD CLAIMED",
+    },
     hidden: {
       hq_shadow_whisper: {
         title: "Shadow's Whisper",

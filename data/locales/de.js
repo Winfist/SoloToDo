@@ -408,6 +408,12 @@ export const de = {
         desc: "Dankbarkeits-Speicher vollständig entleert. Drücke drei Personen in deinem Leben heute explizit deine Wertschätzung aus.",
       },
     },
+    hiddenModal: {
+      heading: "VERBORGENER ERFOLG FREIGESCHALTET",
+      xpGained: "XP ERHALTEN",
+      goldGained: "GOLD ERHALTEN",
+      claim: "BELOHNUNG ANGENOMMEN",
+    },
     hidden: {
       hq_shadow_whisper: {
         title: "Shadow's Whisper",
