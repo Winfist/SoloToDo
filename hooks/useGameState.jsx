@@ -11,7 +11,7 @@ import {
   ACHIEVEMENTS, SKILLS, DUNGEON_MODIFIERS, FLOOR_TYPES, BOSS_PHASES,
   EQUIPMENT_POOL, RARITY_COLORS, RARITY_LABELS, DUNGEON_TEMPLATES, SHOP_ITEMS, GEM_SHOP_ITEMS, THEMES, DEFAULT_STATE, QUEST_TYPES_CONFIG,
   JOB_XP_SOURCES, JOB_XP_LEVELS, JOB_TITLES,
-  assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
+  assignShadowClass, assignShadowTier, calcShadowXpToNext, createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks, generateFloorPlan, getFloorLogs, checkHiddenQuestTriggers, redeemHiddenAchievements, generateEmergencyQuest, generateChainedQuest,
   getRank, getXpForLevel, getRankIndex, genId, getToday, getDailyModifier, calcPowerLevel, getEquipBonuses, checkSkillUnlocks, getSkillBonuses, checkAchievements, generateDungeons, generateDailySystemQuests, generateComebackSystemQuest, generateStarterQuests, getJobBonuses, checkAllJobsLevel5,
   saveState, loadState, migrateState, cacheStateLocally, resolveStateConflict, calculateLevelUp, awardJobXp, saveQuestArchiveEntry,
   generateRedemptionQuests, isDawnWindow, isDuskWindow, calculateProtocolXp, generateSeasonalQuests,
@@ -708,6 +708,26 @@ export function useGameState(initialHunterName, onLogout) {
             }
           }
           if (!s.hiddenQuests) s.hiddenQuests = { discovered: [], completed: [] };
+          // MIGRATION (07/2026): Hidden Quests sind Sofort-Achievements.
+          // Alte offene Board-Eintraege und liegengebliebene discovered-IDs einmalig einloesen.
+          const legacyHiddenBoard = (s.quests || []).filter(q => q.type === "hidden");
+          const legacyHiddenIds = [...new Set([
+            ...legacyHiddenBoard.map(q => q.hiddenId || q.id),
+            ...(s.hiddenQuests.discovered || []),
+          ])].filter(id => !(s.hiddenQuests.completed || []).includes(id));
+          if (legacyHiddenBoard.length > 0 || legacyHiddenIds.length > 0) {
+            s.quests = (s.quests || []).filter(q => q.type !== "hidden");
+            const redemption = redeemHiddenAchievements(s, legacyHiddenIds);
+            Object.assign(s, redemption.state);
+            if (redemption.redeemed.length > 0) {
+              const migratedCount = redemption.redeemed.length;
+              const migratedLocale = getStateLocale(s);
+              setTimeout(() => notify(
+                translate(migratedLocale, "questActions.hiddenMigrated", { count: migratedCount }),
+                "named"
+              ), 1500);
+            }
+          }
           // Dungeons only generate if feature is unlocked (level >= 11)
           if (isFeatureUnlocked('dungeons', s.level || 1)) {
             if (!s.lastDungeonRefresh || s.lastDungeonRefresh !== today) {

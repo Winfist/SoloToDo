@@ -41,7 +41,7 @@ export {
   assignShadowClass, assignShadowTier, calcShadowXpToNext,
   createShadowFromQuest, calcFormationBonus, checkNamedShadowUnlocks,
   generateFloorPlan, getFloorLogs,
-  checkHiddenQuestTriggers, generateEmergencyQuest, generateChainedQuest,
+  checkHiddenQuestTriggers, redeemHiddenAchievements, generateEmergencyQuest, generateChainedQuest,
   getDungeonGateImage,
 } from "./helpers.js";
 

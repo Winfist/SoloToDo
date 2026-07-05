@@ -666,6 +666,7 @@ export const en = {
     charismaCompletedNotify: "CHARISMA DUNGEON COMPLETE: {name}! +{bonus} CHA permanent.",
     hiddenCompleted: "Hidden Quest fulfilled! Legendary reward received!",
     hiddenAchievement: "Hidden achievement unlocked: {title} — +{xp} XP, +{gold} gold!",
+    hiddenMigrated: "{count} hidden achievements redeemed — rewards have been credited.",
     codexMastered: "CODEX MASTERED! Permanent wisdom obtained. +1 {stat}",
     namedShadowAwakened: "{name} - {title} - has awakened!",
     verificationBonus: "Proof bonus: +20% XP & +10% Gold!",
