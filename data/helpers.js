@@ -2,7 +2,7 @@
 // Extracted from data/constants.jsx
 // Contains all game-logic utility functions and job XP configuration.
 
-import { RANKS, DUNGEON_MODIFIERS, SKILLS, ACHIEVEMENTS, DUNGEON_TEMPLATES, EQUIPMENT_POOL, SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS } from "./gameData.js";
+import { RANKS, DUNGEON_MODIFIERS, SKILLS, ACHIEVEMENTS, DUNGEON_TEMPLATES, EQUIPMENT_POOL, SHADOW_CLASSES, SHADOW_TIERS, NAMED_SHADOWS, DIFFICULTIES, QUEST_TYPES_CONFIG } from "./gameData.js";
 import { JOBS } from "./jobs.js";
 import { QUEST_POOL } from "./questPool.js";
 import { getSystemQuestPoolForLocale, localizeQuestTemplate } from "./localizedQuestPool.js";
@@ -784,7 +784,7 @@ export function getFloorLogs(floor, dungeon, strategy, playerStats, isStrong, is
 }
 
 // ─── QUEST HELPERS ────────────────────────────────────────────
-const HIDDEN_QUESTS = [
+export const HIDDEN_QUESTS = [
   // ── Original 5 (text from locale: quests.hidden.<id>) ──
   { id: "hq_shadow_whisper", category: "cha", difficulty: "hard", triggerCondition: { type: "shadow_count", value: 3 }, reward: { xpMult: 3, goldMult: 3 } },
   { id: "hq_thousand_cuts", category: "agi", difficulty: "normal", triggerCondition: { type: "total_quests", value: 10 }, reward: { xpMult: 3, goldMult: 2 } },
@@ -848,6 +848,48 @@ export function checkHiddenQuestTriggers(state) {
     }
   }
   return newlyDiscovered;
+}
+
+// Hidden Quests sind Sofort-Achievements: Belohnung wird bei Entdeckung
+// gutgeschrieben, es entsteht kein offener Board-Eintrag mehr.
+export function computeHiddenAchievementReward(hq) {
+  const diff = DIFFICULTIES.find(d => d.key === hq.difficulty) || DIFFICULTIES[1];
+  const typeCfg = QUEST_TYPES_CONFIG.hidden;
+  return {
+    xp: Math.round(diff.xp * (typeCfg.xpMult || 3) * (hq.reward?.xpMult || 1)),
+    gold: Math.round(diff.gold * (typeCfg.goldMult || 3) * (hq.reward?.goldMult || 1)),
+  };
+}
+
+export function redeemHiddenAchievements(state, hqIds) {
+  const locale = getStateLocale(state);
+  const alreadyCompleted = new Set(state.hiddenQuests?.completed || []);
+  const toRedeem = HIDDEN_QUESTS.filter(hq => hqIds.includes(hq.id) && !alreadyCompleted.has(hq.id));
+  const priorCompleted = [...(state.hiddenQuests?.completed || [])];
+  if (toRedeem.length === 0) {
+    return { state: { ...state, hiddenQuests: { discovered: [], completed: priorCompleted } }, redeemed: [], didLevelUp: false, levelsGained: 0 };
+  }
+  let next = state;
+  let didLevelUp = false;
+  let levelsGained = 0;
+  const redeemed = [];
+  for (const hq of toRedeem) {
+    const { xp, gold } = computeHiddenAchievementReward(hq);
+    next = calculateLevelUp(next, xp);
+    didLevelUp = didLevelUp || !!next._didLevelUp;
+    levelsGained += next._levelsGained || 0;
+    next = { ...next, gold: (next.gold || 0) + gold, totalGoldEarned: (next.totalGoldEarned || 0) + gold };
+    redeemed.push({
+      ...hq,
+      title: translate(locale, `quests.hidden.${hq.id}.title`) || hq.id,
+      desc: translate(locale, `quests.hidden.${hq.id}.desc`) || "",
+      discoveryMsg: translate(locale, `quests.hidden.${hq.id}.discoveryMsg`) || "",
+      grantedXp: xp,
+      grantedGold: gold,
+    });
+  }
+  next = { ...next, hiddenQuests: { discovered: [], completed: [...priorCompleted, ...redeemed.map(r => r.id)] } };
+  return { state: next, redeemed, didLevelUp, levelsGained };
 }
 
 export function generateEmergencyQuest(playerLevel, stateOrLanguage = null) {

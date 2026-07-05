@@ -36,3 +36,30 @@ if (!fires("hq_night_owl", base)) { console.error("time_of_day_between trigger b
 if (!fires("hq_weekend_warrior", { ...base, completedQuests: [{ difficulty: "hard" }] })) { console.error("weekend_hard_boss trigger broken"); process.exit(1); }
 
 console.log("✓ Hidden: neue Trigger feuern korrekt");
+
+// ── Achievement-Redemption (Paket A) ──
+import { redeemHiddenAchievements, computeHiddenAchievementReward, HIDDEN_QUESTS } from "../data/helpers.js";
+
+// Belohnungsformel: normal (15 XP / 25 Gold) × Typ hidden (3×/3×) × Quest-Mult (3×/2×)
+const cuts = HIDDEN_QUESTS.find(h => h.id === "hq_thousand_cuts");
+const reward = computeHiddenAchievementReward(cuts);
+if (reward.xp !== 135) { console.error(`reward.xp expected 135, got ${reward.xp}`); process.exit(1); }
+if (reward.gold !== 150) { console.error(`reward.gold expected 150, got ${reward.gold}`); process.exit(1); }
+
+// Redemption: schreibt XP/Gold gut, trägt in completed ein, leert discovered, ist idempotent
+const redeemBase = {
+  ...base, level: 10, xp: 0, gold: 100, totalGoldEarned: 0,
+  hiddenQuests: { discovered: ["hq_thousand_cuts"], completed: [] },
+  settings: { language: "de" },
+};
+const r1 = redeemHiddenAchievements(redeemBase, ["hq_thousand_cuts"]);
+if (r1.redeemed.length !== 1) { console.error("redeem should redeem 1"); process.exit(1); }
+if (r1.redeemed[0].grantedXp !== 135 || r1.redeemed[0].grantedGold !== 150) { console.error("granted values wrong"); process.exit(1); }
+if (!r1.redeemed[0].title || !r1.redeemed[0].desc) { console.error("redeemed must carry locale title+desc"); process.exit(1); }
+if (r1.state.gold !== 250) { console.error(`gold expected 250, got ${r1.state.gold}`); process.exit(1); }
+if (!r1.state.hiddenQuests.completed.includes("hq_thousand_cuts")) { console.error("not marked completed"); process.exit(1); }
+if (r1.state.hiddenQuests.discovered.length !== 0) { console.error("discovered must be emptied"); process.exit(1); }
+const r2 = redeemHiddenAchievements(r1.state, ["hq_thousand_cuts"]);
+if (r2.redeemed.length !== 0) { console.error("redeem must be idempotent"); process.exit(1); }
+
+console.log("✓ Hidden: Achievement-Redemption korrekt");
