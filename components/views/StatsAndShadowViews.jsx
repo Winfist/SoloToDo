@@ -6,6 +6,8 @@ import { StatRadar, ShadowCard, FormationEditor, ShadowDetailModal } from "../..
 import { checkSkillUnlocks } from "../../data/helpers.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import { getLocalizedCatalog } from "../../data/localizedGameData.js";
+import { isFeatureUnlocked } from "../../data/featureUnlocks.js";
+import HiddenAchievementsGallery from "../HiddenAchievementsGallery.jsx";
 
 /**
  * StatsView – rendered when view === "stats".
@@ -111,6 +113,7 @@ export function StatsView({ state, theme, equipBonuses, powerLevel, increaseStat
           </div>
         </div>
       )}
+      {isFeatureUnlocked('hidden_quests', state.level || 1) && <HiddenAchievementsGallery state={state} />}
     </div>
   );
 }

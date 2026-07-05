@@ -414,6 +414,13 @@ export const de = {
       goldGained: "GOLD ERHALTEN",
       claim: "BELOHNUNG ANGENOMMEN",
     },
+    hiddenGallery: {
+      title: "GEHEIMNISSE",
+      subtitle: "Verborgene Erfolge des Systems",
+      progress: "{found}/{total} entdeckt",
+      locked: "???",
+      lockedHint: "Noch nicht entdeckt",
+    },
     hidden: {
       hq_shadow_whisper: {
         title: "Shadow's Whisper",
