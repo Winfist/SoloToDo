@@ -11,6 +11,7 @@ export default function QuestLogView({
   theme,
   navigateTo,
   completeQuest,
+  completeGoalMilestone,
   completeSubQuest,
   startEditingQuest,
   deleteQuest,
@@ -59,7 +60,7 @@ export default function QuestLogView({
           const pinned = planning.pinnedQuestIds.includes(quest.id);
           return (
             <div key={quest.id}>
-              <QuestCard quest={quest} index={index} theme={theme} onComplete={completeQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onTogglePin={togglePinnedQuest} isPinned={pinned} />
+              <QuestCard quest={quest} index={index} theme={theme} onComplete={completeQuest} onMilestoneDone={completeGoalMilestone} onEdit={startEditingQuest} onDelete={deleteQuest} onCompleteSubQuest={completeSubQuest} onOpenDetail={onOpenDetail} onTogglePin={togglePinnedQuest} isPinned={pinned} />
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "-3px 0 7px 4px" }}>
                 <button onClick={() => togglePinnedQuest(quest.id)} style={actionStyle(pinned ? "#fbbf24" : theme.primary)}>{pinned ? copy.unpin : copy.pin}</button>
                 {tab === "later"

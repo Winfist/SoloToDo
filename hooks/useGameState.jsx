@@ -1075,6 +1075,28 @@ export function useGameState(initialHunterName, onLogout) {
     }
   }, [state, completeQuest]);
 
+  // Schnellaktion Ziel-Quest: Quest UND verknüpften Meilenstein gemeinsam abschließen.
+  // persist stellt stateRef.current synchron — completeQuest zuerst (voller Reward-Flow),
+  // danach der Meilenstein-Abschluss auf dem frischen State.
+  const completeGoalMilestone = useCallback((questId) => {
+    const current = stateRef.current || state;
+    const quest = (current?.quests || []).find(q => q.id === questId);
+    if (!quest || !quest.linkedGoalId || !quest.linkedMilestoneId) return;
+    const milestoneTitle = (current.goals || []).find(g => g.id === quest.linkedGoalId)
+      ?.milestones?.find(m => m.id === quest.linkedMilestoneId)?.title || "";
+    completeQuest(questId);
+    const afterQuest = stateRef.current || current;
+    const result = withMilestoneCompleted(afterQuest, quest.linkedGoalId, quest.linkedMilestoneId);
+    if (!result.completed) return;
+    persist(result.state);
+    notify(ltState(afterQuest, "quests.goalSlot.milestoneDoneNotify", { milestone: milestoneTitle, xp: result.xpBonus }), "success");
+    if (result.allDone) {
+      const goalTitle = result.state.goals.find(g => g.id === quest.linkedGoalId)?.title || "";
+      setTimeout(() => notify(ltState(result.state, "quests.goalSlot.goalCompleted", { goal: goalTitle }), "named"), 1500);
+    }
+    trackEvent('milestone_completed_via_quest', { category: quest.category });
+  }, [state, completeQuest, persist, notify]);
+
   const processWidgetActionQueue = useCallback(async () => {
     if (processingWidgetQueueRef.current) return;
     const currentState = stateRef.current;
@@ -2868,6 +2890,7 @@ export function useGameState(initialHunterName, onLogout) {
     processAchievements,
     computeXpGain,
     completeQuest,
+    completeGoalMilestone,
     completeSubQuest,
     deleteQuest,
     getReplacementCandidates,

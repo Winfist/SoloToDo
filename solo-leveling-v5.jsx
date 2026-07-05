@@ -271,6 +271,7 @@ function App({ initialHunterName, onLogout }) {
     processAchievements,
     computeXpGain,
     completeQuest,
+    completeGoalMilestone,
     completeSubQuest,
     deleteQuest,
     getReplacementCandidates,
@@ -1628,7 +1629,7 @@ function App({ initialHunterName, onLogout }) {
                   xpPercent={xpPercent} xpNeeded={xpNeeded}
                   filteredQuests={filteredQuests} hiddenQuestCount={hiddenQuestCount}
                   questFilter={questFilter} setQuestFilter={setQuestFilter}
-                  completeQuest={handleCompleteQuest} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
+                  completeQuest={handleCompleteQuest} completeGoalMilestone={completeGoalMilestone} completeSubQuest={completeSubQuest} startEditingQuest={startEditingQuest} deleteQuest={deleteQuest}
                   getReplacementCandidates={getReplacementCandidates}
                   replaceSystemQuest={replaceSystemQuest}
                   completeEmergencyQuest={handleCompleteEmergencyQuest} createQuest={createQuest} setDailyFocusQuest={setDailyFocusQuest}
@@ -1665,6 +1666,7 @@ function App({ initialHunterName, onLogout }) {
                   theme={theme}
                   navigateTo={navigateTo}
                   completeQuest={handleCompleteQuest}
+                  completeGoalMilestone={completeGoalMilestone}
                   completeSubQuest={completeSubQuest}
                   startEditingQuest={startEditingQuest}
                   deleteQuest={deleteQuest}

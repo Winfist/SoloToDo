@@ -213,7 +213,7 @@ export default function DashboardView({
   xpPercent, xpNeeded,
   filteredQuests, hiddenQuestCount,
   questFilter, setQuestFilter,
-  completeQuest, completeSubQuest, startEditingQuest, deleteQuest,
+  completeQuest, completeGoalMilestone, completeSubQuest, startEditingQuest, deleteQuest,
   getReplacementCandidates, replaceSystemQuest,
   completeEmergencyQuest, createQuest, onOpenDetail,
   setShowCreate, setShowTaskScan,
@@ -1037,6 +1037,7 @@ export default function DashboardView({
                             index={sortedVisibleQuestGroups.findIndex(item => item.id === q.id)}
                             theme={theme}
                             onComplete={handleInterceptComplete}
+                            onMilestoneDone={completeGoalMilestone}
                             onEdit={startEditingQuest}
                             onDelete={deleteQuest}
                             onCompleteSubQuest={completeSubQuest}

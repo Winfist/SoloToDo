@@ -1030,7 +1030,7 @@ function StageRing({ total, done, accent, allDone }) {
   );
 }
 
-function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false, onTogglePin, isPinned = false, isSystemMark = false }) {
+function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false, onTogglePin, isPinned = false, isSystemMark = false, onMilestoneDone }) {
   const { t, locale } = useI18n();
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -1429,6 +1429,14 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
           )}
           {menuOpen && (
             <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: 35, right: 0, zIndex: 2, minWidth: 156, padding: 5, borderRadius: 12, background: "rgba(12,16,28,0.98)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "0 18px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
+              {!quest.completed && quest.linkedMilestoneId && onMilestoneDone && (
+                <QuestActionMenuItem
+                  label="Meilenstein erreicht"
+                  color="#34d399"
+                  icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>}
+                  onClick={(e) => { e.stopPropagation(); onMilestoneDone(quest.id); setMenuOpen(false); }}
+                />
+              )}
               {hasAmulet && onSetFocus && (
                 <QuestActionMenuItem
                   label={isDailyFocus ? "Fokus entfernen" : "Tagesfokus"}
