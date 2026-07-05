@@ -71,6 +71,7 @@ export const QUEST_ICONS = {
     emergency: "/icons/quest_emergency.webp",
     chain:     "/icons/quest_chain.webp",
     hidden:    "/icons/quest_hidden.webp",
+    goal:      "/icons/nav_goals.webp",
 };
 
 export const BACKGROUNDS = {

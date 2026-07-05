@@ -254,6 +254,7 @@ export const QUEST_TYPES_CONFIG = {
   emergency: { label: "Emergency", color: "#ef4444", icon: "🚨", iconSrc: QUEST_ICONS.emergency, xpMult: 2.5, goldMult: 2.5 },
   chained: { label: "Chained", color: "#f59e0b", icon: "⛓️", iconSrc: QUEST_ICONS.chain, xpMult: 1.0, goldMult: 1.0 },
   hidden: { label: "Hidden", color: "#6366f1", icon: "❓", iconSrc: QUEST_ICONS.hidden, xpMult: 3.0, goldMult: 3.0 },
+  goal: { label: "Goal", color: "#34d399", icon: "🎯", iconSrc: QUEST_ICONS.goal, xpMult: 1.2, goldMult: 1.2 },
 };
 
 // ─── EQUIPMENT ────────────────────────────────────────────────

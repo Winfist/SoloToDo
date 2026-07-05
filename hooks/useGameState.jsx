@@ -26,6 +26,8 @@ import { isFeatureUnlocked, getNewlyUnlockedFeatures, getNewlyUnlockedTier, TIER
 import { buildReminderDate, getDateTimeLocalValue, getYesterdayKey } from '../data/dateUtils.js';
 import { getDailySystemQuestCount, getQuestIntensityActiveCap, getQuestIntensityIntervalMs, getQuestIntensityPreset } from '../data/questIntensity.js';
 import { getFocusStats } from '../data/lifeDomains.js';
+import { generateGoalQuests, generateGoalSetupQuest, withMilestoneCompleted } from '../data/goalQuests.js';
+import { getGoalQuestSlots } from '../data/freeLimits.js';
 import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddNamedShadow, canSwitchJob, applyAIFreeGenerationUsage } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
@@ -645,6 +647,20 @@ export function useGameState(initialHunterName, onLogout) {
               ? (comebackQuest ? [comebackQuest] : [])
               : generateDailySystemQuests(Math.max(0, getDailySystemQuestCount(s) - (markCandidate ? 1 : 0)), s);
             s.quests = [...s.quests, ...newSysQuests];
+            // ── Ziel-Quest-Slot (Paket B): 1 (Pro: 2) Quest aus den eigenen Zielen.
+            // Läuft bewusst auch an Comeback-Tagen — der persönliche Anker bleibt.
+            if (isFeatureUnlocked('goals', s.level || 1)) {
+              const goalSlots = getGoalQuestSlots({ premiumActive: getPremiumStatus(s.premium).active });
+              const goalGen = generateGoalQuests(s, { limit: goalSlots });
+              if (goalGen.quests.length > 0) {
+                s.quests = [...s.quests, ...goalGen.quests];
+                s.goalQuestPlanning = goalGen.planning;
+                trackEvent('goal_quest_assigned', { count: goalGen.quests.length, slots: goalSlots });
+              } else {
+                s.quests = [...s.quests, generateGoalSetupQuest(s)];
+                trackEvent('goal_setup_quest_assigned', {});
+              }
+            }
             if (s.settings?.autoSystemTasks === true) {
               s.lastSystemTaskTime = Date.now();
             }
