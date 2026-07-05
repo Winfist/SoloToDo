@@ -58,5 +58,15 @@ for (const locale of ["de", "en"]) {
   }
 }
 
+// 7. Ziel-Quests: Ableitung + Meta-Quest liefern immer Inhalt (beide Locales)
+import { generateGoalQuests, generateGoalSetupQuest } from "../data/goalQuests.js";
+for (const locale of ["de", "en"]) {
+  const gState = { settings: { language: locale }, goals: [{ id: "g1", title: "Testziel", category: "fitness", milestones: [{ id: "m1", title: "Teilschritt", completed: false }] }] };
+  const gen = generateGoalQuests(gState, { limit: 1 });
+  if (gen.quests.length !== 1 || !hasContent(gen.quests[0])) fail(`GoalQuest[${locale}]: kein desc`);
+  const setup = generateGoalSetupQuest({ settings: { language: locale } });
+  if (!hasContent(setup)) fail(`GoalSetupQuest[${locale}]: kein desc`);
+}
+
 if (failures > 0) { console.error(`${failures} Quest-Content-Verstoesse`); process.exit(1); }
 console.log("✓ Quest-Content: alle Erzeuger liefern Beschreibung oder Teilaufgaben");
