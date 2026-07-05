@@ -14,6 +14,7 @@
     "validate:quests": "node scripts/validate-quests.mjs",
     "test:emergency": "node scripts/test-emergency.mjs",
     "test:hidden": "node scripts/test-hidden.mjs",
+    "test:quest-content": "node scripts/test-quest-content.mjs",
     "test:redemption": "node scripts/test-redemption.mjs",
     "test:streak": "node scripts/test-streak.mjs",
     "test:system-mark": "node scripts/test-system-mark.mjs",
