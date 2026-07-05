@@ -1062,6 +1062,19 @@ export function useGameState(initialHunterName, onLogout) {
     if (due) completeQuest(due.id);
   }, [state, completeQuest]);
 
+  // Meta-Quest „Definiere dein erstes Ziel" schließt sich selbst ab,
+  // sobald ein aktives Ziel mit offenem Meilenstein existiert.
+  useEffect(() => {
+    if (!state) return;
+    const hasActiveGoal = (state.goals || []).some(g => (g.milestones || []).some(m => m && !m.completed));
+    if (!hasActiveGoal) return;
+    const due = (state.quests || []).find(q => q.isGoalSetup && !q.completed);
+    if (due) {
+      trackEvent('meta_quest_goal_created', {});
+      completeQuest(due.id);
+    }
+  }, [state, completeQuest]);
+
   const processWidgetActionQueue = useCallback(async () => {
     if (processingWidgetQueueRef.current) return;
     const currentState = stateRef.current;
