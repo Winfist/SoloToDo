@@ -421,6 +421,15 @@ export const de = {
       locked: "???",
       lockedHint: "Noch nicht entdeckt",
     },
+    goalSlot: {
+      title: "Ziel-Schritt: {milestone}",
+      desc: "Dein nächster Schritt Richtung „{goal}“. Arbeite heute konkret daran.",
+      setupTitle: "Definiere dein erstes Ziel",
+      setupDesc: "Das System wartet auf deine Bestimmung. Lege im Ziele-Bereich dein erstes Ziel mit Meilensteinen fest — es speist ab morgen deine tägliche Ziel-Quest.",
+      milestoneDone: "MEILENSTEIN ERREICHT",
+      milestoneDoneNotify: "Meilenstein erreicht: {milestone} (+{xp} XP Bonus)",
+      goalCompleted: "ZIEL ERREICHT: {goal}",
+    },
     hidden: {
       hq_shadow_whisper: {
         title: "Shadow's Whisper",
