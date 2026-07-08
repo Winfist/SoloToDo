@@ -841,7 +841,9 @@ function App({ initialHunterName, onLogout }) {
       if (!isAI) return; // No AI result — keep static quests
       // Use setState callback to avoid stale state overwrites
       setState(currentState => {
-        const withoutOldSystem = (currentState.quests || []).filter(q => !q.isSystem);
+        // Ziel-Quests (Paket B) sind personengebunden und werden vom KI-Swap
+        // der Pool-Dailies nicht ersetzt.
+        const withoutOldSystem = (currentState.quests || []).filter(q => !q.isSystem || q.type === "goal");
         const updated = { ...currentState, quests: [...withoutOldSystem, ...aiQuests] };
         persist(updated);
         return updated;
