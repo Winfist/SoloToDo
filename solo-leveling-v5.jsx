@@ -42,6 +42,8 @@ const RewardedAdModal = React.lazy(() => import("./components/RewardedAdModal.js
 import GemBoosterBanner from "./components/GemBoosterBanner.jsx";
 import DashboardView from "./components/views/DashboardView.jsx";
 import QuestLogView from "./components/views/QuestLogView.jsx";
+import GoalRitualModal from "./components/GoalRitualModal.jsx";
+import { shouldShowGoalRitual } from "./data/goalQuests.js";
 import HunterIslandHub from "./components/views/HunterIslandHub.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
 const QuestCompletionCinematic = React.lazy(() => import("./components/QuestCompletionCinematic.jsx"));
@@ -852,6 +854,15 @@ function App({ initialHunterName, onLogout }) {
     return () => clearTimeout(timer);
   }, [state?.lastActiveDate, state?.questPlanning?.overloadPreset, loading, premiumStatus?.active]);
 
+  // ─ Ziel-Ritual (Paket C): einmalig ab Lv5, solange keine Ziele existieren ─
+  const [showGoalRitual, setShowGoalRitual] = useState(false);
+  useEffect(() => {
+    if (!state || loading) return;
+    if (!shouldShowGoalRitual(state)) return;
+    const timer = setTimeout(() => setShowGoalRitual(true), 2000);
+    return () => clearTimeout(timer);
+  }, [state?.level, state?.goals?.length, state?.goalRitual?.seen, loading]);
+
   // ─ View Guard: Reset to dashboard if current view is locked ─
   React.useEffect(() => {
     const viewToFeature = {
@@ -1391,6 +1402,24 @@ function App({ initialHunterName, onLogout }) {
               />
             )}
           </React.Suspense>
+
+          {/* GOAL RITUAL (Lv5-Unlock) */}
+          {showGoalRitual && (
+            <GoalRitualModal
+              theme={theme}
+              aiAvailable={false}
+              onRequestAISuggestions={null}
+              onSave={(goals) => {
+                persist({ ...state, goals: [...(state.goals || []), ...goals], goalRitual: { seen: true, completedAt: getToday() } });
+                setShowGoalRitual(false);
+                notify(tr("quests.goalRitual.sealed"), "named");
+              }}
+              onSkip={() => {
+                persist({ ...state, goalRitual: { seen: true, skippedAt: getToday() } });
+                setShowGoalRitual(false);
+              }}
+            />
+          )}
 
           {/* HIDDEN QUEST DISCOVERY MODAL */}
           {showHiddenQuestModal && (
