@@ -860,6 +860,39 @@ function App({ initialHunterName, onLogout }) {
     return () => clearTimeout(timer);
   }, [state?.lastActiveDate, state?.questPlanning?.overloadPreset, loading, premiumStatus?.active]);
 
+  // ─ KI-Veredelung (Paket C): Pro bekommt die Ziel-Quest konkretisiert (1x/Tag).
+  // Fallback = deterministische Quest aus dem Reset; jeder Fehler laesst sie unberuehrt.
+  useEffect(() => {
+    if (!state || loading) return;
+    const today = state.lastActiveDate;
+    const scope = encodeURIComponent(String(state.ownerUid || state.email || state.displayName || state.hunterName || "local"));
+    const storageKey = `sl_goal_refine_date:${scope}`;
+    if (localStorage.getItem(storageKey) === today) return;
+    if (!premiumStatus?.active || !state.ai?.enabled || geminiAI.isRateLimited()) return;
+    const targets = (state.quests || []).filter(q => q.type === "goal" && !q.isGoalSetup && !q.completed && !q.aiRefined);
+    if (targets.length === 0) return;
+    localStorage.setItem(storageKey, today);
+
+    const timer = setTimeout(async () => {
+      for (const quest of targets.slice(0, 2)) {
+        const goal = (state.goals || []).find(g => g.id === quest.linkedGoalId);
+        const context = goal ? `${quest.title} (Ziel: ${goal.title})` : quest.title;
+        const aiResult = await geminiAI.generateQuestDesc(context, quest.category);
+        const refined = applyGoalQuestRefinement(quest, aiResult);
+        if (!refined) continue;
+        setState(currentState => {
+          const updated = {
+            ...currentState,
+            quests: (currentState.quests || []).map(q => q.id === quest.id && !q.completed ? { ...refined, id: q.id } : q),
+          };
+          persist(updated);
+          return updated;
+        });
+      }
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [state?.lastActiveDate, loading, premiumStatus?.active]);
+
   // ─ Ziel-Ritual (Paket C): einmalig ab Lv5, solange keine Ziele existieren ─
   const [showGoalRitual, setShowGoalRitual] = useState(false);
   useEffect(() => {
