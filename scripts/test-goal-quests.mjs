@@ -65,5 +65,38 @@ check(GOAL_QUEST_SLOTS.free === 1 && GOAL_QUEST_SLOTS.pro === 2, "Slot-Konstante
 check(getGoalQuestSlots({ premiumActive: false }) === 1, "free -> 1 Slot");
 check(getGoalQuestSlots({ premiumActive: true }) === 2, "pro -> 2 Slots");
 
+// Ritual-Trigger: Lv5+, Feature frei, noch nie gesehen, keine Ziele
+import { shouldShowGoalRitual, sanitizeGoalSuggestions, applyGoalQuestRefinement } from "../data/goalQuests.js";
+check(shouldShowGoalRitual({ level: 5, goals: [], goalRitual: {} }) === true, "Ritual: Lv5 ohne Ziele -> zeigen");
+check(shouldShowGoalRitual({ level: 4, goals: [], goalRitual: {} }) === false, "Ritual: unter Lv5 -> nie");
+check(shouldShowGoalRitual({ level: 9, goals: [], goalRitual: { seen: true } }) === false, "Ritual: seen -> nie wieder");
+check(shouldShowGoalRitual({ level: 9, goals: [goalB], goalRitual: {} }) === false, "Ritual: Ziele vorhanden -> nicht noetig");
+
+// KI-Zielvorschläge: bounden, Whitelist, Limits
+const rawSuggestions = { goals: [
+  { title: "  Fit werden  ", category: "fitness", milestones: ["10.000 Schritte taeglich", "3x Sport pro Woche", "", "5 km Lauf"] },
+  { title: "X".repeat(400), category: "unbekannt", milestones: ["a"] },
+  { title: "Lesen", category: "learning", milestones: [] },
+  { title: "Viertes Ziel", category: "social", milestones: ["x"] },
+] };
+const sane = sanitizeGoalSuggestions(rawSuggestions);
+check(sane.length === 3, "max 3 Vorschlaege");
+check(sane[0].title === "Fit werden", "Titel getrimmt");
+check(sane[0].milestones.length === 3, "leere Meilensteine gefiltert");
+check(sane[1].title.length <= 140, "Titel begrenzt");
+check(sane[1].category === "productivity", "unbekannte Kategorie -> productivity");
+check(sane[2].milestones.length === 1 && sane[2].milestones[0], "Ziel ohne Meilensteine bekommt Fallback-Meilenstein");
+check(sanitizeGoalSuggestions(null).length === 0, "null -> leer");
+
+// Veredelung: valide KI-Antwort ersetzt desc + subQuests, invalide -> null
+const goalQuest = { id: "q1", title: "Ziel-Schritt: 10 km", desc: "generisch", type: "goal", subQuests: undefined };
+const refined = applyGoalQuestRefinement(goalQuest, { description: "Lauf heute 2x5 km mit Pause.", subQuests: ["5 km am Morgen", "5 km am Abend", "", "X".repeat(500)] });
+check(refined && refined.desc === "Lauf heute 2x5 km mit Pause.", "desc ersetzt");
+check(refined.subQuests.length === 3 && refined.subQuests[0].title === "5 km am Morgen" && refined.subQuests[0].completed === false, "subQuests als Objekte, leere gefiltert");
+check(refined.subQuests[2].title.length <= 140, "subQuest-Titel begrenzt");
+check(refined.aiRefined === true && refined.title === goalQuest.title && refined.id === "q1", "Titel/Id bleiben, aiRefined gesetzt");
+check(applyGoalQuestRefinement(goalQuest, { description: "", subQuests: [] }) === null, "leere Antwort -> null (Fallback)");
+check(applyGoalQuestRefinement(goalQuest, null) === null, "null -> null");
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ Goal-Quests: Ableitung, Rotation, Limits, Meilenstein-Abschluss korrekt");

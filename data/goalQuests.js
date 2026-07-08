@@ -101,3 +101,55 @@ export function withMilestoneCompleted(state, goalId, milestoneId) {
   const allDone = updatedGoals.find(g => g.id === goalId).milestones.every(m => m.completed);
   return { state: next, completed: true, xpBonus, allDone };
 }
+
+// Ritual-Trigger (Paket C): einmalig ab Lv5, solange keine Ziele existieren.
+export function shouldShowGoalRitual(state) {
+  if ((state?.level || 1) < 5) return false;
+  if (state?.goalRitual?.seen) return false;
+  return (state?.goals || []).length === 0;
+}
+
+const SUGGESTION_CATEGORIES = new Set(Object.keys(GOAL_CATEGORY_TO_STAT));
+
+function cleanLine(value, max = 140) {
+  return String(value || "").trim().replace(/\s+/g, " ").slice(0, max);
+}
+
+// KI-Zielvorschläge client-seitig härten: max 3 Ziele, Kategorie-Whitelist,
+// 1–5 nicht-leere Meilensteine, Längen begrenzt.
+export function sanitizeGoalSuggestions(raw) {
+  const goals = Array.isArray(raw?.goals) ? raw.goals : [];
+  return goals
+    .map(g => {
+      const title = cleanLine(g?.title, 140);
+      if (!title) return null;
+      const category = SUGGESTION_CATEGORIES.has(g?.category) ? g.category : "productivity";
+      let milestones = (Array.isArray(g?.milestones) ? g.milestones : [])
+        .map(m => cleanLine(m, 140))
+        .filter(Boolean)
+        .slice(0, 5);
+      if (milestones.length === 0) milestones = [title];
+      return { title, category, milestones };
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+// KI-Veredelung: valide Antwort von generateQuestDescription auf die
+// deterministische Ziel-Quest anwenden. Ungültig/leer -> null (Fallback bleibt).
+export function applyGoalQuestRefinement(quest, aiResult) {
+  if (!quest || !aiResult) return null;
+  const desc = cleanLine(aiResult.description, 300);
+  const subQuests = (Array.isArray(aiResult.subQuests) ? aiResult.subQuests : [])
+    .map(t => cleanLine(t, 140))
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((title, i) => ({ id: String(i + 1), title, completed: false }));
+  if (!desc && subQuests.length === 0) return null;
+  return {
+    ...quest,
+    desc: desc || quest.desc,
+    ...(subQuests.length > 0 ? { subQuests } : {}),
+    aiRefined: true,
+  };
+}
