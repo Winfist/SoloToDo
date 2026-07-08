@@ -175,7 +175,7 @@ function GoalCard({ goal, onUpdateMilestone, onEdit, onDelete, onGenerateQuest, 
 }
 
 // ── Create Goal Modal ────────────────────────────────────────
-function CreateGoalModal({ onClose, onSave, initialGoal, theme }) {
+function CreateGoalModal({ onClose, onSave, initialGoal, theme, onAISuggest }) {
     const isEdit = !!initialGoal;
     const [title, setTitle] = useState(initialGoal?.title || "");
     const [description, setDescription] = useState(initialGoal?.description || "");
@@ -184,6 +184,27 @@ function CreateGoalModal({ onClose, onSave, initialGoal, theme }) {
     const [milestones, setMilestones] = useState(initialGoal?.milestones || [
         { id: genId(), title: "", xpBonus: 50, completed: false }
     ]);
+    // KI-Zielvorschläge (Paket C): earn-it/Pro-Gating passiert im Handler.
+    const [aiState, setAiState] = useState("idle"); // idle | loading | failed
+    const [suggestions, setSuggestions] = useState([]);
+
+    const requestSuggestions = async () => {
+        if (!onAISuggest || aiState === "loading") return;
+        setAiState("loading");
+        const result = await onAISuggest();
+        if (result && result.length > 0) {
+            setSuggestions(result);
+            setAiState("idle");
+        } else {
+            setAiState("failed");
+        }
+    };
+
+    const adoptSuggestion = (s) => {
+        setTitle(s.title);
+        setCategory(s.category);
+        setMilestones(s.milestones.map(t => ({ id: genId(), title: t, xpBonus: 50, completed: false })));
+    };
 
     const addMilestone = () => {
         if (milestones.length >= 5) return;
@@ -256,6 +277,38 @@ function CreateGoalModal({ onClose, onSave, initialGoal, theme }) {
 
                 {/* Scrollable Form Content Sub-Component */}
                 <div style={{ padding: "0 24px 24px", overflowY: "auto", flex: 1, position: "relative", zIndex: 1 }}>
+
+                    {/* KI-Zielvorschläge */}
+                    {!isEdit && onAISuggest && (
+                        <div style={{ marginBottom: 14 }}>
+                            <button onClick={requestSuggestions} disabled={aiState === "loading"} style={{
+                                width: "100%", padding: "10px 0", borderRadius: 12, fontSize: 10, fontWeight: 800, letterSpacing: 2,
+                                background: "rgba(99,102,241,0.08)", color: "#a5b4fc", border: "1px solid #6366f133",
+                                fontFamily: "'JetBrains Mono',monospace", cursor: aiState === "loading" ? "default" : "pointer",
+                            }}>
+                                {aiState === "loading" ? "DAS SYSTEM ANALYSIERT..." : "✦ SYSTEM-VORSCHLÄGE ✦"}
+                            </button>
+                            {aiState === "failed" && (
+                                <div style={{ fontSize: 10, color: "#64748b", marginTop: 6, textAlign: "center" }}>Keine Vorschläge verfügbar — definiere dein Ziel manuell.</div>
+                            )}
+                            {suggestions.length > 0 && (
+                                <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+                                    {suggestions.map((s, i) => {
+                                        const cat = GOAL_CATEGORIES.find(c => c.key === s.category) || GOAL_CATEGORIES[0];
+                                        return (
+                                            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.025)", border: `1px solid ${cat.color}22` }}>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</div>
+                                                    <div style={{ fontSize: 9, color: cat.color, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{cat.label} · {s.milestones.length} Meilensteine</div>
+                                                </div>
+                                                <button onClick={() => adoptSuggestion(s)} style={{ flexShrink: 0, fontSize: 9, fontWeight: 800, letterSpacing: 1, padding: "6px 10px", borderRadius: 8, cursor: "pointer", background: "rgba(52,211,153,0.1)", color: "#34d399", border: "1px solid #34d39944", fontFamily: "'JetBrains Mono',monospace" }}>ÜBERNEHMEN</button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Title */}
                     <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Titel des Ziels (z.B. Marathon Laufen)"
@@ -347,7 +400,7 @@ function CreateGoalModal({ onClose, onSave, initialGoal, theme }) {
 }
 
 // ═══ MAIN COMPONENT ══════════════════════════════════════════
-export default function GoalFramework({ state, persist, notify, theme, onModalOpen, onModalClose }) {
+export default function GoalFramework({ state, persist, notify, theme, onModalOpen, onModalClose, onAISuggest }) {
     const [showCreate, setShowCreate] = useState(false);
     const [editingGoal, setEditingGoal] = useState(null);
     const goals = state?.goals || [];
@@ -429,7 +482,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
 
     return (
         <div data-tutorial="goals-view" style={{ animation: "fadeIn 0.35s ease" }}>
-            {showCreate && <CreateGoalModal onClose={closeCreate} onSave={handleCreate} theme={theme} />}
+            {showCreate && <CreateGoalModal onClose={closeCreate} onSave={handleCreate} theme={theme} onAISuggest={onAISuggest} />}
             {editingGoal && <CreateGoalModal onClose={closeEdit} onSave={handleEdit} initialGoal={editingGoal} theme={theme} />}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>

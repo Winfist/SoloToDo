@@ -43,7 +43,7 @@ import GemBoosterBanner from "./components/GemBoosterBanner.jsx";
 import DashboardView from "./components/views/DashboardView.jsx";
 import QuestLogView from "./components/views/QuestLogView.jsx";
 import GoalRitualModal from "./components/GoalRitualModal.jsx";
-import { shouldShowGoalRitual } from "./data/goalQuests.js";
+import { shouldShowGoalRitual, sanitizeGoalSuggestions, applyGoalQuestRefinement } from "./data/goalQuests.js";
 import HunterIslandHub from "./components/views/HunterIslandHub.jsx";
 import { StatsView, ShadowArmyView } from "./components/views/StatsAndShadowViews.jsx";
 const QuestCompletionCinematic = React.lazy(() => import("./components/QuestCompletionCinematic.jsx"));
@@ -782,6 +782,12 @@ function App({ initialHunterName, onLogout }) {
     return result;
   }, [recordAIFreeGeneration, requireAIGeneration]);
 
+  // ─ Ziel-Vorschläge (Paket C): earn-it-Gating + client-seitige Härtung ─
+  const requestGoalSuggestions = useCallback(async () => {
+    const raw = await runAIGeneration('ai_goal_suggestions', () => geminiAI.suggestGoals());
+    return raw ? sanitizeGoalSuggestions(raw) : null;
+  }, [runAIGeneration, geminiAI]);
+
   const canOfferPhotoVerification = useCallback((quest) => (
     aiGenerationStatus.allowed
     && can('ai_verification')
@@ -1407,8 +1413,8 @@ function App({ initialHunterName, onLogout }) {
           {showGoalRitual && (
             <GoalRitualModal
               theme={theme}
-              aiAvailable={false}
-              onRequestAISuggestions={null}
+              aiAvailable={premiumStatus?.active || aiGenerationStatus.allowed}
+              onRequestAISuggestions={requestGoalSuggestions}
               onSave={(goals) => {
                 persist({ ...state, goals: [...(state.goals || []), ...goals], goalRitual: { seen: true, completedAt: getToday() } });
                 setShowGoalRitual(false);
@@ -2008,7 +2014,7 @@ function App({ initialHunterName, onLogout }) {
               {/* ◆ ◆ ◆  GOALS ◆ ◆ ◆  */}
               {
                 view === "goals" && (
-                  <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} />
+                  <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} onAISuggest={requestGoalSuggestions} />
                 )
               }
 
@@ -2100,7 +2106,7 @@ function App({ initialHunterName, onLogout }) {
 
                   {/* Training modules combined */}
                   <div style={{ marginBottom: 32 }}>
-                    <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} />
+                    <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} onAISuggest={requestGoalSuggestions} />
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>

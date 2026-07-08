@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
 import { getStateLocale, translate } from "../data/i18n.js";
-import { buildAIQuestRequest } from "../data/aiQuestProfile.js";
+import { buildAIQuestRequest, buildAIQuestProfile } from "../data/aiQuestProfile.js";
 
 // Helper: Resize and convert to Base64 to prevent 413 Payload Too Large
 const compressFileToBase64 = (file) => {
@@ -261,6 +261,24 @@ export function useGeminiAI(state) {
     }
   }, [language]);
 
+  // ─── Paket C: Ziel-Vorschläge ─────────────────────────────────────────────
+
+  const suggestGoals = useCallback(async () => {
+    if (!state || rateLimitErrorRef.current) return null;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const fn = httpsCallable(functions, "suggestGoals");
+      const result = await fn({ profile: buildAIQuestProfile(state), language });
+      return result.data; // { goals }
+    } catch (err) {
+      handleError(err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [state, language]);
+
   return {
     isLoading,
     error,
@@ -274,5 +292,6 @@ export function useGeminiAI(state) {
     generateSystemMsg,
     askCoach,
     generateQuestDesc,
+    suggestGoals,
   };
 }
