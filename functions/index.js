@@ -22,6 +22,7 @@ const {
   SYSTEM_MESSAGE_PROMPT,
   COACH_PROMPT,
   QUEST_DESC_PROMPT,
+  SUGGEST_GOALS_PROMPT,
 } = require("./geminiPrompts");
 
 admin.initializeApp();
@@ -295,6 +296,34 @@ exports.generateQuestDescription = onCall(CALL_OPTIONS, async (request) => {
       : "normal",
   };
 });
+// ─── Paket C: Ziel-Vorschlaege ───────────────────────────────────────────────
+
+exports.suggestGoals = onCall(CALL_OPTIONS, async (request) => {
+  const uid = requireAuth(request);
+  const language = normalizeLanguage(request.data?.language);
+  await checkAndIncrementRateLimit(uid);
+
+  const safeProfile = sanitizeAIQuestProfile(request.data?.profile);
+  const prompt = SUGGEST_GOALS_PROMPT(safeProfile, language);
+  const raw = await callGemini(prompt);
+  const result = parseJSON(raw, { goals: [] });
+
+  const allowedCategories = new Set(["fitness", "learning", "health", "productivity", "social"]);
+  const goals = (Array.isArray(result.goals) ? result.goals : [])
+    .map((g) => ({
+      title: String(g?.title || "").trim().slice(0, 140),
+      category: allowedCategories.has(g?.category) ? g.category : "productivity",
+      milestones: (Array.isArray(g?.milestones) ? g.milestones : [])
+        .map((m) => String(m || "").trim().slice(0, 140))
+        .filter(Boolean)
+        .slice(0, 5),
+    }))
+    .filter((g) => g.title)
+    .slice(0, 3);
+
+  return { goals };
+});
+
 // ─── Feature F: Admin Push Notification ────────────────────────────────────────
 
 exports.adminSendPushNotification = onCall(CALL_OPTIONS, async (request) => {
