@@ -2052,7 +2052,7 @@ function App({ initialHunterName, onLogout }) {
               {/* ◆ ◆ ◆  GOALS ◆ ◆ ◆  */}
               {
                 view === "goals" && (
-                  <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} onAISuggest={requestGoalSuggestions} />
+                  <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} onAISuggest={requestGoalSuggestions} onStartRitual={() => setShowGoalRitual(true)} />
                 )
               }
 
@@ -2144,7 +2144,7 @@ function App({ initialHunterName, onLogout }) {
 
                   {/* Training modules combined */}
                   <div style={{ marginBottom: 32 }}>
-                    <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} onAISuggest={requestGoalSuggestions} />
+                    <GoalFramework state={state} persist={persist} notify={notify} theme={theme} onModalOpen={() => setIsCreatingEntry(true)} onModalClose={() => setIsCreatingEntry(false)} onOpenQuestCreate={openQuestCreate} onAISuggest={requestGoalSuggestions} onStartRitual={() => setShowGoalRitual(true)} />
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 0 24px" }}>
@@ -2175,7 +2175,7 @@ function App({ initialHunterName, onLogout }) {
                       <div style={{ fontSize: 14, color: "#475569", marginBottom: 6 }}>Keine aktiven Quests</div>
                       <div style={{ fontSize: 11, color: "#334155" }}>Erstelle Quests auf dem Heute-Tab.</div>
                     </div>
-                  ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleCompleteQuest} onCompleteSubQuest={completeSubQuest} onEdit={startEditingQuest} onDelete={deleteQuest} onOpenDetail={setDetailQuest} />)}
+                  ) : filteredQuests.map((q, i) => <QuestCard key={q.id} quest={q} index={i} theme={theme} onComplete={handleCompleteQuest} onCompleteSubQuest={completeSubQuest} onGoalSetupOpen={() => navigateToWithAccess("goals")} onEdit={startEditingQuest} onDelete={deleteQuest} onOpenDetail={setDetailQuest} />)}
                 </div>
               </div>
             )

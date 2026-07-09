@@ -1030,7 +1030,7 @@ function StageRing({ total, done, accent, allDone }) {
   );
 }
 
-function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false, onTogglePin, isPinned = false, isSystemMark = false, onMilestoneDone }) {
+function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onCompleteSubQuest, onOpenDetail, onSetFocus, isDailyFocus, hasAmulet, onReplace, canReplace = false, onTogglePin, isPinned = false, isSystemMark = false, onMilestoneDone, onGoalSetupOpen }) {
   const { t, locale } = useI18n();
   const [completing, setCompleting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -1299,6 +1299,16 @@ function QuestCard({ quest, index, theme, onComplete, onEdit, onDelete, onComple
             <div style={{ marginTop: 4, color: "#8a93a6", fontSize: 11, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Outfit',sans-serif" }}>
               {questDescription}
             </div>
+          )}
+
+          {quest.isGoalSetup && !quest.completed && onGoalSetupOpen && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onGoalSetupOpen(); }}
+              className="press-feedback"
+              style={{ marginTop: 8, width: "100%", padding: "9px 0", borderRadius: 10, fontSize: 10, fontWeight: 800, letterSpacing: 2, fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", background: "rgba(52,211,153,0.08)", color: "#34d399", border: "1px solid #34d39944" }}
+            >
+              ✦ {t("quests.goalSlot.openGoals")}
+            </button>
           )}
 
           {quest.type === "chained" && <ChainedQuestProgress quest={quest} />}

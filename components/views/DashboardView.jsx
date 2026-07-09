@@ -1038,6 +1038,7 @@ export default function DashboardView({
                             theme={theme}
                             onComplete={handleInterceptComplete}
                             onMilestoneDone={completeGoalMilestone}
+                            onGoalSetupOpen={() => navigateTo?.("goals")}
                             onEdit={startEditingQuest}
                             onDelete={deleteQuest}
                             onCompleteSubQuest={completeSubQuest}

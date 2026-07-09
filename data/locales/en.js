@@ -429,6 +429,7 @@ export const en = {
       milestoneDone: "MILESTONE REACHED",
       milestoneDoneNotify: "Milestone reached: {milestone} (+{xp} XP bonus)",
       goalCompleted: "GOAL ACHIEVED: {goal}",
+      openGoals: "OPEN GOALS",
     },
     goalRitual: {
       eyebrow: "SYSTEM PROTOCOL",

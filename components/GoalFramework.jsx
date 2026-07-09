@@ -400,7 +400,7 @@ function CreateGoalModal({ onClose, onSave, initialGoal, theme, onAISuggest }) {
 }
 
 // ═══ MAIN COMPONENT ══════════════════════════════════════════
-export default function GoalFramework({ state, persist, notify, theme, onModalOpen, onModalClose, onAISuggest }) {
+export default function GoalFramework({ state, persist, notify, theme, onModalOpen, onModalClose, onAISuggest, onStartRitual }) {
     const [showCreate, setShowCreate] = useState(false);
     const [editingGoal, setEditingGoal] = useState(null);
     const goals = state?.goals || [];
@@ -530,14 +530,26 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                         <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
                             Ein guter Hunter kämpft für ein höheres Ziel.
                         </div>
-                        <button onClick={openCreate} data-tutorial="goal-create" style={{
-                            padding: "10px 24px", borderRadius: 12, fontSize: 11, fontWeight: 700,
-                            background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
-                            color: theme?.accent || "#67e8f9", border: `1px solid ${theme?.primary || "#22d3ee"}44`,
-                            fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 2,
-                        }}>
-                            ✦ SET MAIN QUEST ✦
-                        </button>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+                            {onStartRitual && (
+                                <button onClick={onStartRitual} style={{
+                                    padding: "12px 28px", borderRadius: 12, fontSize: 12, fontWeight: 800,
+                                    background: "linear-gradient(135deg,#6366f126,#6366f112)",
+                                    color: "#a5b4fc", border: "1px solid #6366f144",
+                                    fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 2,
+                                }}>
+                                    ✦ ZIEL-RITUAL STARTEN ✦
+                                </button>
+                            )}
+                            <button onClick={openCreate} data-tutorial="goal-create" style={{
+                                padding: "10px 24px", borderRadius: 12, fontSize: 11, fontWeight: 700,
+                                background: `linear-gradient(135deg,${theme?.primary || "#22d3ee"}22,transparent)`,
+                                color: theme?.accent || "#67e8f9", border: `1px solid ${theme?.primary || "#22d3ee"}44`,
+                                fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 2,
+                            }}>
+                                ✦ ZIEL DIREKT ANLEGEN ✦
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
