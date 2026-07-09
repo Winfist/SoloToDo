@@ -22,6 +22,10 @@ export default function GoalRitualModal({ theme, aiAvailable = false, onRequestA
   const { t, locale } = useI18n();
   const labels = CATEGORY_LABELS[locale === "en" ? "en" : "de"];
   const [drafts, setDrafts] = useState([emptyDraft()]);
+  // Beim Öffnen einfrieren: eine erfolgreiche Generierung verbraucht den
+  // Gratis-Credit und würde aiAvailable live kippen — die Sektion (inkl. der
+  // frisch geladenen Vorschläge) darf dadurch nicht unmounten.
+  const [aiEnabled] = useState(aiAvailable);
   const [aiState, setAiState] = useState("idle"); // idle | loading | failed
   const [suggestions, setSuggestions] = useState([]);
 
@@ -97,7 +101,7 @@ export default function GoalRitualModal({ theme, aiAvailable = false, onRequestA
           <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>{t("quests.goalRitual.intro")}</p>
         </div>
 
-        {aiAvailable && (
+        {aiEnabled && (
           <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 14, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.18)" }}>
             <button
               onClick={requestSuggestions}

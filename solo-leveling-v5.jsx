@@ -783,9 +783,14 @@ function App({ initialHunterName, onLogout }) {
   }, [recordAIFreeGeneration, requireAIGeneration]);
 
   // ─ Ziel-Vorschläge (Paket C): earn-it-Gating + client-seitige Härtung ─
+  // Sanitize läuft VOR der Credit-Buchung: ein leeres/kaputtes KI-Ergebnis gibt
+  // null zurück und verbraucht damit keine Gratis-Kostprobe.
   const requestGoalSuggestions = useCallback(async () => {
-    const raw = await runAIGeneration('ai_goal_suggestions', () => geminiAI.suggestGoals());
-    return raw ? sanitizeGoalSuggestions(raw) : null;
+    return await runAIGeneration('ai_goal_suggestions', async () => {
+      const raw = await geminiAI.suggestGoals();
+      const sane = raw ? sanitizeGoalSuggestions(raw) : [];
+      return sane.length > 0 ? sane : null;
+    });
   }, [runAIGeneration, geminiAI]);
 
   const canOfferPhotoVerification = useCallback((quest) => (
