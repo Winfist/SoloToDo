@@ -431,6 +431,17 @@ export const en = {
       goalCompleted: "GOAL ACHIEVED: {goal}",
       openGoals: "OPEN GOALS",
     },
+    goalPage: {
+      eyebrow: "YOUR PURPOSE",
+      title: "Goals & Progress",
+      statGoals: "ACTIVE GOALS",
+      statMilestones: "MILESTONES",
+      statDone: "ACHIEVED",
+      todayActive: "ACTIVE AS TODAY'S GOAL QUEST",
+      nextStage: "NEXT STAGE",
+      completedSection: "ACHIEVED GOALS",
+      confirmMilestone: "✓ CONFIRM",
+    },
     goalRitual: {
       eyebrow: "SYSTEM PROTOCOL",
       title: "Define your purpose",
