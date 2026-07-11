@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { genId, calculateLevelUp } from '../data/constants';
-import { HABIT_ICONS, NAV_ICONS, SKILL_ICONS, STAT_ICONS, STORY_ICONS } from '../data/icons.js';
+import { HABIT_ICONS, NAV_ICONS, STAT_ICONS, STORY_ICONS } from '../data/icons.js';
 import { getToday } from '../data/dateUtils.js';
 import { useI18n } from './i18n/I18nProvider.jsx';
 
@@ -84,6 +84,11 @@ function GoalPathCard({ goal, todayQuestMilestoneId, onCompleteMilestone, onEdit
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
                     <span style={{ fontSize: 10, fontWeight: 800, color: accent, fontFamily: "'JetBrains Mono',monospace" }}>{completedMilestones}/{totalMilestones}</span>
+                    {isGoalCompleted && (
+                        <span style={{ fontSize: 8, fontWeight: 700, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", background: "#22c55e15", borderRadius: 6, border: "1px solid #22c55e44" }}>
+                            {t("quests.goalPage.doneBadge")}
+                        </span>
+                    )}
                     {daysLeft !== null && !isGoalCompleted && (
                         <span style={{ fontSize: 8, fontWeight: 700, color: daysLeft < 7 ? "#ef4444" : "#fbbf24", fontFamily: "'JetBrains Mono',monospace", padding: "2px 6px", background: daysLeft < 7 ? "#ef444418" : "#fbbf2415", borderRadius: 6, border: `1px solid ${daysLeft < 7 ? "#ef444444" : "#fbbf2444"}` }}>
                             {daysLeft}d
@@ -159,13 +164,13 @@ function GoalPathCard({ goal, todayQuestMilestoneId, onCompleteMilestone, onEdit
                     onClick={() => onEdit(goal)}
                     style={{ padding: "6px 12px", borderRadius: 8, fontSize: 9, background: "transparent", color: "#64748b", border: "1px solid rgba(148,163,184,0.18)", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 1 }}
                 >
-                    BEARBEITEN
+                    {t("quests.goalPage.edit")}
                 </button>
                 <button
                     onClick={() => onDelete(goal.id)}
                     style={{ padding: "6px 12px", borderRadius: 8, fontSize: 9, background: "transparent", color: "#7f5b5b", border: "1px solid rgba(239,68,68,0.2)", fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 1 }}
                 >
-                    LÖSCHEN
+                    {t("quests.goalPage.delete")}
                 </button>
             </div>
         </div>
@@ -543,7 +548,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                             background: "rgba(99,102,241,0.06)", color: "#818cf8", border: "1px solid #6366f126",
                             fontFamily: "'JetBrains Mono',monospace", cursor: "pointer",
                         }}>
-                            ✦ ZIEL-RITUAL
+                            ✦ {t("quests.goalPage.ritualShort")}
                         </button>
                     )}
                 </>
@@ -559,9 +564,9 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                     <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.008) 3px, rgba(255,255,255,0.008) 4px)", pointerEvents: "none" }} />
                     <div style={{ position: "relative", zIndex: 1 }}>
                         <div style={{ marginBottom: 12, animation: "float 3s ease-in-out infinite" }}><img src={NAV_ICONS.goals} alt="Goals" style={{ width: 48, height: 48, objectFit: "contain", filter: `drop-shadow(0 0 12px ${theme?.primary || "#22d3ee"}44) brightness(1.1)` }} /></div>
-                        <div style={{ fontSize: 13, color: "#64748b", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>Keine Ziele definiert</div>
+                        <div style={{ fontSize: 13, color: "#64748b", fontFamily: "'Cinzel',serif", marginBottom: 8, letterSpacing: 1 }}>{t("quests.goalPage.emptyTitle")}</div>
                         <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
-                            Ein guter Hunter kämpft für ein höheres Ziel.
+                            {t("quests.goalPage.emptyHint")}
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
                             {onStartRitual && (
@@ -571,7 +576,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                                     color: "#a5b4fc", border: "1px solid #6366f144",
                                     fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 2,
                                 }}>
-                                    ✦ ZIEL-RITUAL STARTEN ✦
+                                    ✦ {t("quests.goalPage.ritualStart")} ✦
                                 </button>
                             )}
                             <button onClick={openCreate} data-tutorial="goal-create" style={{
@@ -580,7 +585,7 @@ export default function GoalFramework({ state, persist, notify, theme, onModalOp
                                 color: theme?.accent || "#67e8f9", border: `1px solid ${theme?.primary || "#22d3ee"}44`,
                                 fontFamily: "'JetBrains Mono',monospace", cursor: "pointer", letterSpacing: 2,
                             }}>
-                                ✦ ZIEL DIREKT ANLEGEN ✦
+                                ✦ {t("quests.goalPage.createDirect")} ✦
                             </button>
                         </div>
                     </div>
