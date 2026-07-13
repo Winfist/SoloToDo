@@ -440,8 +440,40 @@ function buildKeyframes(borderColor, variant) {
   `;
 }
 
+// ── FEEDBACK CHIPS ───────────────────────────────────────────────────────────
+function FeedbackChips({ feedback, onFeedback }) {
+  const [felt, setFelt] = useState(null);
+  const [cat, setCat] = useState(null);
+  const mono = "'JetBrains Mono',monospace";
+  const chip = (active) => ({
+    padding: "6px 12px", borderRadius: 999, fontSize: 10, fontWeight: 800, fontFamily: mono,
+    cursor: active ? "default" : "pointer", letterSpacing: 0.5,
+    background: active ? "rgba(34,211,238,0.15)" : "rgba(255,255,255,0.04)",
+    color: active ? C.cyan : C.silver,
+    border: `1px solid ${active ? C.cyan : "rgba(148,163,184,0.25)"}`,
+  });
+  const pickFelt = (value) => { if (felt) return; setFelt(value); onFeedback?.(feedback.questId, { feltDifficulty: value }); };
+  const pickCat = (value) => { if (cat) return; setCat(value); onFeedback?.(feedback.questId, { categoryFeedback: value }); };
+  return (
+    <div style={{ marginTop: 14, textAlign: "center" }}>
+      <div style={{ fontSize: 9, letterSpacing: 2, color: C.dimText, fontFamily: mono, marginBottom: 8 }}>
+        {felt && cat ? feedback.labels.thanks : feedback.labels.prompt}
+      </div>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+        <button style={chip(felt === "too_easy")} onClick={() => pickFelt("too_easy")}>{feedback.labels.tooEasy}</button>
+        <button style={chip(felt === "ok")} onClick={() => pickFelt("ok")}>{feedback.labels.ok}</button>
+        <button style={chip(felt === "too_hard")} onClick={() => pickFelt("too_hard")}>{feedback.labels.tooHard}</button>
+      </div>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 6 }}>
+        <button style={chip(cat === "more")} onClick={() => pickCat("more")}>{feedback.labels.more}</button>
+        <button style={chip(cat === "less")} onClick={() => pickCat("less")}>{feedback.labels.less}</button>
+      </div>
+    </div>
+  );
+}
+
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
-export default function UnifiedResultModal({ flow, onContinue }) {
+export default function UnifiedResultModal({ flow, onContinue, onFeedback }) {
   const [phase, setPhase] = useState(0);
   const [visibleRewards, setVisibleRewards] = useState(0);
   const [visibleHighlights, setVisibleHighlights] = useState(0);
@@ -1042,6 +1074,10 @@ export default function UnifiedResultModal({ flow, onContinue }) {
                     </div>
                   ))}
                 </div>
+              )}
+
+              {flow.feedback && ctaReady && (
+                <FeedbackChips feedback={flow.feedback} onFeedback={onFeedback} />
               )}
 
               {/* ── CTA ───────────────────────────────────── */}

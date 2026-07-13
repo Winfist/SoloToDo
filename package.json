@@ -36,7 +36,8 @@
     "test:ai-quest-validation": "node scripts/test-ai-quest-validation.mjs",
     "test:gemini-prompts": "node scripts/test-gemini-prompts.mjs",
     "test:quest-swap": "node scripts/test-quest-swap.mjs",
-    "test:forge-limits": "node scripts/test-forge-limits.mjs"
+    "test:forge-limits": "node scripts/test-forge-limits.mjs",
+    "test:quest-feedback": "node scripts/test-quest-feedback.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",

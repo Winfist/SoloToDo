@@ -766,6 +766,15 @@ export const en = {
       line1: "Registered. Today's quota is fulfilled.",
       line2: "The System expects you tomorrow, Hunter.",
     },
+    feedback: {
+      prompt: "How was the quest?",
+      tooEasy: "Too easy",
+      ok: "Just right",
+      tooHard: "Too hard",
+      more: "More like this",
+      less: "Less like this",
+      thanks: "Registered.",
+    },
     labels: {
       xp: "EXPERIENCE POINTS",
       gold: "GOLD RECEIVED",

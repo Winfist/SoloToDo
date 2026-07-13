@@ -766,6 +766,15 @@ export const de = {
       line1: "Registriert. Das Tagessoll ist erfüllt.",
       line2: "Das System erwartet dich morgen, Hunter.",
     },
+    feedback: {
+      prompt: "Wie war die Quest?",
+      tooEasy: "Zu leicht",
+      ok: "Passt",
+      tooHard: "Zu schwer",
+      more: "Mehr davon",
+      less: "Weniger davon",
+      thanks: "Registriert.",
+    },
     labels: {
       xp: "ERFAHRUNGSPUNKTE",
       gold: "GOLD ERHALTEN",

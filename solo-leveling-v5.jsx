@@ -50,6 +50,7 @@ const QuestCompletionCinematic = React.lazy(() => import("./components/QuestComp
 import UnifiedResultModal from "./components/UnifiedResultModal.jsx";
 
 import { buildStoryChapterRewardFlow, buildStoryBossRewardFlow } from "./hooks/rewardFlowBuilders.js";
+import { applyQuestFeedback } from './data/questFeedback.js';
 import CompletionFX from "./components/ui/CompletionFX.jsx";
 import LetterboxOverlay, { triggerLetterbox } from "./components/ui/LetterboxOverlay.jsx";
 import XPParticleTrail from "./components/ui/XPParticleTrail.jsx";
@@ -1275,6 +1276,13 @@ function App({ initialHunterName, onLogout }) {
               onContinue={() => {
                 setShowingModal(false);
                 startAnimationController(rewardFlowQueue[0]);
+              }}
+              onFeedback={(questId, patch) => {
+                setState(currentState => {
+                  const next = applyQuestFeedback(currentState, questId, patch);
+                  if (next !== currentState) persist(next);
+                  return next;
+                });
               }}
             />
           )}

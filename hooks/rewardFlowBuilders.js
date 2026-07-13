@@ -297,6 +297,19 @@ export function buildQuestRewardFlow(result, oldLevel, rect, localeOrMode = null
       achievementsShownInModal,
       levelUpShownInModal: didLevelUp,
     },
+    // Ein-Tipp-Feedback nur fuer System-/KI-Quests (eigene Aufgaben: nerviger als nuetzlich)
+    feedback: quest.isSystem ? {
+      questId: quest.id,
+      labels: {
+        prompt: trFlow(locale, "feedback.prompt"),
+        tooEasy: trFlow(locale, "feedback.tooEasy"),
+        ok: trFlow(locale, "feedback.ok"),
+        tooHard: trFlow(locale, "feedback.tooHard"),
+        more: trFlow(locale, "feedback.more"),
+        less: trFlow(locale, "feedback.less"),
+        thanks: trFlow(locale, "feedback.thanks"),
+      },
+    } : null,
   };
 }
 
