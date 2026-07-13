@@ -468,6 +468,19 @@ export const en = {
       confirm: "SEAL GOALS",
       skip: "Decide later",
       sealed: "The System has registered your goals. Goal quests will appear starting tomorrow.",
+      questionnaire: {
+        entry: "🧭 I don't know yet",
+        entryHint: "4 quick questions — the System distills goal suggestions from them.",
+        q1: "Which area burns the most right now?",
+        q2: "What should be different in 3 months?",
+        q2Placeholder: "Free text — e.g. “get fit again”, “pass the exam”…",
+        q3: "How much time per day is realistic?",
+        q3Options: { "10": "~10 min", "30": "~30 min", "60": "60+ min" },
+        q4: "What has held you back so far?",
+        q4Placeholder: "Free text — e.g. “no energy in the evening”…",
+        submit: "DISTILL SUGGESTIONS",
+        back: "Back",
+      },
     },
     hidden: {
       hq_shadow_whisper: {

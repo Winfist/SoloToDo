@@ -788,9 +788,9 @@ function App({ initialHunterName, onLogout }) {
   // ─ Ziel-Vorschläge (Paket C): earn-it-Gating + client-seitige Härtung ─
   // Sanitize läuft VOR der Credit-Buchung: ein leeres/kaputtes KI-Ergebnis gibt
   // null zurück und verbraucht damit keine Gratis-Kostprobe.
-  const requestGoalSuggestions = useCallback(async () => {
+  const requestGoalSuggestions = useCallback(async (questionnaire = null) => {
     return await runAIGeneration('ai_goal_suggestions', async () => {
-      const raw = await geminiAI.suggestGoals();
+      const raw = await geminiAI.suggestGoals(questionnaire);
       const sane = raw ? sanitizeGoalSuggestions(raw) : [];
       return sane.length > 0 ? sane : null;
     });
@@ -1506,6 +1506,7 @@ function App({ initialHunterName, onLogout }) {
             <GoalRitualModal
               theme={theme}
               aiAvailable={premiumStatus?.active || aiGenerationStatus.allowed}
+              lifeDomains={state.lifeDomains || []}
               onRequestAISuggestions={requestGoalSuggestions}
               onSave={(goals) => {
                 persist({ ...state, goals: [...(state.goals || []), ...goals], goalRitual: { seen: true, completedAt: getToday() } });

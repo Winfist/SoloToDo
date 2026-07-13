@@ -3,6 +3,7 @@ import { genId } from "../data/helpers.js";
 import { getToday } from "../data/dateUtils.js";
 import { GOAL_CATEGORY_TO_STAT } from "../data/goalQuests.js";
 import { useI18n } from "./i18n/I18nProvider.jsx";
+import GoalQuestionnaire from "./GoalQuestionnaire.jsx";
 
 // Ziel-Ritual (Paket C): inszenierte Ziel-Erfassung beim Level-5-Unlock.
 // Schreibt Ziele exakt im CreateGoalModal-Format; Abbruch erlaubt (Meta-Quest
@@ -18,7 +19,7 @@ function emptyDraft() {
   return { key: genId(), category: "fitness", title: "", milestones: ["", "", ""] };
 }
 
-export default function GoalRitualModal({ theme, aiAvailable = false, onRequestAISuggestions, onSave, onSkip }) {
+export default function GoalRitualModal({ theme, aiAvailable = false, lifeDomains = [], onRequestAISuggestions, onSave, onSkip }) {
   const { t, locale } = useI18n();
   const labels = CATEGORY_LABELS[locale === "en" ? "en" : "de"];
   const [drafts, setDrafts] = useState([emptyDraft()]);
@@ -28,6 +29,7 @@ export default function GoalRitualModal({ theme, aiAvailable = false, onRequestA
   const [aiEnabled] = useState(aiAvailable);
   const [aiState, setAiState] = useState("idle"); // idle | loading | failed
   const [suggestions, setSuggestions] = useState([]);
+  const [mode, setMode] = useState("form"); // form | questionnaire
 
   const updateDraft = (key, patch) => setDrafts(ds => ds.map(d => d.key === key ? { ...d, ...patch } : d));
   const updateMilestone = (key, idx, value) => setDrafts(ds => ds.map(d => {
@@ -44,6 +46,19 @@ export default function GoalRitualModal({ theme, aiAvailable = false, onRequestA
     if (result && result.length > 0) {
       setSuggestions(result);
       setAiState("idle");
+    } else {
+      setAiState("failed");
+    }
+  };
+
+  const submitQuestionnaire = async (answers) => {
+    if (!onRequestAISuggestions || aiState === "loading") return;
+    setAiState("loading");
+    const result = await onRequestAISuggestions(answers);
+    if (result && result.length > 0) {
+      setSuggestions(result);
+      setAiState("idle");
+      setMode("form"); // zurueck zur Liste — Vorschlaege erscheinen im bestehenden Uebernehmen-Flow
     } else {
       setAiState("failed");
     }
@@ -129,9 +144,25 @@ export default function GoalRitualModal({ theme, aiAvailable = false, onRequestA
                 ))}
               </div>
             )}
+            <button
+              onClick={() => setMode("questionnaire")}
+              className="press-feedback"
+              style={{ width: "100%", marginTop: 8, padding: "10px 0", borderRadius: 10, fontSize: 11, fontWeight: 800, letterSpacing: 2, fontFamily: mono, cursor: "pointer", background: "transparent", color: "#818cf8", border: "1px dashed #6366f144" }}
+            >
+              {t("quests.goalRitual.questionnaire.entry")}
+            </button>
           </div>
         )}
 
+        {mode === "questionnaire" ? (
+          <GoalQuestionnaire
+            lifeDomains={lifeDomains}
+            loading={aiState === "loading"}
+            onSubmit={submitQuestionnaire}
+            onBack={() => setMode("form")}
+          />
+        ) : (
+          <>
         {drafts.map((draft, dIdx) => (
           <div key={draft.key} style={{ marginBottom: 14, padding: "14px", borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(148,163,184,0.12)" }}>
             <div style={{ fontSize: 9, color: "#64748b", fontFamily: mono, letterSpacing: 2, marginBottom: 8 }}>{t("quests.goalRitual.goalLabel", { index: dIdx + 1 })}</div>
@@ -190,6 +221,8 @@ export default function GoalRitualModal({ theme, aiAvailable = false, onRequestA
         <button onClick={onSkip} style={{ width: "100%", padding: "12px 0 4px", background: "transparent", border: "none", color: "#475569", fontSize: 11, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
           {t("quests.goalRitual.skip")}
         </button>
+          </>
+        )}
       </div>
     </div>
   );

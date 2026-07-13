@@ -131,11 +131,24 @@ function sanitizeGeneratedAIQuests(quests) {
   }).filter((quest) => quest.title);
 }
 
+// Fragebogen aus dem Ziel-Ritual ("Ich weiss noch nicht"-Pfad).
+function sanitizeQuestionnaire(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const clean = {
+    burningDomain: safeText(raw.burningDomain, 32),
+    threeMonthWish: safeText(raw.threeMonthWish, 240),
+    timeBudget: ["10", "30", "60"].includes(String(raw.timeBudget)) ? String(raw.timeBudget) : "",
+    blocker: safeText(raw.blocker, 240),
+  };
+  return Object.values(clean).some(Boolean) ? clean : null;
+}
+
 module.exports = {
   clampInteger,
   safeText,
   sanitizeAIQuestProfile,
   sanitizeGeneratedAIQuests,
+  sanitizeQuestionnaire,
   sanitizeQuestStats,
   sanitizeRecentQuestTitles,
 };

@@ -11,6 +11,7 @@ const {
   clampInteger,
   sanitizeAIQuestProfile,
   sanitizeGeneratedAIQuests,
+  sanitizeQuestionnaire,
   sanitizeQuestStats,
   sanitizeRecentQuestTitles,
 } = require("./aiQuestProfile");
@@ -322,7 +323,8 @@ exports.suggestGoals = onCall(CALL_OPTIONS, async (request) => {
   await checkAndIncrementRateLimit(uid);
 
   const safeProfile = sanitizeAIQuestProfile(request.data?.profile);
-  const prompt = SUGGEST_GOALS_PROMPT(safeProfile, language);
+  const questionnaire = sanitizeQuestionnaire(request.data?.questionnaire);
+  const prompt = SUGGEST_GOALS_PROMPT(safeProfile, language, questionnaire);
   const raw = await callGemini(prompt);
   const result = parseJSON(raw, { goals: [] });
 

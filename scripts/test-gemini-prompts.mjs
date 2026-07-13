@@ -47,5 +47,21 @@ check(clean[0].doneWhen === "Fertig, wenn 30 Minuten gelaufen.", "doneWhen ueber
 check(clean[0].estimatedMinutes === 30, "estimatedMinutes wird Zahl");
 check(clean[0].goalRef === "Halbmarathon", "goalRef ueberlebt Sanitizer");
 
+const { SUGGEST_GOALS_PROMPT } = prompts;
+const { sanitizeQuestionnaire } = profileMod;
+
+const questionnaire = { burningDomain: "fitness", threeMonthWish: "Endlich wieder fit sein", timeBudget: "30", blocker: "Abends keine Energie" };
+const pq = SUGGEST_GOALS_PROMPT({ lifeDomains: ["fitness"] }, "de", questionnaire);
+check(pq.includes("Endlich wieder fit sein"), "Fragebogen-Wunsch steht im Ziel-Prompt");
+check(pq.includes("30"), "Zeitbudget steht im Ziel-Prompt");
+check(pq.includes("Abends keine Energie"), "Blocker steht im Ziel-Prompt");
+const pOhne = SUGGEST_GOALS_PROMPT({ lifeDomains: ["fitness"] }, "de");
+check(!pOhne.includes("FRAGEBOGEN"), "ohne Fragebogen kein Fragebogen-Block");
+
+check(sanitizeQuestionnaire({ burningDomain: "fitness", timeBudget: "30" }).timeBudget === "30", "sanitize: gueltiges Zeitbudget");
+check(sanitizeQuestionnaire({ timeBudget: "999", burningDomain: "" }) === null, "sanitize: nur Muell -> null");
+check(sanitizeQuestionnaire({ threeMonthWish: "x".repeat(1000) }).threeMonthWish.length <= 240, "sanitize: Freitext gedeckelt");
+check(sanitizeQuestionnaire(null) === null, "sanitize: null -> null");
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ test-gemini-prompts: alles gruen");

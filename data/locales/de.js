@@ -468,6 +468,19 @@ export const de = {
       confirm: "ZIELE BESIEGELN",
       skip: "Später entscheiden",
       sealed: "Das System hat deine Ziele registriert. Ab morgen erscheinen Ziel-Quests.",
+      questionnaire: {
+        entry: "🧭 Ich weiß noch nicht",
+        entryHint: "4 kurze Fragen — das System destilliert daraus Zielvorschläge.",
+        q1: "Welcher Bereich brennt gerade am meisten?",
+        q2: "Was soll in 3 Monaten anders sein?",
+        q2Placeholder: "Freitext — z. B. „wieder fit sein“, „Prüfung bestehen“…",
+        q3: "Wie viel Zeit pro Tag ist realistisch?",
+        q3Options: { "10": "~10 min", "30": "~30 min", "60": "60+ min" },
+        q4: "Was hat dich bisher aufgehalten?",
+        q4Placeholder: "Freitext — z. B. „abends keine Energie“…",
+        submit: "VORSCHLÄGE DESTILLIEREN",
+        back: "Zurück",
+      },
     },
     hidden: {
       hq_shadow_whisper: {

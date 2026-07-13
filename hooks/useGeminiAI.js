@@ -263,13 +263,13 @@ export function useGeminiAI(state) {
 
   // ─── Paket C: Ziel-Vorschläge ─────────────────────────────────────────────
 
-  const suggestGoals = useCallback(async () => {
+  const suggestGoals = useCallback(async (questionnaire = null) => {
     if (!state || rateLimitErrorRef.current) return null;
     setIsLoading(true);
     setError(null);
     try {
       const fn = httpsCallable(functions, "suggestGoals");
-      const result = await fn({ profile: buildAIQuestProfile(state), language });
+      const result = await fn({ profile: buildAIQuestProfile(state), language, ...(questionnaire ? { questionnaire } : {}) });
       return result.data; // { goals }
     } catch (err) {
       handleError(err);
