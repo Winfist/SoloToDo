@@ -40,11 +40,13 @@ function countSentences(text) {
   return String(text || "").split(/[.!?]+/).map((s) => s.trim()).filter(Boolean).length;
 }
 
-function validateGeneratedQuests(quests, { language = "de", activeGoalTitles = [] } = {}) {
+function validateGeneratedQuests(quests, { language = "de", activeGoalTitles = [], minCount = 1 } = {}) {
   const reasons = [];
   if (!Array.isArray(quests) || quests.length === 0) {
     return { ok: false, reasons: ["empty"] };
   }
+  // Guard against silent under-delivery: collect too-few-quests in reasons, not early-return
+  if (quests.length < minCount) reasons.push("too-few-quests");
   for (const quest of quests) {
     const title = String(quest?.title || "").trim();
     const desc = String(quest?.desc || "").trim();

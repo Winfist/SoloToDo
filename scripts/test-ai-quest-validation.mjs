@@ -46,5 +46,9 @@ check(resolveGoalRef("Ziel: Halbmarathon", ["Halbmarathon"]) === "Halbmarathon",
 check(resolveGoalRef("Bitcoin Million", ["Halbmarathon"]) === null, "goalRef ohne Treffer -> null");
 check(resolveGoalRef("", ["Halbmarathon"]) === null, "leerer goalRef -> null");
 
+// minCount: Unterlieferung faellt durch, Default bleibt tolerant
+check(validateGeneratedQuests(gute, { language: "de", minCount: 3 }).reasons.includes("too-few-quests"), "1 Quest bei minCount 3 faellt durch");
+check(validateGeneratedQuests(gute, { language: "de" }).ok === true, "Default minCount 1: 1 gueltige Quest passiert");
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ test-ai-quest-validation: alles gruen");
