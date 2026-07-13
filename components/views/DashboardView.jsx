@@ -247,7 +247,10 @@ export default function DashboardView({
   forgePhase,
   forgeStep,
   forgeTargets,
-  onForge
+  onForge,
+  crystallization,
+  onCrystallizeAccept,
+  onCrystallizeDecline
 }) {
   const { t, locale } = useI18n();
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
@@ -997,6 +1000,19 @@ export default function DashboardView({
                   targets={forgeTargets}
                   onForge={onForge}
                 />
+              )}
+
+              {crystallization && (
+                <section style={{ marginBottom: 14, padding: "12px 16px", borderRadius: 16, background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.2)" }}>
+                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#34d399", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{t("quests.goalRitual.crystallize.title")}</div>
+                  <div style={{ fontSize: 11.5, color: "#cbd5e1", marginTop: 4, lineHeight: 1.5 }}>
+                    {t("quests.goalRitual.crystallize.body", { count: crystallization.count, category: t(`quests.goalRitual.crystallize.categories.${crystallization.category}`) })}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button className="press-feedback" onClick={() => onCrystallizeAccept(crystallization.category)} style={{ fontSize: 10, fontWeight: 800, padding: "7px 14px", borderRadius: 8, cursor: "pointer", background: "rgba(52,211,153,0.12)", color: "#34d399", border: "1px solid #34d39944", fontFamily: "'JetBrains Mono',monospace" }}>{t("quests.goalRitual.crystallize.cta")}</button>
+                    <button onClick={() => onCrystallizeDecline(crystallization.category)} style={{ fontSize: 10, padding: "7px 12px", borderRadius: 8, cursor: "pointer", background: "transparent", color: "#64748b", border: "none", fontFamily: "'Outfit',sans-serif" }}>{t("quests.goalRitual.crystallize.dismiss")}</button>
+                  </div>
+                </section>
               )}
 
               {/* ── QUEST LIST ── */}

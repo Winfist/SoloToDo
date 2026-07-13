@@ -481,6 +481,13 @@ export const en = {
         submit: "DISTILL SUGGESTIONS",
         back: "Back",
       },
+      crystallize: {
+        title: "PATTERN DETECTED",
+        body: "You completed {count} of your own {category} tasks — turn it into a goal?",
+        cta: "Create goal",
+        dismiss: "Not now",
+        categories: { fitness: "fitness", learning: "learning", health: "health", productivity: "productivity", social: "social" },
+      },
     },
     hidden: {
       hq_shadow_whisper: {

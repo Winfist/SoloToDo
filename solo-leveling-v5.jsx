@@ -94,6 +94,7 @@ import { getDailyQuestCreationStatus, getPremiumFeatureForRoute, getQuotaStatus,
 import { getQuestVerificationPolicy } from './data/questVerification.js';
 import { getForgeStatus, applyForgeUsage } from './data/freeLimits.js';
 import { countManualForgeTargets } from './data/questSwap.js';
+import { getCrystallizationSuggestion, markCrystallizationChecked, declineCrystallization } from './data/goalCrystallization.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
   "quest_title_input",
@@ -805,6 +806,25 @@ function App({ initialHunterName, onLogout }) {
     today: getToday(),
   }), [premiumStatus?.active, state?.level, state?.totalQuestsCompleted, state?.completedQuests?.length, state?.ai?.lastForgeDate, state?.lastActiveDate]);
   const forgeTargets = useMemo(() => countManualForgeTargets(state?.quests), [state?.quests]);
+
+  // ─ Ziel-Kristallisation (Task 10): regelbasierter Wochen-Check, kein KI-Call ─
+  const crystallization = useMemo(() => {
+    if (!state) return null;
+    return getCrystallizationSuggestion(state);
+  }, [state?.completedQuests?.length, state?.goals, state?.goalCrystallization]);
+
+  const handleCrystallizeAccept = useCallback((category) => {
+    setState(cs => {
+      const next = markCrystallizationChecked({ ...cs, goalCrystallization: { ...(cs.goalCrystallization || {}), pendingCategory: category } });
+      persist(next);
+      return next;
+    });
+    navigateToWithAccess("goals");
+  }, [setState, persist, navigateToWithAccess]);
+
+  const handleCrystallizeDecline = useCallback((category) => {
+    setState(cs => { const next = declineCrystallization(cs, category); persist(next); return next; });
+  }, [setState, persist]);
 
   const handleForge = useCallback(async () => {
     if (!forgeStatus.allowed || forgePhase === "loading") return;
@@ -1792,6 +1812,9 @@ function App({ initialHunterName, onLogout }) {
                   forgeStep={forgeStep}
                   forgeTargets={forgeTargets}
                   onForge={handleForge}
+                  crystallization={crystallization}
+                  onCrystallizeAccept={handleCrystallizeAccept}
+                  onCrystallizeDecline={handleCrystallizeDecline}
                 />
               )}
 

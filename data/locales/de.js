@@ -481,6 +481,13 @@ export const de = {
         submit: "VORSCHLÄGE DESTILLIEREN",
         back: "Zurück",
       },
+      crystallize: {
+        title: "MUSTER ERKANNT",
+        body: "Du hast {count} eigene {category}-Aufgaben abgeschlossen — willst du ein Ziel daraus machen?",
+        cta: "Ziel erstellen",
+        dismiss: "Nicht jetzt",
+        categories: { fitness: "Fitness", learning: "Lern", health: "Gesundheits", productivity: "Produktivitäts", social: "Sozial" },
+      },
     },
     hidden: {
       hq_shadow_whisper: {
