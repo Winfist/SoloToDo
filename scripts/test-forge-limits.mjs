@@ -27,5 +27,19 @@ check(proState.ai.lastForgeDate === "2026-07-13", "Pro-Nutzung stempelt nicht");
 
 check(AI_FREE_TRIAL_REQUIREMENTS.minLevel === 3, "Earn-it-Schwelle unveraendert");
 
+// Edge: today weggelassen -> Fallback auf state.lastActiveDate
+const fallbackState = { ...earned, lastActiveDate: "2026-07-13", ai: { lastForgeDate: "2026-07-13" } };
+check(getForgeStatus({ premiumActive: false, state: fallbackState }).reason === "daily", "ohne today: lastActiveDate greift");
+const stamped = applyForgeUsage({ ...earned, lastActiveDate: "2026-07-15" }, { premiumActive: false });
+check(stamped.ai.lastForgeDate === "2026-07-15", "applyForgeUsage ohne today stempelt lastActiveDate");
+
+// Edge: state ohne ai-Objekt erreicht den lastForgeDate-Zweig gefahrlos
+check(getForgeStatus({ premiumActive: false, state: { level: 3, totalQuestsCompleted: 5 }, today: "2026-07-13" }).allowed === true, "fehlendes state.ai wirft nicht und erlaubt");
+
+// Edge: applyForgeUsage mutiert den Input nicht
+const original = { level: 3, totalQuestsCompleted: 5, ai: {} };
+const result = applyForgeUsage(original, { premiumActive: false, today: "2026-07-13" });
+check(original.ai.lastForgeDate === undefined && result !== original, "Input-State bleibt unveraendert");
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ test-forge-limits: alles gruen");

@@ -152,7 +152,7 @@ export function applyAIFreeGenerationUsage(state = {}, { premiumActive = false, 
 // ─── Schmiede (sichtbare KI-Quest-Generierung) ─────────────────────────────
 // Free = 1x/Tag OHNE Lebenszeit-Deckel — bewusst getrennt von den
 // interaktiven Free-Credits (aiFreeCreditsTotal). Earn-it-Gate (Lv3 +
-// 5 Quests) gilt fuer Free UND Pro: vorher fehlt dem KI das Material.
+// 5 Quests) gilt fuer Free UND Pro: vorher fehlt der KI das Material.
 export function getForgeStatus({ premiumActive = false, state = {}, today = "" } = {}) {
   const level = Math.max(1, Number(state?.level) || 1);
   const completedQuests = Math.max(
