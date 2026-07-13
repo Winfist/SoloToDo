@@ -118,16 +118,20 @@ const prompt = GENERATE_QUESTS_PROMPT(request.stats, request.level, request.weak
 assert(prompt.includes("untrusted user-authored data"));
 assert(prompt.includes("fitness"));
 assert(prompt.includes("Pattern 0"));
-assert(prompt.includes("at least 2 Quests must connect"));
+assert(prompt.includes("At least 1 Quest must train the weakest stat"));
+assert(prompt.includes('exact title in "goalRef"'));
 
 const generatedQuests = sanitizeGeneratedAIQuests([
-  { title: { invalid: true }, category: "invalid", difficulty: "boss", desc: "D".repeat(600), subQuests: [{ title: "" }, { title: "Step" }] },
-  { title: "Second" },
+  { title: { invalid: true }, category: "invalid", difficulty: "boss", desc: "no string title" },
+  { title: "Second", category: "invalid", difficulty: "boss", desc: "D".repeat(600), subQuests: [{ title: "" }, { title: "Step" }] },
   { title: "Third" },
   { title: "Fourth" },
 ]);
-assert.equal(generatedQuests.length, 3);
-assert.equal(generatedQuests[0].title, "System-Quest");
+// Neuer Kontrakt (Task 2): titellose Quests werden verworfen, kein "System-Quest"-Fallback mehr.
+// slice(0,3) kappt "Fourth", der Titel-lose Eintrag faellt raus -> 2 Quests bleiben.
+assert.equal(generatedQuests.length, 2);
+assert(!generatedQuests.some((quest) => quest.title === "System-Quest"));
+assert.equal(generatedQuests[0].title, "Second");
 assert.equal(generatedQuests[0].category, "str");
 assert.equal(generatedQuests[0].difficulty, "normal");
 assert.equal(generatedQuests[0].desc.length, 500);
