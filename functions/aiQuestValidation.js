@@ -1,8 +1,8 @@
-// aiQuestValidation.js — Qualitaetspruefung fuer KI-generierte Quests.
+// aiQuestValidation.js - Qualitaetspruefung fuer KI-generierte Quests.
 // Noetig, weil Gratis-Modelle unzuverlaessig sind (Sprache, Format).
 // Pur & node-testbar: keine Firebase-Abhaengigkeiten.
 
-const GERMAN_HINTS = [" der ", " die ", " das ", " und ", " mit ", " fuer ", " für ", " dein", " deine", " du ", " eine", " einen", " im ", " am ", " auf ", " zu ", " nicht ", " oder ", " wenn ", " bis ", " danach", " minuten", " heute", " fertig"];
+const GERMAN_HINTS = [" der ", " die ", " das ", " und ", " mit ", " fuer ", " dein", " deine", " du ", " eine", " einen", " im ", " am ", " auf ", " zu ", " nicht ", " oder ", " wenn ", " bis ", " danach", " minuten", " heute", " fertig"];
 const ENGLISH_HINTS = [" the ", " your ", " and ", " with ", " for ", " you ", " today", " complete ", " finish ", " weekly ", " daily ", " challenge", " routine"];
 
 function countHits(text, hints) {
@@ -12,7 +12,7 @@ function countHits(text, hints) {
 
 // true, wenn der Text zur angeforderten Sprache passt.
 // de: mindestens 1 deutscher Marker UND nicht weniger als englische Marker.
-// en: kein Check — englische Ausgabe ist bei allen Modellen zuverlaessig.
+// en: kein Check - englische Ausgabe ist bei allen Modellen zuverlaessig.
 function matchesLanguage(text, language) {
   if (language !== "de") return true;
   const de = countHits(text, GERMAN_HINTS);
@@ -24,7 +24,7 @@ function normalizeTitle(value) {
   return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-// goalRef nur behalten, wenn er einem aktiven Ziel entspricht — Gratis-Modelle
+// goalRef nur behalten, wenn er einem aktiven Ziel entspricht - Gratis-Modelle
 // halluzinieren sonst Ziel-Badges. Rueckgabe: kanonischer Zieltitel oder null.
 function resolveGoalRef(goalRef, activeGoalTitles) {
   const ref = normalizeTitle(goalRef);
