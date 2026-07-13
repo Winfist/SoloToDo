@@ -1376,6 +1376,7 @@ export const en = {
     ratePause: "Short pause (~{minutes} min). The AI service needs a moment.",
     resetHint: "({symbol} to reset immediately)",
     unknownError: "Unknown error.",
+    recalibrated: "⚡ The System recalibrated your quests.",
   },
   catalog: {
     categories: {

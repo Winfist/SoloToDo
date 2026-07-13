@@ -830,37 +830,43 @@ function App({ initialHunterName, onLogout }) {
     completeQuest(quest.id, rect, verified);
   }, [verificationTarget, completeEmergencyQuest, completeQuest]);
 
-  // ─ AI: Replace static system quests with AI-generated ones after daily reset ─
-  // Uses localStorage so the guard survives page reloads — prevents one call per reload
+  // ─ AI: Statische System-Quests nach Tagesreset durch KI-Quests ersetzen ─
+  // Guard wird erst NACH Erfolg gesetzt (sl_ai_quest_gen_date); Fehlversuche
+  // zaehlen separat (max. 3/Tag), damit ein 429 den Tag nicht killt.
   const lastActiveDateRef = useRef(null);
   useEffect(() => {
     if (!state || loading) return;
     const today = state.lastActiveDate;
     const aiQuestScope = encodeURIComponent(String(state.ownerUid || state.email || state.displayName || state.hunterName || "local"));
-    const storageKey = `sl_ai_quest_gen_date:${aiQuestScope}`;
-    const alreadyGenToday = localStorage.getItem(storageKey) === today;
-    if (lastActiveDateRef.current === today || alreadyGenToday) return;
+    const doneKey = `sl_ai_quest_gen_date:${aiQuestScope}`;
+    const attemptsKey = `sl_ai_quest_gen_attempts:${aiQuestScope}:${today}`;
+    if (lastActiveDateRef.current === today) return;
+    if (localStorage.getItem(doneKey) === today) return;
+    const attempts = parseInt(localStorage.getItem(attemptsKey) || "0", 10);
+    if (attempts >= 3) return;
     lastActiveDateRef.current = today;
-    localStorage.setItem(storageKey, today);
     if (getQuestPlanningSnapshot(state).overloadStatus.overloaded) return;
-    if (!premiumStatus?.active || !can('ai_dynamic_quests') || !state.ai?.enabled || !state.ai?.dynamicMessagesEnabled || geminiAI.isRateLimited()) return;
+    if (!premiumStatus?.active || !can('ai_dynamic_quests') || !state.ai?.enabled || !(state.ai?.dynamicQuestsEnabled ?? true) || geminiAI.isRateLimited()) return;
 
-    // Small delay so static quests render first, then swap silently
+    // Kurze Verzögerung, damit die statischen Quests zuerst rendern.
     const timer = setTimeout(async () => {
+      localStorage.setItem(attemptsKey, String(attempts + 1));
       const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
+      const { canAutoSwapSystemQuests, swapSystemQuests } = await import('./data/questSwap.js');
       const aiQuests = await generateDailySystemQuestsAsync(getDailySystemQuestCount(state), state, geminiAI.generateQuests);
-      if (!aiQuests?.length) return;
-      const isAI = aiQuests.some(q => q.aiGenerated);
-      if (!isAI) return; // No AI result — keep static quests
-      // Use setState callback to avoid stale state overwrites
+      if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) return; // kein KI-Ergebnis -> Guard NICHT setzen
       setState(currentState => {
-        // Ziel-Quests (Paket B) sind personengebunden und werden vom KI-Swap
-        // der Pool-Dailies nicht ersetzt.
-        const withoutOldSystem = (currentState.quests || []).filter(q => !q.isSystem || q.type === "goal");
-        const updated = { ...currentState, quests: [...withoutOldSystem, ...aiQuests] };
+        // Konservativ: hat der User heute schon eine Daily angefasst, still lassen.
+        if (!canAutoSwapSystemQuests(currentState.quests)) return currentState;
+        localStorage.setItem(doneKey, today);
+        const updated = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "auto" }) };
         persist(updated);
         return updated;
       });
+      // Inszenierung nur, wenn der Swap wirklich passiert ist (doneKey wurde im Updater gesetzt).
+      setTimeout(() => {
+        if (localStorage.getItem(doneKey) === today) notify(tr("ai.recalibrated"), "info");
+      }, 400);
     }, 1500);
     return () => clearTimeout(timer);
   }, [state?.lastActiveDate, state?.questPlanning?.overloadPreset, loading, premiumStatus?.active]);

@@ -33,7 +33,8 @@
     "test:shadow-regression": "node scripts/test-shadow-regression.mjs",
     "test:icon-paths": "node scripts/test-icon-paths.mjs",
     "test:ai-quest-validation": "node scripts/test-ai-quest-validation.mjs",
-    "test:gemini-prompts": "node scripts/test-gemini-prompts.mjs"
+    "test:gemini-prompts": "node scripts/test-gemini-prompts.mjs",
+    "test:quest-swap": "node scripts/test-quest-swap.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",

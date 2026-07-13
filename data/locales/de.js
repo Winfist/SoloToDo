@@ -1376,6 +1376,7 @@ export const de = {
     ratePause: "Kurze Pause (~{minutes} Min.). Der KI-Dienst braucht einen Moment.",
     resetHint: "({symbol} zum sofortigen Zurücksetzen)",
     unknownError: "Unbekannter Fehler.",
+    recalibrated: "⚡ Das System hat deine Quests neu kalibriert.",
   },
   catalog: {
     categories: {

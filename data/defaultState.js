@@ -186,6 +186,7 @@ export const DEFAULT_STATE = {
     enabled: true,
     verificationEnabled: true,
     dynamicMessagesEnabled: true,
+    dynamicQuestsEnabled: true,
     coachEnabled: true,
     verifiedQuests: 0,
     scannedTasks: 0,

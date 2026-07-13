@@ -326,11 +326,7 @@ export async function generateDailySystemQuestsAsync(count = 3, state = null, ge
   if (!generateFn) return generateDailySystemQuests(count, state);
 
   try {
-    const aiResult = await Promise.race([
-      generateFn(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
-    ]);
-
+    const aiResult = await generateFn();
     if (aiResult?.quests?.length > 0) {
       const today = getToday();
       return aiResult.quests.slice(0, count).map(q => normalizeQuestForStorage({
