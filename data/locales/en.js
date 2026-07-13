@@ -1338,7 +1338,7 @@ export const en = {
       },
       tier2_intro: {
         title: "SYSTEM EXPANSION",
-        text: "Level 5 reached. Long-term goals and Micro-Habits have been unlocked.",
+        text: "Level 5 reached. Long-term goals, Micro-Habits, and dynamic AI Quests have been unlocked.",
       },
       training_tab: {
         title: "TRAINING HUB",

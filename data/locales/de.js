@@ -1338,7 +1338,7 @@ export const de = {
       },
       tier2_intro: {
         title: "SYSTEM EXPANSION",
-        text: "Level 5 erreicht. Langfristige Ziele und Micro-Habits sind freigeschaltet.",
+        text: "Level 5 erreicht. Langfristige Ziele, Micro-Habits und dynamische KI-Quests sind freigeschaltet.",
       },
       training_tab: {
         title: "TRAINING HUB",
