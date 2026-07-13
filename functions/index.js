@@ -14,6 +14,7 @@ const {
   sanitizeQuestStats,
   sanitizeRecentQuestTitles,
 } = require("./aiQuestProfile");
+const { validateGeneratedQuests, resolveGoalRef } = require("./aiQuestValidation");
 const {
   VERIFY_QUEST_PROMPT,
   EXTRACT_TASKS_PROMPT,
@@ -220,11 +221,28 @@ exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
   const safeWeakestStat = ["str", "int", "vit", "agi", "cha"].includes(weakestStat) ? weakestStat : null;
   const safeRecentQuests = sanitizeRecentQuestTitles(recentQuests);
   const safeProfile = sanitizeAIQuestProfile(profile);
-  const prompt = GENERATE_QUESTS_PROMPT(safeStats, safeLevel, safeWeakestStat, safeRecentQuests, safeProfile, language);
-  const raw = await callGemini(prompt);
-  const result = parseJSON(raw, { quests: [] });
+  const activeGoalTitles = safeProfile.activeGoals.map((goal) => goal.title);
 
-  const quests = sanitizeGeneratedAIQuests(result.quests);
+  // Gratis-Modelle liefern unzuverlaessig - validieren, bei Murks 1 strenger Retry.
+  let quests = [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const prompt = GENERATE_QUESTS_PROMPT(
+      safeStats, safeLevel, safeWeakestStat, safeRecentQuests, safeProfile, language,
+      { strict: attempt > 0 }
+    );
+    const raw = await callGemini(prompt);
+    const candidate = sanitizeGeneratedAIQuests(parseJSON(raw, { quests: [] }).quests);
+    const verdict = validateGeneratedQuests(candidate, { language, activeGoalTitles });
+    if (verdict.ok) { quests = candidate; break; }
+    console.warn(`[generateDynamicQuests] Versuch ${attempt + 1} ungueltig:`, verdict.reasons.join(","));
+  }
+
+  // goalRef gegen aktive Ziele aufloesen; ohne Treffer Feld verwerfen.
+  quests = quests.map((quest) => {
+    const { goalRef, ...rest } = quest;
+    const resolved = resolveGoalRef(goalRef, activeGoalTitles);
+    return resolved ? { ...rest, goalRef: resolved } : rest;
+  });
 
   return { quests };
 });

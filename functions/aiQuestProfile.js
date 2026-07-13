@@ -110,18 +110,25 @@ function sanitizeAIQuestProfile(profile) {
 }
 
 function sanitizeGeneratedAIQuests(quests) {
-  return (Array.isArray(quests) ? quests : []).slice(0, 3).map((quest) => ({
-    title: safeText(quest?.title, 160) || "System-Quest",
-    category: CATEGORY_ID_SET.has(quest?.category) ? quest.category : "str",
-    difficulty: ["easy", "normal", "hard"].includes(quest?.difficulty) ? quest.difficulty : "normal",
-    desc: safeText(quest?.desc, 500),
-    subQuests: (Array.isArray(quest?.subQuests) ? quest.subQuests : [])
-      .slice(0, 5)
-      .map((subQuest) => ({ title: safeText(subQuest?.title || subQuest, 180) }))
-      .filter((subQuest) => subQuest.title),
-    isSystem: true,
-    aiGenerated: true,
-  }));
+  return (Array.isArray(quests) ? quests : []).slice(0, 3).map((quest) => {
+    const estimatedMinutes = clampInteger(quest?.estimatedMinutes, 0, 480);
+    const goalRef = safeText(quest?.goalRef, 140);
+    return {
+      title: safeText(quest?.title, 160),
+      category: CATEGORY_ID_SET.has(quest?.category) ? quest.category : "str",
+      difficulty: ["easy", "normal", "hard"].includes(quest?.difficulty) ? quest.difficulty : "normal",
+      desc: safeText(quest?.desc, 500),
+      doneWhen: safeText(quest?.doneWhen, 200),
+      ...(estimatedMinutes > 0 ? { estimatedMinutes } : {}),
+      ...(goalRef ? { goalRef } : {}),
+      subQuests: (Array.isArray(quest?.subQuests) ? quest.subQuests : [])
+        .slice(0, 5)
+        .map((subQuest) => ({ title: safeText(subQuest?.title || subQuest, 180) }))
+        .filter((subQuest) => subQuest.title),
+      isSystem: true,
+      aiGenerated: true,
+    };
+  }).filter((quest) => quest.title);
 }
 
 module.exports = {

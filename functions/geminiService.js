@@ -1,8 +1,16 @@
 // geminiService.js — OpenRouter wrapper for SoloToDo (v3.0)
 const { HttpsError } = require("firebase-functions/v2/https");
 
-// Using "openrouter/free" routes to the best available free model.
-const MODEL_NAME = "openrouter/free";
+// Prioritaetenliste deutsch-tauglicher Gratis-Modelle. OpenRouter probiert sie
+// der Reihe nach ("models"-Fallback-Routing); "openrouter/free" ist die letzte
+// Stufe (Blind-Routing). Bei der Umsetzung gegen den aktuellen Katalog pruefen:
+// https://openrouter.ai/models?max_price=0 - IDs aendern sich gelegentlich.
+const MODEL_CANDIDATES = [
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "google/gemma-3-27b-it:free",
+  "openrouter/free",
+];
+const MODEL_NAME = MODEL_CANDIDATES[0];
 
 // Strip markdown code fences if response wraps JSON in them
 function stripMarkdown(text) {
@@ -37,6 +45,7 @@ async function callOpenRouter(messages) {
         },
         body: JSON.stringify({
           model: MODEL_NAME,
+          models: MODEL_CANDIDATES,
           messages: messages,
           temperature: 0.7,
         })
