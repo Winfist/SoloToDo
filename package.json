@@ -22,6 +22,7 @@
     "test:state-merge": "node scripts/test-state-merge.mjs",
     "test:quest-utils": "node scripts/test-quest-utils.mjs",
     "test:quest-planning": "node scripts/test-quest-planning.mjs",
+    "test:quest-pool-weighting": "node scripts/test-quest-pool-weighting.mjs",
     "test:quest-verification": "node scripts/test-quest-verification.mjs",
     "test:sigil": "node scripts/test-sigil-geometry.mjs",
     "test:icons": "node scripts/test-feature-icons.mjs",

@@ -11,6 +11,7 @@ import { getStateLocale, resolveLocale, translate } from "./i18n.js";
 import { getQuestKey, normalizeQuestForStorage } from "./questUtils.js";
 import { getFocusStats } from "./lifeDomains.js";
 import { SCREEN_TIME_ENABLED } from "./featureFlags.js";
+import { computeCategoryWeights, orderPoolByWeight } from "./questPoolWeighting.js";
 
 // ─── JOB XP CONFIG ────────────────────────────────────────────
 export const JOB_XP_SOURCES = {
@@ -234,21 +235,9 @@ export function generateDailySystemQuests(count = 3, state = null) {
     }));
   }
 
-  // ── Focus toward the hunter's chosen life domains (Wege) ──
-  // Most fill quests come from the focus stats; we still reserve one slot
-  // for variety so a single-domain hunter doesn't get a monotone list.
+  // ── Gewichteter Pool statt Zufall: Lebensbereiche + Ziele + Feedback + schwaechster Stat ──
   const remaining = validPool.filter(q => !generatedIds.has(q.id));
-  const focusStats = getFocusStats(state?.lifeDomains);
-  let ordered;
-  if (focusStats.length > 0) {
-    const focusPool = remaining.filter(q => focusStats.includes(q.category)).sort(() => Math.random() - 0.5);
-    const otherPool = remaining.filter(q => !focusStats.includes(q.category)).sort(() => Math.random() - 0.5);
-    const slotsToFill = Math.max(0, count - selected.length);
-    const focusTake = Math.max(0, slotsToFill - (slotsToFill >= 3 ? 1 : 0));
-    ordered = [...focusPool.slice(0, focusTake), ...otherPool, ...focusPool.slice(focusTake)];
-  } else {
-    ordered = remaining.sort(() => Math.random() - 0.5);
-  }
+  const ordered = orderPoolByWeight(remaining, computeCategoryWeights(state || {}));
 
   for (const q of ordered) {
     if (selected.length >= count) break; // Now selected.length will correctly count the injected quest
