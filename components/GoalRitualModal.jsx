@@ -116,7 +116,7 @@ export default function GoalRitualModal({ theme, aiAvailable = false, lifeDomain
           <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>{t("quests.goalRitual.intro")}</p>
         </div>
 
-        {aiEnabled && (
+        {aiEnabled && mode !== "questionnaire" && (
           <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 14, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.18)" }}>
             <button
               onClick={requestSuggestions}

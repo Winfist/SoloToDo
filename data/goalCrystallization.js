@@ -13,6 +13,10 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DECLINE_MS = 4 * WEEK_MS;
 
 export function getCrystallizationSuggestion(state = {}, { now = Date.now() } = {}) {
+  // Ziele schalten erst mit Level 5 frei (wie shouldShowGoalRitual) - vorher
+  // wuerde die Karte in eine gesperrte View routen und den Wochen-Slot verbrennen.
+  if ((state?.level || 1) < 5) return null;
+
   const meta = state.goalCrystallization || {};
   if (meta.lastCheckAt && now - meta.lastCheckAt < WEEK_MS) return null;
 

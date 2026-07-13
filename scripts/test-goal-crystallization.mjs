@@ -5,11 +5,14 @@ const check = (cond, msg) => { if (!cond) { console.error(`✗ ${msg}`); failure
 
 const NOW = Date.parse("2026-07-13T12:00:00Z");
 const strQuests = Array.from({ length: 6 }, (_, i) => ({ id: `q${i}`, category: "str", isSystem: false }));
-const base = { completedQuests: strQuests, goals: [], goalCrystallization: {} };
+const base = { completedQuests: strQuests, goals: [], goalCrystallization: {}, level: 5 };
 
 // 6 eigene str-Quests ohne Fitness-Ziel -> Vorschlag fitness
 const s1 = getCrystallizationSuggestion(base, { now: NOW });
 check(s1 && s1.category === "fitness" && s1.count === 6, "6 eigene str-Quests -> Vorschlag fitness");
+
+// Unter Level 5 nie ein Vorschlag (Goals sind noch gesperrt)
+check(getCrystallizationSuggestion({ ...base, level: 4 }, { now: NOW }) === null, "unter Lv5 kein Vorschlag");
 
 // System-Quests zaehlen nicht (nur EIGENE Aufgaben zeigen echtes Interesse)
 const sysOnly = { ...base, completedQuests: strQuests.map(q => ({ ...q, isSystem: true })) };

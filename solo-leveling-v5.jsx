@@ -837,16 +837,21 @@ function App({ initialHunterName, onLogout }) {
       const { swapSystemQuests, countManualForgeTargets: countTargets } = await import('./data/questSwap.js');
       const aiQuests = await generateDailySystemQuestsAsync(getDailySystemQuestCount(state), state, geminiAI.generateQuests);
       if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) { setForgePhase("failed"); return; }
+      let swapped = false;
       setState(currentState => {
         if (countTargets(currentState.quests) === 0) return currentState;
         // Credit NUR bei Erfolg verbrauchen (applyForgeUsage stempelt nur Free).
-        const swapped = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "manual" }) };
-        const next = applyForgeUsage(swapped, { premiumActive: premiumStatus?.active, today: getToday() });
+        const swappedState = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "manual" }) };
+        const next = applyForgeUsage(swappedState, { premiumActive: premiumStatus?.active, today: getToday() });
         persist(next);
+        swapped = true;
         return next;
       });
-      setForgePhase("idle");
-      notify(tr("ai.recalibrated"), "success");
+      // Toast nur, wenn wirklich getauscht wurde (Updater setzt das Flag synchron vor dem Re-Render).
+      setTimeout(() => {
+        setForgePhase("idle");
+        if (swapped) notify(tr("ai.recalibrated"), "success");
+      }, 400);
     } catch {
       setForgePhase("failed");
     } finally {
