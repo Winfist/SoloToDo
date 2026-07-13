@@ -33,5 +33,18 @@ check(manual.some(q => q.id === "g1"), "manual: Ziel-Quest bleibt");
 // Zähler für die Schmiede-Karte
 check(countManualForgeTargets([poolDaily("s1", { completed: true }), poolDaily("s2"), goalQuest, customQuest]) === 1, "targets: nur offene Pool-Dailies");
 
+// Sonder-Quests (Saison, Redemption, ScreenTime, Schritte, Comeback, Starter) sind tabu
+const seasonal = { id: "w1", isSystem: true, type: "weekly", isSeasonal: true, completed: false };
+const redemption = { id: "r1", isSystem: true, type: "redemption", completed: false };
+const screenTime = { id: "st1", isSystem: true, type: "daily", isScreenTime: true, completed: false };
+const stepGoal = { id: "sg1", isSystem: true, type: "daily", isStepGoal: true, completed: false };
+const comeback = { id: "cb1", isSystem: true, type: "daily", isComebackQuest: true, completed: false };
+const starter = { id: "sta1", isSystem: true, type: "daily", isStarter: true, completed: false };
+const specials = [seasonal, redemption, screenTime, stepGoal, comeback, starter];
+const autoSpecial = swapSystemQuests([...specials, poolDaily("s1")], ai, { mode: "auto" });
+for (const sq of specials) check(autoSpecial.some(q => q.id === sq.id), `auto: Sonder-Quest ${sq.id} bleibt`);
+check(countManualForgeTargets([...specials, poolDaily("s1")]) === 1, "targets: Sonder-Quests zaehlen nicht");
+check(canAutoSwapSystemQuests([{ ...seasonal, completed: true }, poolDaily("s1")]) === true, "auto: erledigte Saison-Quest sperrt nicht");
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ test-quest-swap: alles gruen");

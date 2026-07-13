@@ -4,7 +4,18 @@
 // weg"-Moment). Die manuelle Schmiede ersetzt nur offene, unangetastete
 // Dailies — erledigte bleiben stehen. Ziel-Quests (type "goal") sind tabu.
 
-const isPoolDaily = (quest) => Boolean(quest && quest.isSystem && quest.type !== "goal");
+// Nur austauschbare Pool-Dailies: reine System-Tagesquests ohne Sonderrolle.
+// Saison (weekly), Redemption, ScreenTime-, Schritte-, Comeback- und
+// Starter-Quests sind feature-gebunden und fuer den Swap tabu.
+const isPoolDaily = (quest) => Boolean(
+  quest
+  && quest.isSystem
+  && quest.type === "daily"
+  && !quest.isScreenTime
+  && !quest.isStepGoal
+  && !quest.isComebackQuest
+  && !quest.isStarter
+);
 const isTouched = (quest) => Boolean(quest?.completed)
   || (Array.isArray(quest?.subQuests) && quest.subQuests.some((sq) => sq?.completed));
 
