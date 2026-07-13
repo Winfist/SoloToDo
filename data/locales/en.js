@@ -1172,6 +1172,9 @@ export const en = {
       habitPromptTitle: "CONTINUE AS ROUTINE",
       habitPromptText: "Was this Quest useful? Start with a prefilled Habit and adjust its frequency and verification before saving.",
       createHabit: "CONTINUE AS HABIT",
+      doneWhen: "DONE WHEN",
+      estimatedMinutes: "~{minutes} min",
+      goalRef: "Counts toward: {goal}",
     },
     questCreate: {
       priorityHigh: "HIGH",

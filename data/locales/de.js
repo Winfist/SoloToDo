@@ -1172,6 +1172,9 @@ export const de = {
       habitPromptTitle: "ALS ROUTINE WEITERFÜHREN",
       habitPromptText: "War diese Quest sinnvoll? Übernimm sie als vorausgefüllten Habit und passe Frequenz sowie Verifizierung vor dem Speichern an.",
       createHabit: "ALS HABIT WEITERFÜHREN",
+      doneWhen: "FERTIG, WENN",
+      estimatedMinutes: "~{minutes} min",
+      goalRef: "Zahlt ein auf: {goal}",
     },
     questCreate: {
       priorityHigh: "HOCH",

@@ -612,6 +612,28 @@ export default function QuestDetailModal({
                 </div>
               )}
 
+              {/* KI-Klarheitsfelder: Fertig-Kriterium + Meta-Badges */}
+              {quest.doneWhen && (
+                <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.06), transparent)", borderRadius: 12, padding: "12px 16px", border: "1px solid rgba(34,197,94,0.15)" }}>
+                  <div style={{ fontSize: 9, letterSpacing: 2, color: "#22c55e", fontFamily: "'JetBrains Mono',monospace", marginBottom: 6, fontWeight: 800 }}>{t("modals.questDetail.doneWhen")}</div>
+                  <div style={{ fontSize: 12, color: "#e2e8f0", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>{quest.doneWhen}</div>
+                </div>
+              )}
+              {(Number(quest.estimatedMinutes) > 0 || quest.goalRef) && (
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {Number(quest.estimatedMinutes) > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", color: "#94a3b8", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(148,163,184,0.25)" }}>
+                      {t("modals.questDetail.estimatedMinutes", { minutes: quest.estimatedMinutes })}
+                    </span>
+                  )}
+                  {quest.goalRef && (
+                    <span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace", color: "#a5b4fc", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(99,102,241,0.35)", background: "rgba(99,102,241,0.08)" }}>
+                      {t("modals.questDetail.goalRef", { goal: quest.goalRef })}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* Sub-Quests */}
               {subQuests.length > 0 && (
                 <div>
