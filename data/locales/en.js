@@ -1377,6 +1377,20 @@ export const en = {
     resetHint: "({symbol} to reset immediately)",
     unknownError: "Unknown error.",
     recalibrated: "⚡ The System recalibrated your quests.",
+    forge: {
+      eyebrow: "SYSTEM ANALYSIS",
+      title: "Quest Forge",
+      hint: "The System analyzes goals, behavior and feedback — and reforges today's quests.",
+      cta: "FORGE",
+      working: "WORKING…",
+      step1: "Reading profile…",
+      step2: "Detecting patterns…",
+      step3: "Forging quests…",
+      locked: "Still locked: reach level {level} and complete {quests} quests.",
+      usedToday: "Already forged today — available again tomorrow.",
+      allDone: "All system quests done — the forge reopens tomorrow.",
+      failed: "The System could not forge quests. Try again in a moment.",
+    },
   },
   catalog: {
     categories: {

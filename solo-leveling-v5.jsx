@@ -91,6 +91,8 @@ import QuestDetailModal from './components/QuestDetailModal.jsx';
 import PremiumAccessModal from './components/PremiumAccessModal.jsx';
 import { getDailyQuestCreationStatus, getPremiumFeatureForRoute, getQuotaStatus, getAIFreeGenerationStatus } from './data/premium.js';
 import { getQuestVerificationPolicy } from './data/questVerification.js';
+import { getForgeStatus, applyForgeUsage } from './data/freeLimits.js';
+import { countManualForgeTargets } from './data/questSwap.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
   "quest_title_input",
@@ -792,6 +794,44 @@ function App({ initialHunterName, onLogout }) {
       return sane.length > 0 ? sane : null;
     });
   }, [runAIGeneration, geminiAI]);
+
+  // ─ Quest-Schmiede: sichtbare KI-Generierung (Free 1x/Tag, Pro on-demand) ─
+  const [forgePhase, setForgePhase] = useState("idle"); // idle | loading | failed
+  const [forgeStep, setForgeStep] = useState(0);
+  const forgeStatus = useMemo(() => getForgeStatus({
+    premiumActive: premiumStatus?.active,
+    state,
+    today: getToday(),
+  }), [premiumStatus?.active, state?.level, state?.totalQuestsCompleted, state?.completedQuests?.length, state?.ai?.lastForgeDate, state?.lastActiveDate]);
+  const forgeTargets = useMemo(() => countManualForgeTargets(state?.quests), [state?.quests]);
+
+  const handleForge = useCallback(async () => {
+    if (!forgeStatus.allowed || forgePhase === "loading") return;
+    if (!state?.ai?.enabled || geminiAI.isRateLimited()) { setForgePhase("failed"); return; }
+    setForgePhase("loading");
+    setForgeStep(0);
+    const stepTimer = setInterval(() => setForgeStep(s => Math.min(s + 1, 2)), 2500);
+    try {
+      const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
+      const { swapSystemQuests, countManualForgeTargets: countTargets } = await import('./data/questSwap.js');
+      const aiQuests = await generateDailySystemQuestsAsync(getDailySystemQuestCount(state), state, geminiAI.generateQuests);
+      if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) { setForgePhase("failed"); return; }
+      setState(currentState => {
+        if (countTargets(currentState.quests) === 0) return currentState;
+        // Credit NUR bei Erfolg verbrauchen (applyForgeUsage stempelt nur Free).
+        const swapped = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "manual" }) };
+        const next = applyForgeUsage(swapped, { premiumActive: premiumStatus?.active, today: getToday() });
+        persist(next);
+        return next;
+      });
+      setForgePhase("idle");
+      notify(tr("ai.recalibrated"), "success");
+    } catch {
+      setForgePhase("failed");
+    } finally {
+      clearInterval(stepTimer);
+    }
+  }, [forgeStatus.allowed, forgePhase, state, premiumStatus?.active, geminiAI, notify, tr, persist]);
 
   const canOfferPhotoVerification = useCallback((quest) => (
     aiGenerationStatus.allowed
@@ -1738,6 +1778,11 @@ function App({ initialHunterName, onLogout }) {
                   togglePinnedQuest={togglePinnedQuest}
                   habitDraft={habitDraft}
                   onHabitDraftHandled={clearHabitDraft}
+                  forgeStatus={forgeStatus}
+                  forgePhase={forgePhase}
+                  forgeStep={forgeStep}
+                  forgeTargets={forgeTargets}
+                  onForge={handleForge}
                 />
               )}
 

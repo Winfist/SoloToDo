@@ -1377,6 +1377,20 @@ export const de = {
     resetHint: "({symbol} zum sofortigen Zurücksetzen)",
     unknownError: "Unbekannter Fehler.",
     recalibrated: "⚡ Das System hat deine Quests neu kalibriert.",
+    forge: {
+      eyebrow: "SYSTEM-ANALYSE",
+      title: "Quest-Schmiede",
+      hint: "Das System analysiert Ziele, Verhalten und Feedback — und schmiedet deine heutigen Quests neu.",
+      cta: "SCHMIEDEN",
+      working: "LÄUFT…",
+      step1: "Profil lesen…",
+      step2: "Muster erkennen…",
+      step3: "Quests schmieden…",
+      locked: "Noch gesperrt: erreiche Level {level} und schließe {quests} Quests ab.",
+      usedToday: "Heute bereits geschmiedet — morgen wieder verfügbar.",
+      allDone: "Alle System-Quests erledigt — die Schmiede öffnet morgen wieder.",
+      failed: "Das System konnte keine Quests schmieden. Versuch es gleich nochmal.",
+    },
   },
   catalog: {
     categories: {

@@ -28,6 +28,7 @@ import { getQuestPresentation } from "../../data/questPresentation.js";
 import { useI18n } from "../i18n/I18nProvider.jsx";
 import QuestIntensityControl from "../QuestIntensityControl.jsx";
 import { SCREEN_TIME_ENABLED } from "../../data/featureFlags.js";
+import QuestForgeCard from "../QuestForgeCard.jsx";
 
 // ─── CSS KEYFRAMES for edit mode + carousel ──────────────────
 const EDIT_MODE_CSS = `
@@ -241,7 +242,12 @@ export default function DashboardView({
   setDailyFocusQuest,
   togglePinnedQuest,
   habitDraft,
-  onHabitDraftHandled
+  onHabitDraftHandled,
+  forgeStatus,
+  forgePhase,
+  forgeStep,
+  forgeTargets,
+  onForge
 }) {
   const { t, locale } = useI18n();
   const getUnlocks = _getUnlocksAtLevel || getUnlocksAtLevel;
@@ -980,6 +986,17 @@ export default function DashboardView({
                     }}
                   />
                 </div>
+              )}
+
+              {forgeStatus && (
+                <QuestForgeCard
+                  theme={theme}
+                  status={forgeStatus}
+                  phase={forgePhase}
+                  stepIndex={forgeStep}
+                  targets={forgeTargets}
+                  onForge={onForge}
+                />
               )}
 
               {/* ── QUEST LIST ── */}
