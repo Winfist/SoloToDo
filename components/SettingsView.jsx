@@ -1771,7 +1771,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           {can?.('ai_dynamic_quests') ? (
             <SettingRow label="Dynamische Quests" desc={premiumStatus.active ? "KI generiert tägliche System-Quests" : "Hunter Pro: personalisierte Daily Quests"} value={premiumStatus.active && (state.ai?.dynamicQuestsEnabled ?? true)} onChange={() => premiumStatus.active ? toggleAI("dynamicQuestsEnabled") : onOpenPremium?.("ai_dynamic_quests")} color="#22c55e" theme={theme} />
           ) : (
-            <SettingRow label="Dynamische Quests" desc="KI-basierte Quest-Generierung" disabled lockLevel={15} theme={theme} />
+            <SettingRow label="Dynamische Quests" desc="KI-basierte Quest-Generierung" disabled lockLevel={5} theme={theme} />
           )}
 
           {/* Master Switch */}

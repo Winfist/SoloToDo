@@ -1366,7 +1366,7 @@ export const en = {
       },
       tier5_intro: {
         title: "SHADOW AWAKENING",
-        text: "Level 15 reached. Shadow Army, Hunter Codex, and dynamic AI Quests have been unlocked.",
+        text: "Level 15 reached. Shadow Army and Hunter Codex have been unlocked.",
       },
       tier6_intro: {
         title: "C-RANK SURPASSED",

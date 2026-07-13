@@ -1366,7 +1366,7 @@ export const de = {
       },
       tier5_intro: {
         title: "SCHATTEN-ERWECKUNG",
-        text: "Level 15 erreicht. Shadow Army, Hunter Codex und dynamische KI-Quests sind freigeschaltet.",
+        text: "Level 15 erreicht. Shadow Army und Hunter Codex sind freigeschaltet.",
       },
       tier6_intro: {
         title: "C-RANG ÜBERSCHRITTEN",

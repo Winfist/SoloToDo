@@ -24,6 +24,7 @@ export const FEATURE_UNLOCKS = {
   vision_board:       { level: 5,  tier: 2, label: "Vision Board",     desc: "Manifestiere dein Schicksal" },
   focus_mode:         { level: 3,  tier: 1, label: "Focus Mode",       desc: "Tiefe Konzentration aktivieren" },
   ai_quest_desc:      { level: 5,  tier: 2, label: "KI Quest-Hilfe",   desc: "KI generiert Quest-Beschreibungen" },
+  ai_dynamic_quests:  { level: 5,  tier: 2, label: "KI-Quests",        desc: "KI generiert personalisierte Quests" },
 
   // ─── STUFE 3 — Level 8: Tracking & Routinen ────────────────
   achievements:       { level: 8,  tier: 3, label: "Achievements",     desc: "Meilensteine & Belohnungen" },
@@ -44,7 +45,6 @@ export const FEATURE_UNLOCKS = {
   // ─── STUFE 5 — Level 15: Schatten-Erweckung ────────────────
   shadow_army:        { level: 15, tier: 5, label: "Shadow Army",      desc: "Erwecke besiegte Gegner als Schatten" },
   codex:              { level: 15, tier: 5, label: "Hunter's Codex",   desc: "Verlorene Weisheiten entdecken" },
-  ai_dynamic_quests:  { level: 15, tier: 5, label: "KI-Quests",        desc: "KI generiert personalisierte Quests" },
 
   // ─── STUFE 6 — Level 21: C-Rang (Advanced) ─────────────────
   jobs:               { level: 21, tier: 6, label: "Jobs",             desc: "Hunter-Klassen & Spezialisierung" },
