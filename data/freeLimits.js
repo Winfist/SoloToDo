@@ -149,6 +149,43 @@ export function applyAIFreeGenerationUsage(state = {}, { premiumActive = false, 
   };
 }
 
+// ─── Schmiede (sichtbare KI-Quest-Generierung) ─────────────────────────────
+// Free = 1x/Tag OHNE Lebenszeit-Deckel — bewusst getrennt von den
+// interaktiven Free-Credits (aiFreeCreditsTotal). Earn-it-Gate (Lv3 +
+// 5 Quests) gilt fuer Free UND Pro: vorher fehlt dem KI das Material.
+export function getForgeStatus({ premiumActive = false, state = {}, today = "" } = {}) {
+  const level = Math.max(1, Number(state?.level) || 1);
+  const completedQuests = Math.max(
+    0,
+    Number(state?.totalQuestsCompleted) || 0,
+    Array.isArray(state?.completedQuests) ? state.completedQuests.length : 0
+  );
+  if (level < AI_FREE_TRIAL_REQUIREMENTS.minLevel) {
+    return { allowed: false, reason: "level", premiumActive };
+  }
+  if (completedQuests < AI_FREE_TRIAL_REQUIREMENTS.minCompletedQuests) {
+    return { allowed: false, reason: "quests", premiumActive };
+  }
+  if (premiumActive) return { allowed: true, reason: "premium", premiumActive };
+  const todayKey = String(today || state?.lastActiveDate || "");
+  if (todayKey && String(state?.ai?.lastForgeDate || "") === todayKey) {
+    return { allowed: false, reason: "daily", premiumActive };
+  }
+  return { allowed: true, reason: "available", premiumActive };
+}
+
+// Erfolgreiche Schmiede stempeln. Pro-Nutzung und Fehlschlaege stempeln nicht.
+export function applyForgeUsage(state = {}, { premiumActive = false, today = "" } = {}) {
+  if (premiumActive) return state;
+  return {
+    ...state,
+    ai: {
+      ...(state.ai || {}),
+      lastForgeDate: String(today || state?.lastActiveDate || ""),
+    },
+  };
+}
+
 // Pure per-feature quota status. `state` supplies the daily counter; `premiumActive` from caller.
 export function getQuotaStatus(featureKey, { premiumActive = false, state = {} } = {}) {
   const cfg = QUOTA_CONFIG[featureKey];
