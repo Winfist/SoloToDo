@@ -176,7 +176,9 @@ export function useGeminiAI(state) {
     setIsLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, "generateDynamicQuests");
+      // Gratis-Modelle brauchen real oft >70s (Callable-Default) — bis zum
+      // Function-Timeout (120s) warten statt kurz vor dem Ergebnis abzubrechen.
+      const fn = httpsCallable(functions, "generateDynamicQuests", { timeout: 120000 });
       const result = await fn(buildAIQuestRequest(state, language));
       return result.data; // { quests }
     } catch (err) {
@@ -268,7 +270,8 @@ export function useGeminiAI(state) {
     setIsLoading(true);
     setError(null);
     try {
-      const fn = httpsCallable(functions, "suggestGoals");
+      // Wie generateQuests: Gratis-Modelle + Retry brauchen mehr als die 70s Callable-Default.
+      const fn = httpsCallable(functions, "suggestGoals", { timeout: 120000 });
       const result = await fn({ profile: buildAIQuestProfile(state), language, ...(questionnaire ? { questionnaire } : {}) });
       return result.data; // { goals }
     } catch (err) {

@@ -325,21 +325,29 @@ exports.suggestGoals = onCall(CALL_OPTIONS, async (request) => {
   const safeProfile = sanitizeAIQuestProfile(request.data?.profile);
   const questionnaire = sanitizeQuestionnaire(request.data?.questionnaire);
   const prompt = SUGGEST_GOALS_PROMPT(safeProfile, language, questionnaire);
-  const raw = await callGemini(prompt);
-  const result = parseJSON(raw, { goals: [] });
-
   const allowedCategories = new Set(["fitness", "learning", "health", "productivity", "social"]);
-  const goals = (Array.isArray(result.goals) ? result.goals : [])
-    .map((g) => ({
-      title: String(g?.title || "").trim().slice(0, 140),
-      category: allowedCategories.has(g?.category) ? g.category : "productivity",
-      milestones: (Array.isArray(g?.milestones) ? g.milestones : [])
-        .map((m) => String(m || "").trim().slice(0, 140))
-        .filter(Boolean)
-        .slice(0, 5),
-    }))
-    .filter((g) => g.title)
-    .slice(0, 3);
+
+  // Gratis-Modelle liefern gelegentlich unparsebaren Output -> 1 Retry bei
+  // leerem Ergebnis (gleiches Muster wie generateDynamicQuests).
+  let goals = [];
+  for (let attempt = 0; attempt < 2 && goals.length === 0; attempt++) {
+    const raw = await callGemini(prompt);
+    const result = parseJSON(raw, { goals: [] });
+    goals = (Array.isArray(result.goals) ? result.goals : [])
+      .map((g) => ({
+        title: String(g?.title || "").trim().slice(0, 140),
+        category: allowedCategories.has(g?.category) ? g.category : "productivity",
+        milestones: (Array.isArray(g?.milestones) ? g.milestones : [])
+          .map((m) => String(m || "").trim().slice(0, 140))
+          .filter(Boolean)
+          .slice(0, 5),
+      }))
+      .filter((g) => g.title)
+      .slice(0, 3);
+    if (goals.length === 0) {
+      console.warn(`[suggestGoals] Versuch ${attempt + 1} lieferte keine parsebaren Ziele.`);
+    }
+  }
 
   return { goals };
 });
