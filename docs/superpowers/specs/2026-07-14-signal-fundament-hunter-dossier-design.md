@@ -14,11 +14,12 @@ Verhaltens:
 |---|--------|-----|
 | 1 | **Survivorship Bias:** Die KI sieht ausschließlich abgeschlossene Quests. Ignorierte System-Dailies werden beim Tagesreset kommentarlos gelöscht — kein Signal „3x vergeben, nie angefasst". Auch weggetauschte Schmiede-Quests hinterlassen keine Spur. | `hooks/useGameState.jsx:618`, `data/questSwap.js` |
 | 2 | **Ghost-Sessions unerfasst:** App geöffnet, nichts getan — das wertvollste Frühwarnsignal — existiert nirgends. Nur `lastActiveDate` + `lastInteractionTimeMs`. | `hooks/useGameState.jsx:571` |
-| 3 | **Vorhandene Daten ungenutzt:** `completedAtTime` wird gespeichert, `detectBestTime()` existiert fertig — wird aber nirgends aufgerufen. Wochentagsmuster werden nie ausgewertet. | `components/SystemCoach.jsx:206` |
+| 3 | **Zeitmuster doppelt tot:** `detectBestTime()` existiert fertig, wird aber nirgends aufgerufen — und seine Datenquelle `completedAtTime` wird nirgends geschrieben, nur gelesen. Wochentagsmuster werden nie ausgewertet. Die neuen Recorder stempeln die Abschlusszeit deshalb selbst (kein Feld-Nachrüsten nötig). | `components/SystemCoach.jsx:206` |
 | 4 | **Kein Langzeitgedächtnis:** `buildAIQuestProfile` sieht nur die letzten 8 Abschlüsse. Kein akkumuliertes Bild („bricht Meditation ab, liebt kurze Morgen-Quests"). | `data/aiQuestProfile.js:68` |
 | 5 | **Manuelle Ersetzungen laufen am Lernen vorbei:** `replaceSystemQuest` (Free 1x, Pro 4x/Tag) ist der explizite „will ich nicht"-Moment — wird aber nirgends als Präferenz erfasst. | `hooks/useGameState.jsx:1294` |
 | 6 | **Kein direktes Gefallen-Feedback:** Chips gibt es nur beim Abschluss. Für Quests, die man NICHT macht (der wichtigste Fall), existiert kein Feedback-Kanal. | `data/questFeedback.js` |
 | 7 | **Kein Nerv-Schutz:** Coach-Interventionen haben weder gemeinsames Tagesbudget noch Wirkungsmessung noch Backoff. Wer sie ignoriert, bekommt sie trotzdem weiter. | `components/SystemCoach.jsx` |
+| 8 | **Coach-Pfad nervt schon heute strukturell (verifiziert im Review):** Der Anzeige-Effekt läuft alle 30 Min ohne jedes Tages-Dedup — dieselbe Top-Meldung feuert mehrfach täglich (habitReminder ab 20 Uhr bis zu 8x, streakDanger ab 18 Uhr im 30-Min-Takt). Zudem wird das `_setLastWeeklyPathReport`-Flag vom Aufrufer nie persistiert → `state.lastWeeklyPathReport` bleibt für immer leer und der Weekly Report feuert montags alle 30 Minuten. | `solo-leveling-v5.jsx:1010`, `components/SystemCoach.jsx:294` |
 
 ## 2. Entscheidungen (mit User geklärt, 14.07.)
 
@@ -231,15 +232,26 @@ In `data/questPoolWeighting.js` + `data/helpers.js`:
 3. **Template-Cooldown:** `generateDailySystemQuests` filtert Templates aus
    `getTemplateCooldowns` aus dem `validPool` (3x vergeben + 0x erledigt ODER
    1x disliked → 14 Tage Pause).
+4. **Ersetzungs-Kandidaten lernen mit:** `getReplacementCandidates`
+   (`hooks/useGameState.jsx:1245`) schließt Cooldown-Templates aus und
+   bevorzugt beim Auffüllen `likedCategories` — sonst bietet ausgerechnet der
+   Dislike-Ersetzen-Flow gesperrte oder ungeliebte Kandidaten an.
 
 ## 9. Coach-Policy: anpassen statt drängeln
 
-Neues pures Modul `data/coachPolicy.js`, angewendet in `runCoachChecks`
-(`components/SystemCoach.jsx`):
+Neues pures Modul `data/coachPolicy.js`, angewendet im bestehenden
+Anzeige-Effekt (`solo-leveling-v5.jsx:1010–1027`, `checkCoach`). Der Effekt
+persistiert künftig `coachSignals` nach jedem gezeigten Push — heute
+persistiert er gar nichts, weshalb auch der Weekly-Report-Bug aus Befund 8
+existiert; die Policy behebt ihn nebenbei. Da die Anzeige nur `lines[0]` als
+Toast zeigt, müssen sanfte Textvarianten immer die ERSTE Zeile betreffen.
 
 1. **Budget:** pro Tag max. 1 Meldung vom Typ „coaching" + 1 vom Typ
    „warning". Celebrations sind immer erlaubt. `streakDanger` zählt als
-   Warnung (der wertvollste Push bleibt also erhalten).
+   Warnung (der wertvollste Push bleibt also erhalten). Weil das Budget über
+   `coachSignals.daily` persistiert ist, ist damit auch das
+   30-Minuten-Re-Fire (Befund 8) behoben: Was gezeigt wurde, ist für den Tag
+   verbraucht.
 2. **Mute/Backoff:** Interventionstypen mit aktivem `mutedUntil` werden
    gefiltert (Abschnitt 3.3). Celebrations sind nie mutebar.
 3. **Haltungs-Modulation** (`getCoachPosture`):
@@ -287,7 +299,8 @@ Verhaltensprofil und nimmt dem Sammeln den Creepy-Faktor. Feedback-Chips und
 ## 12. Storage, Merge, Migration
 
 - `data/defaultState.js`: alle drei Felder mit leeren Defaults.
-- `data/storage.js` (Merge-Pfad ~Z. 497/876): Zähler sind monoton →
+- `data/storage.js` (Merge-Pfad ~Z. 497/876, nutzt die vorhandenen Helfer
+  `mergeNumericMaps`/`unionValues`/`mergeArrayByKey`): Zähler sind monoton →
   punktweise `Math.max` je Feld; `days`-Ringpuffer als Key-Union mit
   punktweisem `Math.max`, danach auf 14 Tage schneiden; `recentExpired`/
   `recentDisliked` vereinigt nach `title+date`, neueste zuerst, Deckel 10;
@@ -302,7 +315,8 @@ Verhaltensprofil und nimmt dem Sammeln den Creepy-Faktor. Feedback-Chips und
   Verhalten bei kaputtem State).
 - `test-hunter-dossier.mjs`: Selektoren inkl. aller Gates, Posture-Grenzwerte.
 - `test-coach-policy.mjs`: Budget, Mute/Backoff (3x ignoriert → 7 Tage),
-  Posture-Modulation, Celebrations-Ausnahme, Outcome-Auflösung im Rollover.
+  Posture-Modulation, Celebrations-Ausnahme, Outcome-Auflösung im Rollover,
+  Re-Fire-Szenario (zweiter Check-Lauf am selben Tag zeigt nichts mehr).
 - `test-quest-pool-weighting.mjs` erweitern: Dämpfung, Like-Boost, Stepdown,
   Cooldown (inkl. Dislike-Pfad).
 - `test-state-merge.mjs` erweitern: Max-Merge aller drei Felder.
