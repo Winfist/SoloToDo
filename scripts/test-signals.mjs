@@ -72,6 +72,11 @@ let sw = {};
 for (let i = 1; i <= 20; i++) sw = recordAppOpen(sw, `2026-07-${String(i).padStart(2, "0")}`);
 check(Object.keys(sw.sessionSignals.days).length === 14 && !sw.sessionSignals.days["2026-07-01"], "Ringpuffer exakt 14 Tage");
 
+// Rueckdatierter Aufruf (Geraetezeit rueckwaerts) darf neuere Tage nicht loeschen
+let sBack = recordAppOpen({}, "2026-07-15");
+sBack = recordAppOpen(sBack, "2026-07-10");
+check(sBack.sessionSignals.days["2026-07-15"]?.opens === 1 && sBack.sessionSignals.days["2026-07-10"]?.opens === 1, "rueckdatierter Aufruf loescht neuere Tage nicht");
+
 // ── Coach: shown/Budget-Zaehler + Outcome-Aufloesung + Backoff ──
 let sc = recordInterventionShown({}, "habitReminder", "coaching", "2026-07-15");
 check(sc.coachSignals.byType.habitReminder.shown === 1, "shown gezaehlt");

@@ -212,10 +212,12 @@ function getSessionSignals(state) {
 }
 
 function trimSessionDays(days, today) {
-  const cutoff = addDays(today, -(SESSION_WINDOW_DAYS - 1));
+  const keys = Object.keys(days);
+  const latest = keys.length > 0 ? keys.reduce((max, key) => (key > max ? key : max), today) : today;
+  const cutoff = addDays(latest, -(SESSION_WINDOW_DAYS - 1));
   const next = {};
   for (const [key, value] of Object.entries(days)) {
-    if (key >= cutoff && key <= today) next[key] = value;
+    if (key >= cutoff && key <= latest) next[key] = value;
   }
   return next;
 }
