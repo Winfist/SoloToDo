@@ -31,6 +31,7 @@ import { getGoalQuestSlots } from '../data/freeLimits.js';
 import { getDailyQuestCreationStatus, getPremiumStatus, redeemBetaPremiumCode, canPurchaseExtraSlot, getQuotaStatus, canEquipRarity, canAddNamedShadow, canSwitchJob, applyAIFreeGenerationUsage } from '../data/premium.js';
 import { configureIap, getCustomerInfo, purchasePlan as iapPurchasePlan, restorePurchases as iapRestore, mapCustomerInfoToPremium, addCustomerInfoListener, isIapSupported } from '../services/iapService.js';
 import { getStateLocale, translate } from '../data/i18n.js';
+import { getTemplateCooldowns, getLikedCategories } from '../data/hunterDossier.js';
 import { getCategoryLabel } from '../data/localizedGameData.js';
 import {
   getQuestKey,
@@ -1257,6 +1258,8 @@ export function useGameState(initialHunterName, onLogout) {
     const activeKeys = new Set((current.quests || []).filter(q => !q.completed && q.id !== questId).map(getQuestKey));
     const blockedKeys = new Set([currentKey, ...(status.replacedKeys || [])]);
     const level = current.level || 1;
+    const cooldowns = getTemplateCooldowns(current, today);
+    const likedCategories = getLikedCategories(current);
 
     const pool = getSystemQuestPoolForLocale(locale)
       .filter(template => level >= (template.minLevel || 1))
@@ -1270,7 +1273,8 @@ export function useGameState(initialHunterName, onLogout) {
       }))
       .filter(template => {
         const key = getQuestKey(template);
-        return key !== currentKey && !activeKeys.has(key) && !blockedKeys.has(key);
+        return key !== currentKey && !activeKeys.has(key) && !blockedKeys.has(key)
+          && !cooldowns.has(template.templateId);
       });
 
     const addUnique = (target, source) => {
@@ -1287,6 +1291,7 @@ export function useGameState(initialHunterName, onLogout) {
     const candidates = [];
     addUnique(candidates, pool.filter(t => t.category === quest.category && t.difficulty === quest.difficulty));
     addUnique(candidates, pool.filter(t => t.category === quest.category));
+    addUnique(candidates, pool.filter(t => likedCategories.includes(t.category)));
     addUnique(candidates, pool);
     return candidates.slice(0, 3);
   }, [state]);

@@ -5,6 +5,7 @@
 
 import { getFocusStats } from "./lifeDomains.js";
 import { GOAL_CATEGORY_TO_STAT } from "./goalQuests.js";
+import { getAvoidedCategories, getLikedCategories } from "./hunterDossier.js";
 
 const CATS = ["str", "int", "vit", "agi", "cha"];
 
@@ -26,6 +27,14 @@ export function computeCategoryWeights(state = {}) {
     if (!quest?.category || weights[quest.category] == null) continue;
     if (quest.categoryFeedback === "more") weights[quest.category] += 1;
     if (quest.categoryFeedback === "less") weights[quest.category] = Math.max(0.25, weights[quest.category] - 1);
+  }
+
+  // Dossier-Signale (Spec §8.1): Meidung daempft, Vorliebe verstaerkt.
+  for (const cat of getAvoidedCategories(state)) {
+    if (weights[cat] != null) weights[cat] = Math.max(0.25, weights[cat] * 0.5);
+  }
+  for (const cat of getLikedCategories(state)) {
+    if (weights[cat] != null) weights[cat] += 1;
   }
 
   const stats = state.stats || {};

@@ -12,6 +12,7 @@ import { getQuestKey, normalizeQuestForStorage } from "./questUtils.js";
 import { getFocusStats } from "./lifeDomains.js";
 import { SCREEN_TIME_ENABLED } from "./featureFlags.js";
 import { computeCategoryWeights, orderPoolByWeight } from "./questPoolWeighting.js";
+import { getTemplateCooldowns, getAvoidedCategories } from "./hunterDossier.js";
 
 // ─── JOB XP CONFIG ────────────────────────────────────────────
 export const JOB_XP_SOURCES = {
@@ -172,8 +173,11 @@ export function generateDailySystemQuests(count = 3, state = null) {
   const today = getToday();
   const activeQuestKeys = new Set((state?.quests || []).filter(q => !q.completed).map(getQuestKey));
 
-  // Pool nach Level filtern
-  const validPool = getSystemQuestPoolForLocale(locale).filter(q => level >= (q.minLevel || 1));
+  // Pool nach Level filtern + Dossier-Cooldowns raus (Spec §8.3)
+  const cooldowns = getTemplateCooldowns(state || {}, today);
+  const validPool = getSystemQuestPoolForLocale(locale)
+    .filter(q => level >= (q.minLevel || 1))
+    .filter(q => !cooldowns.has(q.templateId || q.id));
 
   // Finde stärkste Defizite
   let lowestStat = null;
@@ -190,7 +194,12 @@ export function generateDailySystemQuests(count = 3, state = null) {
   const generatedIds = new Set();
 
   if (needsDeficiencyFocus && lowestStat && selected.length < count) {
-    const penaltyPool = validPool.filter(q => q.category === lowestStat);
+    const avoided = getAvoidedCategories(state || {});
+    let penaltyPool = validPool.filter(q => q.category === lowestStat);
+    if (avoided.includes(lowestStat)) {
+      const easyPool = penaltyPool.filter(q => q.difficulty === "easy");
+      if (easyPool.length > 0) penaltyPool = easyPool; // Stepdown statt Verzicht
+    }
     if (penaltyPool.length > 0) {
       const penaltyQ = penaltyPool[Math.floor(Math.random() * penaltyPool.length)];
       generatedIds.add(penaltyQ.id);
