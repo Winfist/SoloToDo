@@ -6,7 +6,7 @@
 import { register } from "node:module";
 register("./state-merge-loader.mjs", import.meta.url);
 
-const { resolveStateConflict } = await import("../data/storage.js");
+const { resolveStateConflict, mergeStateProgress } = await import("../data/storage.js");
 
 let failures = 0;
 const assert = (condition, message) => {
@@ -67,6 +67,45 @@ const resolvedReversed = resolveStateConflict(
 const reversedIds = (resolvedReversed.data?.quests || []).map(q => q.id);
 assert(reversedIds.includes("sys-today") && !reversedIds.includes("sys-june-1"),
   "recency decides which side's system quests survive, regardless of local/cloud role");
+
+// ── Signal-Felder: punktweises Math.max, Union, Deckel ──
+// mergeStateProgress is the internal merge function resolveStateConflict
+// delegates to; it is exercised directly here for tighter control over the
+// signal-field fixtures than going through the full conflict-resolution gate.
+const sigA = {
+  questSignals: {
+    byTemplate: { t1: { assigned: 3, completed: 1, expired: 2, swapped: 0, liked: 1, disliked: 0, lastAssignedAt: "2026-07-10", lastDislikedAt: null } },
+    byCategory: { str: { assigned: 3, completed: 1, expired: 2, liked: 1, disliked: 0 } },
+    completionHours: { morgen: 2, mittag: 0, abend: 1, nacht: 0 },
+    completionWeekdays: [1, 0, 0, 0, 0, 0, 0],
+    recentExpired: [{ title: "A", category: "str", date: "2026-07-10" }],
+    recentDisliked: [],
+  },
+  sessionSignals: { days: { "2026-07-10": { opens: 2, actions: 1 } } },
+  coachSignals: { byType: { inactivity: { shown: 2, actedSameDay: 1, consecutiveIgnored: 1, mutedUntil: null } }, daily: { date: "2026-07-10", coachingShown: 1, warningShown: 0 }, pendingOutcome: [{ type: "inactivity", date: "2026-07-10" }] },
+};
+const sigB = {
+  questSignals: {
+    byTemplate: { t1: { assigned: 5, completed: 1, expired: 4, swapped: 1, liked: 1, disliked: 1, lastAssignedAt: "2026-07-12", lastDislikedAt: "2026-07-12" } },
+    byCategory: { str: { assigned: 5, completed: 1, expired: 4, liked: 1, disliked: 1 } },
+    completionHours: { morgen: 1, mittag: 3, abend: 1, nacht: 0 },
+    completionWeekdays: [0, 2, 0, 0, 0, 0, 0],
+    recentExpired: [{ title: "B", category: "int", date: "2026-07-12" }],
+    recentDisliked: [{ questId: "x", title: "C", category: "vit", note: "zu lang", date: "2026-07-12" }],
+  },
+  sessionSignals: { days: { "2026-07-10": { opens: 1, actions: 2 }, "2026-07-12": { opens: 1, actions: 0 } } },
+  coachSignals: { byType: { inactivity: { shown: 3, actedSameDay: 1, consecutiveIgnored: 2, mutedUntil: "2026-07-19" } }, daily: { date: "2026-07-12", coachingShown: 1, warningShown: 1 }, pendingOutcome: [{ type: "inactivity", date: "2026-07-12" }] },
+};
+const mergedSig = mergeStateProgress(sigA, sigB);
+assert(mergedSig.questSignals.byTemplate.t1.assigned === 5 && mergedSig.questSignals.byTemplate.t1.liked === 1, "byTemplate punktweise Max");
+assert(mergedSig.questSignals.byTemplate.t1.lastAssignedAt === "2026-07-12" && mergedSig.questSignals.byTemplate.t1.lastDislikedAt === "2026-07-12", "Datums-Max");
+assert(mergedSig.questSignals.completionHours.morgen === 2 && mergedSig.questSignals.completionHours.mittag === 3, "Buckets Max");
+assert(mergedSig.questSignals.completionWeekdays[0] === 1 && mergedSig.questSignals.completionWeekdays[1] === 2, "Wochentage Max");
+assert(mergedSig.questSignals.recentExpired.length === 2, "recentExpired Union");
+assert(mergedSig.sessionSignals.days["2026-07-10"].opens === 2 && mergedSig.sessionSignals.days["2026-07-10"].actions === 2, "Session-Tage punktweise Max");
+assert(mergedSig.coachSignals.byType.inactivity.mutedUntil === "2026-07-19", "mutedUntil Max");
+assert(mergedSig.coachSignals.pendingOutcome.length === 2, "pendingOutcome Union");
+assert(mergeStateProgress({}, sigB).questSignals.byTemplate.t1.assigned === 5, "einseitig fehlend -> uebernommen");
 
 if (failures > 0) {
   console.error(`\n${failures} assertion(s) failed.`);

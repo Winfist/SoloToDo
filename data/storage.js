@@ -240,6 +240,39 @@ function mergeNumericMaps(primary = {}, fallback = {}, mode = "max") {
   return merged;
 }
 
+const maxDateString = (a, b) => (String(a || "") >= String(b || "") ? a || null : b || null);
+
+function mergeCounterMapDeep(primary = {}, fallback = {}) {
+  const keys = new Set([...Object.keys(primary || {}), ...Object.keys(fallback || {})]);
+  const result = {};
+  for (const key of keys) {
+    const left = primary?.[key] || {};
+    const right = fallback?.[key] || {};
+    const fields = new Set([...Object.keys(left), ...Object.keys(right)]);
+    const entry = {};
+    for (const field of fields) {
+      entry[field] = field === "lastAssignedAt" || field === "lastDislikedAt" || field === "mutedUntil"
+        ? maxDateString(left[field], right[field])
+        : Math.max(toFiniteNumber(left[field]), toFiniteNumber(right[field]));
+    }
+    result[key] = entry;
+  }
+  return result;
+}
+
+function mergeRecentList(primary = [], fallback = [], cap = 10) {
+  const seen = new Set();
+  const merged = [];
+  for (const entry of [...(primary || []), ...(fallback || [])]) {
+    if (!entry?.title) continue;
+    const key = `${entry.title}|${entry.date || ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(entry);
+  }
+  return merged.sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))).slice(0, cap);
+}
+
 function completedQuestKey(quest) {
   return quest?.id
     ? `${quest.id}:${quest.completedAt || quest.completedAtMs || ""}`
@@ -385,7 +418,7 @@ function withoutStarterQuestProgress(state) {
   };
 }
 
-function mergeStateProgress(primary, fallback) {
+export function mergeStateProgress(primary, fallback) {
   if (!primary || !fallback) return primary || fallback;
 
   const primaryHasEstablishedProgress = hasNonStarterProgress(primary, primary.completedQuests);
@@ -496,6 +529,25 @@ function mergeStateProgress(primary, fallback) {
     streak: Math.max(toFiniteNumber(primary.streak), toFiniteNumber(fallback.streak)),
     lastActiveDate: String(primary.lastActiveDate || "") >= String(fallback.lastActiveDate || "") ? primary.lastActiveDate : fallback.lastActiveDate,
     dailyUserQuestsCreated: Math.max(toFiniteNumber(primary.dailyUserQuestsCreated), toFiniteNumber(fallback.dailyUserQuestsCreated), userQuestsToday),
+    questSignals: {
+      byTemplate: mergeCounterMapDeep(primary.questSignals?.byTemplate, fallback.questSignals?.byTemplate),
+      byCategory: mergeCounterMapDeep(primary.questSignals?.byCategory, fallback.questSignals?.byCategory),
+      completionHours: mergeNumericMaps(primary.questSignals?.completionHours, fallback.questSignals?.completionHours),
+      completionWeekdays: Array.from({ length: 7 }, (_, i) => Math.max(
+        toFiniteNumber(primary.questSignals?.completionWeekdays?.[i]),
+        toFiniteNumber(fallback.questSignals?.completionWeekdays?.[i])
+      )),
+      recentExpired: mergeRecentList(primary.questSignals?.recentExpired, fallback.questSignals?.recentExpired),
+      recentDisliked: mergeRecentList(primary.questSignals?.recentDisliked, fallback.questSignals?.recentDisliked),
+    },
+    sessionSignals: { days: mergeCounterMapDeep(primary.sessionSignals?.days, fallback.sessionSignals?.days) },
+    coachSignals: {
+      byType: mergeCounterMapDeep(primary.coachSignals?.byType, fallback.coachSignals?.byType),
+      daily: String(primary.coachSignals?.daily?.date || "") >= String(fallback.coachSignals?.daily?.date || "")
+        ? { date: null, coachingShown: 0, warningShown: 0, ...(primary.coachSignals?.daily || {}) }
+        : { date: null, coachingShown: 0, warningShown: 0, ...(fallback.coachSignals?.daily || {}) },
+      pendingOutcome: mergeArrayByKey(primary.coachSignals?.pendingOutcome, fallback.coachSignals?.pendingOutcome, item => `${item?.type}|${item?.date}`),
+    },
     dailyUserXP: Math.max(toFiniteNumber(primary.dailyUserXP), toFiniteNumber(fallback.dailyUserXP)),
     extraDailySlots: Math.max(toFiniteNumber(primary.extraDailySlots), toFiniteNumber(fallback.extraDailySlots)),
     dungeons: mergeArrayByKey(primary.dungeons, fallback.dungeons, item => item?.instanceId || item?.id),
@@ -874,6 +926,9 @@ export function migrateState(oldState) {
   s.achievements = { ...DEFAULT_STATE.achievements, ...(oldState.achievements || {}) };
   s.hiddenQuests = { ...DEFAULT_STATE.hiddenQuests, ...(oldState.hiddenQuests || {}) };
   s.questReplacements = { ...DEFAULT_STATE.questReplacements, ...(oldState.questReplacements || {}) };
+  s.questSignals = { ...DEFAULT_STATE.questSignals, ...(oldState.questSignals || {}) };
+  s.sessionSignals = { ...DEFAULT_STATE.sessionSignals, ...(oldState.sessionSignals || {}) };
+  s.coachSignals = { ...DEFAULT_STATE.coachSignals, ...(oldState.coachSignals || {}) };
   s.questPlanning = {
     ...DEFAULT_QUEST_PLANNING,
     ...(oldState.questPlanning || {}),
