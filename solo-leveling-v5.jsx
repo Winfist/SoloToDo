@@ -13,6 +13,7 @@ const MultiplayerMode = React.lazy(() => import("./MultiplayerMode.jsx"));
 import TutorialProvider, { useTutorial } from "./components/tutorial/TutorialProvider.jsx";
 const AnalyticsDashboard = React.lazy(() => import("./components/AnalyticsDashboard.jsx"));
 import { runCoachChecks, enrichCoachMessagesAsync } from "./components/SystemCoach.jsx";
+import { pickCoachMessage } from './data/coachPolicy.js';
 import { NotificationBanner } from "./components/NotificationManager.jsx";
 import GoalFramework from "./components/GoalFramework.jsx";
 import CalendarSchedule from "./components/CalendarSchedule.jsx";
@@ -95,7 +96,7 @@ import { getQuestVerificationPolicy } from './data/questVerification.js';
 import { getForgeStatus, applyForgeUsage } from './data/freeLimits.js';
 import { countManualForgeTargets } from './data/questSwap.js';
 import { getCrystallizationSuggestion, markCrystallizationChecked, declineCrystallization } from './data/goalCrystallization.js';
-import { recordQuestsSwapped, recordQuestsAssigned } from './data/signals.js';
+import { recordQuestsSwapped, recordQuestsAssigned, recordInterventionShown } from './data/signals.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
   "quest_title_input",
@@ -1017,13 +1018,20 @@ function App({ initialHunterName, onLogout }) {
   useEffect(() => {
     if (!state || loading) return;
     const checkCoach = async () => {
+      const today = getToday();
       let messages = runCoachChecks(state, prevStateRef.current);
-      if (messages.length > 0 && premiumStatus?.active && can('ai_coach') && state?.ai?.dynamicMessagesEnabled && state?.ai?.enabled && !geminiAI.isRateLimited()) {
-        messages = await enrichCoachMessagesAsync(messages, state, geminiAI.generateSystemMsg);
-      }
-      if (messages.length > 0) {
-        const top = messages[0];
-        notify(`${top.icon} ${top.lines[0]}`, top.type === "warning" ? "warning" : "info");
+      const picked = pickCoachMessage(state, messages, today);
+      if (picked) {
+        if (premiumStatus?.active && can('ai_coach') && state?.ai?.dynamicMessagesEnabled && state?.ai?.enabled && !geminiAI.isRateLimited()) {
+          const enriched = await enrichCoachMessagesAsync([picked], state, geminiAI.generateSystemMsg);
+          if (enriched[0]) Object.assign(picked, enriched[0]);
+        }
+        notify(`${picked.icon} ${picked.lines[0]}`, picked.type === "warning" ? "warning" : "info");
+        let stamped = recordInterventionShown(state, picked.checkId || "unknown", picked.type === "warning" ? "warning" : "coaching", today);
+        // Bugfix (Spec Befund 8): Weekly-Report-Flag wurde nie persistiert.
+        if (picked._setLastWeeklyPathReport) stamped = { ...stamped, lastWeeklyPathReport: picked._setLastWeeklyPathReport };
+        setState(stamped);
+        persist(stamped);
       }
       prevStateRef.current = { ...state };
     };

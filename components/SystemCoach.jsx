@@ -3,6 +3,7 @@ import { getToday, getLocalDateKey } from "../data/dateUtils.js";
 import { getStateLocale, translate } from "../data/i18n.js";
 import { getFocusStats } from "../data/lifeDomains.js";
 import { getQuestPlanningSnapshot } from "../data/questPlanning.js";
+import { getCoachPosture } from "../data/hunterDossier.js";
 
 function ct(state, key, params = {}) {
     return translate(getStateLocale(state), key, params);
@@ -34,6 +35,7 @@ export function checkInactivity(state) {
     const days = Math.floor(hoursSince / 24);
     return {
         type: "coaching",
+        checkId: "inactivity",
         icon: "⚠",
         iconSrc: NAV_ICONS.events,
         title: ct(state, "systemCoach.anomalyTitle"),
@@ -56,6 +58,7 @@ export function checkOverexertion(state) {
     if (recent < 20) return null;
     return {
         type: "coaching",
+        checkId: "overexertion",
         icon: "🛡️",
         iconSrc: STAT_ICONS.vit,
         title: ct(state, "systemCoach.overloadTitle"),
@@ -76,6 +79,7 @@ export function checkQuestOverload(state, prevState) {
     const overloaded = current.level === "overload";
     return {
         type: overloaded ? "warning" : "coaching",
+        checkId: "questOverload",
         icon: overloaded ? "!" : "LOG",
         iconSrc: NAV_ICONS.events,
         title: overloaded ? (isEnglish ? "QUEST LOG PROTECTION" : "QUEST-LOG SCHUTZ") : (isEnglish ? "QUEST LOG REVIEW" : "QUEST-LOG PRÜFEN"),
@@ -106,6 +110,7 @@ export function checkImbalance(state) {
 
     return {
         type: "coaching",
+        checkId: "imbalance",
         icon: "⚖️",
         iconSrc: STAT_ICONS.int,
         title: ct(state, "systemCoach.imbalanceTitle"),
@@ -132,6 +137,7 @@ export function checkStreakDanger(state) {
     const streakBonus = Math.min(streak, 30);
     return {
         type: "warning",
+        checkId: "streakDanger",
         icon: "🔥",
         iconSrc: STAT_ICONS.str,
         title: ct(state, "systemCoach.streakDangerTitle"),
@@ -155,6 +161,7 @@ export function checkHabitReminder(state) {
     if (unfinished === 0) return null;
     return {
         type: "coaching",
+        checkId: "habitReminder",
         icon: "🔄",
         iconSrc: HABIT_ICONS.weekday,
         title: ct(state, "systemCoach.habitOpenTitle"),
@@ -164,6 +171,24 @@ export function checkHabitReminder(state) {
             ct(state, "systemCoach.smallActionLine"),
         ],
         priority: 1,
+    };
+}
+
+export function checkOpenedButIdle(state) {
+    const today = getToday();
+    const day = state.sessionSignals?.days?.[today];
+    if (!day || (day.opens || 0) < 3 || (day.actions || 0) > 0) return null;
+    return {
+        type: "coaching",
+        checkId: "openedButIdle",
+        icon: "◈",
+        iconSrc: NAV_ICONS.dashboard,
+        title: ct(state, "systemCoach.openedButIdleTitle"),
+        lines: [
+            ct(state, "systemCoach.openedButIdleLine1"),
+            ct(state, "systemCoach.openedButIdleLine2"),
+        ],
+        priority: 2,
     };
 }
 
@@ -189,6 +214,7 @@ export function checkCelebrations(state, prevState) {
             if (c.check(state) && !c.check(prevState)) {
                 return {
                     type: "celebration",
+                    checkId: "celebration",
                     icon: c.icon,
                     iconSrc: c.iconSrc,
                     title: ct(state, "systemCoach.systemMessageTitle"),
@@ -286,6 +312,7 @@ export function checkWeeklyPathReport(state) {
 
     return {
         type: "coaching",
+        checkId: "weeklyPathReport",
         icon: "📊",
         iconSrc: NAV_ICONS.analytics,
         title: "WEEKLY PATH REPORT",
@@ -306,6 +333,7 @@ export function runCoachChecks(state, prevState) {
         checkInactivity,
         checkOverexertion,
         checkImbalance,
+        checkOpenedButIdle,
         checkWeeklyPathReport,
     ];
 
@@ -323,7 +351,23 @@ export function runCoachChecks(state, prevState) {
     // Sort by priority (highest first)
     messages.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-    return messages;
+    // Celebrations always lead: pickCoachMessage returns the FIRST surviving
+    // message, and celebrations are one-shot state transitions — if a
+    // budget-passing coaching message sat in front of one, the celebration
+    // would be shadowed and lost for good.
+    const celebrations = messages.filter(m => m.type === "celebration");
+    const rest = messages.filter(m => m.type !== "celebration");
+    let sorted = [...celebrations, ...rest];
+
+    // Struggling-Posture: erste Zeile (= Toast-Text) wird sanft, plus Mini-Einstieg.
+    if (getCoachPosture(state) === "struggling") {
+        const SOFT_KEYS = { inactivity: "systemCoach.inactivitySoft", habitReminder: "systemCoach.habitReminderSoft", openedButIdle: "systemCoach.openedButIdleSoft" };
+        sorted = sorted.map(msg => SOFT_KEYS[msg.checkId]
+            ? { ...msg, lines: [ct(state, SOFT_KEYS[msg.checkId]), ...msg.lines.slice(1), ct(state, "systemCoach.miniStep")] }
+            : msg);
+    }
+
+    return sorted;
 }
 
 // ── AI Enrichment (optional, async) ─────────────────────────
