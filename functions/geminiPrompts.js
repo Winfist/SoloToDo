@@ -203,6 +203,10 @@ RULES (clarity ALWAYS beats drama - Nexus tone stays terse and direct, but instr
 - "estimatedMinutes": realistic minutes (5-120), integer.
 - At least 1 Quest must train the weakest stat.${goalRule}
 - Feedback in recentCompletedQuests: if "too_easy" appears often, raise difficulty; "too_hard" -> lower it; categoryFeedback "less" -> avoid that category; "more" -> prefer it.
+- behaviorSignals in the profile: never repeat quests whose titles appear in recentDislikedTitles or recentExpiredTitles, or whose category is in avoidCategories, in the same form - offer lighter or shorter variants instead.
+- userNotes are the strongest preference source after the questionnaire: concrete wishes there outrank derived patterns.
+- If behaviorSignals.bestTime is set, phrase at least 1 quest to fit that time window.
+- If behaviorSignals.ghostDaysLast14 >= 3: at least 1 quest with an entry barrier of 10 minutes or less.
 - Use own Quest patterns as signals, but do not repeat their titles exactly.
 - Never mention profile analysis or private metadata in a Quest.
 
@@ -230,6 +234,10 @@ REGELN (Verstaendlichkeit schlaegt IMMER Drama - der Nexus-Ton bleibt knapp und 
 - "estimatedMinutes": realistische Minuten (5-120), ganze Zahl.
 - Mindestens 1 Quest trainiert den schwaechsten Stat.${goalRule}
 - Feedback in recentCompletedQuests: haeufig "too_easy" -> Schwierigkeit anheben; "too_hard" -> absenken; categoryFeedback "less" -> Kategorie meiden; "more" -> Kategorie bevorzugen.
+- behaviorSignals im Profil: Quests, deren Titel in recentDislikedTitles oder recentExpiredTitles stehen oder deren Kategorie in avoidCategories liegt, nicht in gleicher Form wiederholen - biete stattdessen leichtere oder kuerzere Varianten an.
+- userNotes sind nach dem Fragebogen die staerkste Praeferenzquelle: konkrete Wuensche darin haben Vorrang vor abgeleiteten Mustern.
+- Wenn behaviorSignals.bestTime gesetzt ist, formuliere mindestens 1 Quest so, dass sie in dieses Zeitfenster passt.
+- Wenn behaviorSignals.ghostDaysLast14 >= 3: mindestens 1 Quest mit Einstiegshuerde von maximal 10 Minuten.
 - Nutze eigene Quest-Muster als Signale, aber wiederhole ihre Titel nicht exakt.
 - Erwaehne niemals Profilanalyse oder private Metadaten in einer Quest.
 

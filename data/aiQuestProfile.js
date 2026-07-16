@@ -1,4 +1,5 @@
 import { DOMAIN_IDS, getFocusStats } from "./lifeDomains.js";
+import { getDossierSummary } from "./hunterDossier.js";
 
 const CATEGORY_IDS = ["str", "int", "vit", "agi", "cha"];
 const DIFFICULTIES = ["easy", "normal", "hard", "boss"];
@@ -112,6 +113,21 @@ export function buildAIQuestProfile(state = {}) {
     .filter((habit) => habit.title)
     .slice(0, 4);
 
+  const dossier = getDossierSummary(state);
+  const behaviorSignals = {
+    bestTime: dossier.bestTime?.bucket || null,
+    categoryCompletionRates: Object.fromEntries(
+      Object.entries(dossier.categoryCompletionRates).map(([cat, rate]) => [cat, Math.round(rate * 100) / 100])
+    ),
+    avoidCategories: dossier.avoidCategories,
+    reliableCategories: dossier.reliableCategories,
+    likedCategories: dossier.likedCategories,
+    ghostDaysLast14: dossier.ghost?.ghostDays || 0,
+    recentExpiredTitles: (state.questSignals?.recentExpired || []).map((e) => cleanText(e?.title, 140)).filter(Boolean).slice(0, 5),
+    recentDislikedTitles: (state.questSignals?.recentDisliked || []).map((e) => cleanText(e?.title, 140)).filter(Boolean).slice(0, 5),
+    userNotes: (state.questSignals?.recentDisliked || []).map((e) => cleanText(e?.note, 140)).filter(Boolean).slice(0, 3),
+  };
+
   return {
     lifeDomains,
     focusStats: getFocusStats(lifeDomains),
@@ -125,6 +141,7 @@ export function buildAIQuestProfile(state = {}) {
       totalSessions: cleanInteger(state.focus?.totalSessions, 100000),
       recentMinutes: getRecentFocusMinutes(state.focus),
     },
+    behaviorSignals,
   };
 }
 

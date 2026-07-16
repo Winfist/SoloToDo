@@ -63,5 +63,17 @@ check(sanitizeQuestionnaire({ timeBudget: "999", burningDomain: "" }) === null, 
 check(sanitizeQuestionnaire({ threeMonthWish: "x".repeat(1000) }).threeMonthWish.length <= 240, "sanitize: Freitext gedeckelt");
 check(sanitizeQuestionnaire(null) === null, "sanitize: null -> null");
 
+// ── behaviorSignals-Regeln im Quest-Prompt ──
+const sigPrompt = GENERATE_QUESTS_PROMPT({ str: 1 }, 3, "str", [], {
+  behaviorSignals: { bestTime: "morgen", avoidCategories: ["vit"], recentDislikedTitles: ["Meditiere 20 Minuten"], userNotes: ["lieber draussen"], ghostDaysLast14: 4 },
+}, "de");
+check(sigPrompt.includes("recentDislikedTitles") || sigPrompt.includes("behaviorSignals"), "Signals landen im Profil-JSON");
+check(sigPrompt.includes("nicht in gleicher Form wiederholen"), "Dislike/Expired-Regel de");
+check(sigPrompt.includes("staerkste Praeferenzquelle") || sigPrompt.includes("stärkste Präferenzquelle"), "Notiz-Regel de");
+check(sigPrompt.includes("bestTime"), "bestTime-Regel referenziert Feld");
+check(sigPrompt.includes("10 Minuten"), "Ghost-Einstiegsregel de");
+const sigPromptEn = GENERATE_QUESTS_PROMPT({ str: 1 }, 3, "str", [], { behaviorSignals: { ghostDaysLast14: 4 } }, "en");
+check(sigPromptEn.includes("strongest preference source"), "Notiz-Regel en");
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ test-gemini-prompts: alles gruen");

@@ -93,6 +93,24 @@ function sanitizeAIQuestProfile(profile) {
     .filter((habit) => habit.title)
     .slice(0, 4);
 
+  const rawSignals = value.behaviorSignals && typeof value.behaviorSignals === "object" ? value.behaviorSignals : {};
+  const TIME_BUCKETS = new Set(["morgen", "mittag", "abend", "nacht"]);
+  const cleanCategoryList = (list) => [...new Set(Array.isArray(list) ? list : [])]
+    .filter((cat) => CATEGORY_ID_SET.has(cat)).slice(0, CATEGORY_IDS.length);
+  const behaviorSignals = {
+    bestTime: TIME_BUCKETS.has(rawSignals.bestTime) ? rawSignals.bestTime : null,
+    categoryCompletionRates: Object.fromEntries(CATEGORY_IDS
+      .filter((cat) => Number.isFinite(Number(rawSignals.categoryCompletionRates?.[cat])))
+      .map((cat) => [cat, Math.min(1, Math.max(0, Number(rawSignals.categoryCompletionRates[cat])))])),
+    avoidCategories: cleanCategoryList(rawSignals.avoidCategories),
+    reliableCategories: cleanCategoryList(rawSignals.reliableCategories),
+    likedCategories: cleanCategoryList(rawSignals.likedCategories),
+    ghostDaysLast14: clampInteger(rawSignals.ghostDaysLast14, 0, 14),
+    recentExpiredTitles: uniqueSafeTexts(rawSignals.recentExpiredTitles, 5, 140),
+    recentDislikedTitles: uniqueSafeTexts(rawSignals.recentDislikedTitles, 5, 140),
+    userNotes: uniqueSafeTexts(rawSignals.userNotes, 3, 140),
+  };
+
   return {
     lifeDomains,
     focusStats,
@@ -106,6 +124,7 @@ function sanitizeAIQuestProfile(profile) {
       totalSessions: clampInteger(value.focusSummary?.totalSessions, 0, 100000),
       recentMinutes: clampInteger(value.focusSummary?.recentMinutes, 0, 10080),
     },
+    behaviorSignals,
   };
 }
 

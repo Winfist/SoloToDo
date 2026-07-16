@@ -137,4 +137,28 @@ assert.equal(generatedQuests[0].difficulty, "normal");
 assert.equal(generatedQuests[0].desc.length, 500);
 assert.deepEqual(generatedQuests[0].subQuests, [{ title: "Step" }]);
 
+// ── behaviorSignals (Spec §7) ──
+const sigDays = {};
+for (let i = 10; i <= 17; i++) sigDays[`2026-07-${i}`] = { opens: 1, actions: i % 2 === 0 ? 0 : 1 };
+const sigState = {
+  questSignals: {
+    byCategory: { vit: { assigned: 10, completed: 1, expired: 9, liked: 0, disliked: 0 } },
+    completionHours: { morgen: 8, mittag: 1, abend: 1, nacht: 0 },
+    completionWeekdays: [0, 0, 0, 0, 0, 0, 0],
+    recentExpired: Array.from({ length: 8 }, (_, i) => ({ title: `Verfallen ${i}`, category: "vit", date: "2026-07-10" })),
+    recentDisliked: [
+      { questId: "a", title: "Meditiere 20 Minuten", category: "vit", note: "Meditation ist nichts fuer mich", date: "2026-07-11" },
+      { questId: "b", title: "Kalt duschen", category: "vit", note: "", date: "2026-07-10" },
+    ],
+  },
+  sessionSignals: { days: sigDays },
+};
+const sigProfile = buildAIQuestProfile(sigState);
+assert(sigProfile.behaviorSignals.bestTime === "morgen", "bestTime im Profil");
+assert(sigProfile.behaviorSignals.avoidCategories.includes("vit"), "avoidCategories im Profil");
+assert(sigProfile.behaviorSignals.ghostDaysLast14 === 4, "ghostDays im Profil");
+assert(sigProfile.behaviorSignals.recentExpiredTitles.length === 5, "expiredTitles Deckel 5");
+assert(sigProfile.behaviorSignals.userNotes[0] === "Meditation ist nichts fuer mich" && sigProfile.behaviorSignals.userNotes.length === 1, "nur nicht-leere Notizen, max 3");
+assert(buildAIQuestProfile({}).behaviorSignals.bestTime === null, "leerer State -> neutrale Signals");
+
 console.log("test-ai-quest-profile: all assertions passed.");
