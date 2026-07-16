@@ -284,6 +284,8 @@ function App({ initialHunterName, onLogout }) {
     deleteQuest,
     getReplacementCandidates,
     replaceSystemQuest,
+    rateQuest,
+    addDislikeNote,
     createQuest,
     createQuestsFromInputs,
     snoozeReminder,
@@ -1521,6 +1523,14 @@ function App({ initialHunterName, onLogout }) {
                   };
                   setState(updated);
                   persist(updated);
+                }}
+                onRateQuest={rateQuest}
+                onDislikeNote={addDislikeNote}
+                onReplaceFromDislike={(quest) => {
+                  const candidates = getReplacementCandidates(quest.id);
+                  if (candidates.length > 0 && replaceSystemQuest(quest.id, candidates[0])) {
+                    setDetailQuest(null);
+                  }
                 }}
                 completedQuests={state.completedQuests || []}
               />

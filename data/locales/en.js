@@ -1984,6 +1984,15 @@ export const en = {
     shadowRegressionActive: "SHADOW REGRESSION: Redemption Quests available",
     streakLine: "Streak: {streak} days - keep going!",
   },
+  questRating: {
+    prompt: "DOES THIS QUEST FIT?",
+    like: "Like",
+    dislike: "Not for me",
+    replaceCta: "Replace",
+    noteCta: "Note",
+    notePlaceholder: "Why doesn't it fit? (optional)",
+    noteSave: "Save",
+  },
   widgets: {
     messages: [
       "The Shadows obey you, Hunter. Show them your will.",

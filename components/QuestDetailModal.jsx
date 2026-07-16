@@ -44,6 +44,9 @@ export default function QuestDetailModal({
   onDeleteAttachment,
   onSaveNotes,
   onCreateHabitFromQuest,
+  onRateQuest,
+  onDislikeNote,
+  onReplaceFromDislike,
   completedQuests = [], // Pass from parent for history
   gameState, // NEW: for tactical hints
   readOnly = false
@@ -54,6 +57,8 @@ export default function QuestDetailModal({
   const [attachmentPreviews, setAttachmentPreviews] = useState({});
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachmentError, setAttachmentError] = useState("");
+  const [noteDraft, setNoteDraft] = useState("");
+  const [showNoteField, setShowNoteField] = useState(false);
   const attachmentInputRef = useRef(null);
 
   // Video player states & refs
@@ -128,6 +133,8 @@ export default function QuestDetailModal({
 
   const isBoss = quest.difficulty === 'boss';
   const isSystemQuest = quest.isSystem === true;
+  const showRating = Boolean(quest.isSystem && !quest.completed && !readOnly && onRateQuest);
+  const rating = quest.userRating || null;
 
   const subQuests = quest.subQuests || [];
   const completedSubs = subQuests.filter(sq => sq.completed).length;
@@ -480,6 +487,51 @@ export default function QuestDetailModal({
                   <div style={{ fontSize: 13, color: "#e2e8f0", lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>
                     {getQuestDescription(quest)}
                   </div>
+                </div>
+              )}
+
+              {/* Quest Rating */}
+              {showRating && (
+                <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(148,163,184,0.06)", border: "1px solid rgba(148,163,184,0.15)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 10, color: "#94a3b8", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5, flex: 1 }}>{t("questRating.prompt")}</span>
+                    <button className="press-feedback" onClick={() => onRateQuest(quest.id, rating === "liked" ? null : "liked")}
+                      style={{ padding: "6px 10px", borderRadius: 8, fontSize: 12, cursor: "pointer", background: rating === "liked" ? "rgba(34,197,94,0.18)" : "rgba(255,255,255,0.04)", color: rating === "liked" ? "#4ade80" : "#94a3b8", border: `1px solid ${rating === "liked" ? "#22c55e55" : "rgba(148,163,184,0.2)"}` }}>
+                      ▲ {t("questRating.like")}
+                    </button>
+                    <button className="press-feedback" onClick={() => { onRateQuest(quest.id, rating === "disliked" ? null : "disliked"); setShowNoteField(false); }}
+                      style={{ padding: "6px 10px", borderRadius: 8, fontSize: 12, cursor: "pointer", background: rating === "disliked" ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.04)", color: rating === "disliked" ? "#f87171" : "#94a3b8", border: `1px solid ${rating === "disliked" ? "#ef444455" : "rgba(148,163,184,0.2)"}` }}>
+                      ▼ {t("questRating.dislike")}
+                    </button>
+                  </div>
+                  {rating === "disliked" && (
+                    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {onReplaceFromDislike && (
+                          <button className="press-feedback" onClick={() => onReplaceFromDislike(quest)}
+                            style={{ padding: "6px 10px", borderRadius: 8, fontSize: 11, cursor: "pointer", background: "rgba(99,102,241,0.12)", color: "#a5b4fc", border: "1px solid #6366f155" }}>
+                            {t("questRating.replaceCta")}
+                          </button>
+                        )}
+                        <button className="press-feedback" onClick={() => setShowNoteField(v => !v)}
+                          style={{ padding: "6px 10px", borderRadius: 8, fontSize: 11, cursor: "pointer", background: "rgba(255,255,255,0.04)", color: "#94a3b8", border: "1px solid rgba(148,163,184,0.2)" }}>
+                          {t("questRating.noteCta")}
+                        </button>
+                      </div>
+                      {showNoteField && (
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <input value={noteDraft} maxLength={140} onChange={(e) => setNoteDraft(e.target.value)}
+                            placeholder={t("questRating.notePlaceholder")}
+                            style={{ flex: 1, padding: "7px 10px", borderRadius: 8, fontSize: 12, background: "rgba(10,12,24,0.6)", color: "#e2e8f0", border: "1px solid rgba(148,163,184,0.2)" }} />
+                          <button className="press-feedback" disabled={!noteDraft.trim()}
+                            onClick={() => { onDislikeNote?.(quest.id, noteDraft); setNoteDraft(""); setShowNoteField(false); }}
+                            style={{ padding: "6px 10px", borderRadius: 8, fontSize: 11, cursor: "pointer", background: "rgba(99,102,241,0.12)", color: "#a5b4fc", border: "1px solid #6366f155" }}>
+                            {t("questRating.noteSave")}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

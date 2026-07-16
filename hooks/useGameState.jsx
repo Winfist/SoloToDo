@@ -1357,6 +1357,25 @@ export function useGameState(initialHunterName, onLogout) {
     return true;
   }, [state, persist, notify]);
 
+  const rateQuest = useCallback((questId, rating) => {
+    const current = stateRef.current || state;
+    if (!current) return;
+    let next = applyQuestRating(current, questId, rating, getToday());
+    if (next === current) return;
+    if (rating) next = recordUserAction(next, getToday());
+    setState(next);
+    persist(next);
+  }, [state, persist]);
+
+  const addDislikeNote = useCallback((questId, note) => {
+    const current = stateRef.current || state;
+    if (!current) return;
+    const next = applyDislikeNote(current, questId, note);
+    if (next === current) return;
+    setState(next);
+    persist(next);
+  }, [state, persist]);
+
   const resetQuestForm = useCallback(() => {
     setQTitle("");
     setQDescription("");
@@ -2920,6 +2939,8 @@ export function useGameState(initialHunterName, onLogout) {
     deleteQuest,
     getReplacementCandidates,
     replaceSystemQuest,
+    rateQuest,
+    addDislikeNote,
     createQuest,
     createQuestsFromInputs,
     snoozeReminder,
