@@ -60,5 +60,36 @@ for (let i = 0; i < 15; i++) {
   check(!roll.some(q => q.templateId === blockedId), `Cooldown-Template nie vergeben (Lauf ${i})`);
 }
 
+// ── Stepdown: gemiedene Defizit-Kategorie liefert nur easy-Templates (Task 4) ──
+// int @ Level 5 hat 8 easy + 3 normal Templates im Pool (minLevel <= 5) -> echter Stepdown-Effekt pruefbar.
+const stepdownState = {
+  level: 5,
+  stats: { str: 5, int: 0, vit: 5, agi: 5, cha: 5 }, // int = eindeutig schwaechster Stat
+  questSignals: { byCategory: {
+    int: { assigned: 10, completed: 1, expired: 9, liked: 0, disliked: 0 }, // Rate 0.1 < 0.25 -> gemieden
+  } },
+};
+for (let i = 0; i < 10; i++) {
+  const quests = generateDailySystemQuests(4, stepdownState);
+  const deficiencyQuests = quests.filter(q => q.xpMult === 1.5);
+  check(deficiencyQuests.length === 1, `Stepdown: genau eine Defizit-Quest (Lauf ${i})`);
+  const dq = deficiencyQuests[0];
+  check(dq?.category === "int", `Stepdown: Defizit-Quest bleibt in der schwaechsten Kategorie (Lauf ${i})`);
+  check(dq?.difficulty === "easy", `Stepdown: gemiedene Kategorie liefert nur easy-Templates (Lauf ${i})`);
+}
+
+// ── Negativkontrolle: ohne gemiedene Kategorie ist die Defizit-Quest NICHT auf easy beschraenkt ──
+const noAvoidState = {
+  level: 5,
+  stats: { str: 5, int: 0, vit: 5, agi: 5, cha: 5 },
+  questSignals: { byCategory: {} },
+};
+for (let i = 0; i < 10; i++) {
+  const quests = generateDailySystemQuests(4, noAvoidState);
+  const deficiencyQuests = quests.filter(q => q.xpMult === 1.5);
+  check(deficiencyQuests.length === 1, `Ohne Stepdown: genau eine Defizit-Quest (Lauf ${i})`);
+  check(deficiencyQuests[0]?.category === "int", `Ohne Stepdown: Defizit-Quest bleibt in der schwaechsten Kategorie (Lauf ${i})`);
+}
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ test-quest-pool-weighting: alles gruen");
