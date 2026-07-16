@@ -20,6 +20,7 @@ import { getStateLocale, translate } from '../data/i18n.js';
 import { getQuestVerificationPolicy } from '../data/questVerification.js';
 import { getYesterdayKey } from '../data/dateUtils.js';
 import { isPremiumActive, canAddShadow, canAddNamedShadow } from '../data/premium.js';
+import { recordQuestCompleted, recordUserAction } from "../data/signals.js";
 
 function ltState(state, key, params = {}) {
   return translate(getStateLocale(state), key, params);
@@ -390,6 +391,8 @@ export function buildCompleteQuestState(questId, state, processAchievements, gem
         : (state.seasons?.seasonalCompletions || [])
     }
   };
+  next = recordQuestCompleted(next, quest, Date.now());
+  next = recordUserAction(next, today);
 
   // Hidden quest triggers → Sofort-Achievements (kein Board-Eintrag)
   const hqCandidates = isFeatureUnlocked('hidden_quests', next.level) ? checkHiddenQuestTriggers(next) : [];

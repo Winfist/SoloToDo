@@ -95,6 +95,7 @@ import { getQuestVerificationPolicy } from './data/questVerification.js';
 import { getForgeStatus, applyForgeUsage } from './data/freeLimits.js';
 import { countManualForgeTargets } from './data/questSwap.js';
 import { getCrystallizationSuggestion, markCrystallizationChecked, declineCrystallization } from './data/goalCrystallization.js';
+import { recordQuestsSwapped, recordQuestsAssigned } from './data/signals.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
   "quest_title_input",
@@ -841,7 +842,10 @@ function App({ initialHunterName, onLogout }) {
       setState(currentState => {
         if (countTargets(currentState.quests) === 0) return currentState;
         // Credit NUR bei Erfolg verbrauchen (applyForgeUsage stempelt nur Free).
-        const swappedState = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "manual" }) };
+        const replacedManual = currentState.quests.filter(q => q.isSystem && q.type === "daily" && !q.completed);
+        let swappedState = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "manual" }) };
+        swappedState = recordQuestsSwapped(swappedState, replacedManual, getToday());
+        swappedState = recordQuestsAssigned(swappedState, aiQuests, getToday());
         const next = applyForgeUsage(swappedState, { premiumActive: premiumStatus?.active, today: getToday() });
         persist(next);
         swapped = true;
@@ -925,7 +929,10 @@ function App({ initialHunterName, onLogout }) {
         // Konservativ: hat der User heute schon eine Daily angefasst, still lassen.
         if (!canAutoSwapSystemQuests(currentState.quests)) return currentState;
         localStorage.setItem(doneKey, today);
-        const updated = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "auto" }) };
+        const replacedAuto = currentState.quests.filter(q => q.isSystem && q.type === "daily" && !q.completed);
+        let updated = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "auto" }) };
+        updated = recordQuestsSwapped(updated, replacedAuto, getToday());
+        updated = recordQuestsAssigned(updated, aiQuests, getToday());
         persist(updated);
         return updated;
       });

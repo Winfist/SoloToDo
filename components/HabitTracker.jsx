@@ -4,6 +4,7 @@ import { calculateLevelUp } from "../data/constants";
 import { HABIT_ICONS, QUEST_ICONS, NAV_ICONS, STAT_ICONS, BACKGROUNDS } from "../data/icons.js";
 import { getToday, getLocalDateKey, getYesterdayKey } from "../data/dateUtils.js";
 import { getPremiumStatus } from "../data/premium.js";
+import { recordUserAction } from "../data/signals.js";
 
 // ═══════════════════════════════════════════════════════════════
 // HABIT TRACKER – Recurring Habits with per-Habit Streaks & Timer
@@ -699,7 +700,9 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
             return q;
         }) : state.quests;
 
-        persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpGain));
+        let nextState = calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpGain);
+        nextState = recordUserAction(nextState, today);
+        persist(nextState);
         setCelebration({ habit: updatedHabit, xpGain, streak: updatedHabit?.currentStreak || 1 });
     }, [habits, state, persist, today]);
 
@@ -733,7 +736,9 @@ export default function HabitTracker({ state, persist, notify, theme, onModalOpe
             return q;
         }) : state.quests;
 
-        persist(calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpToGain));
+        let nextState = calculateLevelUp({ ...state, habits: updated, quests: updatedQuests }, xpToGain);
+        nextState = recordUserAction(nextState, today);
+        persist(nextState);
         if (value >= habit.targetCount && !habit.history?.[today]?.completed) {
             const done = updated.find(h => h.id === habitId);
             setCelebration({ habit: done, xpGain: xpToGain, streak: done?.currentStreak || 1 });

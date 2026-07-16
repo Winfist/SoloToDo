@@ -41,6 +41,7 @@ import {
   wasTitleCompletedRecently
 } from '../data/questUtils.js';
 import { getSystemQuestPoolForLocale } from '../data/localizedQuestPool.js';
+import { recordQuestsAssigned, recordQuestsExpired, recordQuestsSwapped, recordAppOpen, recordUserAction, resolveInterventionOutcomes, applyQuestRating, applyDislikeNote } from '../data/signals.js';
 import {
   cleanupQuestAttachmentBlobsForState,
   getQuestAttachmentReferenceSignature
@@ -577,6 +578,7 @@ export function useGameState(initialHunterName, onLogout) {
             s.restBuff = { active: false, date: null };
           }
           s.lastInteractionTimeMs = Date.now();
+          Object.assign(s, recordAppOpen(s, getToday()));
 
           // Local state belongs to this user ─ preserve it as-is.
 
@@ -616,6 +618,10 @@ export function useGameState(initialHunterName, onLogout) {
             s.quests = s.quests?.map(q => q.type === "daily" && !q.isSystem ? { ...q, completed: false } : q) || [];
             // BUG FIX: Keep redemption quests alive if shadow regression is still active
             const regressionActive = s.shadowRegression?.active;
+            // Signal: alle offenen System-Dailies des Vortags verfallen jetzt (Spec §4)
+            const expiredSystemDailies = (s.quests || []).filter(q => q && q.isSystem && q.type === "daily" && !q.completed);
+            Object.assign(s, recordQuestsExpired(s, expiredSystemDailies, today));
+            Object.assign(s, resolveInterventionOutcomes(s, today));
             s.quests = (s.quests || []).filter(q => shouldRetainQuestAtReset(q, { regressionActive }));
             // ── Systemzeichen: mark ONE forgotten own quest as today's system
             // call (bonus XP, top of loadout). It SUBSTITUTES a pool quest —
@@ -648,6 +654,7 @@ export function useGameState(initialHunterName, onLogout) {
               ? (comebackQuest ? [comebackQuest] : [])
               : generateDailySystemQuests(Math.max(0, getDailySystemQuestCount(s) - (markCandidate ? 1 : 0)), s);
             s.quests = [...s.quests, ...newSysQuests];
+            Object.assign(s, recordQuestsAssigned(s, newSysQuests, today));
             // ── Ziel-Quest-Slot (Paket B): 1 (Pro: 2) Quest aus den eigenen Zielen.
             // Läuft bewusst auch an Comeback-Tagen — der persönliche Anker bleibt.
             if (isFeatureUnlocked('goals', s.level || 1)) {
@@ -655,6 +662,7 @@ export function useGameState(initialHunterName, onLogout) {
               const goalGen = generateGoalQuests(s, { limit: goalSlots });
               if (goalGen.quests.length > 0) {
                 s.quests = [...s.quests, ...goalGen.quests];
+                Object.assign(s, recordQuestsAssigned(s, goalGen.quests, today));
                 s.goalQuestPlanning = goalGen.planning;
                 trackEvent('goal_quest_assigned', { count: goalGen.quests.length, slots: goalSlots });
               } else {
@@ -1331,7 +1339,7 @@ export function useGameState(initialHunterName, onLogout) {
     });
     const replacementKey = getQuestKey(replacement);
 
-    persist({
+    let nextState = {
       ...current,
       quests: (current.quests || []).map(q => q.id === questId ? replacement : q),
       reminders: (current.reminders || []).filter(r => r.questId !== questId),
@@ -1340,7 +1348,11 @@ export function useGameState(initialHunterName, onLogout) {
         used: status.used + 1,
         replacedKeys: [...new Set([...(status.replacedKeys || []), sourceKey, replacementKey])],
       },
-    });
+    };
+    nextState = recordQuestsSwapped(nextState, [quest], today, { implicitDislike: true });
+    nextState = recordQuestsAssigned(nextState, [replacement], today);
+    nextState = recordUserAction(nextState, today);
+    persist(nextState);
     notify(`Quest ersetzt: ${replacement.title}`, "success");
     return true;
   }, [state, persist, notify]);
@@ -1698,7 +1710,7 @@ export function useGameState(initialHunterName, onLogout) {
     if (quests.length === 0) return [];
     const pool = state.customQuestPool || { templates: [], favorites: [], recentlyUsed: [], collections: [] };
     const recent = [...quests.map(q => q.title), ...(pool.recentlyUsed || []).filter(t => !quests.some(q => q.title === t))].slice(0, 10);
-    const nextState = {
+    let nextState = {
       ...state,
       quests: [...(state.quests || []), ...quests],
       reminders: [...(state.reminders || []), ...reminders],
@@ -1706,6 +1718,7 @@ export function useGameState(initialHunterName, onLogout) {
       customQuestPool: { ...pool, recentlyUsed: recent },
       ...(options.source === "scan" ? { ai: { ...(state.ai || {}), scannedTasks: ((state.ai?.scannedTasks || 0) + 1) } } : {}),
     };
+    nextState = recordUserAction(nextState, getToday());
     const suggestQuestLog = getQuestPlanningSnapshot(state).loadout.length >= 3;
     persist(nextState);
     if (suggestQuestLog) {
@@ -1876,6 +1889,7 @@ export function useGameState(initialHunterName, onLogout) {
       nextState.habits = [...(state.habits || []), linkedHabit];
     }
 
+    nextState = recordUserAction(nextState, getToday());
     const suggestQuestLog = getQuestPlanningSnapshot(state).loadout.length >= 3;
     persist(nextState);
     if (suggestQuestLog) {
@@ -1929,7 +1943,9 @@ export function useGameState(initialHunterName, onLogout) {
     }
     const totalSteps = 3;
     const firstQuest = normalizeQuestForStorage(generateChainedQuest(title, category, difficulty, 1, totalSteps, options.desc || ""));
-    persist({ ...state, quests: [...state.quests, firstQuest], dailyUserQuestsCreated: bypassDailyLimit ? questLimit.createdCount : questLimit.createdCount + 1 });
+    let nextState = { ...state, quests: [...state.quests, firstQuest], dailyUserQuestsCreated: bypassDailyLimit ? questLimit.createdCount : questLimit.createdCount + 1 };
+    nextState = recordUserAction(nextState, getToday());
+    persist(nextState);
     notify(ltState(state, "quests.chainStarted", { steps: totalSteps }), "info");
   }, [state, persist, notify]);
 
@@ -1958,6 +1974,7 @@ export function useGameState(initialHunterName, onLogout) {
     // totalXpEarned already accumulated by calculateLevelUp above
 
     setXpFloats(prev => [...prev, { id: genId(), amount: subQuestXp, ts: Date.now() }]);
+    nextState = recordUserAction(nextState, getToday());
     persist(nextState);
     notify(ltState(state, "quests.subQuestCompleted", { title: subQuest.title, xp: subQuestXp }), "success");
     try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) { }
@@ -1995,7 +2012,7 @@ export function useGameState(initialHunterName, onLogout) {
       t.id === template.id ? { ...t, usageCount: (t.usageCount || 0) + 1 } : t
     );
 
-    persist({
+    let nextState = {
       ...state,
       quests: [...state.quests, quest],
       dailyUserQuestsCreated: createdCount + 1,
@@ -2004,7 +2021,9 @@ export function useGameState(initialHunterName, onLogout) {
         templates: updatedTemplates,
         recentlyUsed: [template.title, ...(pool.recentlyUsed || []).filter(t => t !== template.title)].slice(0, 10),
       },
-    });
+    };
+    nextState = recordUserAction(nextState, getToday());
+    persist(nextState);
     notify(ltState(state, "quests.templateCreated", { title: template.title }), "success");
   }, [state, persist, notify]);
 
@@ -2147,6 +2166,7 @@ export function useGameState(initialHunterName, onLogout) {
     const { nextState: afterAch, newAchievements } = processAchievementsPure(next);
     next = afterAch;
 
+    next = recordUserAction(next, getToday());
     persist(next);
     setActiveDungeon(null);
 
