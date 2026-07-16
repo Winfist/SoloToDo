@@ -1015,25 +1015,37 @@ function App({ initialHunterName, onLogout }) {
 
   // ─ Adaptive System Coach: periodic intervention checks ─
   const prevStateRef = useRef(null);
+  // Bugfix (Review: stale closure in checkCoach): checkCoach must read the LIVE
+  // state via a ref, not the `state` value closed over when the effect's deps
+  // last changed. Without this, a full setState(stamped)/persist(stamped) below
+  // silently reverts any progress made since this closure was captured (or
+  // during the up-to-3s enrichCoachMessagesAsync await).
+  const coachStateRef = useRef(state);
+  useEffect(() => { coachStateRef.current = state; }, [state]);
   useEffect(() => {
     if (!state || loading) return;
     const checkCoach = async () => {
       const today = getToday();
-      let messages = runCoachChecks(state, prevStateRef.current);
-      const picked = pickCoachMessage(state, messages, today);
+      const current = coachStateRef.current;
+      if (!current) return;
+      const messages = runCoachChecks(current, prevStateRef.current);
+      const picked = pickCoachMessage(current, messages, today);
       if (picked) {
-        if (premiumStatus?.active && can('ai_coach') && state?.ai?.dynamicMessagesEnabled && state?.ai?.enabled && !geminiAI.isRateLimited()) {
-          const enriched = await enrichCoachMessagesAsync([picked], state, geminiAI.generateSystemMsg);
+        if (premiumStatus?.active && can('ai_coach') && current?.ai?.dynamicMessagesEnabled && current?.ai?.enabled && !geminiAI.isRateLimited()) {
+          const enriched = await enrichCoachMessagesAsync([picked], current, geminiAI.generateSystemMsg);
           if (enriched[0]) Object.assign(picked, enriched[0]);
         }
         notify(`${picked.icon} ${picked.lines[0]}`, picked.type === "warning" ? "warning" : "info");
-        let stamped = recordInterventionShown(state, picked.checkId || "unknown", picked.type === "warning" ? "warning" : "coaching", today);
+        // Nach dem await frisch lesen: nichts ueberschreiben, was waehrenddessen passiert ist.
+        const latest = coachStateRef.current || current;
+        let stamped = recordInterventionShown(latest, picked.checkId || "unknown", picked.type === "warning" ? "warning" : "coaching", today);
         // Bugfix (Spec Befund 8): Weekly-Report-Flag wurde nie persistiert.
         if (picked._setLastWeeklyPathReport) stamped = { ...stamped, lastWeeklyPathReport: picked._setLastWeeklyPathReport };
         setState(stamped);
         persist(stamped);
+        coachStateRef.current = stamped;
       }
-      prevStateRef.current = { ...state };
+      prevStateRef.current = { ...coachStateRef.current };
     };
     // Run after 2 min delay on load, then every 30 min
     const initial = setTimeout(checkCoach, 120000);
