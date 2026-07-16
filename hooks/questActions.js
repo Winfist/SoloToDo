@@ -499,6 +499,8 @@ export function buildCompleteEmergencyQuestState(eq, state, processAchievements,
       ? { ai: { ...(next.ai || {}), verifiedQuests: (next.ai?.verifiedQuests || 0) + 1 } }
       : {})
   };
+  next = recordQuestCompleted(next, eq, Date.now());
+  next = recordUserAction(next, getToday());
   const { nextState: afterAch, newAchievements } = processAchievements(next);
   next = afterAch;
 

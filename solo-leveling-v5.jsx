@@ -835,14 +835,14 @@ function App({ initialHunterName, onLogout }) {
     const stepTimer = setInterval(() => setForgeStep(s => Math.min(s + 1, 2)), 2500);
     try {
       const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
-      const { swapSystemQuests, countManualForgeTargets: countTargets } = await import('./data/questSwap.js');
+      const { swapSystemQuests, countManualForgeTargets: countTargets, getSwappedQuests } = await import('./data/questSwap.js');
       const aiQuests = await generateDailySystemQuestsAsync(getDailySystemQuestCount(state), state, geminiAI.generateQuests);
       if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) { setForgePhase("failed"); return; }
       let swapped = false;
       setState(currentState => {
         if (countTargets(currentState.quests) === 0) return currentState;
         // Credit NUR bei Erfolg verbrauchen (applyForgeUsage stempelt nur Free).
-        const replacedManual = currentState.quests.filter(q => q.isSystem && q.type === "daily" && !q.completed);
+        const replacedManual = getSwappedQuests(currentState.quests, aiQuests, { mode: "manual" });
         let swappedState = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "manual" }) };
         swappedState = recordQuestsSwapped(swappedState, replacedManual, getToday());
         swappedState = recordQuestsAssigned(swappedState, aiQuests, getToday());
@@ -922,14 +922,14 @@ function App({ initialHunterName, onLogout }) {
     const timer = setTimeout(async () => {
       localStorage.setItem(attemptsKey, String(attempts + 1));
       const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
-      const { canAutoSwapSystemQuests, swapSystemQuests } = await import('./data/questSwap.js');
+      const { canAutoSwapSystemQuests, swapSystemQuests, getSwappedQuests } = await import('./data/questSwap.js');
       const aiQuests = await generateDailySystemQuestsAsync(getDailySystemQuestCount(state), state, geminiAI.generateQuests);
       if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) return; // kein KI-Ergebnis -> Guard NICHT setzen
       setState(currentState => {
         // Konservativ: hat der User heute schon eine Daily angefasst, still lassen.
         if (!canAutoSwapSystemQuests(currentState.quests)) return currentState;
         localStorage.setItem(doneKey, today);
-        const replacedAuto = currentState.quests.filter(q => q.isSystem && q.type === "daily" && !q.completed);
+        const replacedAuto = getSwappedQuests(currentState.quests, aiQuests, { mode: "auto" });
         let updated = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "auto" }) };
         updated = recordQuestsSwapped(updated, replacedAuto, getToday());
         updated = recordQuestsAssigned(updated, aiQuests, getToday());

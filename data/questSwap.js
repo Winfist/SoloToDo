@@ -27,6 +27,14 @@ export function countManualForgeTargets(quests = []) {
   return (quests || []).filter((quest) => isPoolDaily(quest) && !isTouched(quest)).length;
 }
 
+// Liefert exakt die Quests, die swapSystemQuests im jeweiligen Modus entfernt —
+// fuer die Signal-Erfassung an den Aufrufstellen (kein Re-Deriving dort).
+export function getSwappedQuests(quests = [], aiQuests = [], { mode = "auto" } = {}) {
+  const list = quests || [];
+  if (mode === "auto") return list.filter(isPoolDaily);
+  return list.filter((quest) => isPoolDaily(quest) && !isTouched(quest)).slice(0, (aiQuests || []).length);
+}
+
 export function swapSystemQuests(quests = [], aiQuests = [], { mode = "auto" } = {}) {
   const list = quests || [];
   const incomingAll = aiQuests || [];
