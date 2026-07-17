@@ -850,7 +850,7 @@ function App({ initialHunterName, onLogout }) {
         const replacedManual = getSwappedQuests(currentState.quests, aiQuests, { mode: "manual" });
         let swappedState = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "manual" }) };
         swappedState = recordQuestsSwapped(swappedState, replacedManual, getToday());
-        swappedState = recordQuestsAssigned(swappedState, aiQuests, getToday());
+        swappedState = recordQuestsAssigned(swappedState, aiQuests.slice(0, replacedManual.length), getToday());
         const next = applyForgeUsage(swappedState, { premiumActive: premiumStatus?.active, today: getToday() });
         persist(next);
         swapped = true;
@@ -1040,14 +1040,17 @@ function App({ initialHunterName, onLogout }) {
           if (enriched[0]) Object.assign(picked, enriched[0]);
         }
         notify(`${picked.icon} ${picked.lines[0]}`, picked.type === "warning" ? "warning" : "info");
-        // Nach dem await frisch lesen: nichts ueberschreiben, was waehrenddessen passiert ist.
-        const latest = coachStateRef.current || current;
-        let stamped = recordInterventionShown(latest, picked.checkId || "unknown", picked.type === "warning" ? "warning" : "coaching", today);
-        // Bugfix (Spec Befund 8): Weekly-Report-Flag wurde nie persistiert.
-        if (picked._setLastWeeklyPathReport) stamped = { ...stamped, lastWeeklyPathReport: picked._setLastWeeklyPathReport };
-        setState(stamped);
-        persist(stamped);
-        coachStateRef.current = stamped;
+        // Celebrations are shown but never stamped — they must not consume coaching budget.
+        if (picked.type !== "celebration") {
+          // Nach dem await frisch lesen: nichts ueberschreiben, was waehrenddessen passiert ist.
+          const latest = coachStateRef.current || current;
+          let stamped = recordInterventionShown(latest, picked.checkId || "unknown", picked.type === "warning" ? "warning" : "coaching", today);
+          // Bugfix (Spec Befund 8): Weekly-Report-Flag wurde nie persistiert.
+          if (picked._setLastWeeklyPathReport) stamped = { ...stamped, lastWeeklyPathReport: picked._setLastWeeklyPathReport };
+          setState(stamped);
+          persist(stamped);
+          coachStateRef.current = stamped;
+        }
       }
       prevStateRef.current = { ...coachStateRef.current };
     };

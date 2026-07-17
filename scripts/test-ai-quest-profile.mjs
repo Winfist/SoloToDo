@@ -161,4 +161,61 @@ assert(sigProfile.behaviorSignals.recentExpiredTitles.length === 5, "expiredTitl
 assert(sigProfile.behaviorSignals.userNotes[0] === "Meditation ist nichts fuer mich" && sigProfile.behaviorSignals.userNotes.length === 1, "nur nicht-leere Notizen, max 3");
 assert(buildAIQuestProfile({}).behaviorSignals.bestTime === null, "leerer State -> neutrale Signals");
 
+// ── Sanitizer-Haertung: hostile behaviorSignals-Payloads (Security-Vertrauensgrenze) ──
+const HOSTILE_SIGNALS = {
+  bestTime: "<script>",
+  avoidCategories: ["vit", "DROP TABLE", "vit", 5, {}],
+  ghostDaysLast14: 9999,
+  recentExpiredTitles: Array.from({ length: 10 }, () => "Verfallene Quest (Dupe)"),
+  categoryCompletionRates: { vit: 7, cha: -1, bogus: 0.5, int: "0.4" },
+  userNotes: [
+    "A".repeat(500),
+    "",
+    "  spaced   note  ",
+    ...Array.from({ length: 20 }, (_, i) => `Notiz ${i}`),
+  ],
+};
+
+const hostileClean = sanitizeAIQuestProfile({ behaviorSignals: HOSTILE_SIGNALS }).behaviorSignals;
+assert.equal(hostileClean.bestTime, null, "bestTime: <script> wird verworfen");
+assert.equal(
+  sanitizeAIQuestProfile({ behaviorSignals: { ...HOSTILE_SIGNALS, bestTime: "morgen" } }).behaviorSignals.bestTime,
+  "morgen",
+  "bestTime: gueltiger Bucket bleibt erhalten"
+);
+assert.deepEqual(hostileClean.avoidCategories, ["vit"], "avoidCategories: nur gueltige IDs, dedupliziert");
+assert.equal(hostileClean.ghostDaysLast14, 14, "ghostDaysLast14: 9999 -> Deckel 14");
+assert.equal(
+  sanitizeAIQuestProfile({ behaviorSignals: { ...HOSTILE_SIGNALS, ghostDaysLast14: -5 } }).behaviorSignals.ghostDaysLast14,
+  0,
+  "ghostDaysLast14: -5 -> 0"
+);
+assert.equal(
+  sanitizeAIQuestProfile({ behaviorSignals: { ...HOSTILE_SIGNALS, ghostDaysLast14: "abc" } }).behaviorSignals.ghostDaysLast14,
+  0,
+  "ghostDaysLast14: 'abc' -> 0"
+);
+assert.equal(hostileClean.userNotes.length, 3, "userNotes: Deckel 3 Eintraege");
+assert(hostileClean.userNotes.every((note) => note.length > 0 && note.length <= 140), "userNotes: alle Eintraege 1-140 Zeichen");
+assert(hostileClean.userNotes.every((note) => note === note.trim().replace(/\s+/g, " ")), "userNotes: getrimmt/kollabiert");
+assert.equal(hostileClean.recentExpiredTitles.length, 1, "recentExpiredTitles: 10 Dupes -> 1 einzigartiger Titel (dedupliziert, unter Deckel 5)");
+assert.equal(hostileClean.categoryCompletionRates.vit, 1, "categoryCompletionRates: vit 7 -> auf 1 geklemmt");
+assert.equal(hostileClean.categoryCompletionRates.cha, 0, "categoryCompletionRates: cha -1 -> auf 0 geklemmt");
+assert.equal(hostileClean.categoryCompletionRates.bogus, undefined, "categoryCompletionRates: unbekannte Kategorie faellt raus");
+assert.equal(hostileClean.categoryCompletionRates.int, 0.4, "categoryCompletionRates: numerischer String wird gecoerced");
+
+for (const hostileBehaviorSignals of [null, "string", []]) {
+  const neutral = sanitizeAIQuestProfile({ behaviorSignals: hostileBehaviorSignals }).behaviorSignals;
+  const label = JSON.stringify(hostileBehaviorSignals);
+  assert.equal(neutral.bestTime, null, `behaviorSignals=${label}: neutrale bestTime`);
+  assert.deepEqual(neutral.categoryCompletionRates, {}, `behaviorSignals=${label}: neutrale categoryCompletionRates`);
+  assert.deepEqual(neutral.avoidCategories, [], `behaviorSignals=${label}: neutrale avoidCategories`);
+  assert.deepEqual(neutral.reliableCategories, [], `behaviorSignals=${label}: neutrale reliableCategories`);
+  assert.deepEqual(neutral.likedCategories, [], `behaviorSignals=${label}: neutrale likedCategories`);
+  assert.equal(neutral.ghostDaysLast14, 0, `behaviorSignals=${label}: neutrale ghostDaysLast14`);
+  assert.deepEqual(neutral.recentExpiredTitles, [], `behaviorSignals=${label}: neutrale recentExpiredTitles`);
+  assert.deepEqual(neutral.recentDislikedTitles, [], `behaviorSignals=${label}: neutrale recentDislikedTitles`);
+  assert.deepEqual(neutral.userNotes, [], `behaviorSignals=${label}: neutrale userNotes`);
+}
+
 console.log("test-ai-quest-profile: all assertions passed.");

@@ -32,7 +32,7 @@ export function getCategoryCompletionRates(state) {
   for (const cat of CATS) {
     const entry = categories(state)[cat];
     if (num(entry?.assigned) >= MIN_ASSIGNED_PER_CATEGORY) {
-      rates[cat] = num(entry.completed) / num(entry.assigned);
+      rates[cat] = Math.min(1, num(entry.completed) / num(entry.assigned));
     }
   }
   return rates;

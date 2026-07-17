@@ -619,7 +619,7 @@ export function useGameState(initialHunterName, onLogout) {
             // BUG FIX: Keep redemption quests alive if shadow regression is still active
             const regressionActive = s.shadowRegression?.active;
             // Signal: alle offenen System-Dailies des Vortags verfallen jetzt (Spec §4)
-            const expiredSystemDailies = (s.quests || []).filter(q => q && q.isSystem && q.type === "daily" && !q.completed);
+            const expiredSystemDailies = (s.quests || []).filter(q => q && q.isSystem && q.type === "daily" && !q.completed && !q.isStepGoal && !q.isScreenTime && !q.isStarter);
             Object.assign(s, recordQuestsExpired(s, expiredSystemDailies, today));
             Object.assign(s, resolveInterventionOutcomes(s, today));
             s.quests = (s.quests || []).filter(q => shouldRetainQuestAtReset(q, { regressionActive }));
@@ -1349,7 +1349,7 @@ export function useGameState(initialHunterName, onLogout) {
         replacedKeys: [...new Set([...(status.replacedKeys || []), sourceKey, replacementKey])],
       },
     };
-    nextState = recordQuestsSwapped(nextState, [quest], today, { implicitDislike: true });
+    nextState = recordQuestsSwapped(nextState, [quest], today, { implicitDislike: quest.userRating !== "disliked" });
     nextState = recordQuestsAssigned(nextState, [replacement], today);
     nextState = recordUserAction(nextState, today);
     persist(nextState);

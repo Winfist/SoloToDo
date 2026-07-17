@@ -218,14 +218,14 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
     }, [cq, theme]);
 
     const chrono = useMemo(() => {
-        const t={m:0,a:0,e:0,n:0}; let has=false;
-        cq.forEach(q=>{if(q.completedAtMs){has=true;const h=new Date(q.completedAtMs).getHours();if(h>=6&&h<12)t.m++;else if(h>=12&&h<18)t.a++;else if(h>=18&&h<24)t.e++;else t.n++;}});
-        const tot=t.m+t.a+t.e+t.n;
+        const buckets={m:0,a:0,e:0,n:0}; let has=false;
+        cq.forEach(q=>{if(q.completedAtMs){has=true;const h=new Date(q.completedAtMs).getHours();if(h>=6&&h<12)buckets.m++;else if(h>=12&&h<18)buckets.a++;else if(h>=18&&h<24)buckets.e++;else buckets.n++;}});
+        const tot=buckets.m+buckets.a+buckets.e+buckets.n;
         return {has, stats:[
-            {label:"Morgen",cnt:t.m,pct:tot>0?t.m/tot:0,color:"#fcd34d",Icon:SunriseIcon},
-            {label:"Mittag",cnt:t.a,pct:tot>0?t.a/tot:0,color:"#f97316",Icon:SunIcon},
-            {label:"Abend",cnt:t.e,pct:tot>0?t.e/tot:0,color:"#8b5cf6",Icon:SunsetIcon},
-            {label:"Nacht",cnt:t.n,pct:tot>0?t.n/tot:0,color:"#3b82f6",Icon:MoonIcon},
+            {label:"Morgen",cnt:buckets.m,pct:tot>0?buckets.m/tot:0,color:"#fcd34d",Icon:SunriseIcon},
+            {label:"Mittag",cnt:buckets.a,pct:tot>0?buckets.a/tot:0,color:"#f97316",Icon:SunIcon},
+            {label:"Abend",cnt:buckets.e,pct:tot>0?buckets.e/tot:0,color:"#8b5cf6",Icon:SunsetIcon},
+            {label:"Nacht",cnt:buckets.n,pct:tot>0?buckets.n/tot:0,color:"#3b82f6",Icon:MoonIcon},
         ]};
     }, [cq]);
     const peak = chrono.has ? [...chrono.stats].sort((a,b)=>b.cnt-a.cnt)[0] : null;
@@ -244,8 +244,8 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
     }, [cq]);
     const top = catSt.has ? [...catSt.stats].sort((a,b)=>b.val-a.val)[0] : null;
     const diffSt = useMemo(() => {
-        const d={easy:0,normal:0,hard:0,boss:0}; cq.forEach(q=>{if(d[q.difficulty]!==undefined)d[q.difficulty]++;}); const t=cq.length||1;
-        return {easy:d.easy/t,normal:d.normal/t,hard:d.hard/t,boss:d.boss/t};
+        const d={easy:0,normal:0,hard:0,boss:0}; cq.forEach(q=>{if(d[q.difficulty]!==undefined)d[q.difficulty]++;}); const total=cq.length||1;
+        return {easy:d.easy/total,normal:d.normal/total,hard:d.hard/total,boss:d.boss/total};
     }, [cq]);
 
     const habSt = useMemo(() => {
@@ -353,6 +353,7 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
                     lines.push(t("systemAnalysis.reliable", { stat: statLabel[cat], percent: Math.round((dossier.categoryCompletionRates[cat] || 0) * 100) }));
                 }
                 for (const cat of dossier.avoidCategories.slice(0, 1)) {
+                    if (dossier.reliableCategories.includes(cat)) continue;
                     const rate = dossier.categoryCompletionRates[cat];
                     if (rate !== undefined) lines.push(t("systemAnalysis.avoided", { stat: statLabel[cat], percent: Math.round(rate * 100) }));
                 }

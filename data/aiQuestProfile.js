@@ -123,8 +123,8 @@ export function buildAIQuestProfile(state = {}) {
     reliableCategories: dossier.reliableCategories,
     likedCategories: dossier.likedCategories,
     ghostDaysLast14: dossier.ghost?.ghostDays || 0,
-    recentExpiredTitles: (state.questSignals?.recentExpired || []).map((e) => cleanText(e?.title, 140)).filter(Boolean).slice(0, 5),
-    recentDislikedTitles: (state.questSignals?.recentDisliked || []).map((e) => cleanText(e?.title, 140)).filter(Boolean).slice(0, 5),
+    recentExpiredTitles: [...new Set((state.questSignals?.recentExpired || []).map((e) => cleanText(e?.title, 140)).filter(Boolean))].slice(0, 5),
+    recentDislikedTitles: [...new Set((state.questSignals?.recentDisliked || []).map((e) => cleanText(e?.title, 140)).filter(Boolean))].slice(0, 5),
     userNotes: (state.questSignals?.recentDisliked || []).map((e) => cleanText(e?.note, 140)).filter(Boolean).slice(0, 3),
   };
 
