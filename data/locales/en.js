@@ -2043,4 +2043,16 @@ export const en = {
     daysToChange: "Days to rotation",
     rotation: "WORLD EVENT ROTATION",
   },
+  systemAnalysis: {
+    title: "SYSTEM ANALYSIS",
+    collecting: "The System is still gathering data.",
+    bestTime: "Peak activity: {bucket} — {percent}% of your completions.",
+    reliable: "Reliable: {stat} ({percent}% completed).",
+    avoided: "{stat} quests often stay open ({percent}% completed). The System now assigns shorter entries here.",
+    ghost: "Observation without action: {ghost} of {days} days. The System is reducing its calls.",
+    bucket_morgen: "mornings",
+    bucket_mittag: "midday",
+    bucket_abend: "evenings",
+    bucket_nacht: "nights",
+  },
 };

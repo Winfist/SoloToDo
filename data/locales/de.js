@@ -1979,4 +1979,16 @@ export const de = {
     daysToChange: "Tage bis Wechsel",
     rotation: "WORLD EVENT ROTATION",
   },
+  systemAnalysis: {
+    title: "SYSTEMANALYSE",
+    collecting: "Das System sammelt noch Daten.",
+    bestTime: "Beste Aktivzeit: {bucket} — {percent}% deiner Abschlüsse.",
+    reliable: "Zuverlässig: {stat} ({percent}% erledigt).",
+    avoided: "{stat}-Quests bleiben oft liegen ({percent}% erledigt). Das System vergibt hier jetzt kürzere Einstiege.",
+    ghost: "Beobachtung ohne Handlung: {ghost} von {days} Tagen. Das System reduziert seine Rufe.",
+    bucket_morgen: "morgens",
+    bucket_mittag: "mittags",
+    bucket_abend: "abends",
+    bucket_nacht: "nachts",
+  },
 };

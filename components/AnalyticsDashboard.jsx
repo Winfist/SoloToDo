@@ -3,6 +3,8 @@ import { STAT_ICONS, MICRO_ICONS, HEALTH_ICONS, NAV_ICONS } from "../data/icons.
 import { CATEGORIES, DIFFICULTIES } from "../data/gameData.js";
 import { getToday, getLocalDateKey } from "../data/dateUtils.js";
 import { SCREEN_TIME_ENABLED } from "../data/featureFlags.js";
+import { getDossierSummary } from "../data/hunterDossier.js";
+import { useI18n } from "./i18n/I18nProvider.jsx";
 import QuestDetailModal from "./QuestDetailModal.jsx";
 
 // ─── INLINE KEYFRAMES (injected once) ───
@@ -182,6 +184,7 @@ const DEFAULT_MICRO = [
 ];
 
 export default function AnalyticsDashboard({ state, theme, gameState, onCreateHabitFromQuest }) {
+    const { t } = useI18n();
     const cq = state?.completedQuests || [];
     const habits = state?.habits || [];
     const [historyTime, setHistoryTime] = useState("all");
@@ -336,6 +339,41 @@ export default function AnalyticsDashboard({ state, theme, gameState, onCreateHa
 
     return (
         <div style={{ paddingBottom: 40 }}>
+
+            {/* ═══════════════════════════════════════════════
+                1. SYSTEMANALYSE (Hunter-Dossier)
+            ═══════════════════════════════════════════════ */}
+            {(() => {
+                const dossier = getDossierSummary(gameState || {});
+                const bucketLabel = (bucket) => t(`systemAnalysis.bucket_${bucket}`);
+                const statLabel = { str: "STR", int: "INT", vit: "VIT", agi: "AGI", cha: "CHA" };
+                const lines = [];
+                if (dossier.bestTime) lines.push(t("systemAnalysis.bestTime", { bucket: bucketLabel(dossier.bestTime.bucket), percent: dossier.bestTime.percent }));
+                for (const cat of dossier.reliableCategories.slice(0, 1)) {
+                    lines.push(t("systemAnalysis.reliable", { stat: statLabel[cat], percent: Math.round((dossier.categoryCompletionRates[cat] || 0) * 100) }));
+                }
+                for (const cat of dossier.avoidCategories.slice(0, 1)) {
+                    const rate = dossier.categoryCompletionRates[cat];
+                    if (rate !== undefined) lines.push(t("systemAnalysis.avoided", { stat: statLabel[cat], percent: Math.round(rate * 100) }));
+                }
+                if (dossier.ghost && dossier.ghost.ghostDays >= 3) {
+                    lines.push(t("systemAnalysis.ghost", { ghost: dossier.ghost.ghostDays, days: dossier.ghost.daysWithData }));
+                }
+                return (
+                    <section style={{ marginBottom: 14, padding: "14px 16px", borderRadius: 16, background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(10,12,24,0.6))", border: "1px solid rgba(99,102,241,0.25)" }}>
+                        <div style={{ fontSize: 9, letterSpacing: 3, color: "#818cf8", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>{t("systemAnalysis.title")}</div>
+                        {lines.length === 0 ? (
+                            <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>{t("systemAnalysis.collecting")}</div>
+                        ) : (
+                            <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
+                                {lines.slice(0, 4).map((line, i) => (
+                                    <li key={i} style={{ fontSize: 11.5, color: "#cbd5e1", lineHeight: 1.5 }}>▸ {line}</li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+                );
+            })()}
 
             {/* Profile card removed — identity lives in TopBar, analysis starts directly below */}
 
