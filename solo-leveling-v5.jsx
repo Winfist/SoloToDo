@@ -287,6 +287,7 @@ function App({ initialHunterName, onLogout }) {
     replaceSystemQuest,
     rateQuest,
     addDislikeNote,
+    resetSignals,
     createQuest,
     createQuestsFromInputs,
     snoozeReminder,
@@ -2230,6 +2231,7 @@ function App({ initialHunterName, onLogout }) {
                     activatePremiumCode={activatePremiumCode}
                     notify={notify}
                     onResetTutorial={handleResetTutorial}
+                    onResetSignals={resetSignals}
                   />
                 )
               }

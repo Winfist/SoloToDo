@@ -146,6 +146,9 @@ export const de = {
     languageDesc: "Auto nutzt die Sprache deines Geräts. Deine Wahl wird im Account gespeichert.",
     resolvedLocale: "Aktive Sprache: {locale}",
     languageSaved: "Sprache aktualisiert.",
+    signalsReset: "Systemanalyse zurücksetzen",
+    signalsResetConfirm: "Alle gesammelten Verhaltensmuster (Analyse, Bewertungen, Coach-Historie) löschen? Dein Spielfortschritt bleibt unberührt.",
+    signalsResetDone: "Systemanalyse zurückgesetzt. Das System beginnt neu zu lernen.",
     sections: {
       premium: "Premium & Beta",
       appearance: "Erscheinungsbild",

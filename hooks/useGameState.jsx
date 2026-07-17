@@ -41,7 +41,7 @@ import {
   wasTitleCompletedRecently
 } from '../data/questUtils.js';
 import { getSystemQuestPoolForLocale } from '../data/localizedQuestPool.js';
-import { recordQuestsAssigned, recordQuestsExpired, recordQuestsSwapped, recordAppOpen, recordUserAction, resolveInterventionOutcomes, applyQuestRating, applyDislikeNote } from '../data/signals.js';
+import { recordQuestsAssigned, recordQuestsExpired, recordQuestsSwapped, recordAppOpen, recordUserAction, resolveInterventionOutcomes, applyQuestRating, applyDislikeNote, DEFAULT_QUEST_SIGNALS, DEFAULT_SESSION_SIGNALS, DEFAULT_COACH_SIGNALS } from '../data/signals.js';
 import {
   cleanupQuestAttachmentBlobsForState,
   getQuestAttachmentReferenceSignature
@@ -1375,6 +1375,24 @@ export function useGameState(initialHunterName, onLogout) {
     setState(next);
     persist(next);
   }, [state, persist]);
+
+  // Setzt Verhaltenssignale (Analyse, Bewertungen, Coach-Historie) auf Default zurueck.
+  // completedQuests/Feedback-Chips bleiben unberuehrt. JSON.parse(JSON.stringify(...))
+  // statt structuredClone, um zum bestehenden Deep-Clone-Muster (cloneDefaultState) zu passen.
+  const resetSignals = useCallback(() => {
+    const current = stateRef.current || state;
+    if (!current) return;
+    const next = {
+      ...current,
+      questSignals: JSON.parse(JSON.stringify(DEFAULT_QUEST_SIGNALS)),
+      sessionSignals: JSON.parse(JSON.stringify(DEFAULT_SESSION_SIGNALS)),
+      coachSignals: JSON.parse(JSON.stringify(DEFAULT_COACH_SIGNALS)),
+      quests: (current.quests || []).map(q => (q.userRating ? { ...q, userRating: null } : q)),
+    };
+    setState(next);
+    persist(next);
+    notify(ltState(next, "settings.signalsResetDone"), "success");
+  }, [state, persist, notify]);
 
   const resetQuestForm = useCallback(() => {
     setQTitle("");
@@ -2941,6 +2959,7 @@ export function useGameState(initialHunterName, onLogout) {
     replaceSystemQuest,
     rateQuest,
     addDislikeNote,
+    resetSignals,
     createQuest,
     createQuestsFromInputs,
     snoozeReminder,

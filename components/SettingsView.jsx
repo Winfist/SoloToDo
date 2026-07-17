@@ -1252,7 +1252,7 @@ function NavbarCustomizer({ navKeys, onChange, allTabs, can, theme, premiumStatu
 // ═════════════════════════════════════════════════════════════════
 //  MAIN SETTINGS VIEW
 // ═════════════════════════════════════════════════════════════════
-export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onOpenPremium, premiumStatus: premiumStatusProp, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI, activatePremiumCode, notify, onResetTutorial }) {
+export default function SettingsView({ state, persist, theme, can, onLogout, onOpenShop, onOpenPremium, premiumStatus: premiumStatusProp, onPreviewPageTransition, updateHealthData, claimHealthReward, updateScreenTimeData, claimScreenTimeReward, geminiAI, activatePremiumCode, notify, onResetTutorial, onResetSignals }) {
   const { t, locale } = useI18n();
   // ── Section states ──
   const [openSection, setOpenSection] = useState(null);
@@ -2335,6 +2335,21 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
           onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.12)"}
           onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.06)"}
         >🗑 {t("settings.data.clearCache").toUpperCase()}</button>
+
+        {/* Systemanalyse zuruecksetzen (Verhaltenssignale/Coach-Historie/Bewertungen) */}
+        {onResetSignals && (
+          <button className="press-feedback" onClick={() => {
+            if (confirm(t("settings.signalsResetConfirm"))) onResetSignals();
+          }} style={{
+            width: "100%", padding: 12, borderRadius: 10, marginBottom: 10,
+            background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
+            color: "#f87171", fontWeight: 700, fontSize: 11, fontFamily: "'Cinzel',serif",
+            cursor: "pointer", transition: "all 0.2s", letterSpacing: 1, textAlign: "left",
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.12)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.06)"}
+          >{t("settings.signalsReset").toUpperCase()}</button>
+        )}
 
         {/* Logout */}
         {onLogout && (
