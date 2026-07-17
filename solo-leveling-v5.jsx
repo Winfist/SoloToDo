@@ -97,6 +97,7 @@ import { getForgeStatus, applyForgeUsage } from './data/freeLimits.js';
 import { countManualForgeTargets } from './data/questSwap.js';
 import { getCrystallizationSuggestion, markCrystallizationChecked, declineCrystallization } from './data/goalCrystallization.js';
 import { recordQuestsSwapped, recordQuestsAssigned, recordInterventionShown } from './data/signals.js';
+import { getQuestReplacementStatus } from './data/questUtils.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
   "quest_title_input",
@@ -1527,8 +1528,17 @@ function App({ initialHunterName, onLogout }) {
                 onRateQuest={rateQuest}
                 onDislikeNote={addDislikeNote}
                 onReplaceFromDislike={(quest) => {
+                  const status = getQuestReplacementStatus(state);
+                  if (!status.canReplace) {
+                    notify(`Ersatzlimit erreicht (${status.used}/${status.limit})`, "warning");
+                    return;
+                  }
                   const candidates = getReplacementCandidates(quest.id);
-                  if (candidates.length > 0 && replaceSystemQuest(quest.id, candidates[0])) {
+                  if (!candidates.length) {
+                    notify("Keine passenden Ersatz-Quests verfuegbar.", "warning");
+                    return;
+                  }
+                  if (replaceSystemQuest(quest.id, candidates[0])) {
                     setDetailQuest(null);
                   }
                 }}
