@@ -200,6 +200,7 @@ RULES (clarity ALWAYS beats drama - Nexus tone stays terse and direct, but instr
 - "desc": 2-4 sentences. Sentence 1: exactly what to do. Sentence 2: why it is worth it - if an active goal fits, name it literally ("This counts toward your goal 'X'.").
 - "doneWhen": exactly 1 measurable sentence starting with "Done when".
 - "subQuests": 2-4 concrete executable steps.
+- NEVER generic placeholders for subQuests - each must have real, specific content.
 - "estimatedMinutes": realistic minutes (5-120), integer.
 - At least 1 Quest must train the weakest stat.${goalRule}
 - Feedback in recentCompletedQuests: if "too_easy" appears often, raise difficulty; "too_hard" -> lower it; categoryFeedback "less" -> avoid that category; "more" -> prefer it.
@@ -211,7 +212,7 @@ RULES (clarity ALWAYS beats drama - Nexus tone stays terse and direct, but instr
 - Never mention profile analysis or private metadata in a Quest.
 
 Return ONLY this JSON, no Markdown and no extra text:
-{"quests": [{"title": "Run for 30 minutes outside", "category": "str", "difficulty": "normal", "desc": "2-4 sentences: what + why.", "doneWhen": "Done when you ran 30 minutes without stopping.", "estimatedMinutes": 30, "goalRef": null, "subQuests": [{"title": "Step 1"}, {"title": "Step 2"}]}]}`;
+{"quests": [{"title": "Run for 30 minutes outside", "category": "str", "difficulty": "normal", "desc": "2-4 sentences: what + why.", "doneWhen": "Done when you ran 30 minutes without stopping.", "estimatedMinutes": 30, "goalRef": null, "subQuests": [{"title": "Put on your running shoes and head out"}, {"title": "Run 25 minutes at an easy pace"}]}]}`;
   }
 
   return `${persona}
@@ -231,6 +232,7 @@ REGELN (Verstaendlichkeit schlaegt IMMER Drama - der Nexus-Ton bleibt knapp und 
 - "desc": 2-4 Saetze. Satz 1: was genau zu tun ist. Satz 2: warum es sich lohnt - wenn ein aktives Ziel passt, benenne es woertlich ("Das zahlt auf dein Ziel 'X' ein.").
 - "doneWhen": genau 1 messbarer Satz, beginnend mit "Fertig, wenn".
 - "subQuests": 2-4 konkrete, ausfuehrbare Schritte.
+- NIEMALS generische Platzhalter fuer subQuests - jede muss echten, spezifischen Inhalt haben.
 - "estimatedMinutes": realistische Minuten (5-120), ganze Zahl.
 - Mindestens 1 Quest trainiert den schwaechsten Stat.${goalRule}
 - Feedback in recentCompletedQuests: haeufig "too_easy" -> Schwierigkeit anheben; "too_hard" -> absenken; categoryFeedback "less" -> Kategorie meiden; "more" -> Kategorie bevorzugen.
@@ -242,7 +244,7 @@ REGELN (Verstaendlichkeit schlaegt IMMER Drama - der Nexus-Ton bleibt knapp und 
 - Erwaehne niemals Profilanalyse oder private Metadaten in einer Quest.
 
 Antworte NUR mit diesem JSON, kein Markdown und kein Extra-Text:
-{"quests": [{"title": "Geh 30 Minuten laufen im Freien", "category": "str", "difficulty": "normal", "desc": "2-4 Saetze: was + warum.", "doneWhen": "Fertig, wenn du 30 Minuten ohne Pause gelaufen bist.", "estimatedMinutes": 30, "goalRef": null, "subQuests": [{"title": "Schritt 1"}, {"title": "Schritt 2"}]}]}`;
+{"quests": [{"title": "Geh 30 Minuten laufen im Freien", "category": "str", "difficulty": "normal", "desc": "2-4 Saetze: was + warum.", "doneWhen": "Fertig, wenn du 30 Minuten ohne Pause gelaufen bist.", "estimatedMinutes": 30, "goalRef": null, "subQuests": [{"title": "Laufschuhe anziehen und rausgehen"}, {"title": "25 Minuten im Wohlfuehltempo laufen"}]}]}`;
 }
 
 function SYSTEM_MESSAGE_PROMPT(context, type, hunterName, language = "de") {

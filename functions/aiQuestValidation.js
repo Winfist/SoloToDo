@@ -4,6 +4,7 @@
 
 const GERMAN_HINTS = [" der ", " die ", " das ", " und ", " mit ", " fuer ", " dein", " deine", " du ", " eine", " einen", " im ", " am ", " auf ", " zu ", " nicht ", " oder ", " wenn ", " bis ", " danach", " minuten", " heute", " fertig"];
 const ENGLISH_HINTS = [" the ", " your ", " and ", " with ", " for ", " you ", " today", " complete ", " finish ", " weekly ", " daily ", " challenge", " routine"];
+const PLACEHOLDER_SUBQUEST = /^(schritt|step|teil|part)\s*\d+\.?$/i;
 
 function countHits(text, hints) {
   const padded = ` ${String(text || "").toLowerCase()} `;
@@ -55,6 +56,13 @@ function validateGeneratedQuests(quests, { language = "de", activeGoalTitles = [
     if (countSentences(desc) < 2) reasons.push("desc-too-short");
     if (!doneWhen) reasons.push("missing-doneWhen");
     if (!Array.isArray(quest?.subQuests) || quest.subQuests.length < 2) reasons.push("missing-subQuests");
+    const subTitles = (Array.isArray(quest?.subQuests) ? quest.subQuests : [])
+      .map((sq) => normalizeTitle(typeof sq === "string" ? sq : sq?.title));
+    if (subTitles.some((t) => PLACEHOLDER_SUBQUEST.test(t))) {
+      reasons.push("placeholder-subquests");
+    } else if (subTitles.length >= 2 && new Set(subTitles).size === 1) {
+      reasons.push("placeholder-subquests");
+    }
     if (!matchesLanguage(`${title} ${desc}`, language)) reasons.push("wrong-language");
   }
   return { ok: reasons.length === 0, reasons: [...new Set(reasons)] };

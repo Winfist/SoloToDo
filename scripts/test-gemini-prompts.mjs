@@ -63,6 +63,14 @@ check(sanitizeQuestionnaire({ timeBudget: "999", burningDomain: "" }) === null, 
 check(sanitizeQuestionnaire({ threeMonthWish: "x".repeat(1000) }).threeMonthWish.length <= 240, "sanitize: Freitext gedeckelt");
 check(sanitizeQuestionnaire(null) === null, "sanitize: null -> null");
 
+// ── Prompt-Beispiel darf keine Platzhalter-Subquests mehr enthalten ──
+const promptDe = GENERATE_QUESTS_PROMPT({ str: 1 }, 3, "str", [], {}, "de");
+const promptEn = GENERATE_QUESTS_PROMPT({ str: 1 }, 3, "str", [], {}, "en");
+check(!/Schritt 1/.test(promptDe) && !/Schritt 2/.test(promptDe), "de-Beispiel ohne Schritt-Platzhalter");
+check(!/"Step 1"/.test(promptEn) && !/"Step 2"/.test(promptEn), "en-Beispiel ohne Step-Platzhalter");
+check(promptDe.includes("NIEMALS generische Platzhalter"), "de-Regel gegen Platzhalter vorhanden");
+check(promptEn.includes("NEVER generic placeholders"), "en-Regel gegen Platzhalter vorhanden");
+
 // ── behaviorSignals-Regeln im Quest-Prompt ──
 const sigPrompt = GENERATE_QUESTS_PROMPT({ str: 1 }, 3, "str", [], {
   behaviorSignals: { bestTime: "morgen", avoidCategories: ["vit"], recentDislikedTitles: ["Meditiere 20 Minuten"], userNotes: ["lieber draussen"], ghostDaysLast14: 4 },
