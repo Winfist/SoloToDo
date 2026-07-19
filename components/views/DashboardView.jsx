@@ -625,8 +625,10 @@ export default function DashboardView({
     filteredQuestIds.has(q.id)
     && (originFilter === "all" || (originFilter === "system" ? q.isSystem : !q.isSystem))
   );
+  const forgeLoadout = dashboardLoadout.filter(q => q.origin === "forge");
   const questBoardSections = [
-    { key: "loadout", title: locale === "en" ? "YOUR LOADOUT" : "DEIN LOADOUT", color: theme.primary, quests: groupQuestStacks(dashboardLoadout) },
+    { key: "forge", title: locale === "en" ? "⚒ FROM THE FORGE" : "⚒ AUS DER SCHMIEDE", color: "#818cf8", quests: groupQuestStacks(forgeLoadout) },
+    { key: "loadout", title: locale === "en" ? "YOUR LOADOUT" : "DEIN LOADOUT", color: theme.primary, quests: groupQuestStacks(dashboardLoadout.filter(q => q.origin !== "forge")) },
   ].filter(section => section.quests.length > 0);
   const replacementStatus = getQuestReplacementStatus(state);
 
@@ -1056,7 +1058,10 @@ export default function DashboardView({
               ) : (
                 <div style={{ marginBottom: 24, display: "grid", gap: 12 }}>
                   {questBoardSections.map(section => (
-                    <section key={section.key}>
+                    <section
+                      key={section.key}
+                      style={section.key === "forge" ? { border: "1px solid rgba(129,140,248,0.25)", borderRadius: 14, padding: 10 } : undefined}
+                    >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 7 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
                           <span style={{ width: 7, height: 7, borderRadius: 999, background: section.color, boxShadow: `0 0 12px ${section.color}55`, flexShrink: 0 }} />
