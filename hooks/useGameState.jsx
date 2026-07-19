@@ -718,6 +718,9 @@ export function useGameState(initialHunterName, onLogout) {
             s.dailyDungeonsRun = 0;
             s.dailyCharismaRun = 0;
             s.questReplacements = { date: today, used: 0, replacedKeys: [] };
+            if (s.forge?.pending && s.forge.pending.date !== today) {
+              s.forge = { ...(s.forge || {}), pending: null };
+            }
             s.integrityScore = Math.min(100, (s.integrityScore !== undefined ? s.integrityScore : 100) + 20);
           }
           s.lastActiveDate = today;

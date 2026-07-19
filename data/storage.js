@@ -548,6 +548,9 @@ export function mergeStateProgress(primary, fallback) {
         : { date: null, coachingShown: 0, warningShown: 0, ...(fallback.coachSignals?.daily || {}) },
       pendingOutcome: mergeArrayByKey(primary.coachSignals?.pendingOutcome, fallback.coachSignals?.pendingOutcome, item => `${item?.type}|${item?.date}`),
     },
+    forge: toFiniteNumber(primary.forge?.pending?.generatedAtMs) >= toFiniteNumber(fallback.forge?.pending?.generatedAtMs)
+      ? { pending: primary.forge?.pending || fallback.forge?.pending || null }
+      : { pending: fallback.forge?.pending || null },
     dailyUserXP: Math.max(toFiniteNumber(primary.dailyUserXP), toFiniteNumber(fallback.dailyUserXP)),
     extraDailySlots: Math.max(toFiniteNumber(primary.extraDailySlots), toFiniteNumber(fallback.extraDailySlots)),
     dungeons: mergeArrayByKey(primary.dungeons, fallback.dungeons, item => item?.instanceId || item?.id),
@@ -929,6 +932,7 @@ export function migrateState(oldState) {
   s.questSignals = { ...DEFAULT_STATE.questSignals, ...(oldState.questSignals || {}) };
   s.sessionSignals = { ...DEFAULT_STATE.sessionSignals, ...(oldState.sessionSignals || {}) };
   s.coachSignals = { ...DEFAULT_STATE.coachSignals, ...(oldState.coachSignals || {}) };
+  s.forge = { ...DEFAULT_STATE.forge, ...(oldState.forge || {}) };
   s.questPlanning = {
     ...DEFAULT_QUEST_PLANNING,
     ...(oldState.questPlanning || {}),

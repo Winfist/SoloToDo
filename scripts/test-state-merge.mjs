@@ -107,6 +107,15 @@ assert(mergedSig.coachSignals.byType.inactivity.mutedUntil === "2026-07-19", "mu
 assert(mergedSig.coachSignals.pendingOutcome.length === 2, "pendingOutcome Union");
 assert(mergeStateProgress({}, sigB).questSignals.byTemplate.t1.assigned === 5, "einseitig fehlend -> uebernommen");
 
+// ── forge.pending: neueres generatedAtMs gewinnt komplett ──
+const forgeOld = { forge: { pending: { proposals: [{ id: "old", title: "Alt", origin: "forge" }], date: "2026-07-18", generatedAtMs: 100, source: "manual" } } };
+const forgeNew = { forge: { pending: { proposals: [{ id: "new", title: "Neu", origin: "forge" }], date: "2026-07-18", generatedAtMs: 200, source: "auto" } } };
+const forgeMerged = mergeStateProgress(forgeOld, forgeNew);
+assert(forgeMerged.forge.pending.proposals[0].id === "new", "neueres Set gewinnt komplett");
+assert(mergeStateProgress(forgeNew, forgeOld).forge.pending.proposals[0].id === "new", "Richtung egal");
+assert(mergeStateProgress(forgeOld, {}).forge.pending.proposals[0].id === "old", "einseitig fehlend -> vorhandenes Set");
+assert(mergeStateProgress({}, {}).forge.pending === null, "beidseitig fehlend -> null");
+
 if (failures > 0) {
   console.error(`\n${failures} assertion(s) failed.`);
   process.exit(1);
