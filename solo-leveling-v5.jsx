@@ -808,6 +808,11 @@ function App({ initialHunterName, onLogout }) {
   const [forgePhase, setForgePhase] = useState("idle"); // idle | loading | failed
   const [forgeStep, setForgeStep] = useState(0);
   const [showForgeRitual, setShowForgeRitual] = useState(false);
+  // Bugfix (Review: Ritual-Close mid-generation defeats reentrancy guard): forgePhase
+  // resets to "idle" on modal close while the uncancellable up-to-120s AI-Call still
+  // runs. Close -> reopen -> tap would fire a SECOND concurrent paid call. This ref
+  // is the true in-flight lock, independent of the (closable) phase state.
+  const forgeInFlightRef = useRef(false);
   const forgeStatus = useMemo(() => getForgeStatus({
     premiumActive: premiumStatus?.active,
     state,
@@ -835,9 +840,10 @@ function App({ initialHunterName, onLogout }) {
   }, [setState, persist]);
 
   const runForgeGeneration = useCallback(async ({ force = false } = {}) => {
-    if (forgePhase === "loading") return;
+    if (forgeInFlightRef.current) return; // echte In-Flight-Sperre (Phase kann durch Close resetten)
     if (!force && isPendingSetValid(state, getToday())) return; // Anti-Farming: Set existiert
     if (!state?.ai?.enabled || geminiAI.isRateLimited()) { setForgePhase("failed"); return; }
+    forgeInFlightRef.current = true;
     setForgePhase("loading");
     try {
       const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
@@ -845,6 +851,7 @@ function App({ initialHunterName, onLogout }) {
       const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
       if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) { setForgePhase("failed"); return; }
       setState(currentState => {
+        if (!force && isPendingSetValid(currentState, getToday())) return currentState; // parallel gewonnen -> nicht clobbern
         const pending = createPendingSet(aiQuests, { source: "manual", today: getToday(), nowMs: Date.now() });
         // Credit stempelt bei erfolgreicher GENERIERUNG (Spec §7), nicht beim Swap.
         const next = applyForgeUsage({ ...currentState, forge: { ...(currentState.forge || {}), pending } }, { premiumActive: premiumStatus?.active, today: getToday() });
@@ -854,13 +861,17 @@ function App({ initialHunterName, onLogout }) {
       setForgePhase("idle");
     } catch {
       setForgePhase("failed");
+    } finally {
+      forgeInFlightRef.current = false;
     }
-  }, [forgePhase, state, premiumStatus?.active, geminiAI, persist]);
+  }, [state, premiumStatus?.active, geminiAI, persist]);
 
   const handleForge = useCallback(() => {
     if (!forgeStatus.allowed && !isPendingSetValid(state, getToday())) return;
     setShowForgeRitual(true);
-    if (!isPendingSetValid(state, getToday())) runForgeGeneration();
+    // forgeInFlightRef-Check: eine bereits laufende Generierung (z.B. nach Close/Reopen)
+    // nicht erneut anstoßen — das Ritual zeigt einfach den laufenden Fortschritt.
+    if (!isPendingSetValid(state, getToday()) && !forgeInFlightRef.current) runForgeGeneration();
   }, [forgeStatus.allowed, state, runForgeGeneration]);
 
   const handleAcceptProposals = useCallback((proposalIds) => {
@@ -1562,7 +1573,7 @@ function App({ initialHunterName, onLogout }) {
                 onGenerate={() => runForgeGeneration()}
                 onReforge={() => runForgeGeneration({ force: true })}
                 onAccept={handleAcceptProposals}
-                onClose={() => { setShowForgeRitual(false); setForgePhase("idle"); }}
+                onClose={() => { setShowForgeRitual(false); if (!forgeInFlightRef.current) setForgePhase("idle"); }}
               />
             )}
 
