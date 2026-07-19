@@ -60,6 +60,7 @@ export const DEFAULT_STATE = {
     daily: { date: null, coachingShown: 0, warningShown: 0 },
     pendingOutcome: [],
   },
+  forge: { pending: null },
   penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },
   todayModifier: null,
   emergencyQuest: null,
