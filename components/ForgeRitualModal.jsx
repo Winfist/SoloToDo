@@ -28,7 +28,12 @@ export default function ForgeRitualModal({
   useEffect(() => {
     if (phase !== "forging") return undefined;
     setStepIndex(0);
-    const timer = setInterval(() => setStepIndex((s) => Math.min(s + 1, 2)), 2500);
+    const timer = setInterval(() => {
+      setStepIndex((s) => {
+        if (s >= 2) { clearInterval(timer); return s; }
+        return s + 1;
+      });
+    }, 2500);
     return () => clearInterval(timer);
   }, [phase]);
 
@@ -67,7 +72,7 @@ export default function ForgeRitualModal({
       <div style={{ flex: 1, overflowY: "auto", padding: "8px 20px 20px" }}>
         {phase === "forging" && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 18, textAlign: "center" }}>
-            <div className="forge-pulse" style={{ width: 64, height: 64, borderRadius: "50%", border: "2px solid #6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>⚒</div>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", border: "2px solid #6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>⚒</div>
             <div style={{ fontSize: 13, fontWeight: 700, fontFamily: mono, letterSpacing: 1 }}>{steps[stepIndex]}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
               {dossierLines.map((line, i) => (
@@ -143,12 +148,14 @@ export default function ForgeRitualModal({
       </div>
 
       {/* Fuss (nur Auswahl-Phase) */}
-      {phase === "choose" && (
+      {phase === "choose" && (selectableCount > 0 || canReforge) && (
         <div style={{ padding: "12px 20px 24px", borderTop: "1px solid rgba(148,163,184,0.12)", display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 10.5, fontFamily: mono, letterSpacing: 1, color: "#94a3b8" }}>
-              {t("forgeRitual.chosen", { k: selectedIds.length, n: selectableCount })}
-            </span>
+            {selectableCount > 0 && (
+              <span style={{ fontSize: 10.5, fontFamily: mono, letterSpacing: 1, color: "#94a3b8" }}>
+                {t("forgeRitual.chosen", { k: selectedIds.length, n: selectableCount })}
+              </span>
+            )}
             {canReforge && (
               <button onClick={onReforge} className="press-feedback"
                 style={{ fontSize: 10.5, fontFamily: mono, letterSpacing: 1, color: "#94a3b8", background: "none", border: "none", cursor: "pointer" }}>
@@ -156,10 +163,12 @@ export default function ForgeRitualModal({
               </button>
             )}
           </div>
-          <button onClick={() => selectedIds.length > 0 && onAccept(selectedIds)} disabled={selectedIds.length === 0} className="press-feedback"
-            style={{ padding: "13px 16px", borderRadius: 12, fontSize: 12, fontWeight: 900, letterSpacing: 1.5, fontFamily: mono, cursor: selectedIds.length > 0 ? "pointer" : "default", background: selectedIds.length > 0 ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.05)", color: selectedIds.length > 0 ? "#fff" : "#475569", border: "none" }}>
-            {t("forgeRitual.accept")}
-          </button>
+          {selectableCount > 0 && (
+            <button onClick={() => selectedIds.length > 0 && onAccept(selectedIds)} disabled={selectedIds.length === 0} className="press-feedback"
+              style={{ padding: "13px 16px", borderRadius: 12, fontSize: 12, fontWeight: 900, letterSpacing: 1.5, fontFamily: mono, cursor: selectedIds.length > 0 ? "pointer" : "default", background: selectedIds.length > 0 ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.05)", color: selectedIds.length > 0 ? "#fff" : "#475569", border: "none" }}>
+              {t("forgeRitual.accept")}
+            </button>
+          )}
         </div>
       )}
     </div>,
