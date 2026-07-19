@@ -1422,6 +1422,8 @@ export const de = {
       usedToday: "Heute bereits geschmiedet — morgen wieder verfügbar.",
       allDone: "Alle System-Quests erledigt — die Schmiede öffnet morgen wieder.",
       failed: "Das System konnte keine Quests schmieden. Versuch es gleich nochmal.",
+      ready: "{n} Vorschläge bereit",
+      viewCta: "ANSEHEN",
     },
   },
   catalog: {
@@ -1931,6 +1933,24 @@ export const de = {
     noteCta: "Notiz",
     notePlaceholder: "Warum passt sie nicht? (optional)",
     noteSave: "Merken",
+  },
+  forgeRitual: {
+    eyebrow: "SYSTEM-SCHMIEDE",
+    title: "Quests werden geschmiedet",
+    close: "Schließen",
+    retry: "Erneut versuchen",
+    chooseHint: "Das System hat 3 Vorschläge geschmiedet. Wähle bis zu {count} für dein Quest-Log — der Rest verfällt um Mitternacht.",
+    noSlots: "Heute ist alles erledigt — die Vorschläge verfallen um Mitternacht.",
+    chosen: "Gewählt: {k} von {n}",
+    accept: "INS QUEST-LOG ÜBERNEHMEN",
+    reforge: "Neu schmieden",
+    minutes: "{m} MIN",
+    showSteps: "{n} Schritte anzeigen",
+    hideSteps: "Schritte verbergen",
+    insightBestTime: "Beste Aktivzeit: {bucket}",
+    insightReliable: "Zuverlässig: {stat}",
+    insightAvoided: "Angepasst: weniger {stat}",
+    insightCalibrating: "Das System kalibriert sich noch",
   },
   widgets: {
     messages: [

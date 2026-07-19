@@ -1422,6 +1422,8 @@ export const en = {
       usedToday: "Already forged today — available again tomorrow.",
       allDone: "All system quests done — the forge reopens tomorrow.",
       failed: "The System could not forge quests. Try again in a moment.",
+      ready: "{n} proposals ready",
+      viewCta: "VIEW",
     },
   },
   catalog: {
@@ -1995,6 +1997,24 @@ export const en = {
     noteCta: "Note",
     notePlaceholder: "Why doesn't it fit? (optional)",
     noteSave: "Save",
+  },
+  forgeRitual: {
+    eyebrow: "SYSTEM FORGE",
+    title: "Forging quests",
+    close: "Close",
+    retry: "Try again",
+    chooseHint: "The System forged 3 proposals. Pick up to {count} for your quest log — the rest expires at midnight.",
+    noSlots: "Everything is done today — the proposals expire at midnight.",
+    chosen: "Chosen: {k} of {n}",
+    accept: "ADD TO QUEST LOG",
+    reforge: "Reforge",
+    minutes: "{m} MIN",
+    showSteps: "Show {n} steps",
+    hideSteps: "Hide steps",
+    insightBestTime: "Peak activity: {bucket}",
+    insightReliable: "Reliable: {stat}",
+    insightAvoided: "Adjusted: less {stat}",
+    insightCalibrating: "The System is still calibrating",
   },
   widgets: {
     messages: [
