@@ -5,17 +5,19 @@ import { AI_FREE_TRIAL_REQUIREMENTS } from "../data/freeLimits.js";
 // Sichtbare Quest-Schmiede: Free zuendet den Tages-Credit bewusst per Knopf,
 // Pro nutzt sie on-demand ("Neu schmieden"). Die Sequenz dauert ehrlich so
 // lange wie der API-Call — kein Fake-Timer, kein Abbruch-Rennen.
-export default function QuestForgeCard({ theme, status, phase, stepIndex, targets, onForge }) {
+export default function QuestForgeCard({ theme, status, phase, stepIndex, targets, pendingCount = 0, onForge }) {
   const { t } = useI18n();
   const mono = "'JetBrains Mono',monospace";
   const steps = [t("ai.forge.step1"), t("ai.forge.step2"), t("ai.forge.step3")];
+  const hasPending = pendingCount > 0;
   const locked = status.reason === "level" || status.reason === "quests";
   const usedToday = status.reason === "daily";
   const noTargets = targets === 0;
-  const disabled = phase === "loading" || locked || usedToday || noTargets;
+  const disabled = phase === "loading" || (!hasPending && (locked || usedToday || noTargets));
 
   let hint = t("ai.forge.hint");
-  if (locked) hint = t("ai.forge.locked", { level: AI_FREE_TRIAL_REQUIREMENTS.minLevel, quests: AI_FREE_TRIAL_REQUIREMENTS.minCompletedQuests });
+  if (hasPending) hint = t("ai.forge.ready", { n: pendingCount });
+  else if (locked) hint = t("ai.forge.locked", { level: AI_FREE_TRIAL_REQUIREMENTS.minLevel, quests: AI_FREE_TRIAL_REQUIREMENTS.minCompletedQuests });
   else if (usedToday) hint = t("ai.forge.usedToday");
   else if (noTargets) hint = t("ai.forge.allDone");
   if (phase === "failed") hint = t("ai.forge.failed");
@@ -36,7 +38,7 @@ export default function QuestForgeCard({ theme, status, phase, stepIndex, target
           className="press-feedback"
           style={{ flexShrink: 0, padding: "10px 14px", borderRadius: 10, fontSize: 10, fontWeight: 900, letterSpacing: 1.5, fontFamily: mono, cursor: disabled ? "default" : "pointer", background: disabled ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg,#6366f133,#6366f11a)", color: disabled ? "#475569" : "#a5b4fc", border: `1px solid ${disabled ? "rgba(148,163,184,0.15)" : "#6366f155"}` }}
         >
-          {phase === "loading" ? t("ai.forge.working") : t("ai.forge.cta")}
+          {hasPending ? t("ai.forge.viewCta") : (phase === "loading" ? t("ai.forge.working") : t("ai.forge.cta"))}
         </button>
       </div>
     </section>

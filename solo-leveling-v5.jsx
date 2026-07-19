@@ -27,7 +27,6 @@ import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import DungeonGatesPage from "./pages/DungeonGatesPage.jsx";
 import LifeDomainsOnboarding from "./components/LifeDomainsOnboarding.jsx";
 import { HUNTER_CODEX } from "./data/hunterCodex.js";
-import { getDailySystemQuestCount } from "./data/questIntensity.js";
 import { getQuestPlanningSnapshot } from "./data/questPlanning.js";
 const InnerSanctum = React.lazy(() => import("./components/InnerSanctum.jsx"));
 const ShadowRegressionCinematic = React.lazy(() => import("./components/ShadowRegressionCinematic.jsx"));
@@ -91,12 +90,14 @@ import { TaskScanModal } from './components/TaskScanModal.jsx';
 import { AIChatWidget } from './components/AIChatWidget.jsx';
 import QuestDetailModal from './components/QuestDetailModal.jsx';
 import PremiumAccessModal from './components/PremiumAccessModal.jsx';
+import ForgeRitualModal from './components/ForgeRitualModal.jsx';
+import { createPendingSet, isPendingSetValid, getSelectableCount, acceptProposals } from './data/forge.js';
 import { getDailyQuestCreationStatus, getPremiumFeatureForRoute, getQuotaStatus, getAIFreeGenerationStatus } from './data/premium.js';
 import { getQuestVerificationPolicy } from './data/questVerification.js';
 import { getForgeStatus, applyForgeUsage } from './data/freeLimits.js';
 import { countManualForgeTargets } from './data/questSwap.js';
 import { getCrystallizationSuggestion, markCrystallizationChecked, declineCrystallization } from './data/goalCrystallization.js';
-import { recordQuestsSwapped, recordQuestsAssigned, recordInterventionShown } from './data/signals.js';
+import { recordInterventionShown } from './data/signals.js';
 import { getQuestReplacementStatus } from './data/questUtils.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
@@ -806,6 +807,7 @@ function App({ initialHunterName, onLogout }) {
   // ─ Quest-Schmiede: sichtbare KI-Generierung (Free 1x/Tag, Pro on-demand) ─
   const [forgePhase, setForgePhase] = useState("idle"); // idle | loading | failed
   const [forgeStep, setForgeStep] = useState(0);
+  const [showForgeRitual, setShowForgeRitual] = useState(false);
   const forgeStatus = useMemo(() => getForgeStatus({
     premiumActive: premiumStatus?.active,
     state,
@@ -832,41 +834,45 @@ function App({ initialHunterName, onLogout }) {
     setState(cs => { const next = declineCrystallization(cs, category); persist(next); return next; });
   }, [setState, persist]);
 
-  const handleForge = useCallback(async () => {
-    if (!forgeStatus.allowed || forgePhase === "loading") return;
+  const runForgeGeneration = useCallback(async ({ force = false } = {}) => {
+    if (forgePhase === "loading") return;
+    if (!force && isPendingSetValid(state, getToday())) return; // Anti-Farming: Set existiert
     if (!state?.ai?.enabled || geminiAI.isRateLimited()) { setForgePhase("failed"); return; }
     setForgePhase("loading");
-    setForgeStep(0);
-    const stepTimer = setInterval(() => setForgeStep(s => Math.min(s + 1, 2)), 2500);
     try {
       const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
-      const { swapSystemQuests, countManualForgeTargets: countTargets, getSwappedQuests } = await import('./data/questSwap.js');
-      const aiQuests = await generateDailySystemQuestsAsync(getDailySystemQuestCount(state), state, geminiAI.generateQuests);
+      // Immer 3 anfordern — Auswahlbreite; begrenzt wird erst bei der Annahme.
+      const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
       if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) { setForgePhase("failed"); return; }
-      let swapped = false;
       setState(currentState => {
-        if (countTargets(currentState.quests) === 0) return currentState;
-        // Credit NUR bei Erfolg verbrauchen (applyForgeUsage stempelt nur Free).
-        const replacedManual = getSwappedQuests(currentState.quests, aiQuests, { mode: "manual" });
-        let swappedState = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "manual" }) };
-        swappedState = recordQuestsSwapped(swappedState, replacedManual, getToday());
-        swappedState = recordQuestsAssigned(swappedState, aiQuests.slice(0, replacedManual.length), getToday());
-        const next = applyForgeUsage(swappedState, { premiumActive: premiumStatus?.active, today: getToday() });
+        const pending = createPendingSet(aiQuests, { source: "manual", today: getToday(), nowMs: Date.now() });
+        // Credit stempelt bei erfolgreicher GENERIERUNG (Spec §7), nicht beim Swap.
+        const next = applyForgeUsage({ ...currentState, forge: { ...(currentState.forge || {}), pending } }, { premiumActive: premiumStatus?.active, today: getToday() });
         persist(next);
-        swapped = true;
         return next;
       });
-      // Toast nur, wenn wirklich getauscht wurde (Updater setzt das Flag synchron vor dem Re-Render).
-      setTimeout(() => {
-        setForgePhase("idle");
-        if (swapped) notify(tr("ai.recalibrated"), "success");
-      }, 400);
+      setForgePhase("idle");
     } catch {
       setForgePhase("failed");
-    } finally {
-      clearInterval(stepTimer);
     }
-  }, [forgeStatus.allowed, forgePhase, state, premiumStatus?.active, geminiAI, notify, tr, persist]);
+  }, [forgePhase, state, premiumStatus?.active, geminiAI, persist]);
+
+  const handleForge = useCallback(() => {
+    if (!forgeStatus.allowed && !isPendingSetValid(state, getToday())) return;
+    setShowForgeRitual(true);
+    if (!isPendingSetValid(state, getToday())) runForgeGeneration();
+  }, [forgeStatus.allowed, state, runForgeGeneration]);
+
+  const handleAcceptProposals = useCallback((proposalIds) => {
+    setState(currentState => {
+      const { state: next, acceptedCount } = acceptProposals(currentState, proposalIds, { today: getToday() });
+      if (acceptedCount === 0) return currentState;
+      persist(next);
+      setTimeout(() => notify(tr("ai.recalibrated"), "success"), 200);
+      return next;
+    });
+    setShowForgeRitual(false);
+  }, [persist, notify, tr]);
 
   const canOfferPhotoVerification = useCallback((quest) => (
     aiGenerationStatus.allowed
@@ -927,24 +933,17 @@ function App({ initialHunterName, onLogout }) {
     const timer = setTimeout(async () => {
       localStorage.setItem(attemptsKey, String(attempts + 1));
       const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
-      const { canAutoSwapSystemQuests, swapSystemQuests, getSwappedQuests } = await import('./data/questSwap.js');
-      const aiQuests = await generateDailySystemQuestsAsync(getDailySystemQuestCount(state), state, geminiAI.generateQuests);
+      // Immer 3 anfordern — Auswahlbreite; begrenzt wird erst bei der Annahme.
+      const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
       if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) return; // kein KI-Ergebnis -> Guard NICHT setzen
       setState(currentState => {
-        // Konservativ: hat der User heute schon eine Daily angefasst, still lassen.
-        if (!canAutoSwapSystemQuests(currentState.quests)) return currentState;
+        if (isPendingSetValid(currentState, today)) return currentState; // manuell war schneller
         localStorage.setItem(doneKey, today);
-        const replacedAuto = getSwappedQuests(currentState.quests, aiQuests, { mode: "auto" });
-        let updated = { ...currentState, quests: swapSystemQuests(currentState.quests, aiQuests, { mode: "auto" }) };
-        updated = recordQuestsSwapped(updated, replacedAuto, getToday());
-        updated = recordQuestsAssigned(updated, aiQuests, getToday());
+        const pending = createPendingSet(aiQuests, { source: "auto", today, nowMs: Date.now() });
+        const updated = { ...currentState, forge: { ...(currentState.forge || {}), pending } };
         persist(updated);
         return updated;
       });
-      // Inszenierung nur, wenn der Swap wirklich passiert ist (doneKey wurde im Updater gesetzt).
-      setTimeout(() => {
-        if (localStorage.getItem(doneKey) === today) notify(tr("ai.recalibrated"), "info");
-      }, 400);
     }, 1500);
     return () => clearTimeout(timer);
   }, [state?.lastActiveDate, state?.questPlanning?.overloadPreset, loading, premiumStatus?.active]);
@@ -1550,6 +1549,23 @@ function App({ initialHunterName, onLogout }) {
               />
             )}
 
+            {/* SCHMIEDE-RITUAL */}
+            {showForgeRitual && (
+              <ForgeRitualModal
+                theme={theme}
+                gameState={state}
+                pendingSet={isPendingSetValid(state, getToday()) ? state.forge.pending : null}
+                generating={forgePhase === "loading"}
+                failed={forgePhase === "failed"}
+                selectableCount={getSelectableCount(state)}
+                canReforge={Boolean(premiumStatus?.active)}
+                onGenerate={() => runForgeGeneration()}
+                onReforge={() => runForgeGeneration({ force: true })}
+                onAccept={handleAcceptProposals}
+                onClose={() => { setShowForgeRitual(false); setForgePhase("idle"); }}
+              />
+            )}
+
             {/* SOUL LINK VIEW */}
             {showSoulLink && (
               <SoulLinkView
@@ -1867,6 +1883,7 @@ function App({ initialHunterName, onLogout }) {
                   forgePhase={forgePhase}
                   forgeStep={forgeStep}
                   forgeTargets={forgeTargets}
+                  forgePendingCount={isPendingSetValid(state, getToday()) ? state.forge.pending.proposals.length : 0}
                   onForge={handleForge}
                   crystallization={crystallization}
                   onCrystallizeAccept={handleCrystallizeAccept}

@@ -247,6 +247,7 @@ export default function DashboardView({
   forgePhase,
   forgeStep,
   forgeTargets,
+  forgePendingCount,
   onForge,
   crystallization,
   onCrystallizeAccept,
@@ -998,6 +999,7 @@ export default function DashboardView({
                   phase={forgePhase}
                   stepIndex={forgeStep}
                   targets={forgeTargets}
+                  pendingCount={forgePendingCount}
                   onForge={onForge}
                 />
               )}
