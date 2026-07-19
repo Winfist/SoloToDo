@@ -5,10 +5,9 @@ import { AI_FREE_TRIAL_REQUIREMENTS } from "../data/freeLimits.js";
 // Sichtbare Quest-Schmiede: Free zuendet den Tages-Credit bewusst per Knopf,
 // Pro nutzt sie on-demand ("Neu schmieden"). Die Sequenz dauert ehrlich so
 // lange wie der API-Call — kein Fake-Timer, kein Abbruch-Rennen.
-export default function QuestForgeCard({ theme, status, phase, stepIndex, targets, pendingCount = 0, onForge }) {
+export default function QuestForgeCard({ theme, status, phase, targets, pendingCount = 0, onForge }) {
   const { t } = useI18n();
   const mono = "'JetBrains Mono',monospace";
-  const steps = [t("ai.forge.step1"), t("ai.forge.step2"), t("ai.forge.step3")];
   const hasPending = pendingCount > 0;
   const locked = status.reason === "level" || status.reason === "quests";
   const usedToday = status.reason === "daily";
@@ -29,7 +28,7 @@ export default function QuestForgeCard({ theme, status, phase, stepIndex, target
           <div style={{ fontSize: 9, letterSpacing: 3, color: "#818cf8", fontFamily: mono, fontWeight: 800 }}>{t("ai.forge.eyebrow")}</div>
           <div style={{ fontSize: 13, fontWeight: 800, color: "#e2e8f0", marginTop: 2, fontFamily: "'Outfit',sans-serif" }}>{t("ai.forge.title")}</div>
           <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 3, lineHeight: 1.5, fontFamily: "'Outfit',sans-serif" }}>
-            {phase === "loading" ? steps[Math.min(stepIndex, steps.length - 1)] : hint}
+            {phase === "loading" ? t("ai.forge.working") : hint}
           </div>
         </div>
         <button

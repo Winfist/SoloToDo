@@ -1939,7 +1939,7 @@ export const de = {
     title: "Quests werden geschmiedet",
     close: "Schließen",
     retry: "Erneut versuchen",
-    chooseHint: "Das System hat 3 Vorschläge geschmiedet. Wähle bis zu {count} für dein Quest-Log — der Rest verfällt um Mitternacht.",
+    chooseHint: "Das System hat {total} Vorschläge geschmiedet. Wähle bis zu {count} für dein Quest-Log — der Rest verfällt um Mitternacht.",
     noSlots: "Heute ist alles erledigt — die Vorschläge verfallen um Mitternacht.",
     chosen: "Gewählt: {k} von {n}",
     accept: "INS QUEST-LOG ÜBERNEHMEN",

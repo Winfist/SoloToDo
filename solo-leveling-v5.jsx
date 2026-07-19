@@ -806,7 +806,6 @@ function App({ initialHunterName, onLogout }) {
 
   // ─ Quest-Schmiede: sichtbare KI-Generierung (Free 1x/Tag, Pro on-demand) ─
   const [forgePhase, setForgePhase] = useState("idle"); // idle | loading | failed
-  const [forgeStep, setForgeStep] = useState(0);
   const [showForgeRitual, setShowForgeRitual] = useState(false);
   // Bugfix (Review: Ritual-Close mid-generation defeats reentrancy guard): forgePhase
   // resets to "idle" on modal close while the uncancellable up-to-120s AI-Call still
@@ -942,19 +941,28 @@ function App({ initialHunterName, onLogout }) {
 
     // Kurze Verzögerung, damit die statischen Quests zuerst rendern.
     const timer = setTimeout(async () => {
-      localStorage.setItem(attemptsKey, String(attempts + 1));
-      const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
-      // Immer 3 anfordern — Auswahlbreite; begrenzt wird erst bei der Annahme.
-      const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
-      if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) return; // kein KI-Ergebnis -> Guard NICHT setzen
-      setState(currentState => {
-        if (isPendingSetValid(currentState, today)) return currentState; // manuell war schneller
-        localStorage.setItem(doneKey, today);
-        const pending = createPendingSet(aiQuests, { source: "auto", today, nowMs: Date.now() });
-        const updated = { ...currentState, forge: { ...(currentState.forge || {}), pending } };
-        persist(updated);
-        return updated;
-      });
+      // Bugfix (Review: Autoflow vs. manuelle Schmiede): gleiche In-Flight-Sperre
+      // wie runForgeGeneration, sonst kann der Auto-Timer parallel zu einem
+      // manuellen Ritual-Tap laufen und einen zweiten kostenpflichtigen Call ausloesen.
+      if (forgeInFlightRef.current || isPendingSetValid(state, today)) return;
+      forgeInFlightRef.current = true;
+      try {
+        localStorage.setItem(attemptsKey, String(attempts + 1));
+        const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
+        // Immer 3 anfordern — Auswahlbreite; begrenzt wird erst bei der Annahme.
+        const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
+        if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) return; // kein KI-Ergebnis -> Guard NICHT setzen
+        setState(currentState => {
+          if (isPendingSetValid(currentState, today)) return currentState; // manuell war schneller
+          localStorage.setItem(doneKey, today);
+          const pending = createPendingSet(aiQuests, { source: "auto", today, nowMs: Date.now() });
+          const updated = { ...currentState, forge: { ...(currentState.forge || {}), pending } };
+          persist(updated);
+          return updated;
+        });
+      } finally {
+        forgeInFlightRef.current = false;
+      }
     }, 1500);
     return () => clearTimeout(timer);
   }, [state?.lastActiveDate, state?.questPlanning?.overloadPreset, loading, premiumStatus?.active]);
@@ -1570,8 +1578,8 @@ function App({ initialHunterName, onLogout }) {
                 failed={forgePhase === "failed"}
                 selectableCount={getSelectableCount(state)}
                 canReforge={Boolean(premiumStatus?.active)}
-                onGenerate={() => runForgeGeneration()}
-                onReforge={() => runForgeGeneration({ force: true })}
+                onGenerate={() => runForgeGeneration({ force: isPendingSetValid(state, getToday()) })}
+                onReforge={() => forgeStatus.allowed && runForgeGeneration({ force: true })}
                 onAccept={handleAcceptProposals}
                 onClose={() => { setShowForgeRitual(false); if (!forgeInFlightRef.current) setForgePhase("idle"); }}
               />
@@ -1892,7 +1900,6 @@ function App({ initialHunterName, onLogout }) {
                   onHabitDraftHandled={clearHabitDraft}
                   forgeStatus={forgeStatus}
                   forgePhase={forgePhase}
-                  forgeStep={forgeStep}
                   forgeTargets={forgeTargets}
                   forgePendingCount={isPendingSetValid(state, getToday()) ? state.forge.pending.proposals.length : 0}
                   onForge={handleForge}

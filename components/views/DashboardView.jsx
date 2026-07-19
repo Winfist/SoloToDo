@@ -245,7 +245,6 @@ export default function DashboardView({
   onHabitDraftHandled,
   forgeStatus,
   forgePhase,
-  forgeStep,
   forgeTargets,
   forgePendingCount,
   onForge,
@@ -999,7 +998,6 @@ export default function DashboardView({
                   theme={theme}
                   status={forgeStatus}
                   phase={forgePhase}
-                  stepIndex={forgeStep}
                   targets={forgeTargets}
                   pendingCount={forgePendingCount}
                   onForge={onForge}

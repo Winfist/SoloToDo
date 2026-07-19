@@ -97,7 +97,7 @@ export default function ForgeRitualModal({
           <>
             <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 12, lineHeight: 1.5 }}>
               {selectableCount > 0
-                ? t("forgeRitual.chooseHint", { count: selectableCount })
+                ? t("forgeRitual.chooseHint", { total: proposals.length, count: selectableCount })
                 : t("forgeRitual.noSlots")}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

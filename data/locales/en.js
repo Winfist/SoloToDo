@@ -2003,7 +2003,7 @@ export const en = {
     title: "Forging quests",
     close: "Close",
     retry: "Try again",
-    chooseHint: "The System forged 3 proposals. Pick up to {count} for your quest log — the rest expires at midnight.",
+    chooseHint: "The System forged {total} proposals. Pick up to {count} for your quest log — the rest expires at midnight.",
     noSlots: "Everything is done today — the proposals expire at midnight.",
     chosen: "Chosen: {k} of {n}",
     accept: "ADD TO QUEST LOG",
