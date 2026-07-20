@@ -64,6 +64,16 @@ check(nullResult.acceptedCount === 0 && nullResult.state === acceptState, "unbek
 check(acceptProposals(acceptState, [], { today: TODAY }).state === acceptState, "leere Auswahl -> no-op");
 check(acceptProposals({}, ["x"], { today: TODAY }).acceptedCount === 0, "kaputter State wirft nicht");
 
+// ── Kappung auf QUEST_LOADOUT_CAP (Spec 2026-07-20 §2.2) ──
+{
+  const manyTargets = {
+    settings: { questIntensity: "monarch_call" },
+    premium: { tier: "hunter_pro", status: "active", activeUntil: new Date(Date.now() + 86400000).toISOString() },
+    quests: [1, 2, 3, 4, 5].map(i => ({ id: `pd${i}`, templateId: `t_pd${i}`, title: `PD${i}`, category: "int", type: "daily", isSystem: true })),
+  };
+  check(getSelectableCount(manyTargets) === 3, "Pro-Intensitaet 4 + 5 freie Dailies -> Kappung auf 3 Loadout-Plaetze");
+}
+
 // ── defaultState enthaelt forge ──
 import { DEFAULT_STATE } from "../data/defaultState.js";
 check(JSON.stringify(DEFAULT_STATE.forge) === JSON.stringify(DEFAULT_FORGE), "DEFAULT_STATE.forge = DEFAULT_FORGE-Shape");

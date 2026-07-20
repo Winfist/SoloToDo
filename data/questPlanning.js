@@ -133,6 +133,8 @@ function compareLoadoutQuests(a, b, planning, today, dailyFocusQuestId, systemMa
   const pinB = pinIds.includes(b.id) ? pinIds.indexOf(b.id) : Number.POSITIVE_INFINITY;
   const overdueA = a.dueDate && a.dueDate < today ? 0 : 1;
   const overdueB = b.dueDate && b.dueDate < today ? 0 : 1;
+  const forgeA = a.origin === "forge" ? 0 : 1;
+  const forgeB = b.origin === "forge" ? 0 : 1;
   const chainA = a.type === "chained" ? 0 : 1;
   const chainB = b.type === "chained" ? 0 : 1;
   const ownA = a.isSystem ? 1 : 0;
@@ -143,6 +145,7 @@ function compareLoadoutQuests(a, b, planning, today, dailyFocusQuestId, systemMa
     || markA - markB
     || pinA - pinB
     || overdueA - overdueB
+    || forgeA - forgeB
     || chainA - chainB
     || ownA - ownB
     || dueA - dueB

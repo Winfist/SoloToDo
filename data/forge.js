@@ -5,6 +5,7 @@
 import { swapSystemQuests, getSwappedQuests, countManualForgeTargets } from "./questSwap.js";
 import { getDailySystemQuestCount } from "./questIntensity.js";
 import { recordQuestsSwapped, recordQuestsAssigned, recordUserAction } from "./signals.js";
+import { QUEST_LOADOUT_CAP } from "./questPlanning.js";
 
 const MAX_PROPOSALS = 3;
 
@@ -38,6 +39,7 @@ export function clearPendingSet(state) {
 export function getSelectableCount(state) {
   try {
     return Math.max(0, Math.min(
+      QUEST_LOADOUT_CAP,
       getDailySystemQuestCount(state || {}),
       countManualForgeTargets(state?.quests || [])
     ));

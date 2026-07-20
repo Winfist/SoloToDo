@@ -159,4 +159,25 @@ assert(getQuestPlanningSnapshot(restored.state).actionable.length === 1, "restor
   assert(s2.pauseAtOpenQuests === 7 && s2.staleDays === 3, "focused preset: pause at 7, stale after 3 days");
 }
 
+// ── Forge-Rang im Loadout (Spec 2026-07-20 §2.1) ──
+{
+  const mkQuest = (id, extra = {}) => ({ id, title: id, type: "daily", category: "str", createdAt: today, ...extra });
+  const forgeState = {
+    quests: [
+      mkQuest("own1", { isSystem: false, createdAtMs: 1 }),
+      mkQuest("own2", { isSystem: false, createdAtMs: 2 }),
+      mkQuest("sys1", { isSystem: true, createdAtMs: 3 }),
+      mkQuest("forge1", { isSystem: true, origin: "forge", aiGenerated: true, createdAtMs: 99 }),
+    ],
+    questPlanning: { overloadPreset: "balanced", pinnedQuestIds: [], deferredUntilById: {}, lifecycleById: {} },
+  };
+  const forgeSnap = getQuestPlanningSnapshot(forgeState);
+  assert(forgeSnap.loadout.some(q => q.id === "forge1"), "Forge-Quest ist im 3er-Loadout (verdraengt eigene/System)");
+  // Pin schlaegt Forge:
+  const pinnedState = { ...forgeState, questPlanning: { ...forgeState.questPlanning, pinnedQuestIds: ["own1", "own2", "sys1"] } };
+  const pinnedSnap = getQuestPlanningSnapshot(pinnedState);
+  assert(!pinnedSnap.loadout.some(q => q.id === "forge1"), "3 gepinnte schlagen Forge (explizite User-Prio bleibt oben)");
+  assert(pinnedSnap.questLog.some(q => q.id === "forge1"), "Forge landet dann im Quest-Log");
+}
+
 console.log("✓ Quest planning: loadout, overload, deferral and archive behavior verified");
