@@ -201,6 +201,9 @@ RULES (clarity ALWAYS beats drama - Nexus tone stays terse and direct, but instr
 - "doneWhen": exactly 1 measurable sentence starting with "Done when".
 - "subQuests": 2-4 concrete executable steps.
 - NEVER generic placeholders for subQuests - each must have real, specific content.
+- "doneWhen" ALWAYS contains an objectively verifiable amount, duration, or count - never feelings or vague states.
+- "desc" without filler and without meta language ("This quest ..."): sentence 1 = concrete action, sentence 2 = concrete benefit.
+- The 3 quests differ in category OR type of activity - never three variants of the same activity.
 - "estimatedMinutes": realistic minutes (5-120), integer.
 - At least 1 Quest must train the weakest stat.${goalRule}
 - Feedback in recentCompletedQuests: if "too_easy" appears often, raise difficulty; "too_hard" -> lower it; categoryFeedback "less" -> avoid that category; "more" -> prefer it.
@@ -233,6 +236,9 @@ REGELN (Verstaendlichkeit schlaegt IMMER Drama - der Nexus-Ton bleibt knapp und 
 - "doneWhen": genau 1 messbarer Satz, beginnend mit "Fertig, wenn".
 - "subQuests": 2-4 konkrete, ausfuehrbare Schritte.
 - NIEMALS generische Platzhalter fuer subQuests - jede muss echten, spezifischen Inhalt haben.
+- "doneWhen" enthaelt IMMER eine objektiv pruefbare Menge, Dauer oder Anzahl - niemals Gefuehle oder vage Zustaende.
+- "desc" ohne Fuellfloskeln und ohne Meta-Sprache ("Diese Quest ..."): Satz 1 = konkrete Handlung, Satz 2 = konkreter Nutzen.
+- Die 3 Quests unterscheiden sich in Kategorie ODER Taetigkeitsart - niemals drei Varianten derselben Taetigkeit.
 - "estimatedMinutes": realistische Minuten (5-120), ganze Zahl.
 - Mindestens 1 Quest trainiert den schwaechsten Stat.${goalRule}
 - Feedback in recentCompletedQuests: haeufig "too_easy" -> Schwierigkeit anheben; "too_hard" -> absenken; categoryFeedback "less" -> Kategorie meiden; "more" -> Kategorie bevorzugen.

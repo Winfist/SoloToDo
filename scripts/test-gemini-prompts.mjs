@@ -83,5 +83,15 @@ check(sigPrompt.includes("10 Minuten"), "Ghost-Einstiegsregel de");
 const sigPromptEn = GENERATE_QUESTS_PROMPT({ str: 1 }, 3, "str", [], { behaviorSignals: { ghostDaysLast14: 4 } }, "en");
 check(sigPromptEn.includes("strongest preference source"), "Notiz-Regel en");
 
+// ── Qualitaets-Regeln 2.1 ──
+const qPromptDe = GENERATE_QUESTS_PROMPT({ str: 1 }, 3, "str", [], {}, "de");
+const qPromptEn = GENERATE_QUESTS_PROMPT({ str: 1 }, 3, "str", [], {}, "en");
+check(qPromptDe.includes("objektiv pruefbare Menge"), "doneWhen-Messbarkeits-Regel de");
+check(qPromptDe.includes("Meta-Sprache"), "desc-Floskel-Regel de");
+check(qPromptDe.includes("niemals drei Varianten derselben Taetigkeit"), "Varianz-Regel de");
+check(qPromptEn.includes("objectively verifiable amount"), "doneWhen rule en");
+check(qPromptEn.includes("meta language"), "desc rule en");
+check(qPromptEn.includes("never three variants of the same activity"), "variety rule en");
+
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ test-gemini-prompts: alles gruen");
