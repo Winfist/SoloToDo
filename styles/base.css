@@ -1063,3 +1063,9 @@ h6 {
   scrollbar-width: thin;
   scrollbar-color: var(--theme-primary, #4f6ef7) rgba(15, 15, 30, 0.3);
 }
+
+/* Schmiede-Ritual: dezenter Puls (nur Scale/Opacity, kein Glow) */
+@keyframes forgePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.72; }
+}

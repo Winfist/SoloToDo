@@ -2015,6 +2015,16 @@ export const en = {
     insightReliable: "Reliable: {stat}",
     insightAvoided: "Adjusted: less {stat}",
     insightCalibrating: "The System is still calibrating",
+    status1: "Analyzing your recent completions…",
+    status2: "Reading your behavior profile…",
+    status3: "Checking your peak activity times…",
+    status4: "Shaping proposal 1 of 3…",
+    status5: "Writing concrete steps…",
+    status6: "Checking proposal quality…",
+    elapsedHint: "Can take up to 2 minutes.",
+    closeHint: "You can close this — the forge keeps working and the card will let you know when everything is ready.",
+    accepted: "Accepted!",
+    acceptedSub: "Your quests are now at the top of your board.",
   },
   widgets: {
     messages: [

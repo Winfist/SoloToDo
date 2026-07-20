@@ -1951,6 +1951,16 @@ export const de = {
     insightReliable: "Zuverlässig: {stat}",
     insightAvoided: "Angepasst: weniger {stat}",
     insightCalibrating: "Das System kalibriert sich noch",
+    status1: "Analysiere deine letzten Abschlüsse…",
+    status2: "Lese dein Verhaltensprofil…",
+    status3: "Prüfe deine besten Aktivzeiten…",
+    status4: "Forme Vorschlag 1 von 3…",
+    status5: "Formuliere konkrete Schritte…",
+    status6: "Prüfe die Qualität der Vorschläge…",
+    elapsedHint: "Kann bis zu 2 Minuten dauern.",
+    closeHint: "Du kannst schließen — die Schmiede arbeitet weiter und die Karte meldet sich, sobald alles bereit ist.",
+    accepted: "Übernommen!",
+    acceptedSub: "Deine Quests stehen jetzt oben auf deinem Board.",
   },
   widgets: {
     messages: [

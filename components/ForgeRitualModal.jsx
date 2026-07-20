@@ -19,23 +19,22 @@ export default function ForgeRitualModal({
   const { t } = useI18n();
   const [selectedIds, setSelectedIds] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
-  const [stepIndex, setStepIndex] = useState(0);
+  const [statusIndex, setStatusIndex] = useState(0);
+  const [elapsedS, setElapsedS] = useState(0);
+  const [accepted, setAccepted] = useState(false);
 
   const proposals = pendingSet?.proposals || [];
   const maxSelectable = Math.min(selectableCount, proposals.length);
   const phase = generating ? "forging" : failed ? "failed" : proposals.length > 0 ? "choose" : "idle";
 
-  // Sequenz-Zeilen rotieren, solange der echte Call laeuft (kein Fake-Ende).
+  // Rotierende Status-Zeilen + Elapsed, solange der echte Call laeuft.
   useEffect(() => {
     if (phase !== "forging") return undefined;
-    setStepIndex(0);
-    const timer = setInterval(() => {
-      setStepIndex((s) => {
-        if (s >= 2) { clearInterval(timer); return s; }
-        return s + 1;
-      });
-    }, 2500);
-    return () => clearInterval(timer);
+    setStatusIndex(0);
+    setElapsedS(0);
+    const rotate = setInterval(() => setStatusIndex((i) => (i + 1) % 6), 3000);
+    const tick = setInterval(() => setElapsedS((s) => s + 1), 1000);
+    return () => { clearInterval(rotate); clearInterval(tick); };
   }, [phase]);
 
   // Hintergrund einfrieren, solange das Ritual offen ist.
@@ -63,7 +62,11 @@ export default function ForgeRitualModal({
     return [...ids, id];
   });
 
-  const steps = [t("ai.forge.step1"), t("ai.forge.step2"), t("ai.forge.step3")];
+  const handleAcceptTap = () => {
+    if (selectedIds.length === 0 || accepted) return;
+    setAccepted(true);
+    setTimeout(() => onAccept(selectedIds), 900);
+  };
 
   return ReactDOM.createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(5,7,15,0.94)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column", color: "#e2e8f0", fontFamily: sans, overscrollBehavior: "contain" }}>
@@ -78,19 +81,31 @@ export default function ForgeRitualModal({
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "8px 20px 20px" }}>
-        {phase === "forging" && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 18, textAlign: "center" }}>
-            <div style={{ width: 64, height: 64, borderRadius: "50%", border: "2px solid #6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>⚒</div>
-            <div style={{ fontSize: 13, fontWeight: 700, fontFamily: mono, letterSpacing: 1 }}>{steps[stepIndex]}</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+        {accepted && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 12, textAlign: "center" }}>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(74,222,128,0.12)", border: "2px solid #4ade80", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, color: "#4ade80" }}>✓</div>
+            <div style={{ fontSize: 15, fontWeight: 800 }}>{t("forgeRitual.accepted")}</div>
+            <div style={{ fontSize: 11.5, color: "#94a3b8" }}>{t("forgeRitual.acceptedSub")}</div>
+          </div>
+        )}
+
+        {phase === "forging" && !accepted && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 16, textAlign: "center", padding: "0 12px" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", border: "2px solid #6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, animation: "forgePulse 2.4s ease-in-out infinite" }}>⚒</div>
+            <div style={{ fontSize: 13, fontWeight: 700, fontFamily: mono, letterSpacing: 1, minHeight: 20 }}>{t(`forgeRitual.status${statusIndex + 1}`)}</div>
+            <div style={{ fontSize: 11, color: "#64748b", fontFamily: mono }}>
+              {String(Math.floor(elapsedS / 60)).padStart(1, "0")}:{String(elapsedS % 60).padStart(2, "0")} · {t("forgeRitual.elapsedHint")}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
               {dossierLines.map((line, i) => (
                 <div key={i} style={{ fontSize: 11, color: "#94a3b8" }}>▸ {line}</div>
               ))}
             </div>
+            <div style={{ fontSize: 10.5, color: "#64748b", maxWidth: 300, lineHeight: 1.55, marginTop: 6 }}>{t("forgeRitual.closeHint")}</div>
           </div>
         )}
 
-        {phase === "failed" && (
+        {phase === "failed" && !accepted && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 14, textAlign: "center" }}>
             <div style={{ fontSize: 26 }}>⚠</div>
             <div style={{ fontSize: 12.5, color: "#94a3b8", maxWidth: 280, lineHeight: 1.5 }}>{t("ai.forge.failed")}</div>
@@ -101,7 +116,7 @@ export default function ForgeRitualModal({
           </div>
         )}
 
-        {phase === "choose" && (
+        {phase === "choose" && !accepted && (
           <>
             <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 12, lineHeight: 1.5 }}>
               {maxSelectable > 0
@@ -156,7 +171,7 @@ export default function ForgeRitualModal({
       </div>
 
       {/* Fuss (nur Auswahl-Phase) */}
-      {phase === "choose" && (maxSelectable > 0 || canReforge) && (
+      {phase === "choose" && !accepted && (maxSelectable > 0 || canReforge) && (
         <div style={{ padding: "12px 20px calc(max(env(safe-area-inset-bottom, 0px), 12px) + 12px)", borderTop: "1px solid rgba(148,163,184,0.12)", display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             {maxSelectable > 0 && (
@@ -172,7 +187,7 @@ export default function ForgeRitualModal({
             )}
           </div>
           {maxSelectable > 0 && (
-            <button onClick={() => selectedIds.length > 0 && onAccept(selectedIds)} disabled={selectedIds.length === 0} className="press-feedback"
+            <button onClick={handleAcceptTap} disabled={selectedIds.length === 0 || accepted} className="press-feedback"
               style={{ padding: "13px 16px", borderRadius: 12, fontSize: 12, fontWeight: 900, letterSpacing: 1.5, fontFamily: mono, cursor: selectedIds.length > 0 ? "pointer" : "default", background: selectedIds.length > 0 ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.05)", color: selectedIds.length > 0 ? "#fff" : "#475569", border: "none" }}>
               {t("forgeRitual.accept")}
             </button>
