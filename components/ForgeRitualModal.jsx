@@ -22,6 +22,7 @@ export default function ForgeRitualModal({
   const [stepIndex, setStepIndex] = useState(0);
 
   const proposals = pendingSet?.proposals || [];
+  const maxSelectable = Math.min(selectableCount, proposals.length);
   const phase = generating ? "forging" : failed ? "failed" : proposals.length > 0 ? "choose" : "idle";
 
   // Sequenz-Zeilen rotieren, solange der echte Call laeuft (kein Fake-Ende).
@@ -37,6 +38,13 @@ export default function ForgeRitualModal({
     return () => clearInterval(timer);
   }, [phase]);
 
+  // Hintergrund einfrieren, solange das Ritual offen ist.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, []);
+
   // Neues Set -> Auswahl zuruecksetzen.
   useEffect(() => { setSelectedIds([]); setExpandedId(null); }, [pendingSet?.generatedAtMs]);
 
@@ -51,22 +59,22 @@ export default function ForgeRitualModal({
 
   const toggle = (id) => setSelectedIds((ids) => {
     if (ids.includes(id)) return ids.filter((x) => x !== id);
-    if (ids.length >= selectableCount) return ids;
+    if (ids.length >= maxSelectable) return ids;
     return [...ids, id];
   });
 
   const steps = [t("ai.forge.step1"), t("ai.forge.step2"), t("ai.forge.step3")];
 
   return ReactDOM.createPortal(
-    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(5,7,15,0.94)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column", color: "#e2e8f0", fontFamily: sans }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(5,7,15,0.94)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column", color: "#e2e8f0", fontFamily: sans, overscrollBehavior: "contain" }}>
       {/* Kopf */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 10px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(env(safe-area-inset-top, 0px), 14px) 20px 10px" }}>
         <div>
           <div style={{ fontSize: 9, letterSpacing: 3, color: "#818cf8", fontFamily: mono, fontWeight: 800 }}>{t("forgeRitual.eyebrow")}</div>
           <div style={{ fontSize: 17, fontWeight: 800, marginTop: 2 }}>{t("forgeRitual.title")}</div>
         </div>
         <button onClick={onClose} className="press-feedback" aria-label={t("forgeRitual.close")}
-          style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.05)", color: "#94a3b8", border: "1px solid rgba(148,163,184,0.2)", fontSize: 16, cursor: "pointer" }}>✕</button>
+          style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(255,255,255,0.05)", color: "#94a3b8", border: "1px solid rgba(148,163,184,0.2)", fontSize: 18, cursor: "pointer" }}>✕</button>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "8px 20px 20px" }}>
@@ -96,8 +104,8 @@ export default function ForgeRitualModal({
         {phase === "choose" && (
           <>
             <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 12, lineHeight: 1.5 }}>
-              {selectableCount > 0
-                ? t("forgeRitual.chooseHint", { total: proposals.length, count: selectableCount })
+              {maxSelectable > 0
+                ? t("forgeRitual.chooseHint", { total: proposals.length, count: maxSelectable })
                 : t("forgeRitual.noSlots")}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -106,8 +114,8 @@ export default function ForgeRitualModal({
                 const expanded = expandedId === quest.id;
                 const catColor = CAT_COLORS[quest.category] || "#818cf8";
                 return (
-                  <div key={quest.id} onClick={() => selectableCount > 0 && toggle(quest.id)}
-                    style={{ padding: "14px 16px", borderRadius: 14, cursor: selectableCount > 0 ? "pointer" : "default", background: selected ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.03)", border: `1.5px solid ${selected ? "#6366f1" : "rgba(148,163,184,0.15)"}`, transition: "border-color .15s, background .15s" }}>
+                  <div key={quest.id} onClick={() => maxSelectable > 0 && toggle(quest.id)}
+                    style={{ padding: "14px 16px", borderRadius: 14, cursor: maxSelectable > 0 ? "pointer" : "default", background: selected ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.03)", border: `1.5px solid ${selected ? "#6366f1" : "rgba(148,163,184,0.15)"}`, transition: "border-color .15s, background .15s" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 800, lineHeight: 1.35 }}>{quest.title}</div>
@@ -148,12 +156,12 @@ export default function ForgeRitualModal({
       </div>
 
       {/* Fuss (nur Auswahl-Phase) */}
-      {phase === "choose" && (selectableCount > 0 || canReforge) && (
-        <div style={{ padding: "12px 20px 24px", borderTop: "1px solid rgba(148,163,184,0.12)", display: "flex", flexDirection: "column", gap: 10 }}>
+      {phase === "choose" && (maxSelectable > 0 || canReforge) && (
+        <div style={{ padding: "12px 20px calc(max(env(safe-area-inset-bottom, 0px), 12px) + 12px)", borderTop: "1px solid rgba(148,163,184,0.12)", display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            {selectableCount > 0 && (
+            {maxSelectable > 0 && (
               <span style={{ fontSize: 10.5, fontFamily: mono, letterSpacing: 1, color: "#94a3b8" }}>
-                {t("forgeRitual.chosen", { k: selectedIds.length, n: selectableCount })}
+                {t("forgeRitual.chosen", { k: selectedIds.length, n: maxSelectable })}
               </span>
             )}
             {canReforge && (
@@ -163,7 +171,7 @@ export default function ForgeRitualModal({
               </button>
             )}
           </div>
-          {selectableCount > 0 && (
+          {maxSelectable > 0 && (
             <button onClick={() => selectedIds.length > 0 && onAccept(selectedIds)} disabled={selectedIds.length === 0} className="press-feedback"
               style={{ padding: "13px 16px", borderRadius: 12, fontSize: 12, fontWeight: 900, letterSpacing: 1.5, fontFamily: mono, cursor: selectedIds.length > 0 ? "pointer" : "default", background: selectedIds.length > 0 ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.05)", color: selectedIds.length > 0 ? "#fff" : "#475569", border: "none" }}>
               {t("forgeRitual.accept")}
