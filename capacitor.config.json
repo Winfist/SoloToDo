@@ -18,5 +18,26 @@
     "FirebaseMessaging": {
       "presentationOptions": ["badge", "sound", "alert"]
     }
+  },
+  "experimental": {
+    "ios": {
+      "spm": {
+        "swiftToolsVersion": "6.1",
+        "packageTraits": {
+          "@capacitor-firebase/analytics": ["AnalyticsWithoutAdIdSupport"]
+        },
+        "packageOptions": {
+          "@capacitor-firebase/analytics": {
+            "symlink": true
+          },
+          "@capacitor-firebase/authentication": {
+            "symlink": true
+          },
+          "@capacitor-firebase/messaging": {
+            "symlink": true
+          }
+        }
+      }
+    }
   }
 }

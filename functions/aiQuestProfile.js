@@ -130,15 +130,18 @@ function sanitizeAIQuestProfile(profile) {
 
 function sanitizeGeneratedAIQuests(quests) {
   return (Array.isArray(quests) ? quests : []).slice(0, 3).map((quest) => {
-    const estimatedMinutes = clampInteger(quest?.estimatedMinutes, 0, 480);
+    const estimatedMinutes = typeof quest?.estimatedMinutes === "number"
+      && Number.isInteger(quest.estimatedMinutes)
+      ? quest.estimatedMinutes
+      : null;
     const goalRef = safeText(quest?.goalRef, 140);
     return {
       title: safeText(quest?.title, 160),
-      category: CATEGORY_ID_SET.has(quest?.category) ? quest.category : "str",
-      difficulty: ["easy", "normal", "hard"].includes(quest?.difficulty) ? quest.difficulty : "normal",
+      ...(CATEGORY_ID_SET.has(quest?.category) ? { category: quest.category } : {}),
+      ...(["easy", "normal", "hard"].includes(quest?.difficulty) ? { difficulty: quest.difficulty } : {}),
       desc: safeText(quest?.desc, 500),
       doneWhen: safeText(quest?.doneWhen, 200),
-      ...(estimatedMinutes > 0 ? { estimatedMinutes } : {}),
+      ...(estimatedMinutes !== null ? { estimatedMinutes } : {}),
       ...(goalRef ? { goalRef } : {}),
       subQuests: (Array.isArray(quest?.subQuests) ? quest.subQuests : [])
         .slice(0, 5)

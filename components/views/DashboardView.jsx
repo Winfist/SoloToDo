@@ -69,6 +69,15 @@ const CAROUSEL_CSS = `
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
 }
+@keyframes forgeBoardArrival {
+  0% { box-shadow: 0 0 0 0 rgba(129,140,248,0); border-color: rgba(129,140,248,0.25); }
+  32% { box-shadow: 0 0 0 3px rgba(129,140,248,0.22), 0 0 28px rgba(99,102,241,0.24); border-color: rgba(165,180,252,0.8); }
+  100% { box-shadow: 0 0 0 0 rgba(129,140,248,0); border-color: rgba(129,140,248,0.25); }
+}
+.forge-board-highlight { animation: forgeBoardArrival 1.35s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .forge-board-highlight { animation: none; border-color: rgba(165,180,252,0.8) !important; box-shadow: 0 0 0 2px rgba(129,140,248,0.18); }
+}
 `;
 
 const PREMIUM_WIDGET_LOCK_COPY = {
@@ -247,6 +256,8 @@ export default function DashboardView({
   forgePhase,
   forgeTargets,
   forgePendingCount,
+  forgeBoardHighlight = false,
+  forgeBoardAcceptedIds = [],
   onForge,
   crystallization,
   onCrystallizeAccept,
@@ -291,6 +302,19 @@ export default function DashboardView({
   const [freqOpen, setFreqOpen] = useState(false);
   const [replacementQuest, setReplacementQuest] = useState(null);
   const [replacementOptions, setReplacementOptions] = useState([]);
+  const forgeSectionRef = useRef(null);
+
+  useEffect(() => {
+    if (!forgeBoardHighlight) return undefined;
+    const frame = requestAnimationFrame(() => {
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      forgeSectionRef.current?.scrollIntoView({
+        behavior: reducedMotion ? 'auto' : 'smooth',
+        block: 'center',
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [forgeBoardHighlight]);
 
   // ── Dashboard Configuration ──
   const dashConfig = useMemo(() => mergeConfig(state.dashboardConfig, can), [state.dashboardConfig, state.level]);
@@ -624,7 +648,12 @@ export default function DashboardView({
     filteredQuestIds.has(q.id)
     && (originFilter === "all" || (originFilter === "system" ? q.isSystem : !q.isSystem))
   );
-  const forgeLoadout = dashboardLoadout.filter(q => q.origin === "forge");
+  const openForgeQuests = planningSnapshot.open.filter((quest) => quest.origin === "forge");
+  const acceptedForgeIds = new Set((Array.isArray(forgeBoardAcceptedIds) ? forgeBoardAcceptedIds : []).filter(Boolean));
+  const acceptedForgeQuests = openForgeQuests.filter((quest) => acceptedForgeIds.has(quest.id));
+  const forgeLoadout = forgeBoardHighlight
+    ? (acceptedForgeQuests.length > 0 ? acceptedForgeQuests : openForgeQuests)
+    : dashboardLoadout.filter((quest) => quest.origin === "forge");
   const questBoardSections = [
     { key: "forge", title: locale === "en" ? "⚒ FROM THE FORGE" : "⚒ AUS DER SCHMIEDE", color: "#818cf8", quests: groupQuestStacks(forgeLoadout) },
     { key: "loadout", title: locale === "en" ? "YOUR LOADOUT" : "DEIN LOADOUT", color: theme.primary, quests: groupQuestStacks(dashboardLoadout.filter(q => q.origin !== "forge")) },
@@ -1018,7 +1047,7 @@ export default function DashboardView({
               )}
 
               {/* ── QUEST LIST ── */}
-              {dashboardLoadout.length === 0 ? (
+              {questBoardSections.length === 0 ? (
                 planningSnapshot.completedToday > 0 ? (
                   <div style={{ textAlign: "center", padding: "42px 20px 36px", background: theme.card, borderRadius: 16, border: "1px solid rgba(148,163,184,0.12)", backdropFilter: "blur(8px)", marginBottom: 24 }}>
                     <div style={{ width: 56, height: 56, margin: "0 auto 14px", borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", background: `${theme.primary}08`, border: `1px solid ${theme.primary}22` }}>
@@ -1058,7 +1087,9 @@ export default function DashboardView({
                   {questBoardSections.map(section => (
                     <section
                       key={section.key}
-                      style={section.key === "forge" ? { border: "1px solid rgba(129,140,248,0.25)", borderRadius: 14, padding: 10 } : undefined}
+                      ref={section.key === "forge" ? forgeSectionRef : undefined}
+                      className={section.key === "forge" && forgeBoardHighlight ? "forge-board-highlight" : undefined}
+                      style={section.key === "forge" ? { border: "1px solid rgba(129,140,248,0.25)", borderRadius: 14, padding: 10, scrollMarginTop: 96 } : undefined}
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 7 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>

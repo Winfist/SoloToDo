@@ -12,6 +12,110 @@ function systemPersona(language = "de") {
 
 const SYSTEM_PERSONA = systemPersona("de");
 
+const FORGE_PROFILE_MAX_CHARS = 4000;
+
+function jsonFits(value, maxChars) {
+  try {
+    return JSON.stringify(value).length <= maxChars;
+  } catch {
+    return false;
+  }
+}
+
+function addArraySection(result, key, values, maxChars) {
+  if (!Array.isArray(values) || values.length === 0) return result;
+  const complete = { ...result, [key]: values };
+  if (jsonFits(complete, maxChars)) return complete;
+
+  let items = [];
+  let next = result;
+  for (const value of values) {
+    const candidate = { ...result, [key]: [...items, value] };
+    if (!jsonFits(candidate, maxChars)) break;
+    items = candidate[key];
+    next = candidate;
+  }
+  return next;
+}
+
+function addObjectSection(result, key, value, fieldOrder, maxChars) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return result;
+  const complete = { ...result, [key]: value };
+  if (jsonFits(complete, maxChars)) return complete;
+
+  let section = {};
+  let next = result;
+  for (const field of fieldOrder) {
+    const fieldValue = value[field];
+    if (fieldValue === undefined) continue;
+    if (Array.isArray(fieldValue)) {
+      let items = [];
+      for (const item of fieldValue) {
+        const candidateSection = { ...section, [field]: [...items, item] };
+        const candidate = { ...result, [key]: candidateSection };
+        if (!jsonFits(candidate, maxChars)) break;
+        items = candidateSection[field];
+        section = candidateSection;
+        next = candidate;
+      }
+      continue;
+    }
+    if (fieldValue && typeof fieldValue === "object") {
+      let nested = {};
+      for (const [nestedKey, nestedValue] of Object.entries(fieldValue)) {
+        const candidateSection = { ...section, [field]: { ...nested, [nestedKey]: nestedValue } };
+        const candidate = { ...result, [key]: candidateSection };
+        if (!jsonFits(candidate, maxChars)) break;
+        nested = candidateSection[field];
+        section = candidateSection;
+        next = candidate;
+      }
+      continue;
+    }
+    const candidateSection = { ...section, [field]: fieldValue };
+    const candidate = { ...result, [key]: candidateSection };
+    if (!jsonFits(candidate, maxChars)) continue;
+    section = candidateSection;
+    next = candidate;
+  }
+  return next;
+}
+
+// Build valid JSON under the prompt budget. Explicit preferences and goals are
+// kept first; lower-value history is reduced item-by-item instead of slicing a
+// serialized JSON string into an invalid fragment.
+function serializeForgeProfile(profile = {}, maxChars = FORGE_PROFILE_MAX_CHARS) {
+  const source = profile && typeof profile === "object" ? profile : {};
+  const budget = Math.max(2, Math.min(FORGE_PROFILE_MAX_CHARS, Number(maxChars) || FORGE_PROFILE_MAX_CHARS));
+  let compact = {};
+
+  compact = addArraySection(compact, "activeGoals", source.activeGoals, budget);
+  compact = addObjectSection(compact, "behaviorSignals", source.behaviorSignals, [
+    "userNotes",
+    "recentDislikedTitles",
+    "recentExpiredTitles",
+    "avoidCategories",
+    "likedCategories",
+    "reliableCategories",
+    "bestTime",
+    "ghostDaysLast14",
+    "categoryCompletionRates",
+  ], budget);
+  compact = addArraySection(compact, "recentCompletedQuests", source.recentCompletedQuests, budget);
+  compact = addArraySection(compact, "lifeDomains", source.lifeDomains, budget);
+  compact = addArraySection(compact, "focusStats", source.focusStats, budget);
+  compact = addObjectSection(compact, "categoryCompletions", source.categoryCompletions,
+    ["str", "int", "vit", "agi", "cha"], budget);
+
+  // Lowest-priority sections: useful when space remains, safe to reduce first.
+  compact = addArraySection(compact, "customQuestPatterns", source.customQuestPatterns, budget);
+  compact = addArraySection(compact, "activeHabits", source.activeHabits, budget);
+  compact = addObjectSection(compact, "focusSummary", source.focusSummary,
+    ["recentMinutes", "totalMinutes", "totalSessions"], budget);
+
+  return JSON.stringify(compact);
+}
+
 function VERIFY_QUEST_PROMPT(title, desc, questSteps = [], evidenceKind = "artifact", language = "de") {
   const persona = systemPersona(language);
   const steps = Array.isArray(questSteps) ? questSteps.filter(Boolean) : [];
@@ -169,7 +273,7 @@ function GENERATE_QUESTS_PROMPT(stats, level, weakStat, recentQuests, profile = 
       ? `\nRecently completed Quests (do not repeat): ${recentQuests.slice(0, 5).join(", ")}`
       : `\nLetzte abgeschlossene Quests (nicht wiederholen): ${recentQuests.slice(0, 5).join(", ")}`
     : "";
-  const profileJson = JSON.stringify(profile || {}).slice(0, 4000);
+  const profileJson = serializeForgeProfile(profile);
   const strictNote = strict
     ? (isEn
       ? "\nYOUR LAST ANSWER WAS INVALID. Follow the JSON format EXACTLY. Fill EVERY field. All user-facing text in English.\n"
@@ -205,6 +309,7 @@ RULES (clarity ALWAYS beats drama - Nexus tone stays terse and direct, but instr
 - "desc" without filler and without meta language ("This quest ..."): sentence 1 = concrete action, sentence 2 = concrete benefit.
 - The 3 quests differ in category OR type of activity - never three variants of the same activity.
 - "estimatedMinutes": realistic minutes (5-120), integer.
+- At least 1 of the 3 Quests must be a meaningful quick win estimated at 5-15 minutes. It must create concrete progress toward an active goal, the weakest stat, an active habit, or a useful daily outcome - never a token task invented only to satisfy the time range.
 - At least 1 Quest must train the weakest stat.${goalRule}
 - Feedback in recentCompletedQuests: if "too_easy" appears often, raise difficulty; "too_hard" -> lower it; categoryFeedback "less" -> avoid that category; "more" -> prefer it.
 - behaviorSignals in the profile: never repeat quests whose titles appear in recentDislikedTitles or recentExpiredTitles, or whose category is in avoidCategories, in the same form - offer lighter or shorter variants instead.
@@ -240,6 +345,7 @@ REGELN (Verstaendlichkeit schlaegt IMMER Drama - der Nexus-Ton bleibt knapp und 
 - "desc" ohne Fuellfloskeln und ohne Meta-Sprache ("Diese Quest ..."): Satz 1 = konkrete Handlung, Satz 2 = konkreter Nutzen.
 - Die 3 Quests unterscheiden sich in Kategorie ODER Taetigkeitsart - niemals drei Varianten derselben Taetigkeit.
 - "estimatedMinutes": realistische Minuten (5-120), ganze Zahl.
+- Mindestens 1 der 3 Quests muss ein sinnvoller Quick Win mit 5-15 Minuten sein. Er muss konkreten Fortschritt fuer ein aktives Ziel, den schwaechsten Stat, einen aktiven Habit oder ein nuetzliches Tagesergebnis schaffen - niemals eine Alibi-Aufgabe nur fuer das Zeitfenster.
 - Mindestens 1 Quest trainiert den schwaechsten Stat.${goalRule}
 - Feedback in recentCompletedQuests: haeufig "too_easy" -> Schwierigkeit anheben; "too_hard" -> absenken; categoryFeedback "less" -> Kategorie meiden; "more" -> Kategorie bevorzugen.
 - behaviorSignals im Profil: Quests, deren Titel in recentDislikedTitles oder recentExpiredTitles stehen oder deren Kategorie in avoidCategories liegt, nicht in gleicher Form wiederholen - biete stattdessen leichtere oder kuerzere Varianten an.
@@ -391,7 +497,7 @@ Schwierigkeiten: "easy", "normal", "hard"`;
 function SUGGEST_GOALS_PROMPT(profile = {}, language = "de", questionnaire = null) {
   const persona = systemPersona(language);
   const isEn = normalizeLanguage(language) === "en";
-  const profileJson = JSON.stringify(profile).slice(0, 4000);
+  const profileJson = serializeForgeProfile(profile);
 
   if (isEn) {
     const questionnaireBlock = questionnaire
@@ -451,4 +557,5 @@ module.exports = {
   COACH_PROMPT,
   QUEST_DESC_PROMPT,
   SUGGEST_GOALS_PROMPT,
+  serializeForgeProfile,
 };

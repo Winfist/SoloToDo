@@ -132,8 +132,8 @@ const generatedQuests = sanitizeGeneratedAIQuests([
 assert.equal(generatedQuests.length, 2);
 assert(!generatedQuests.some((quest) => quest.title === "System-Quest"));
 assert.equal(generatedQuests[0].title, "Second");
-assert.equal(generatedQuests[0].category, "str");
-assert.equal(generatedQuests[0].difficulty, "normal");
+assert.equal(generatedQuests[0].category, undefined);
+assert.equal(generatedQuests[0].difficulty, undefined);
 assert.equal(generatedQuests[0].desc.length, 500);
 assert.deepEqual(generatedQuests[0].subQuests, [{ title: "Step" }]);
 

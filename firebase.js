@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
-import { getAnalytics, logEvent as fbLogEvent } from "firebase/analytics";
+import { getAnalytics } from "firebase/analytics";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 // Replace with your Firebase config

@@ -1,7 +1,7 @@
 import prompts from "../functions/geminiPrompts.js";
 import profileMod from "../functions/aiQuestProfile.js";
-const { GENERATE_QUESTS_PROMPT } = prompts;
-const { sanitizeGeneratedAIQuests } = profileMod;
+const { GENERATE_QUESTS_PROMPT, serializeForgeProfile } = prompts;
+const { sanitizeAIQuestProfile, sanitizeGeneratedAIQuests } = profileMod;
 
 let failures = 0;
 const check = (cond, msg) => { if (!cond) { console.error(`✗ ${msg}`); failures += 1; } };
@@ -25,10 +25,38 @@ check(!p.includes("(1 Satz)"), "alte 1-Satz-Regel ist raus");
 const pStrict = GENERATE_QUESTS_PROMPT(stats, 7, "agi", [], profile, "de", { strict: true });
 check(pStrict.includes("UNGUELTIG"), "strict-Variante enthaelt Verschaerfung");
 
-// Profil-Cap: Monster-Profil wird abgeschnitten
-const fat = { activeGoals: [{ title: "x".repeat(10000) }] };
+// Profil-Cap: gueltiges, priorisiertes JSON statt abgeschnittenem Fragment
+const fat = sanitizeAIQuestProfile({
+  behaviorSignals: {
+    userNotes: ["kurze konkrete Aufgaben bevorzugen", "nicht am Telefon"],
+    recentDislikedTitles: Array.from({ length: 5 }, (_, i) => `Abgelehnt ${i} ${"x".repeat(110)}`),
+    recentExpiredTitles: Array.from({ length: 5 }, (_, i) => `Verfallen ${i} ${"y".repeat(110)}`),
+    avoidCategories: ["vit"],
+  },
+  activeGoals: Array.from({ length: 3 }, (_, i) => ({
+    title: `Wichtiges Ziel ${i}`,
+    category: "fitness",
+    nextMilestone: `Konkreter Meilenstein ${i} ${"z".repeat(100)}`,
+  })),
+  recentCompletedQuests: Array.from({ length: 8 }, (_, i) => ({
+    title: `Erledigte Quest ${i} ${"r".repeat(110)}`,
+    category: "str",
+  })),
+  lifeDomains: ["fitness", "health", "career"],
+  focusStats: ["str", "vit", "agi"],
+  customQuestPatterns: Array.from({ length: 8 }, (_, i) => `Eigenes Muster ${i} ${"p".repeat(110)}`),
+  activeHabits: Array.from({ length: 4 }, (_, i) => ({ title: `Habit ${i} ${"h".repeat(110)}` })),
+  focusSummary: { totalMinutes: 999999, totalSessions: 99999, recentMinutes: 10080 },
+});
+const compactJson = serializeForgeProfile(fat);
+const compactProfile = JSON.parse(compactJson);
+check(compactJson.length <= 4000, "Profil-JSON ist auf 4000 Zeichen gedeckelt");
+check(compactProfile.behaviorSignals?.userNotes?.length === 2, "explizite behaviorSignals bleiben erhalten");
+check(compactProfile.activeGoals?.length === 3, "aktive Ziele bleiben vor niedriger priorisierten Daten erhalten");
 const pFat = GENERATE_QUESTS_PROMPT(stats, 7, null, [], fat, "de");
-check(pFat.length < 8000, "Profil-JSON ist gedeckelt (4000 Zeichen)");
+const embeddedProfileJson = pFat.split("FORGE_PROFILE_JSON: ")[1].split("\n\nREGELN")[0];
+check(embeddedProfileJson.length <= 4000, "eingebettetes Profil bleibt im Zeichenbudget");
+check(Boolean(JSON.parse(embeddedProfileJson).activeGoals?.length), "eingebettetes Profil ist gueltiges JSON");
 
 // en-Variante existiert und ist englisch
 const pEn = GENERATE_QUESTS_PROMPT(stats, 7, "agi", [], profile, "en");
@@ -38,13 +66,21 @@ check(pEn.includes("doneWhen") && pEn.includes("English"), "en-Prompt vorhanden"
 const raw = [{
   title: "Geh 30 Minuten laufen", category: "str", difficulty: "normal",
   desc: "Satz eins. Satz zwei.", doneWhen: "Fertig, wenn 30 Minuten gelaufen.",
-  estimatedMinutes: "30", goalRef: "Halbmarathon",
+  estimatedMinutes: 30, goalRef: "Halbmarathon",
   subQuests: [{ title: "Schuhe an" }, { title: "Loslaufen" }],
 }, { title: "", desc: "kaputt" }];
 const clean = sanitizeGeneratedAIQuests(raw);
 check(clean.length === 1, "Quest ohne Titel wird verworfen (kein 'System-Quest'-Fallback mehr)");
 check(clean[0].doneWhen === "Fertig, wenn 30 Minuten gelaufen.", "doneWhen ueberlebt Sanitizer");
-check(clean[0].estimatedMinutes === 30, "estimatedMinutes wird Zahl");
+check(clean[0].estimatedMinutes === 30, "ganzzahliges estimatedMinutes bleibt erhalten");
+const invalidTimeQuest = sanitizeGeneratedAIQuests([{ ...raw[0], estimatedMinutes: "30" }])[0];
+check(!("estimatedMinutes" in invalidTimeQuest), "estimatedMinutes-String wird nicht still in einen Integer umgewandelt");
+const fractionalTimeQuest = sanitizeGeneratedAIQuests([{ ...raw[0], estimatedMinutes: 10.5 }])[0];
+check(!("estimatedMinutes" in fractionalTimeQuest), "estimatedMinutes-Float wird nicht still gerundet");
+const invalidCategoryQuest = sanitizeGeneratedAIQuests([{ ...raw[0], category: "fitness" }])[0];
+check(!("category" in invalidCategoryQuest), "unbekannte Kategorie wird nicht still zu STR umgedeutet");
+const invalidDifficultyQuest = sanitizeGeneratedAIQuests([{ ...raw[0], difficulty: "extreme" }])[0];
+check(!("difficulty" in invalidDifficultyQuest), "unbekannte Schwierigkeit erhält keinen stillen Default");
 check(clean[0].goalRef === "Halbmarathon", "goalRef ueberlebt Sanitizer");
 
 const { SUGGEST_GOALS_PROMPT } = prompts;
@@ -92,6 +128,8 @@ check(qPromptDe.includes("niemals drei Varianten derselben Taetigkeit"), "Varian
 check(qPromptEn.includes("objectively verifiable amount"), "doneWhen rule en");
 check(qPromptEn.includes("meta language"), "desc rule en");
 check(qPromptEn.includes("never three variants of the same activity"), "variety rule en");
+check(qPromptDe.includes("5-15 Minuten") && qPromptDe.includes("Quick Win"), "de-Prompt fordert sinnvollen 5-15-Min-Quick-Win");
+check(qPromptEn.includes("5-15 minutes") && qPromptEn.includes("meaningful quick win"), "en-Prompt fordert sinnvollen 5-15-Min-Quick-Win");
 
 if (failures > 0) { console.error(`${failures} Fehler`); process.exit(1); }
 console.log("✓ test-gemini-prompts: alles gruen");

@@ -33,6 +33,14 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-2350642592248441~8697191783"
         />
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false"
+        />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="false"
+        />
     </application>
 
     <!-- Permissions -->

@@ -3,6 +3,7 @@
 import { db, auth } from "../firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { DEFAULT_STATE } from "./defaultState.js";
+import { mergeForgeState, normalizeForgeState } from "./forge.js";
 import { calcShadowXpToNext, genId, getToday, getXpForLevel, recalculateLevelFromTotalXp } from "./helpers.js";
 import { normalizeQuestForStorage } from "./questUtils.js";
 import { migrateLegacyShadowIdentity, clearBogusShadowRegression } from "./shadowMigration.js";
@@ -101,10 +102,11 @@ function stampStateForUser(state, user = auth.currentUser) {
   };
 }
 
-function mergeLocalOnlyCaches(primary, fallback) {
+function mergeLocalOnlyCaches(primary, fallback, { mergeForge = true } = {}) {
   if (!primary || !fallback) return primary;
   return {
     ...primary,
+    ...(mergeForge ? { forge: mergeForgeState(primary.forge, fallback.forge) } : {}),
     healthDailyHistory: {
       ...(fallback.healthDailyHistory || {}),
       ...(primary.healthDailyHistory || {}),
@@ -548,9 +550,7 @@ export function mergeStateProgress(primary, fallback) {
         : { date: null, coachingShown: 0, warningShown: 0, ...(fallback.coachSignals?.daily || {}) },
       pendingOutcome: mergeArrayByKey(primary.coachSignals?.pendingOutcome, fallback.coachSignals?.pendingOutcome, item => `${item?.type}|${item?.date}`),
     },
-    forge: toFiniteNumber(primary.forge?.pending?.generatedAtMs) >= toFiniteNumber(fallback.forge?.pending?.generatedAtMs)
-      ? { pending: primary.forge?.pending || fallback.forge?.pending || null }
-      : { pending: fallback.forge?.pending || null },
+    forge: mergeForgeState(primary.forge, fallback.forge),
     dailyUserXP: Math.max(toFiniteNumber(primary.dailyUserXP), toFiniteNumber(fallback.dailyUserXP)),
     extraDailySlots: Math.max(toFiniteNumber(primary.extraDailySlots), toFiniteNumber(fallback.extraDailySlots)),
     dungeons: mergeArrayByKey(primary.dungeons, fallback.dungeons, item => item?.instanceId || item?.id),
@@ -723,7 +723,7 @@ export function resolveStateConflict(localState, cloudState) {
       resetType: cloudState._adminResetType,
       localHad: localAdminResetAt,
     });
-    return { data: mergeLocalOnlyCaches(cloudState, localState), source: "cloud", reason: "admin-reset" };
+    return { data: mergeLocalOnlyCaches(cloudState, localState, { mergeForge: false }), source: "cloud", reason: "admin-reset" };
   }
 
   const localScore = getStateProgressScore(localState);
@@ -737,7 +737,7 @@ export function resolveStateConflict(localState, cloudState) {
   const cloudHasSyncableProgress = hasSyncableProgress(cloudState);
 
   if (localHasProfile && !cloudHasProfile) {
-    return { data: localState, source: "local", reason: "cloud-empty-protected" };
+    return { data: mergeLocalOnlyCaches(localState, cloudState), source: "local", reason: "cloud-empty-protected" };
   }
 
   if (cloudHasProfile && !localHasProfile) {
@@ -756,7 +756,7 @@ export function resolveStateConflict(localState, cloudState) {
   if (mergedProgress) return mergedProgress;
 
   if (localScore >= 12 && cloudScore <= Math.max(4, localScore * 0.35)) {
-    return { data: localState, source: "local", reason: "cloud-reset-protected" };
+    return { data: mergeLocalOnlyCaches(localState, cloudState), source: "local", reason: "cloud-reset-protected" };
   }
 
   if (cloudScore >= 12 && localScore <= Math.max(4, cloudScore * 0.35)) {
@@ -764,7 +764,7 @@ export function resolveStateConflict(localState, cloudState) {
   }
 
   if (localScore >= 6 && cloudScore <= 4 && localScore > cloudScore) {
-    return { data: localState, source: "local", reason: "cloud-low-progress-protected" };
+    return { data: mergeLocalOnlyCaches(localState, cloudState), source: "local", reason: "cloud-low-progress-protected" };
   }
 
   if (cloudScore >= 6 && localScore <= 4 && cloudScore > localScore) {
@@ -776,14 +776,14 @@ export function resolveStateConflict(localState, cloudState) {
   }
 
   if (localTime > cloudTime + CLOCK_SKEW_TOLERANCE_MS) {
-    return { data: localState, source: "local", reason: "local-newer" };
+    return { data: mergeLocalOnlyCaches(localState, cloudState), source: "local", reason: "local-newer" };
   }
 
   if (cloudScore > localScore) {
     return { data: mergeLocalOnlyCaches(cloudState, localState), source: "cloud", reason: "cloud-richer" };
   }
 
-  return { data: localState, source: "local", reason: "local-richer-or-equal" };
+  return { data: mergeLocalOnlyCaches(localState, cloudState), source: "local", reason: "local-richer-or-equal" };
 }
 
 async function readLocalState(user = auth.currentUser) {
@@ -932,7 +932,7 @@ export function migrateState(oldState) {
   s.questSignals = { ...DEFAULT_STATE.questSignals, ...(oldState.questSignals || {}) };
   s.sessionSignals = { ...DEFAULT_STATE.sessionSignals, ...(oldState.sessionSignals || {}) };
   s.coachSignals = { ...DEFAULT_STATE.coachSignals, ...(oldState.coachSignals || {}) };
-  s.forge = { ...DEFAULT_STATE.forge, ...(oldState.forge || {}) };
+  s.forge = normalizeForgeState(oldState.forge);
   s.questPlanning = {
     ...DEFAULT_QUEST_PLANNING,
     ...(oldState.questPlanning || {}),

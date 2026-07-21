@@ -1,8 +1,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { db, auth, analytics } from "../firebase";
+import { db, auth } from "../firebase";
 import { doc, onSnapshot, setDoc, collection } from "firebase/firestore";
-import { logEvent } from "firebase/analytics";
 import { onAuthStateChanged } from "firebase/auth";
 import { QUEST_POOL } from "../data/questPool.js";
 import {
@@ -57,6 +56,8 @@ import {
   withPinnedQuest,
   withRestoredQuest,
 } from '../data/questPlanning.js';
+import { acceptProposals as acceptForgeSelection, clearPendingSet } from '../data/forge.js';
+import { trackEvent } from '../services/analytics.js';
 
 const QUEST_TO_HABIT_CATEGORY = {
   str: "fitness",
@@ -87,11 +88,34 @@ function cloneDefaultState() {
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
 }
 
-// ── Analytics helper (fails silently if analytics is null) ──
-function trackEvent(eventName, params = {}) {
-  try {
-    if (analytics) logEvent(analytics, eventName, params);
-  } catch (_) { /* Analytics may not be available */ }
+function getQuestCompletionAnalyticsParams(quest, extra = {}) {
+  const nowMs = Date.now();
+  const acceptedAtMs = Number(quest?.forgeAcceptedAtMs);
+  const hasForgeAccept = Number.isFinite(acceptedAtMs) && acceptedAtMs > 0;
+  const acceptedAt = hasForgeAccept ? new Date(acceptedAtMs) : null;
+  const now = new Date(nowMs);
+  const sameDay = Boolean(acceptedAt
+    && acceptedAt.getFullYear() === now.getFullYear()
+    && acceptedAt.getMonth() === now.getMonth()
+    && acceptedAt.getDate() === now.getDate());
+  const allowedCategories = new Set(['str', 'int', 'vit', 'agi', 'cha']);
+  const allowedDifficulties = new Set(['easy', 'normal', 'hard', 'boss']);
+  const allowedOrigins = new Set(['forge', 'starter', 'replacement', 'system', 'manual']);
+  const category = allowedCategories.has(quest?.category) ? quest.category : 'unknown';
+  const difficulty = allowedDifficulties.has(quest?.difficulty) ? quest.difficulty : 'unknown';
+  const fallbackOrigin = quest?.isSystem ? 'system' : 'manual';
+  const origin = allowedOrigins.has(quest?.origin) ? quest.origin : fallbackOrigin;
+  return {
+    ...extra,
+    category,
+    difficulty,
+    isSystem: Boolean(quest?.isSystem),
+    origin,
+    same_day: sameDay,
+    minutes_since_forge_accept: hasForgeAccept
+      ? Math.max(0, Math.floor((nowMs - acceptedAtMs) / 60000))
+      : -1,
+  };
 }
 
 function normalizeHunterName(name) {
@@ -446,6 +470,26 @@ export function useGameState(initialHunterName, onLogout) {
     return true;
   }, [persist]);
 
+  const acceptForgeProposals = useCallback(({ pendingId, proposalIds } = {}) => {
+    const current = stateRef.current;
+    if (!current) {
+      return {
+        state: current || {},
+        acceptedCount: 0,
+        acceptedIds: [],
+        selectableCount: 0,
+        reason: 'storage_error',
+      };
+    }
+    const result = acceptForgeSelection(
+      current,
+      { pendingId, proposalIds },
+      { today: getToday(), nowMs: Date.now() },
+    );
+    if (result.reason === null && result.acceptedCount > 0) persist(result.state);
+    return result;
+  }, [persist]);
+
   // Real-time Cloud Sync — BUG FIX #1: Timestamp-based conflict resolution
   // Instead of ignoring cloud data entirely when local state exists, we compare
   // lastInteractionTimeMs to determine which state is newer. This fixes the
@@ -719,7 +763,12 @@ export function useGameState(initialHunterName, onLogout) {
             s.dailyCharismaRun = 0;
             s.questReplacements = { date: today, used: 0, replacedKeys: [] };
             if (s.forge?.pending && s.forge.pending.date !== today) {
-              s.forge = { ...(s.forge || {}), pending: null };
+              const expiredPending = s.forge.pending;
+              Object.assign(s, clearPendingSet(s, { nowMs: Date.now() }));
+              trackEvent('forge_pending_expired', {
+                source: expiredPending.source === 'auto' ? 'auto' : 'manual',
+                proposal_count: Array.isArray(expiredPending.proposals) ? expiredPending.proposals.length : 0,
+              });
             }
             s.integrityScore = Math.min(100, (s.integrityScore !== undefined ? s.integrityScore : 100) + 20);
           }
@@ -1032,7 +1081,7 @@ export function useGameState(initialHunterName, onLogout) {
       ? { ...result.nextState, lastDayRecapDate: getToday() }
       : result.nextState;
     persist(nextStateFinal);
-    trackEvent('quest_completed', { category: quest.category, difficulty: quest.difficulty, isSystem: !!quest.isSystem, streak: result.nextState.streak || 0 });
+    trackEvent('quest_completed', getQuestCompletionAnalyticsParams(quest, { streak: result.nextState.streak || 0 }));
     if (showDayRecap) {
       trackEvent('day_goal_reached', { streak: result.nextState.streak || 0 });
     }
@@ -1148,12 +1197,7 @@ export function useGameState(initialHunterName, onLogout) {
               workingState = result.nextState;
               changed = true;
               if (result.newlyCompletedQuests?.length) newlyCompletedQuests.push(...result.newlyCompletedQuests);
-              trackEvent('quest_completed', {
-                category: result.quest?.category,
-                difficulty: result.quest?.difficulty,
-                isSystem: !!result.quest?.isSystem,
-                source: 'widget',
-              });
+              trackEvent('quest_completed', getQuestCompletionAnalyticsParams(result.quest, { source: 'widget' }));
             }
           }
         } else if (action.type === "completeHabit") {
@@ -3012,6 +3056,7 @@ export function useGameState(initialHunterName, onLogout) {
     premiumStatus,
     questCreationStatus,
     recordAIFreeGeneration,
+    acceptForgeProposals,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     // Screen Time gamification

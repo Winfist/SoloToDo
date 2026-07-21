@@ -91,7 +91,7 @@ import { AIChatWidget } from './components/AIChatWidget.jsx';
 import QuestDetailModal from './components/QuestDetailModal.jsx';
 import PremiumAccessModal from './components/PremiumAccessModal.jsx';
 import ForgeRitualModal from './components/ForgeRitualModal.jsx';
-import { createPendingSet, isPendingSetValid, getSelectableCount, acceptProposals } from './data/forge.js';
+import { createPendingSet, isPendingSetValid, getSelectableCount } from './data/forge.js';
 import { getDailyQuestCreationStatus, getPremiumFeatureForRoute, getQuotaStatus, getAIFreeGenerationStatus } from './data/premium.js';
 import { getQuestVerificationPolicy } from './data/questVerification.js';
 import { getForgeStatus, applyForgeUsage } from './data/freeLimits.js';
@@ -99,6 +99,7 @@ import { countManualForgeTargets } from './data/questSwap.js';
 import { getCrystallizationSuggestion, markCrystallizationChecked, declineCrystallization } from './data/goalCrystallization.js';
 import { recordInterventionShown } from './data/signals.js';
 import { getQuestReplacementStatus } from './data/questUtils.js';
+import { trackEvent } from './services/analytics.js';
 const ONBOARDING_QUEST_FORGE_STEP_IDS = new Set([
   "click_create_quest",
   "quest_title_input",
@@ -333,6 +334,7 @@ function App({ initialHunterName, onLogout }) {
     premiumStatus,
     questCreationStatus,
     recordAIFreeGeneration,
+    acceptForgeProposals,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     handleNotificationClick,
@@ -812,6 +814,10 @@ function App({ initialHunterName, onLogout }) {
   // runs. Close -> reopen -> tap would fire a SECOND concurrent paid call. This ref
   // is the true in-flight lock, independent of the (closable) phase state.
   const forgeInFlightRef = useRef(false);
+  const [forgeBoardHighlight, setForgeBoardHighlight] = useState(false);
+  const [forgeBoardAcceptedIds, setForgeBoardAcceptedIds] = useState([]);
+  const forgeBoardHighlightTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(forgeBoardHighlightTimerRef.current), []);
   const forgeStatus = useMemo(() => getForgeStatus({
     premiumActive: premiumStatus?.active,
     state,
@@ -839,51 +845,98 @@ function App({ initialHunterName, onLogout }) {
   }, [setState, persist]);
 
   const runForgeGeneration = useCallback(async ({ force = false } = {}) => {
-    if (forgeInFlightRef.current) return; // echte In-Flight-Sperre (Phase kann durch Close resetten)
-    if (!force && isPendingSetValid(state, getToday())) return; // Anti-Farming: Set existiert
-    if (!state?.ai?.enabled || geminiAI.isRateLimited()) { setForgePhase("failed"); return; }
+    if (forgeInFlightRef.current) return;
+    if (!force && isPendingSetValid(state, getToday())) return;
+
+    const source = force ? 'reforge' : 'manual';
+    const startedAtMs = Date.now();
+    if (!state?.ai?.enabled || geminiAI.isRateLimited()) {
+      setForgePhase('failed');
+      trackEvent('forge_generation', { source, outcome: 'unavailable', duration_ms: 0, proposal_count: 0 });
+      return;
+    }
+
     forgeInFlightRef.current = true;
-    setForgePhase("loading");
+    setForgePhase('loading');
+    let outcome = 'failed';
+    let proposalCount = 0;
     try {
       const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
-      // Immer 3 anfordern — Auswahlbreite; begrenzt wird erst bei der Annahme.
       const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
-      if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) { setForgePhase("failed"); return; }
-      setState(currentState => {
-        if (!force && isPendingSetValid(currentState, getToday())) return currentState; // parallel gewonnen -> nicht clobbern
-        const pending = createPendingSet(aiQuests, { source: "manual", today: getToday(), nowMs: Date.now() });
-        // Credit stempelt bei erfolgreicher GENERIERUNG (Spec §7), nicht beim Swap.
-        const next = applyForgeUsage({ ...currentState, forge: { ...(currentState.forge || {}), pending } }, { premiumActive: premiumStatus?.active, today: getToday() });
+      if (aiQuests?.length !== 3 || !aiQuests.every((quest) => quest.aiGenerated)) {
+        setForgePhase('failed');
+        return;
+      }
+      proposalCount = aiQuests.length;
+      setState((currentState) => {
+        if (!force && isPendingSetValid(currentState, getToday())) return currentState;
+        const generatedAtMs = Math.max(Date.now(), Number(currentState.forge?.updatedAtMs || 0) + 1);
+        const pending = createPendingSet(aiQuests, { source: 'manual', today: getToday(), nowMs: generatedAtMs });
+        const withPending = {
+          ...currentState,
+          forge: { ...(currentState.forge || {}), pending, updatedAtMs: generatedAtMs },
+        };
+        const next = applyForgeUsage(withPending, { premiumActive: premiumStatus?.active, today: getToday() });
         persist(next);
         return next;
       });
-      setForgePhase("idle");
+      outcome = 'success';
+      setForgePhase('idle');
     } catch {
-      setForgePhase("failed");
+      setForgePhase('failed');
     } finally {
       forgeInFlightRef.current = false;
+      trackEvent('forge_generation', {
+        source,
+        outcome,
+        duration_ms: Math.max(0, Date.now() - startedAtMs),
+        proposal_count: proposalCount,
+      });
     }
-  }, [state, premiumStatus?.active, geminiAI, persist]);
+  }, [state, premiumStatus?.active, geminiAI, persist, setState]);
 
   const handleForge = useCallback(() => {
-    if (!forgeStatus.allowed && !isPendingSetValid(state, getToday())) return;
+    const hasPending = isPendingSetValid(state, getToday());
+    if (!forgeStatus.allowed && !hasPending) return;
+    trackEvent('forge_opened', {
+      source: hasPending ? (state.forge?.pending?.source || 'manual') : 'manual',
+      has_pending: Number(hasPending),
+      selectable_count: getSelectableCount(state),
+    });
     setShowForgeRitual(true);
-    // forgeInFlightRef-Check: eine bereits laufende Generierung (z.B. nach Close/Reopen)
-    // nicht erneut anstoßen — das Ritual zeigt einfach den laufenden Fortschritt.
-    if (!isPendingSetValid(state, getToday()) && !forgeInFlightRef.current) runForgeGeneration();
+    if (!hasPending && !forgeInFlightRef.current) runForgeGeneration();
   }, [forgeStatus.allowed, state, runForgeGeneration]);
 
-  const handleAcceptProposals = useCallback((proposalIds) => {
-    setState(currentState => {
-      const { state: next, acceptedCount } = acceptProposals(currentState, proposalIds, { today: getToday() });
-      if (acceptedCount === 0) return currentState;
-      persist(next);
-      setTimeout(() => notify(tr("ai.recalibrated"), "success"), 200);
-      return next;
-    });
-    setShowForgeRitual(false);
-  }, [persist, notify, tr]);
+  const handleAcceptProposals = useCallback((selection) => {
+    if (!acceptForgeProposals) {
+      return {
+        state: state || {},
+        acceptedCount: 0,
+        acceptedIds: [],
+        selectableCount: getSelectableCount(state),
+        reason: 'storage_error',
+      };
+    }
+    return acceptForgeProposals(selection);
+  }, [acceptForgeProposals, state]);
 
+  const handleForgeRitualClose = useCallback((result) => {
+    setShowForgeRitual(false);
+    if (!forgeInFlightRef.current) setForgePhase('idle');
+    if (!result?.accepted) return;
+    const acceptedIds = Array.isArray(result.acceptedIds)
+      ? result.acceptedIds.filter((id) => typeof id === 'string' && id)
+      : [];
+    setView('dashboard');
+    setForgeBoardAcceptedIds(acceptedIds);
+    setForgeBoardHighlight(true);
+    clearTimeout(forgeBoardHighlightTimerRef.current);
+    forgeBoardHighlightTimerRef.current = setTimeout(() => {
+      setForgeBoardHighlight(false);
+      setForgeBoardAcceptedIds([]);
+    }, 1800);
+    notify(tr('ai.recalibrated'), 'success');
+  }, [notify, setView, tr]);
   const canOfferPhotoVerification = useCallback((quest) => (
     aiGenerationStatus.allowed
     && can('ai_verification')
@@ -941,27 +994,42 @@ function App({ initialHunterName, onLogout }) {
 
     // Kurze Verzögerung, damit die statischen Quests zuerst rendern.
     const timer = setTimeout(async () => {
-      // Bugfix (Review: Autoflow vs. manuelle Schmiede): gleiche In-Flight-Sperre
-      // wie runForgeGeneration, sonst kann der Auto-Timer parallel zu einem
-      // manuellen Ritual-Tap laufen und einen zweiten kostenpflichtigen Call ausloesen.
       if (forgeInFlightRef.current || isPendingSetValid(state, today)) return;
       forgeInFlightRef.current = true;
+      setForgePhase('loading');
+      const startedAtMs = Date.now();
+      let outcome = 'failed';
+      let proposalCount = 0;
       try {
         localStorage.setItem(attemptsKey, String(attempts + 1));
         const { generateDailySystemQuestsAsync } = await import('./data/helpers.js');
-        // Immer 3 anfordern — Auswahlbreite; begrenzt wird erst bei der Annahme.
         const aiQuests = await generateDailySystemQuestsAsync(3, state, geminiAI.generateQuests);
-        if (!aiQuests?.length || !aiQuests.some(q => q.aiGenerated)) return; // kein KI-Ergebnis -> Guard NICHT setzen
-        setState(currentState => {
-          if (isPendingSetValid(currentState, today)) return currentState; // manuell war schneller
+        if (aiQuests?.length !== 3 || !aiQuests.every((quest) => quest.aiGenerated)) return;
+        proposalCount = aiQuests.length;
+        setState((currentState) => {
+          if (isPendingSetValid(currentState, today)) return currentState;
           localStorage.setItem(doneKey, today);
-          const pending = createPendingSet(aiQuests, { source: "auto", today, nowMs: Date.now() });
-          const updated = { ...currentState, forge: { ...(currentState.forge || {}), pending } };
-          persist(updated);
-          return updated;
+          const generatedAtMs = Math.max(Date.now(), Number(currentState.forge?.updatedAtMs || 0) + 1);
+          const pending = createPendingSet(aiQuests, { source: 'auto', today, nowMs: generatedAtMs });
+          const updatedState = {
+            ...currentState,
+            forge: { ...(currentState.forge || {}), pending, updatedAtMs: generatedAtMs },
+          };
+          persist(updatedState);
+          return updatedState;
         });
+        outcome = 'success';
+      } catch {
+        outcome = 'failed';
       } finally {
         forgeInFlightRef.current = false;
+        setForgePhase(outcome === 'success' ? 'idle' : 'failed');
+        trackEvent('forge_generation', {
+          source: 'auto',
+          outcome,
+          duration_ms: Math.max(0, Date.now() - startedAtMs),
+          proposal_count: proposalCount,
+        });
       }
     }, 1500);
     return () => clearTimeout(timer);
@@ -1581,7 +1649,7 @@ function App({ initialHunterName, onLogout }) {
                 onGenerate={() => runForgeGeneration({ force: isPendingSetValid(state, getToday()) })}
                 onReforge={() => forgeStatus.allowed && runForgeGeneration({ force: true })}
                 onAccept={handleAcceptProposals}
-                onClose={() => { setShowForgeRitual(false); if (!forgeInFlightRef.current) setForgePhase("idle"); }}
+                onClose={handleForgeRitualClose}
               />
             )}
 
@@ -1902,6 +1970,8 @@ function App({ initialHunterName, onLogout }) {
                   forgePhase={forgePhase}
                   forgeTargets={forgeTargets}
                   forgePendingCount={isPendingSetValid(state, getToday()) ? state.forge.pending.proposals.length : 0}
+                  forgeBoardHighlight={forgeBoardHighlight}
+                  forgeBoardAcceptedIds={forgeBoardAcceptedIds}
                   onForge={handleForge}
                   crystallization={crystallization}
                   onCrystallizeAccept={handleCrystallizeAccept}

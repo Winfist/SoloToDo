@@ -6,7 +6,7 @@
 import { register } from "node:module";
 register("./state-merge-loader.mjs", import.meta.url);
 
-const { resolveStateConflict, mergeStateProgress } = await import("../data/storage.js");
+const { resolveStateConflict, mergeStateProgress, migrateState } = await import("../data/storage.js");
 
 let failures = 0;
 const assert = (condition, message) => {
@@ -107,15 +107,75 @@ assert(mergedSig.coachSignals.byType.inactivity.mutedUntil === "2026-07-19", "mu
 assert(mergedSig.coachSignals.pendingOutcome.length === 2, "pendingOutcome Union");
 assert(mergeStateProgress({}, sigB).questSignals.byTemplate.t1.assigned === 5, "einseitig fehlend -> uebernommen");
 
-// ── forge.pending: neueres generatedAtMs gewinnt komplett ──
-const forgeOld = { forge: { pending: { proposals: [{ id: "old", title: "Alt", origin: "forge" }], date: "2026-07-18", generatedAtMs: 100, source: "manual" } } };
-const forgeNew = { forge: { pending: { proposals: [{ id: "new", title: "Neu", origin: "forge" }], date: "2026-07-18", generatedAtMs: 200, source: "auto" } } };
+// ── forge: LWW-Tombstone, Pending-ID und Legacy-Migration ────────────────
+const forgePending = (id, generatedAtMs, source = "manual") => ({
+  id,
+  proposals: [{ id, title: id, origin: "forge" }],
+  date: "2026-07-18",
+  generatedAtMs,
+  source,
+});
+const forgeOld = { forge: { pending: forgePending("old", 100), updatedAtMs: 100 } };
+const forgeNew = { forge: { pending: forgePending("new", 200, "auto"), updatedAtMs: 200 } };
 const forgeMerged = mergeStateProgress(forgeOld, forgeNew);
-assert(forgeMerged.forge.pending.proposals[0].id === "new", "neueres Set gewinnt komplett");
-assert(mergeStateProgress(forgeNew, forgeOld).forge.pending.proposals[0].id === "new", "Richtung egal");
-assert(mergeStateProgress(forgeOld, {}).forge.pending.proposals[0].id === "old", "einseitig fehlend -> vorhandenes Set");
-assert(mergeStateProgress({}, {}).forge.pending === null, "beidseitig fehlend -> null");
+assert(forgeMerged.forge.pending.proposals[0].id === "new", "höheres forge.updatedAtMs gewinnt komplett");
+assert(mergeStateProgress(forgeNew, forgeOld).forge.pending.proposals[0].id === "new", "Forge-Merge ist richtungsunabhängig");
+assert(mergeStateProgress(forgeOld, {}).forge.pending.proposals[0].id === "old", "einseitiges Live-Set bleibt erhalten");
+assert(mergeStateProgress({}, {}).forge.pending === null, "beidseitig fehlend ergibt null");
+assert(mergeStateProgress({}, {}).forge.updatedAtMs === 0, "beidseitig fehlend ergibt Version null");
 
+const acceptedTombstone = { forge: { pending: null, updatedAtMs: 300 } };
+const tombstoneForward = mergeStateProgress(acceptedTombstone, forgeNew).forge;
+const tombstoneReverse = mergeStateProgress(forgeNew, acceptedTombstone).forge;
+assert(tombstoneForward.pending === null && tombstoneForward.updatedAtMs === 300, "neuerer Tombstone verhindert Resurrection");
+assert(tombstoneReverse.pending === null && tombstoneReverse.updatedAtMs === 300, "Tombstone gewinnt in beiden Merge-Richtungen");
+
+const tiedTombstone = { forge: { pending: null, updatedAtMs: 200 } };
+assert(mergeStateProgress(tiedTombstone, forgeNew).forge.pending === null, "bei Versionsgleichstand gewinnt null");
+assert(mergeStateProgress(forgeNew, tiedTombstone).forge.pending === null, "Tie-Tombstone ist richtungsunabhängig");
+const staleTombstone = { forge: { pending: null, updatedAtMs: 50 } };
+assert(mergeStateProgress(staleTombstone, forgeOld).forge.pending.id === "old", "älterer Tombstone löscht kein neueres Set");
+
+const simultaneousA = { forge: { pending: forgePending("set-a", 400), updatedAtMs: 400 } };
+const simultaneousB = { forge: { pending: forgePending("set-b", 400), updatedAtMs: 400 } };
+const simultaneousForward = mergeStateProgress(simultaneousA, simultaneousB).forge.pending.id;
+const simultaneousReverse = mergeStateProgress(simultaneousB, simultaneousA).forge.pending.id;
+assert(simultaneousForward === simultaneousReverse, "zwei gleichzeitige Live-Sets werden deterministisch aufgelöst");
+
+// Auch wenn der Fortschritt identisch ist und der globale State-Zeitstempel die andere Seite bevorzugt,
+// muss Forge unabhängig per updatedAtMs zusammengeführt werden.
+const equalProgressLocal = { ...base, quests: [], lastInteractionTimeMs: NOW + 20_000, ...forgeOld };
+const equalProgressCloud = { ...base, quests: [], lastInteractionTimeMs: NOW, ...forgeNew };
+const equalProgressResolved = resolveStateConflict(equalProgressLocal, equalProgressCloud);
+assert(equalProgressResolved.reason === "local-newer", "Fixture erreicht den identischen-Fortschritt-Konfliktpfad");
+assert(equalProgressResolved.data.forge.pending.id === "new", "Forge-LWW gilt auch ohne allgemeinen Progress-Merge");
+
+const newerCloudTombstone = { ...base, quests: [], lastInteractionTimeMs: NOW, ...acceptedTombstone };
+const tombstoneConflict = resolveStateConflict({ ...equalProgressLocal, ...forgeNew }, newerCloudTombstone);
+assert(tombstoneConflict.data.forge.pending === null, "neuer Forge-Tombstone gewinnt trotz älterem globalen State");
+
+const adminResetConflict = resolveStateConflict(
+  { ...equalProgressLocal, ...forgeNew },
+  { ...base, quests: [], lastInteractionTimeMs: NOW, _adminResetAt: "2026-07-18T12:00:00.000Z", forge: { pending: null, updatedAtMs: 0 } },
+);
+assert(adminResetConflict.reason === "admin-reset" && adminResetConflict.data.forge.pending === null, "Admin-Reset setzt Forge bewusst zurück");
+
+const legacyState = migrateState({
+  stateVersion: 5,
+  forge: {
+    pending: {
+      proposals: [{ id: "legacy", title: "Legacy" }],
+      date: "2026-07-18",
+      generatedAtMs: 123,
+      source: "manual",
+    },
+  },
+});
+assert(legacyState.forge.updatedAtMs === 123, "Migration leitet Legacy-Version aus generatedAtMs ab");
+assert(typeof legacyState.forge.pending.id === "string" && legacyState.forge.pending.id.startsWith("forge_"), "Migration ergänzt Pending-ID");
+assert(legacyState.forge.pending.proposals[0].origin === "forge", "Migration normalisiert Proposal-Origin");
+const migratedTombstone = migrateState({ stateVersion: 5, forge: { pending: null } });
+assert(migratedTombstone.forge.pending === null && migratedTombstone.forge.updatedAtMs === 0, "Legacy-null migriert auf Default-Tombstone");
 if (failures > 0) {
   console.error(`\n${failures} assertion(s) failed.`);
   process.exit(1);

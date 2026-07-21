@@ -1479,7 +1479,7 @@ export default function SettingsView({ state, persist, theme, can, onLogout, onO
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
-          {["AI Forge", "Hunter Intel", "Cinematic VFX"].map(label => (
+          {["System-Schmiede", "Hunter Intel", "Cinematic VFX"].map(label => (
             <div key={label} style={{
               padding: "10px 11px",
               borderRadius: 12,

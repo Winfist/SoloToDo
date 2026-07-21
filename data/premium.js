@@ -21,7 +21,7 @@ export const PREMIUM_PRODUCT = {
       desc: "Erweiterte Systemnachrichten, Quest-Hilfe und personalisierte Tagesimpulse.",
     },
     {
-      title: "AI Quest Forge",
+      title: "System-Schmiede",
       desc: "Unbegrenzte KI-Quest-Hilfe, Task-Scanner und Foto-Verifikation nach deiner Gratis-Kostprobe.",
     },
     {

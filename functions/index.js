@@ -233,7 +233,14 @@ exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
     );
     const raw = await callGemini(prompt);
     const candidate = sanitizeGeneratedAIQuests(parseJSON(raw, { quests: [] }).quests);
-    const verdict = validateGeneratedQuests(candidate, { language, activeGoalTitles, minCount: 3 });
+    const verdict = validateGeneratedQuests(candidate, {
+      language,
+      activeGoalTitles,
+      minCount: 3,
+      recentDislikedTitles: safeProfile.behaviorSignals?.recentDislikedTitles,
+      recentExpiredTitles: safeProfile.behaviorSignals?.recentExpiredTitles,
+      requiredWeakestStat: safeWeakestStat,
+    });
     if (verdict.ok) { quests = candidate; break; }
     console.warn(`[generateDynamicQuests] Versuch ${attempt + 1} ungueltig:`, verdict.reasons.join(","));
   }
