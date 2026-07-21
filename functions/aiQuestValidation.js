@@ -4,6 +4,25 @@
 
 const GERMAN_HINTS = [" der ", " die ", " das ", " und ", " mit ", " fuer ", " dein", " deine", " du ", " eine", " einen", " im ", " am ", " auf ", " zu ", " nicht ", " oder ", " wenn ", " bis ", " danach", " minuten", " heute", " fertig"];
 const ENGLISH_HINTS = [" the ", " your ", " and ", " with ", " for ", " you ", " today", " complete ", " finish ", " weekly ", " daily ", " challenge", " routine"];
+const GERMAN_WORDS = new Set([
+  "du", "dein", "deine", "deinen", "heute", "fertig", "wenn", "danach", "fuer",
+  "mit", "und", "eine", "einen", "einem", "drei", "punkte", "schritt", "minuten",
+  "erstelle", "schreibe", "bereite", "plane", "uebe", "ube", "organisiere",
+  "sortiere", "sende", "rufe", "vereinbare", "buche", "raeume", "raume", "laufe",
+  "gehe", "erledige", "pruefe", "prufe", "entscheide", "waehle", "wahle",
+  "entwirf", "baue", "koche", "bewege", "dehne", "meditiere", "lies", "lerne",
+  "sammle", "packe", "richte", "notiere", "speichere", "vorbereiten", "speichern",
+]);
+const ENGLISH_WORDS = new Set([
+  "you", "your", "today", "done", "when", "then", "for", "with", "and", "the",
+  "one", "two", "three", "minutes", "step", "result", "create", "write", "prepare",
+  "plan", "practice", "organize", "sort", "send", "call", "schedule", "book",
+  "clean", "walk", "run", "complete", "review", "decide", "choose", "draft",
+  "build", "cook", "move", "stretch", "meditate", "read", "study", "learn",
+  "collect", "pack", "outline", "list", "record", "finish", "update", "reply",
+  "contact", "exercise", "train", "make", "clear", "save", "publish", "implement",
+  "draw", "design", "research", "compare", "check", "analyze", "analyse",
+]);
 const PLACEHOLDER_SUBQUEST = /^(schritt|step|teil|part)\s*\d+\.?$/i;
 const CATEGORY_IDS = new Set(["str", "int", "vit", "agi", "cha"]);
 const DIFFICULTIES = new Set(["easy", "normal", "hard"]);
@@ -26,14 +45,33 @@ function countHits(text, hints) {
   return hints.reduce((sum, hint) => sum + (padded.includes(hint) ? 1 : 0), 0);
 }
 
-// true, wenn der Text zur angeforderten Sprache passt.
-// de: mindestens 1 deutscher Marker UND nicht weniger als englische Marker.
-// en: kein Check - englische Ausgabe ist bei allen Modellen zuverlaessig.
+function countWordHits(text, words) {
+  const tokens = normalizeTitle(text).split(" ").filter(Boolean);
+  return tokens.reduce((sum, token) => sum + Number(words.has(token)), 0);
+}
+
+function getLanguageHits(text) {
+  return {
+    de: countHits(text, GERMAN_HINTS) + countWordHits(text, GERMAN_WORDS),
+    en: countHits(text, ENGLISH_HINTS) + countWordHits(text, ENGLISH_WORDS),
+  };
+}
+
+// Symmetric, deliberately lightweight language detection. Short neutral labels
+// are tolerated by field-level callers, while a complete quest must provide at
+// least one positive marker and may not contain stronger opposite evidence.
 function matchesLanguage(text, language) {
-  if (language !== "de") return true;
-  const de = countHits(text, GERMAN_HINTS);
-  const en = countHits(text, ENGLISH_HINTS);
-  return de >= 1 && de >= en;
+  const hits = getLanguageHits(text);
+  const target = language === "en" ? hits.en : hits.de;
+  const opposite = language === "en" ? hits.de : hits.en;
+  return target >= 1 && target >= opposite;
+}
+
+function hasOppositeLanguageEvidence(text, language) {
+  const hits = getLanguageHits(text);
+  const target = language === "en" ? hits.en : hits.de;
+  const opposite = language === "en" ? hits.de : hits.en;
+  return opposite >= 2 && opposite > target;
 }
 
 function normalizeTitle(value) {
@@ -120,12 +158,20 @@ function validateGeneratedQuests(quests, {
     if (!Array.isArray(quest?.subQuests) || quest.subQuests.length < 2) reasons.push("missing-subQuests");
     const subTitles = (Array.isArray(quest?.subQuests) ? quest.subQuests : [])
       .map((sq) => normalizeTitle(typeof sq === "string" ? sq : sq?.title));
+    const rawSubTitles = (Array.isArray(quest?.subQuests) ? quest.subQuests : [])
+      .map((sq) => String(typeof sq === "string" ? sq : sq?.title || "").trim())
+      .filter(Boolean);
     if (subTitles.some((t) => PLACEHOLDER_SUBQUEST.test(t))) {
       reasons.push("placeholder-subquests");
     } else if (subTitles.length >= 2 && new Set(subTitles).size === 1) {
       reasons.push("placeholder-subquests");
     }
-    if (!matchesLanguage(`${title} ${desc}`, language)) reasons.push("wrong-language");
+    const languageText = [title, desc, doneWhen, rawSubTitles.join(" ")].join(" ");
+    if (!matchesLanguage(languageText, language)
+      || hasOppositeLanguageEvidence(desc, language)
+      || hasOppositeLanguageEvidence(rawSubTitles.join(" "), language)) {
+      reasons.push("wrong-language");
+    }
   }
 
   if (minCount >= 3) {
@@ -146,4 +192,4 @@ function validateGeneratedQuests(quests, {
   return { ok: reasons.length === 0, reasons: [...new Set(reasons)] };
 }
 
-module.exports = { validateGeneratedQuests, resolveGoalRef, matchesLanguage };
+module.exports = { validateGeneratedQuests, resolveGoalRef, matchesLanguage, hasOppositeLanguageEvidence };

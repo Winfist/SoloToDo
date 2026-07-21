@@ -1,6 +1,11 @@
 import { Capacitor } from "@capacitor/core";
 import { logEvent as logWebEvent } from "firebase/analytics";
 import { analytics as webAnalytics } from "../firebase.js";
+import {
+  hasAnalyticsSchema,
+  sanitizeAnalyticsName,
+  sanitizeEventParams,
+} from "./analyticsPolicy.js";
 
 const MAX_EVENT_NAME_LENGTH = 40;
 const MAX_PARAM_COUNT = 25;
@@ -47,10 +52,10 @@ function isNativePlatform() {
 
 export async function trackEvent(eventName, params = {}) {
   try {
-    const name = sanitizeName(eventName);
-    if (!name) return false;
+    const name = sanitizeAnalyticsName(eventName);
+    if (!name || !hasAnalyticsSchema(name)) return false;
 
-    const sanitizedParams = sanitizeAnalyticsParams(params);
+    const sanitizedParams = sanitizeEventParams(name, params);
     if (isNativePlatform()) {
       const { FirebaseAnalytics } = await import("@capacitor-firebase/analytics");
       await FirebaseAnalytics.logEvent({ name, params: sanitizedParams });

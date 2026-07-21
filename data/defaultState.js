@@ -1,8 +1,11 @@
 // ─── DEFAULT STATE ────────────────────────────────────────────
 // Extracted from data/constants.jsx
 
+import { DEFAULT_FORGE_LEARNING } from "./forgeLearning.js";
+import { DEFAULT_FORGE_GOAL_PROGRESS } from "./forgeGoalProgress.js";
+
 export const DEFAULT_STATE = {
-  stateVersion: 5,
+  stateVersion: 6,
   hunterName: "", level: 1, xp: 0, gold: 0, totalGoldEarned: 0,
   premium: {
     tier: "free",
@@ -61,6 +64,12 @@ export const DEFAULT_STATE = {
     pendingOutcome: [],
   },
   forge: { pending: null, updatedAtMs: 0 },
+  forgeLearning: {
+    ...DEFAULT_FORGE_LEARNING,
+    outcomesByQuestId: {},
+    preferencesByRecipe: {},
+  },
+  forgeGoalProgress: { ...DEFAULT_FORGE_GOAL_PROGRESS, byGoalId: {} },
   penaltyZone: { active: false, redemptionLeft: 0, questsCompletedInPenalty: 0 },
   todayModifier: null,
   emergencyQuest: null,

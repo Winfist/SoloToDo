@@ -10,7 +10,7 @@ import {
 import { getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getAnalytics } from "firebase/analytics";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
+import { CustomProvider, initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 // Replace with your Firebase config
 const firebaseConfig = {
@@ -80,11 +80,39 @@ const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const hasConfiguredRecaptchaKey =
   recaptchaSiteKey && recaptchaSiteKey !== "YOUR_RECAPTCHA_SITE_KEY";
 
+let appCheckReady = Promise.resolve(false);
 if (!isNative && !import.meta.env.DEV && hasConfiguredRecaptchaKey) {
   initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
     isTokenAutoRefreshEnabled: true,
   });
+  appCheckReady = Promise.resolve(true);
+} else if (isNative) {
+  // Native App Check uses Play Integrity on Android and App Attest/DeviceCheck
+  // on iOS. Enforcement remains disabled server-side until legacy builds age out.
+  appCheckReady = import("@capacitor-firebase/app-check")
+    .then(async ({ FirebaseAppCheck }) => {
+      await FirebaseAppCheck.initialize({ isTokenAutoRefreshEnabled: true });
+      await FirebaseAppCheck.setTokenAutoRefreshEnabled({ enabled: true });
+      // The app uses the Firebase JavaScript SDK inside the Capacitor WebView.
+      // Bridge native Play Integrity/App Attest tokens into that SDK so callable
+      // Functions actually receive X-Firebase-AppCheck.
+      const provider = new CustomProvider({
+        getToken: async () => {
+          const result = await FirebaseAppCheck.getToken({ forceRefresh: false });
+          return {
+            token: result.token,
+            expireTimeMillis: Number(result.expireTimeMillis) || Date.now() + 30 * 60 * 1000,
+          };
+        },
+      });
+      initializeAppCheck(app, { provider, isTokenAutoRefreshEnabled: true });
+      return true;
+    })
+    .catch((error) => {
+      console.warn("[SoloToDo] Native App Check initialization failed.", error?.code || "unavailable");
+      return false;
+    });
 }
 
 // Analytics — only in browser, not in WKWebView (Capacitor native)
@@ -102,4 +130,4 @@ if (import.meta.env.DEV) {
   // connectFunctionsEmulator(functions, "127.0.0.1", 5001); // DISABLED: connecting to live backend to use Blaze plan
 }
 
-export { auth, db, functions, analytics };
+export { auth, db, functions, analytics, appCheckReady };

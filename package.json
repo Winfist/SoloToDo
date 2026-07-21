@@ -38,11 +38,15 @@
     "test:quest-swap": "node scripts/test-quest-swap.mjs",
     "test:forge-limits": "node scripts/test-forge-limits.mjs",
     "test:quest-feedback": "node scripts/test-quest-feedback.mjs",
-    "test:goal-crystallization": "node scripts/test-goal-crystallization.mjs"
+    "test:goal-crystallization": "node scripts/test-goal-crystallization.mjs",
+    "test:forge": "node scripts/test-forge.mjs",
+    "test:forge-emulator": "node ./node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --project demo-solo-todo --only auth,firestore,functions \"node scripts/test-forge-emulator.mjs\"",
+    "test:forge-suite": "node scripts/test-forge.mjs && node scripts/test-forge-compiler.mjs && node scripts/test-quest-dna.mjs && node scripts/test-forge-learning.mjs && node scripts/test-forge-goal-progress.mjs && node scripts/test-forge-state-models.mjs && node scripts/test-forge-ai-profile.mjs && node scripts/test-analytics-privacy.mjs && node scripts/test-forge-ui-contract.mjs && node scripts/test-forge-golden-eval.mjs && node scripts/test-native-forge-config.mjs && node scripts/test-ai-quest-profile.mjs && node scripts/test-ai-quest-validation.mjs && node scripts/test-gemini-prompts.mjs && node scripts/test-signals.mjs && node scripts/test-state-merge.mjs && node scripts/test-quest-swap.mjs && node scripts/test-forge-limits.mjs && node scripts/test-quest-feedback.mjs && node functions/testGeminiTimeout.js && node functions/testForgeQuality.js && node functions/testForgeGeneration.js && node functions/testForgeLedger.js && node functions/testForgeCallable.js && node functions/testForgePrivacy.js"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
     "@capacitor-firebase/analytics": "8.3.0",
+    "@capacitor-firebase/app-check": "8.3.0",
     "@capacitor-firebase/authentication": "8.3.0",
     "@capacitor-firebase/messaging": "8.3.0",
     "@capacitor/android": "8.4.1",

@@ -1,5 +1,11 @@
 import { DOMAIN_IDS, getFocusStats } from "./lifeDomains.js";
 import { getDossierSummary } from "./hunterDossier.js";
+import {
+  buildForgeAIProfile,
+  createForgeRequestId,
+  getWeakestStat,
+  serializeForgeAIProfile,
+} from "./forgeAIProfile.js";
 
 const CATEGORY_IDS = ["str", "int", "vit", "agi", "cha"];
 const DIFFICULTIES = ["easy", "normal", "hard", "boss"];
@@ -66,7 +72,7 @@ function getRecentFocusMinutes(focus) {
     .reduce((sum, [, day]) => sum + cleanInteger(day?.totalMinutes, 1440), 0);
 }
 
-export function buildAIQuestProfile(state = {}) {
+function buildLegacyAIQuestProfile(state = {}) {
   const lifeDomains = (state.lifeDomains || [])
     .filter((domain, index, domains) => DOMAIN_ID_SET.has(domain) && domains.indexOf(domain) === index)
     .slice(0, 3);
@@ -145,21 +151,33 @@ export function buildAIQuestProfile(state = {}) {
   };
 }
 
-export function buildAIQuestRequest(state = {}, language = "de") {
+export function buildAIQuestProfile(state = {}, options = {}) {
+  return buildLegacyAIQuestProfile(state, options);
+}
+
+export function buildAIQuestRequest(state = {}, language = "de", options = {}) {
+  const nowMs = Number.isFinite(Number(options.nowMs)) ? Number(options.nowMs) : Date.now();
+  const today = /^\d{4}-\d{2}-\d{2}$/.test(options.today || "")
+    ? options.today
+    : new Date(nowMs).toISOString().slice(0, 10);
+  const timeZone = cleanText(options.timeZone, 64)
+    || Intl.DateTimeFormat?.().resolvedOptions?.().timeZone
+    || "UTC";
   const stats = Object.fromEntries(CATEGORY_IDS.map((category) => [
     category,
     cleanInteger(state.stats?.[category], 1000000),
   ]));
-  const weakestStat = CATEGORY_IDS.reduce((weakest, category) => (
-    stats[category] < stats[weakest] ? category : weakest
-  ), CATEGORY_IDS[0]);
-  const profile = buildAIQuestProfile(state);
+  const profile = buildForgeAIProfile(state, { nowMs, today });
+  serializeForgeAIProfile(profile);
 
   return {
+    requestId: cleanText(options.requestId, 96) || createForgeRequestId(nowMs),
+    clientPolicyVersion: "forge-3.0",
+    today,
+    timeZone,
     stats,
     level: Math.max(1, cleanInteger(state.level, 1000)),
-    weakestStat,
-    recentQuests: profile.recentCompletedQuests.map((quest) => quest.title).slice(0, 10),
+    weakestStat: getWeakestStat(stats),
     profile,
     language: language === "en" ? "en" : "de",
   };

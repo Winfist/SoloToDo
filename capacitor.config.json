@@ -35,6 +35,9 @@
           },
           "@capacitor-firebase/messaging": {
             "symlink": true
+          },
+          "@capacitor-firebase/app-check": {
+            "symlink": true
           }
         }
       }

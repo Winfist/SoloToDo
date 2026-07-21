@@ -1,6 +1,12 @@
 const CATEGORY_IDS = ["str", "int", "vit", "agi", "cha"];
 const DOMAIN_IDS = ["fitness", "knowledge", "health", "career", "social", "dating", "finance", "mindset"];
 const DIFFICULTIES = ["easy", "normal", "hard", "boss"];
+const QUEST_DNA_ACTION_KINDS = new Set(["prepare", "practice", "produce", "organize", "communicate", "move", "recover", "review"]);
+const QUEST_DNA_CONTEXT_KINDS = new Set(["any", "home", "computer", "phone", "outside", "errand", "social"]);
+const QUEST_DNA_FOCUS_MODES = new Set(["interruptible", "continuous"]);
+const QUEST_DNA_OUTCOME_KINDS = new Set(["artifact", "decision", "message_sent", "scheduled", "environment_changed", "practice_block", "movement_block", "recovery_block"]);
+const QUEST_DNA_REQUIREMENTS = new Set(["computer", "phone", "outdoors", "materials", "other_person", "opening_hours"]);
+const QUEST_DNA_VERSION = 1;
 const CATEGORY_ID_SET = new Set(CATEGORY_IDS);
 const DOMAIN_ID_SET = new Set(DOMAIN_IDS);
 const DIFFICULTY_SET = new Set(DIFFICULTIES);
@@ -37,6 +43,13 @@ function sanitizeQuestStats(stats) {
   ]));
 }
 
+function getUniqueWeakestStat(stats) {
+  const safe = sanitizeQuestStats(stats);
+  const entries = CATEGORY_IDS.map((category) => [category, safe[category]]);
+  const minimum = Math.min(...entries.map(([, value]) => value));
+  const weakest = entries.filter(([, value]) => value === minimum);
+  return weakest.length === 1 ? weakest[0][0] : null;
+}
 function sanitizeRecentQuestTitles(titles) {
   return uniqueSafeTexts(titles, 10, 140);
 }
@@ -128,13 +141,114 @@ function sanitizeAIQuestProfile(profile) {
   };
 }
 
-function sanitizeGeneratedAIQuests(quests) {
-  return (Array.isArray(quests) ? quests : []).slice(0, 3).map((quest) => {
+// Forge 3.0 sends only its explicit minimal contract. Active goal/habit titles
+// are allowed intent context; historical quest titles, notes, and IDs are
+// excluded.
+function sanitizeForgeModelProfile(profile) {
+  const raw = profile && typeof profile === "object" && !Array.isArray(profile) ? profile : {};
+  const recipePattern = /^r1\|(prepare|practice|produce|organize|communicate|move|recover|review)\|(any|home|computer|phone|outside|errand|social)\|(quick|standard|deep)$/;
+  const actionKinds = new Set(QUEST_DNA_ACTION_KINDS);
+  const outcomeKinds = new Set(QUEST_DNA_OUTCOME_KINDS);
+  const habitFrequencies = new Set(["daily", "weekdays", "weekly", "custom"]);
+
+  const activeGoals = (Array.isArray(raw.activeGoals) ? raw.activeGoals : [])
+    .map((goal) => {
+      const title = safeText(goal?.title, 140);
+      const nextMilestone = safeText(goal?.nextMilestone, 140);
+      const rawResume = goal?.resume && typeof goal.resume === "object" && !Array.isArray(goal.resume)
+        ? goal.resume : {};
+      const resume = {
+        ...(recipePattern.test(String(rawResume.recipeKey || "")) ? { recipeKey: rawResume.recipeKey } : {}),
+        ...(actionKinds.has(rawResume.actionKind) ? { actionKind: rawResume.actionKind } : {}),
+        ...(outcomeKinds.has(rawResume.outcomeKind) ? { outcomeKind: rawResume.outcomeKind } : {}),
+      };
+      return {
+        title,
+        ...(CATEGORY_ID_SET.has(goal?.category) ? { category: goal.category } : {}),
+        ...(nextMilestone ? { nextMilestone } : {}),
+        ...(Object.keys(resume).length > 0 ? { resume } : {}),
+      };
+    })
+    .filter((goal) => goal.title)
+    .slice(0, 3);
+
+  const activeHabits = (Array.isArray(raw.activeHabits) ? raw.activeHabits : [])
+    .map((habit) => ({
+      title: safeText(habit?.title, 120),
+      ...(CATEGORY_ID_SET.has(habit?.category) ? { category: habit.category } : {}),
+      frequency: habitFrequencies.has(habit?.frequency) ? habit.frequency : "custom",
+    }))
+    .filter((habit) => habit.title)
+    .slice(0, 2);
+
+  const rawLearning = raw.learning && typeof raw.learning === "object" && !Array.isArray(raw.learning)
+    ? raw.learning : {};
+  const learning = {
+    preferences: (Array.isArray(rawLearning.preferences) ? rawLearning.preferences : [])
+      .map((entry) => ({
+        recipeKey: recipePattern.test(String(entry?.recipeKey || "")) ? entry.recipeKey : null,
+        value: ["prefer", "avoid", "neutral"].includes(entry?.value) ? entry.value : null,
+      }))
+      .filter((entry) => entry.recipeKey && entry.value)
+      .slice(0, 12),
+    patterns: (Array.isArray(rawLearning.patterns) ? rawLearning.patterns : [])
+      .map((entry) => ({
+        recipeKey: recipePattern.test(String(entry?.recipeKey || "")) ? entry.recipeKey : null,
+        outcomes: clampInteger(entry?.outcomes, 0, 1000),
+        completionBand: ["unknown", "low", "medium", "high"].includes(entry?.completionBand)
+          ? entry.completionBand : "unknown",
+        reliable: entry?.reliable === true,
+      }))
+      .filter((entry) => entry.recipeKey)
+      .slice(0, 10),
+  };
+  const allowedCategories = [...new Set(Array.isArray(raw.allowedCategories) ? raw.allowedCategories : CATEGORY_IDS)]
+    .filter((category) => CATEGORY_ID_SET.has(category));
+
+  return {
+    activeGoals,
+    activeHabits,
+    learning,
+    stats: sanitizeQuestStats(raw.stats),
+    loadBand: ["normal", "elevated", "high"].includes(raw.loadBand) ? raw.loadBand : "normal",
+    allowedCategories: allowedCategories.length > 0 ? allowedCategories : CATEGORY_IDS,
+  };
+}
+
+function sanitizeGeneratedQuestDNA(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)
+    || value.version !== QUEST_DNA_VERSION) return null;
+  const actionKind = typeof value.actionKind === "string" ? value.actionKind : "";
+  const contextKind = typeof value.contextKind === "string" ? value.contextKind : "";
+  const focusMode = typeof value.focusMode === "string" ? value.focusMode : "";
+  const outcomeKind = typeof value.outcomeKind === "string" ? value.outcomeKind : "";
+  const rawRequirements = Array.isArray(value.requirements) ? value.requirements : null;
+  if (!QUEST_DNA_ACTION_KINDS.has(actionKind)
+    || !QUEST_DNA_CONTEXT_KINDS.has(contextKind)
+    || !QUEST_DNA_FOCUS_MODES.has(focusMode)
+    || !QUEST_DNA_OUTCOME_KINDS.has(outcomeKind)
+    || !rawRequirements
+    || rawRequirements.length > QUEST_DNA_REQUIREMENTS.size) return null;
+  const requirements = rawRequirements.map((item) => typeof item === "string" ? item : "");
+  if (requirements.some((item) => !QUEST_DNA_REQUIREMENTS.has(item))) return null;
+  return {
+    version: QUEST_DNA_VERSION,
+    actionKind,
+    contextKind,
+    focusMode,
+    outcomeKind,
+    requirements: [...new Set(requirements)],
+  };
+}
+function sanitizeGeneratedAIQuests(quests, { limit = 3 } = {}) {
+  const safeLimit = Math.max(1, Math.min(12, clampInteger(limit, 1, 12)));
+  return (Array.isArray(quests) ? quests : []).slice(0, safeLimit).map((quest) => {
     const estimatedMinutes = typeof quest?.estimatedMinutes === "number"
       && Number.isInteger(quest.estimatedMinutes)
       ? quest.estimatedMinutes
       : null;
     const goalRef = safeText(quest?.goalRef, 140);
+    const questDNA = sanitizeGeneratedQuestDNA(quest?.questDNA);
     return {
       title: safeText(quest?.title, 160),
       ...(CATEGORY_ID_SET.has(quest?.category) ? { category: quest.category } : {}),
@@ -143,6 +257,7 @@ function sanitizeGeneratedAIQuests(quests) {
       doneWhen: safeText(quest?.doneWhen, 200),
       ...(estimatedMinutes !== null ? { estimatedMinutes } : {}),
       ...(goalRef ? { goalRef } : {}),
+      ...(questDNA ? { questDNA } : {}),
       subQuests: (Array.isArray(quest?.subQuests) ? quest.subQuests : [])
         .slice(0, 5)
         .map((subQuest) => ({ title: safeText(subQuest?.title || subQuest, 180) }))
@@ -167,9 +282,12 @@ function sanitizeQuestionnaire(raw) {
 
 module.exports = {
   clampInteger,
+  getUniqueWeakestStat,
   safeText,
   sanitizeAIQuestProfile,
+  sanitizeForgeModelProfile,
   sanitizeGeneratedAIQuests,
+  sanitizeGeneratedQuestDNA,
   sanitizeQuestionnaire,
   sanitizeQuestStats,
   sanitizeRecentQuestTitles,

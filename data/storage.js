@@ -4,6 +4,8 @@ import { db, auth } from "../firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { DEFAULT_STATE } from "./defaultState.js";
 import { mergeForgeState, normalizeForgeState } from "./forge.js";
+import { mergeForgeLearning, normalizeForgeLearning } from "./forgeLearning.js";
+import { mergeForgeGoalProgress, normalizeForgeGoalProgress } from "./forgeGoalProgress.js";
 import { calcShadowXpToNext, genId, getToday, getXpForLevel, recalculateLevelFromTotalXp } from "./helpers.js";
 import { normalizeQuestForStorage } from "./questUtils.js";
 import { migrateLegacyShadowIdentity, clearBogusShadowRegression } from "./shadowMigration.js";
@@ -102,11 +104,15 @@ function stampStateForUser(state, user = auth.currentUser) {
   };
 }
 
-function mergeLocalOnlyCaches(primary, fallback, { mergeForge = true } = {}) {
+function mergeLocalOnlyCaches(primary, fallback, { mergeForge = true, mergePersonalization = true } = {}) {
   if (!primary || !fallback) return primary;
   return {
     ...primary,
     ...(mergeForge ? { forge: mergeForgeState(primary.forge, fallback.forge) } : {}),
+    ...(mergePersonalization ? {
+      forgeLearning: mergeForgeLearning(primary.forgeLearning, fallback.forgeLearning),
+      forgeGoalProgress: mergeForgeGoalProgress(primary.forgeGoalProgress, fallback.forgeGoalProgress),
+    } : {}),
     healthDailyHistory: {
       ...(fallback.healthDailyHistory || {}),
       ...(primary.healthDailyHistory || {}),
@@ -551,6 +557,8 @@ export function mergeStateProgress(primary, fallback) {
       pendingOutcome: mergeArrayByKey(primary.coachSignals?.pendingOutcome, fallback.coachSignals?.pendingOutcome, item => `${item?.type}|${item?.date}`),
     },
     forge: mergeForgeState(primary.forge, fallback.forge),
+    forgeLearning: mergeForgeLearning(primary.forgeLearning, fallback.forgeLearning),
+    forgeGoalProgress: mergeForgeGoalProgress(primary.forgeGoalProgress, fallback.forgeGoalProgress),
     dailyUserXP: Math.max(toFiniteNumber(primary.dailyUserXP), toFiniteNumber(fallback.dailyUserXP)),
     extraDailySlots: Math.max(toFiniteNumber(primary.extraDailySlots), toFiniteNumber(fallback.extraDailySlots)),
     dungeons: mergeArrayByKey(primary.dungeons, fallback.dungeons, item => item?.instanceId || item?.id),
@@ -723,7 +731,7 @@ export function resolveStateConflict(localState, cloudState) {
       resetType: cloudState._adminResetType,
       localHad: localAdminResetAt,
     });
-    return { data: mergeLocalOnlyCaches(cloudState, localState, { mergeForge: false }), source: "cloud", reason: "admin-reset" };
+    return { data: mergeLocalOnlyCaches(cloudState, localState, { mergeForge: false, mergePersonalization: false }), source: "cloud", reason: "admin-reset" };
   }
 
   const localScore = getStateProgressScore(localState);
@@ -808,12 +816,14 @@ async function readLocalState(user = auth.currentUser) {
 }
 
 export async function cacheStateLocally(state, user = auth.currentUser) {
-  if (!state) return;
+  if (!state) return false;
   try {
     const scopedState = stampStateForUser(state, user);
     await window.storage.set(getScopedKey(ACTIVE_STATE_KEY, user), JSON.stringify(scopedState));
+    return true;
   } catch (e) {
     console.error("System: Lokaler Speicherfehler:", e);
+    return false;
   }
 }
 
@@ -907,6 +917,13 @@ export function migrateState(oldState) {
     oldState.stateVersion = 5;
   }
 
+  if (version < 6) {
+    // v5 -> v6: initialize bounded Forge learning and dynamic goal-resume state.
+    oldState.forgeLearning = normalizeForgeLearning(oldState.forgeLearning);
+    oldState.forgeGoalProgress = normalizeForgeGoalProgress(oldState.forgeGoalProgress);
+    oldState.stateVersion = 6;
+  }
+
   const s = { ...DEFAULT_STATE, ...oldState };
   s.level = Math.max(1, s.level || 1);
   s.xp = s.xp || 0;
@@ -933,6 +950,8 @@ export function migrateState(oldState) {
   s.sessionSignals = { ...DEFAULT_STATE.sessionSignals, ...(oldState.sessionSignals || {}) };
   s.coachSignals = { ...DEFAULT_STATE.coachSignals, ...(oldState.coachSignals || {}) };
   s.forge = normalizeForgeState(oldState.forge);
+  s.forgeLearning = normalizeForgeLearning(oldState.forgeLearning);
+  s.forgeGoalProgress = normalizeForgeGoalProgress(oldState.forgeGoalProgress);
   s.questPlanning = {
     ...DEFAULT_QUEST_PLANNING,
     ...(oldState.questPlanning || {}),

@@ -3,6 +3,7 @@ import {
   acceptProposals,
   clearPendingSet,
   createPendingSet,
+  compileLegacyForgeSet,
   getSelectableCount,
   isPendingSetValid,
   normalizeForgeState,
@@ -184,6 +185,23 @@ const coldStartRank = recommendForgeSet({
 equal(coldStartRank.orderedIds, [plainQuest.id, likedQuest.id], "Cold Start bewahrt ohne Signal die stabile Ursprungsreihenfolge");
 check(Object.keys(coldStartRank.reasonsById).length === 0, "Cold Start erfindet keinen schwächsten Stat oder Personalisierungsgrund");
 
+
+const legacyCompiled = compileLegacyForgeSet(baseState, [goalQuest, quickQuest, weakQuest, plainQuest]);
+check(legacyCompiled.composition.compilerVersion === "legacy", "Kill-Switch nutzt den echten 2.2-Compiler");
+check(legacyCompiled.composition.proposals.length === 3, "2.2-Kill-Switch begrenzt den Batch auf drei Karten");
+check(legacyCompiled.composition.recommendedIds.length === 1, "2.2-Kill-Switch respektiert die aktuelle Kapazitaet");
+check(legacyCompiled.composition.status === "ready", "drei Legacy-Kandidaten ergeben ready");
+const legacyPendingFromCompiler = createPendingSet(legacyCompiled.composition.proposals, {
+  today: TODAY,
+  nowMs: 190,
+  composition: legacyCompiled.composition,
+});
+check(legacyPendingFromCompiler.qualityPolicyVersion === "forge-2.2", "Legacy-Compiler erzeugt ein echtes 2.2-Pending");
+const legacyPreview = compileLegacyForgeSet({ ...baseState, quests: [] }, [goalQuest, quickQuest, weakQuest]);
+check(legacyPreview.composition.recommendedIds.length === 0, "2.2-Kill-Switch zeigt bei N=0 nur Preview-Karten");
+equal(legacyPreview.composition.previewIds, legacyPreview.composition.orderedIds, "N=0 behaelt alle Legacy-Vorschlaege sichtbar");
+const legacyPartial = compileLegacyForgeSet(baseState, [quickQuest, weakQuest]);
+check(legacyPartial.composition.status === "partial", "Legacy-Fallback fuellt zwei Kandidaten nicht kuenstlich auf");
 // ── Atomare Annahme ──────────────────────────────────────────────────────
 const acceptPending = createPendingSet([
   proposal("a", "A"), proposal("b", "B"), proposal("c", "C"),
@@ -207,6 +225,21 @@ check(result.state.forge.pending === null && result.state.forge.updatedAtMs === 
 check(acceptState.forge.pending === acceptPending, "Eingabe-State bleibt unverändert");
 check((result.state.questSignals?.byCategory?.str?.assigned || 0) === 1, "Assigned-Signal wird erfasst");
 check((result.state.sessionSignals?.days?.[TODAY]?.actions || 0) === 1, "User-Action wird erfasst");
+check(result.state.quests.find((quest) => quest.id === "sys_ai_a")?.replacedQuestId === "p1", "ersetzte Quest bleibt als Swap-Evidenz verknuepft");
+
+const stagedPending = {
+  ...acceptPending,
+  quotaCommitStatus: "pending",
+  quotaRequestId: "forge_req_123",
+  quotaTimeZone: "Europe/Berlin",
+};
+const stagedState = { ...acceptState, forge: { pending: stagedPending, updatedAtMs: 101 } };
+const stagedResult = acceptProposals(stagedState, {
+  pendingId: stagedPending.id,
+  proposalIds: ["sys_ai_a"],
+}, { today: TODAY, nowMs: 222 });
+check(stagedResult.reason === "storage_error", "nicht committedes Kontingent kann nicht angenommen werden");
+check(stagedResult.state === stagedState && stagedState.forge.pending === stagedPending, "Commit-Gate mutiert das sichtbare Set nicht");
 
 const capacityChanged = acceptProposals(acceptState, {
   pendingId: acceptPending.id,

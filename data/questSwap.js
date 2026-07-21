@@ -23,8 +23,19 @@ export function canAutoSwapSystemQuests(quests = []) {
   return !(quests || []).some((quest) => isPoolDaily(quest) && isTouched(quest));
 }
 
+// Eine Quelle fuer Compiler, Kapazitaet und atomaren Swap: alle muessen exakt
+// dieselbe stabile Zielreihenfolge verwenden.
+export function getManualForgeTargets(quests = [], limit = Number.POSITIVE_INFINITY) {
+  const normalizedLimit = Number.isFinite(Number(limit))
+    ? Math.max(0, Math.floor(Number(limit)))
+    : Number.POSITIVE_INFINITY;
+  return (Array.isArray(quests) ? quests : [])
+    .filter((quest) => isPoolDaily(quest) && !isTouched(quest))
+    .slice(0, normalizedLimit);
+}
+
 export function countManualForgeTargets(quests = []) {
-  return (quests || []).filter((quest) => isPoolDaily(quest) && !isTouched(quest)).length;
+  return getManualForgeTargets(quests).length;
 }
 
 // Liefert exakt die Quests, die swapSystemQuests im jeweiligen Modus entfernt —
@@ -32,7 +43,7 @@ export function countManualForgeTargets(quests = []) {
 export function getSwappedQuests(quests = [], aiQuests = [], { mode = "auto" } = {}) {
   const list = quests || [];
   if (mode === "auto") return list.filter(isPoolDaily);
-  return list.filter((quest) => isPoolDaily(quest) && !isTouched(quest)).slice(0, (aiQuests || []).length);
+  return getManualForgeTargets(list, (aiQuests || []).length);
 }
 
 export function swapSystemQuests(quests = [], aiQuests = [], { mode = "auto" } = {}) {
@@ -41,7 +52,7 @@ export function swapSystemQuests(quests = [], aiQuests = [], { mode = "auto" } =
   if (mode === "auto") {
     return [...list.filter((quest) => !isPoolDaily(quest)), ...incomingAll];
   }
-  const replaceable = list.filter((quest) => isPoolDaily(quest) && !isTouched(quest));
+  const replaceable = getManualForgeTargets(list);
   const incoming = incomingAll.slice(0, replaceable.length);
   const dropIds = new Set(replaceable.slice(0, incoming.length).map((quest) => quest.id));
   return [...list.filter((quest) => !dropIds.has(quest.id)), ...incoming];

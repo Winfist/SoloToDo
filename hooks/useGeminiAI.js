@@ -2,9 +2,10 @@
 
 import { useState, useCallback, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase";
+import { appCheckReady, functions } from "../firebase";
 import { getStateLocale, translate } from "../data/i18n.js";
 import { buildAIQuestRequest, buildAIQuestProfile } from "../data/aiQuestProfile.js";
+import { createForgeRequestId } from "../data/forgeAIProfile.js";
 
 // Helper: Resize and convert to Base64 to prevent 413 Payload Too Large
 const compressFileToBase64 = (file) => {
@@ -86,7 +87,7 @@ export function useGeminiAI(state) {
   }
 
   function handleError(err) {
-    console.error("[useGeminiAI]", err);
+    console.error("[useGeminiAI]", err?.code || "unknown_error");
     if (isRateLimitErr(err)) {
       rateLimitErrorRef.current = true;
       setRateLimitError(true);
@@ -171,23 +172,64 @@ export function useGeminiAI(state) {
 
   // ─── Feature B1: Generate dynamic daily quests ────────────────────────────
 
-  const generateQuests = useCallback(async () => {
-    if (!state || rateLimitErrorRef.current) return null;
+  const generateQuests = useCallback(async (options = {}) => {
+    const emptyMeta = { policyVersion: "forge-3.0", requestedCount: 6, validCount: 0, attemptCount: 0, outcome: "empty" };
+    if (!state) return { ok: false, quests: [], reason: "invalid_request", retryable: false, retryAfterMs: 0, meta: emptyMeta };
+    if (rateLimitErrorRef.current) {
+      return {
+        ok: false,
+        quests: [],
+        reason: "rate_limited",
+        retryable: true,
+        retryAfterMs: Math.max(0, getRateLimitExpiry() - Date.now()),
+        meta: emptyMeta,
+      };
+    }
+    const requestId = options.requestId || createForgeRequestId();
     setIsLoading(true);
     setError(null);
     try {
       // Gratis-Modelle brauchen real oft >70s (Callable-Default) — bis zum
       // Function-Timeout (120s) warten statt kurz vor dem Ergebnis abzubrechen.
       const fn = httpsCallable(functions, "generateDynamicQuests", { timeout: 120000 });
-      const result = await fn(buildAIQuestRequest(state, language));
-      return result.data; // { quests }
+      await appCheckReady;
+      const request = buildAIQuestRequest(state, language, { ...options, requestId });
+      const result = await fn(request);
+      const data = result?.data;
+      if (data && typeof data === "object") return { ...data, requestId };
+      return { ok: false, quests: [], reason: "provider_unavailable", retryable: true, retryAfterMs: 0, meta: emptyMeta, requestId };
     } catch (err) {
       handleError(err);
-      return null;
+      return {
+        ok: false,
+        quests: [],
+        reason: isRateLimitErr(err) ? "rate_limited" : "provider_unavailable",
+        retryable: true,
+        retryAfterMs: isRateLimitErr(err) ? Math.max(0, getRateLimitExpiry() - Date.now()) : 0,
+        meta: emptyMeta,
+        requestId,
+      };
     } finally {
       setIsLoading(false);
     }
   }, [state, language]);
+
+  const commitForgeGeneration = useCallback(async ({ requestId, pendingId, timeZone } = {}) => {
+    if (!requestId || !pendingId) return { ok: false, reason: "invalid_request" };
+    try {
+      const fn = httpsCallable(functions, "commitForgeGeneration", { timeout: 30000 });
+      await appCheckReady;
+      const result = await fn({
+        requestId,
+        pendingId,
+        timeZone: timeZone || Intl.DateTimeFormat?.().resolvedOptions?.().timeZone || "UTC",
+      });
+      return result?.data || { ok: false, reason: "storage_error" };
+    } catch (err) {
+      console.error("[useGeminiAI:commit]", err?.code || "storage_error");
+      return { ok: false, reason: "storage_error", retryable: true };
+    }
+  }, []);
 
   // ─── Feature B2: Generate system message ─────────────────────────────────
 
@@ -292,6 +334,7 @@ export function useGeminiAI(state) {
     scanTaskPhoto,
     extractScreenTime,
     generateQuests,
+    commitForgeGeneration,
     generateSystemMsg,
     askCoach,
     generateQuestDesc,

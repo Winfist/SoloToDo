@@ -13,7 +13,7 @@ function todayString() {
  * Check if the user is within their daily limit, then increment the counter.
  * Throws HttpsError("resource-exhausted") if the limit is reached.
  */
-async function checkAndIncrementRateLimit(userId) {
+async function checkAndIncrementRateLimit(userId, { failClosed = false } = {}) {
   const db = admin.firestore();
   const ref = db.collection("aiUsage").doc(userId);
   const today = todayString();
@@ -47,6 +47,9 @@ async function checkAndIncrementRateLimit(userId) {
     // Re-throw HttpsError (rate limit exceeded), log and ignore all other errors
     // so that Firestore permission issues don't block the AI call.
     if (err instanceof HttpsError) throw err;
+    if (failClosed) {
+      throw new HttpsError("unavailable", "KI-Nutzung kann gerade nicht sicher reserviert werden.");
+    }
     console.warn("[RateLimiter] Fehler beim Rate-Limit-Check (wird ignoriert):", err.message || err);
   }
 }

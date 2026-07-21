@@ -3,6 +3,8 @@ import { calculateLevelUp, genId } from "../data/constants";
 import { getLocalDateKey, getToday, getYesterdayKey } from "../data/dateUtils.js";
 import { HABIT_ICONS, JOB_ICONS, NAV_ICONS, SHADOW_ICONS, STAT_ICONS, STORY_ICONS } from "../data/icons.js";
 import GameIcon from "./GameIcon.jsx";
+import { getQuestDurationBand } from "../data/questDNA.js";
+import { trackEvent } from "../services/analytics.js";
 
 const FOCUS_MODES = {
   pomodoro: {
@@ -367,8 +369,31 @@ export default function FocusMode({ state, persist, notify, onExit, theme, proce
       return;
     }
     if (phase === "work" && timeLeft === activeMode.work * 60) {
-      setSessionStartedAt(Date.now());
+      const nowMs = Date.now();
+      setSessionStartedAt(nowMs);
       setAffirmationIdx(0);
+      const currentState = stateRef.current;
+      const focusQuestId = currentState?.dailyFocusQuestId;
+      const focusQuest = (currentState?.quests || []).find((quest) => quest.id === focusQuestId);
+      if (focusQuest && !Number(focusQuest.startedAtMs)) {
+        const nextState = {
+          ...currentState,
+          quests: currentState.quests.map((quest) => quest.id === focusQuestId ? { ...quest, startedAtMs: nowMs } : quest),
+        };
+        stateRef.current = nextState;
+        persist(nextState);
+        const fallbackOrigin = focusQuest.isSystem ? "system" : "manual";
+        const allowedOrigins = new Set(["forge", "starter", "replacement", "system", "manual"]);
+        const assignedAtMs = Number(focusQuest.forgeAcceptedAtMs) || 0;
+        trackEvent("quest_started", {
+          origin: allowedOrigins.has(focusQuest.origin) ? focusQuest.origin : fallbackOrigin,
+          start_source: "focus",
+          duration_band: getQuestDurationBand(focusQuest) || "unknown",
+          same_day: assignedAtMs > 0
+            ? getLocalDateKey(new Date(assignedAtMs)) === getToday()
+            : focusQuest.createdAt === getToday(),
+        });
+      }
     }
     completionTokenRef.current = null;
     setRunning(true);

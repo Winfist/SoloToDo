@@ -6,21 +6,16 @@ const admin = require("firebase-admin");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { checkAndIncrementRateLimit } = require("./rateLimiter");
+const { createCommitForgeHandler, createGenerateForgeHandler } = require("./forgeCallable");
 const { callGemini, callGeminiWithImage, callGeminiWithImages, parseJSON } = require("./geminiService");
 const {
-  clampInteger,
   sanitizeAIQuestProfile,
-  sanitizeGeneratedAIQuests,
   sanitizeQuestionnaire,
-  sanitizeQuestStats,
-  sanitizeRecentQuestTitles,
 } = require("./aiQuestProfile");
-const { validateGeneratedQuests, resolveGoalRef } = require("./aiQuestValidation");
 const {
   VERIFY_QUEST_PROMPT,
   EXTRACT_TASKS_PROMPT,
   EXTRACT_SCREEN_TIME_PROMPT,
-  GENERATE_QUESTS_PROMPT,
   SYSTEM_MESSAGE_PROMPT,
   COACH_PROMPT,
   QUEST_DESC_PROMPT,
@@ -206,54 +201,18 @@ exports.extractScreenTime = onCall(CALL_OPTIONS, async (request) => {
   };
 });
 
-exports.generateDynamicQuests = onCall(CALL_OPTIONS, async (request) => {
-  const uid = requireAuth(request);
-  const { stats, level, weakestStat, recentQuests, profile } = request.data;
-  const language = normalizeLanguage(request.data?.language);
+exports.generateDynamicQuests = onCall(CALL_OPTIONS, createGenerateForgeHandler({
+  admin,
+  requireAuth,
+  checkAndIncrementRateLimit,
+  callGemini,
+  parseJSON,
+}));
 
-  if (!stats || !level) {
-    throw new HttpsError("invalid-argument", "stats und level sind erforderlich.");
-  }
-
-  await checkAndIncrementRateLimit(uid);
-
-  const safeStats = sanitizeQuestStats(stats);
-  const safeLevel = clampInteger(level, 1, 1000);
-  const safeWeakestStat = ["str", "int", "vit", "agi", "cha"].includes(weakestStat) ? weakestStat : null;
-  const safeRecentQuests = sanitizeRecentQuestTitles(recentQuests);
-  const safeProfile = sanitizeAIQuestProfile(profile);
-  const activeGoalTitles = safeProfile.activeGoals.map((goal) => goal.title);
-
-  // Gratis-Modelle liefern unzuverlaessig - validieren, bei Murks 1 strenger Retry.
-  let quests = [];
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const prompt = GENERATE_QUESTS_PROMPT(
-      safeStats, safeLevel, safeWeakestStat, safeRecentQuests, safeProfile, language,
-      { strict: attempt > 0 }
-    );
-    const raw = await callGemini(prompt);
-    const candidate = sanitizeGeneratedAIQuests(parseJSON(raw, { quests: [] }).quests);
-    const verdict = validateGeneratedQuests(candidate, {
-      language,
-      activeGoalTitles,
-      minCount: 3,
-      recentDislikedTitles: safeProfile.behaviorSignals?.recentDislikedTitles,
-      recentExpiredTitles: safeProfile.behaviorSignals?.recentExpiredTitles,
-      requiredWeakestStat: safeWeakestStat,
-    });
-    if (verdict.ok) { quests = candidate; break; }
-    console.warn(`[generateDynamicQuests] Versuch ${attempt + 1} ungueltig:`, verdict.reasons.join(","));
-  }
-
-  // goalRef gegen aktive Ziele aufloesen; ohne Treffer Feld verwerfen.
-  quests = quests.map((quest) => {
-    const { goalRef, ...rest } = quest;
-    const resolved = resolveGoalRef(goalRef, activeGoalTitles);
-    return resolved ? { ...rest, goalRef: resolved } : rest;
-  });
-
-  return { quests };
-});
+exports.commitForgeGeneration = onCall(CALL_OPTIONS, createCommitForgeHandler({
+  admin,
+  requireAuth,
+}));
 
 // ─── Feature B2: Generate System Message ─────────────────────────────────────
 

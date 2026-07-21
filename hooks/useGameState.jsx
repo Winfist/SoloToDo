@@ -56,7 +56,16 @@ import {
   withPinnedQuest,
   withRestoredQuest,
 } from '../data/questPlanning.js';
-import { acceptProposals as acceptForgeSelection, clearPendingSet } from '../data/forge.js';
+import { acceptProposals as acceptForgeSelection, clearPendingSet, compileLegacyForgeSet, createPendingSet } from '../data/forge.js';
+import { compileForgeSet } from '../data/forgeCompiler.js';
+import {
+  getForgeLearningDossier,
+  reconcileForgeLearning,
+  resetForgeLearning,
+  setForgeRecipePreference,
+} from '../data/forgeLearning.js';
+import { reconcileForgeGoalProgress } from '../data/forgeGoalProgress.js';
+import { getQuestDurationBand } from '../data/questDNA.js';
 import { trackEvent } from '../services/analytics.js';
 
 const QUEST_TO_HABIT_CATEGORY = {
@@ -91,13 +100,16 @@ function cloneDefaultState() {
 function getQuestCompletionAnalyticsParams(quest, extra = {}) {
   const nowMs = Date.now();
   const acceptedAtMs = Number(quest?.forgeAcceptedAtMs);
+  const startedAtMs = Number(quest?.startedAtMs);
   const hasForgeAccept = Number.isFinite(acceptedAtMs) && acceptedAtMs > 0;
-  const acceptedAt = hasForgeAccept ? new Date(acceptedAtMs) : null;
+  const hasStarted = Number.isFinite(startedAtMs) && startedAtMs > 0;
   const now = new Date(nowMs);
-  const sameDay = Boolean(acceptedAt
-    && acceptedAt.getFullYear() === now.getFullYear()
-    && acceptedAt.getMonth() === now.getMonth()
-    && acceptedAt.getDate() === now.getDate());
+  const isSameLocalDay = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.getFullYear() === now.getFullYear()
+      && date.getMonth() === now.getMonth()
+      && date.getDate() === now.getDate();
+  };
   const allowedCategories = new Set(['str', 'int', 'vit', 'agi', 'cha']);
   const allowedDifficulties = new Set(['easy', 'normal', 'hard', 'boss']);
   const allowedOrigins = new Set(['forge', 'starter', 'replacement', 'system', 'manual']);
@@ -106,15 +118,18 @@ function getQuestCompletionAnalyticsParams(quest, extra = {}) {
   const fallbackOrigin = quest?.isSystem ? 'system' : 'manual';
   const origin = allowedOrigins.has(quest?.origin) ? quest.origin : fallbackOrigin;
   return {
-    ...extra,
     category,
     difficulty,
-    isSystem: Boolean(quest?.isSystem),
+    is_system: Boolean(quest?.isSystem),
     origin,
-    same_day: sameDay,
+    same_day: hasForgeAccept && isSameLocalDay(acceptedAtMs),
+    started_same_day: hasStarted && isSameLocalDay(startedAtMs),
     minutes_since_forge_accept: hasForgeAccept
       ? Math.max(0, Math.floor((nowMs - acceptedAtMs) / 60000))
       : -1,
+    duration_band: getQuestDurationBand(quest) || 'unknown',
+    streak: Number.isFinite(Number(extra.streak)) ? Number(extra.streak) : 0,
+    content_source: extra.source === 'widget' ? 'widget' : origin,
   };
 }
 
@@ -425,6 +440,11 @@ export function useGameState(initialHunterName, onLogout) {
     const now = Date.now();
     const previous = stateRef.current;
     let next = stampRuntimeState({ ...s, lastInteractionTimeMs: now, lastModifiedAtMs: now });
+    if (previous) {
+      const reconcileOptions = { nowMs: now, today: getToday(), locale: getStateLocale(next) };
+      next = reconcileForgeLearning(previous, next, reconcileOptions);
+      next = reconcileForgeGoalProgress(previous, next, reconcileOptions);
+    }
     const progressEvent = createProgressSyncEvent(previous, next, now);
     if (progressEvent) {
       const events = Array.isArray(next.syncEvents) ? next.syncEvents : [];
@@ -437,7 +457,7 @@ export function useGameState(initialHunterName, onLogout) {
     stateRef.current = next;
     // Track level-ups from any source
     if (previous && next.level > (previous.level || 1)) {
-      trackEvent('level_up', { level: next.level, previousLevel: previous.level || 1 });
+      trackEvent('level_up', { level: next.level, previous_level: previous.level || 1 });
     }
     saveState(next);
     // Widget Sync: push state snapshot to iOS WidgetKit via shared App Group
@@ -470,7 +490,7 @@ export function useGameState(initialHunterName, onLogout) {
     return true;
   }, [persist]);
 
-  const acceptForgeProposals = useCallback(({ pendingId, proposalIds } = {}) => {
+  const acceptForgeProposals = useCallback(async ({ pendingId, proposalIds } = {}) => {
     const current = stateRef.current;
     if (!current) {
       return {
@@ -481,14 +501,183 @@ export function useGameState(initialHunterName, onLogout) {
         reason: 'storage_error',
       };
     }
-    const result = acceptForgeSelection(
+    let result = acceptForgeSelection(
       current,
       { pendingId, proposalIds },
       { today: getToday(), nowMs: Date.now() },
     );
-    if (result.reason === null && result.acceptedCount > 0) persist(result.state);
+    if (result.stateChanged) {
+      const reconcileOptions = { nowMs: Date.now(), today: getToday(), locale: getStateLocale(result.state) };
+      const durableState = reconcileForgeGoalProgress(
+        current,
+        reconcileForgeLearning(current, result.state, reconcileOptions),
+        reconcileOptions,
+      );
+      result = { ...result, state: durableState };
+      const locallyStored = await cacheStateLocally(durableState);
+      if (!locallyStored) {
+        return {
+          ...result,
+          state: current,
+          acceptedCount: 0,
+          acceptedIds: [],
+          reason: 'storage_error',
+          stateChanged: false,
+        };
+      }
+      // A cloud/reconnect update may land while the durable write is pending.
+      // Never publish a snapshot compiled from an obsolete base state.
+      if (stateRef.current !== current) {
+        const latest = stateRef.current;
+        if (latest) {
+          await cacheStateLocally(latest);
+        }
+        return {
+          ...result,
+          state: latest || current,
+          acceptedCount: 0,
+          acceptedIds: [],
+          reason: 'storage_error',
+          stateChanged: false,
+        };
+      }
+      persist(result.state);
+    }
     return result;
   }, [persist]);
+
+  const storeForgeGeneration = useCallback(async ({
+    candidates, source = 'manual', today = getToday(), nowMs = Date.now(), serverMeta = null,
+    requestId = '', timeZone = 'UTC',
+  } = {}) => {
+    const current = stateRef.current;
+    if (!current) return { ok: false, persisted: false, status: 'no_fit', reason: 'storage_error' };
+    const safeRequestId = typeof requestId === 'string' && /^[A-Za-z0-9_-]{8,96}$/.test(requestId) ? requestId : '';
+    const safeTimeZone = typeof timeZone === 'string' && /^[A-Za-z0-9_+./-]{1,64}$/.test(timeZone) ? timeZone : '';
+    if (!safeRequestId || !safeTimeZone) return { ok: false, persisted: false, status: 'no_fit', reason: 'storage_error' };
+    try {
+      const policyVersion = serverMeta?.activePolicy === 'forge-2.2' ? 'forge-2.2' : 'forge-3.0';
+      let compiled;
+      if (policyVersion === 'forge-2.2') {
+        compiled = compileLegacyForgeSet(current, candidates, { proposalLimit: 3 });
+      } else {
+        compiled = compileForgeSet(current, candidates, {
+          today,
+          nowMs,
+          contentSource: 'ai',
+          strict: true,
+          proposalLimit: 3,
+        });
+      }
+      const { context, compilation, composition } = compiled;
+      const successful = ['ready', 'partial'].includes(composition.status) && composition.proposals.length > 0;
+      if (source === 'reforge' && !successful) {
+        return { ok: false, persisted: false, status: composition.status, reason: 'quality_rejected', policyVersion, ...compiled };
+      }
+      const diagnostics = {
+        generatedCount: Number(serverMeta?.validCount ?? compilation.diagnostics.inputCount) || 0,
+        validCount: compilation.diagnostics.eligibleCount || 0,
+        rejectionCounts: compilation.diagnostics.rejectionCounts || {},
+        attemptCount: Number(serverMeta?.attemptCount) || 0,
+      };
+      const createdPending = createPendingSet(composition.proposals, {
+        source,
+        today,
+        nowMs,
+        contentSource: 'ai',
+        status: composition.status,
+        composition,
+        context,
+        diagnostics,
+      });
+      const pending = {
+        ...createdPending,
+        quotaCommitStatus: successful ? 'pending' : 'committed',
+        quotaRequestId: successful ? safeRequestId : '',
+        quotaTimeZone: successful ? safeTimeZone : '',
+      };
+      const updatedAtMs = Math.max(Number(current.forge?.updatedAtMs || 0) + 1, Number(nowMs) || Date.now());
+      const next = { ...current, forge: { ...(current.forge || {}), pending, updatedAtMs } };
+      // Quota is committed only after a durable local Pending exists. This
+      // explicit write precedes the regular local/cloud persistence pipeline.
+      const locallyStored = await cacheStateLocally(next);
+      if (!locallyStored) {
+        return { ok: false, persisted: false, status: composition.status, reason: 'storage_error', policyVersion, ...compiled };
+      }
+      // Keep a concurrent cloud/reconnect winner intact. The caller retains
+      // its stable requestId and can safely retry without consuming quota.
+      if (stateRef.current !== current) {
+        const latest = stateRef.current;
+        if (latest) {
+          await cacheStateLocally(latest);
+        }
+        return {
+          ok: false, persisted: false, status: composition.status, reason: 'storage_error', policyVersion, ...compiled,
+        };
+      }
+      persist(next);
+      return { ok: successful, persisted: true, pending, status: composition.status, diagnostics, policyVersion, ...compiled };
+    } catch {
+      return { ok: false, persisted: false, status: 'no_fit', reason: 'storage_error' };
+    }
+  }, [persist]);
+
+  const markForgeGenerationCommitted = useCallback(async ({ pendingId, requestId } = {}) => {
+    const current = stateRef.current;
+    const pending = current?.forge?.pending;
+    if (!current || !pending
+      || pending.id !== pendingId
+      || pending.quotaCommitStatus !== 'pending'
+      || pending.quotaRequestId !== requestId) return false;
+
+    const nowMs = Date.now();
+    const committedPending = {
+      ...pending,
+      quotaCommitStatus: 'committed',
+      quotaRequestId: '',
+      quotaTimeZone: '',
+    };
+    const next = {
+      ...current,
+      forge: {
+        ...(current.forge || {}),
+        pending: committedPending,
+        updatedAtMs: Math.max(Number(current.forge?.updatedAtMs || 0) + 1, nowMs),
+      },
+    };
+    const locallyStored = await cacheStateLocally(next);
+    if (!locallyStored) return false;
+    if (stateRef.current !== current) {
+      const latest = stateRef.current;
+      if (latest) await cacheStateLocally(latest);
+      return false;
+    }
+    persist(next);
+    return true;
+  }, [persist]);
+
+  const updateForgeRecipePreference = useCallback(({ recipeKey, value } = {}) => {
+    const current = stateRef.current;
+    if (!current) return false;
+    const next = setForgeRecipePreference(current, { recipeKey, value, nowMs: Date.now() });
+    if (next === current) return false;
+    persist(next);
+    trackEvent('memory_action', { policy_version: 'forge-3.0', memory_action: value });
+    return true;
+  }, [persist]);
+
+  const clearForgeLearning = useCallback(() => {
+    const current = stateRef.current;
+    if (!current) return false;
+    const next = resetForgeLearning(current, { nowMs: Date.now() });
+    persist(next);
+    trackEvent('memory_action', { policy_version: 'forge-3.0', memory_action: 'reset' });
+    return true;
+  }, [persist]);
+
+  const readForgeLearningDossier = useCallback(() => (
+    getForgeLearningDossier(stateRef.current || {}, { nowMs: Date.now() })
+  ), []);
 
   // Real-time Cloud Sync — BUG FIX #1: Timestamp-based conflict resolution
   // Instead of ignoring cloud data entirely when local state exists, we compare
@@ -632,7 +821,7 @@ export function useGameState(initialHunterName, onLogout) {
               // BUG FIX: Store previousStreak BEFORE resetting to 0
               const previousStreak = s.streak || 0;
               s.streak = 0;
-              trackEvent('comeback_return', { daysMissed: diff, previousStreak });
+              trackEvent('comeback_return', { days_missed: diff, previous_streak: previousStreak });
               const hadDailies = s.quests?.some(q => q.type === "daily" && !q.completed);
               // Shadow Regression: heroic comeback instead of shameful penalty.
               // Only when there was an actual streak to lose — players without
@@ -655,7 +844,7 @@ export function useGameState(initialHunterName, onLogout) {
                   regressionHistory: s.shadowRegression?.regressionHistory || []
                 };
                 s.quests = [...(s.quests || []), ...redemptionQs];
-                trackEvent('regression_started', { previousStreak, daysMissed: diff });
+                trackEvent('regression_started', { previous_streak: previousStreak, days_missed: diff });
                 setTimeout(() => setShowShadowRegression(true), 800);
               }
             }
@@ -674,8 +863,8 @@ export function useGameState(initialHunterName, onLogout) {
             if (markCandidate) {
               const planningNow = getQuestPlanningState(s);
               trackEvent('system_mark_assigned', {
-                questAgeDays: Math.max(0, Math.round((Date.now() - (markCandidate.createdAtMs || Date.now())) / 86400000)),
-                markCount: (planningNow.lifecycleById[markCandidate.id]?.markCount || 0) + 1,
+                quest_age_days: Math.max(0, Math.round((Date.now() - (markCandidate.createdAtMs || Date.now())) / 86400000)),
+                mark_count: (planningNow.lifecycleById[markCandidate.id]?.markCount || 0) + 1,
               });
               s.systemMark = { questId: markCandidate.id, date: today, xpMult: SYSTEM_MARK_XP_MULT };
               s.questPlanning = {
@@ -766,8 +955,9 @@ export function useGameState(initialHunterName, onLogout) {
               const expiredPending = s.forge.pending;
               Object.assign(s, clearPendingSet(s, { nowMs: Date.now() }));
               trackEvent('forge_pending_expired', {
-                source: expiredPending.source === 'auto' ? 'auto' : 'manual',
-                proposal_count: Array.isArray(expiredPending.proposals) ? expiredPending.proposals.length : 0,
+                policy_version: expiredPending.qualityPolicyVersion || 'forge-2.2',
+                content_source: expiredPending.contentSource || 'unknown',
+                valid_count: Array.isArray(expiredPending.proposals) ? expiredPending.proposals.length : 0,
               });
             }
             s.integrityScore = Math.min(100, (s.integrityScore !== undefined ? s.integrityScore : 100) + 20);
@@ -1086,10 +1276,10 @@ export function useGameState(initialHunterName, onLogout) {
       trackEvent('day_goal_reached', { streak: result.nextState.streak || 0 });
     }
     if (result.systemMarkCompleted) {
-      trackEvent('system_mark_completed', { category: quest.category, difficulty: quest.difficulty, xpGain: result.xpGain });
+      trackEvent('system_mark_completed', { category: quest.category, difficulty: quest.difficulty, xp_gain: result.xpGain });
     }
     if (result.regressionCompleted) {
-      trackEvent('regression_completed', { restoredStreak: result.nextState.streak || 0 });
+      trackEvent('regression_completed', { restored_streak: result.nextState.streak || 0 });
     }
 
     // ── Hybrid Storage: archive completed quest to subcollection ──
@@ -2041,8 +2231,10 @@ export function useGameState(initialHunterName, onLogout) {
     const subQuest = quest.subQuests.find(sq => sq.id === subQuestId);
     if (!subQuest || subQuest.completed) return;
 
+    const startedAtMs = Number(quest.startedAtMs) > 0 ? Number(quest.startedAtMs) : Date.now();
+    const isFirstStart = !Number(quest.startedAtMs);
     const updatedSubQuests = quest.subQuests.map(sq =>
-      sq.id === subQuestId ? { ...sq, completed: true, completedAt: Date.now() } : sq
+      sq.id === subQuestId ? { ...sq, completed: true, completedAt: startedAtMs, completedAtMs: startedAtMs } : sq
     );
 
     // XP: proportional share of base quest XP
@@ -2053,13 +2245,22 @@ export function useGameState(initialHunterName, onLogout) {
 
     let nextState = calculateLevelUp({ ...state }, subQuestXp);
     nextState.quests = nextState.quests.map(q =>
-      q.id === questId ? { ...q, subQuests: updatedSubQuests } : q
+      q.id === questId ? { ...q, startedAtMs, subQuests: updatedSubQuests } : q
     );
     // totalXpEarned already accumulated by calculateLevelUp above
 
     setXpFloats(prev => [...prev, { id: genId(), amount: subQuestXp, ts: Date.now() }]);
     nextState = recordUserAction(nextState, getToday());
     persist(nextState);
+    if (isFirstStart) {
+      const fallbackOrigin = quest.isSystem ? 'system' : 'manual';
+      trackEvent('quest_started', {
+        origin: ['forge', 'starter', 'replacement', 'system', 'manual'].includes(quest.origin) ? quest.origin : fallbackOrigin,
+        start_source: 'subquest',
+        duration_band: getQuestDurationBand(quest) || 'unknown',
+        same_day: Boolean(quest.forgeAcceptedAtMs && new Date(quest.forgeAcceptedAtMs).toDateString() === new Date(startedAtMs).toDateString()),
+      });
+    }
     notify(ltState(state, "quests.subQuestCompleted", { title: subQuest.title, xp: subQuestXp }), "success");
     try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) { }
   }, [state, persist, notify]);
@@ -2168,7 +2369,7 @@ export function useGameState(initialHunterName, onLogout) {
     const didLevelUp = next._didLevelUp;
     const earnedPoints = next._levelsGained;
     const newLevel = next.level;
-    trackEvent('dungeon_entered', { rank: dungeon.rank, floors: dungeon.floors, won: result.won });
+    trackEvent('dungeon_entered', { rank: String(dungeon.rank || 'unknown').toLowerCase(), floors: dungeon.floors, won: result.won });
 
     let newInventory = [...(next.equipment?.inventory || [])];
     if (result.drop) newInventory.push(result.drop);
@@ -3056,7 +3257,12 @@ export function useGameState(initialHunterName, onLogout) {
     premiumStatus,
     questCreationStatus,
     recordAIFreeGeneration,
+    storeForgeGeneration,
+    markForgeGenerationCommitted,
     acceptForgeProposals,
+    updateForgeRecipePreference,
+    clearForgeLearning,
+    readForgeLearningDossier,
     getActiveGemBoosters,
     getGemBoosterMultipliers,
     // Screen Time gamification

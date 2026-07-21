@@ -27,13 +27,20 @@ function is429(status, errorData) {
 /**
  * Base fetch function to OpenRouter
  */
-async function callOpenRouter(messages) {
+async function callOpenRouter(messages, { maxAttempts = 2, redactErrors = false, timeoutMs = 45000 } = {}) {
+  const safeTimeoutMs = Math.max(100, Math.min(90000, Number(timeoutMs) || 45000));
+  const safeAttempts = Math.max(1, Math.min(2, Number(maxAttempts) || 1));
   const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY; // Fallback so .env renaming isn't strictly required
   if (!apiKey) {
+    if (redactErrors) {
+      throw new HttpsError("unavailable", "Quest-Erzeugung ist nicht verfuegbar.");
+    }
     throw new Error("OPENROUTER_API_KEY environment variable is not set.");
   }
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < safeAttempts; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), safeTimeoutMs);
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -43,6 +50,7 @@ async function callOpenRouter(messages) {
           "X-Title": "SoloToDo",
           "Content-Type": "application/json"
         },
+        signal: controller.signal,
         body: JSON.stringify({
           model: MODEL_NAME,
           models: MODEL_CANDIDATES,
@@ -54,29 +62,49 @@ async function callOpenRouter(messages) {
       const data = await response.json();
 
       if (!response.ok) {
-        if (is429(response.status, data) && attempt === 0) {
+        if (is429(response.status, data) && attempt < safeAttempts - 1) {
           console.warn("[OpenRouter] 429 Rate limit — retry in 15s…");
           await sleep(15000);
           continue;
         }
-        console.error("OpenRouter API Error:", JSON.stringify(data));
+        if (redactErrors) {
+          console.error(`[OpenRouter] Forge provider error (HTTP ${Number(response.status) || 0}).`);
+        } else {
+          console.error("OpenRouter API Error:", JSON.stringify(data));
+        }
         if (is429(response.status, data)) {
           throw new HttpsError("resource-exhausted", "KI-Fehler: Kurzes Rate Limit. Bitte in 2-3 Minuten erneut versuchen.");
         }
-        throw new HttpsError("unknown", `KI-Fehler: ${data.error?.message || JSON.stringify(data)}`);
+        throw new HttpsError("unknown", redactErrors
+          ? "Quest-Erzeugung ist nicht verfuegbar."
+          : `KI-Fehler: ${data.error?.message || JSON.stringify(data)}`);
       }
 
       const textOutput = data.choices?.[0]?.message?.content || "";
       return stripMarkdown(textOutput);
 
     } catch (err) {
+      if (err?.name === "AbortError") {
+        if (redactErrors) console.error("[OpenRouter] Forge provider timeout.");
+        if (attempt === safeAttempts - 1) throw new HttpsError("deadline-exceeded", "Quest-Erzeugung hat zu lange gedauert.");
+        await sleep(2000);
+        continue;
+      }
       if (err instanceof HttpsError) throw err;
 
-      console.error("OpenRouter Fetch Error:", err.message);
-      if (attempt === 1) {
-        throw new HttpsError("unknown", `Netzwerk-Fehler zur KI: ${err.message}`);
+      if (redactErrors) {
+        console.error("[OpenRouter] Forge network error.");
+      } else {
+        console.error("OpenRouter Fetch Error:", err.message);
+      }
+      if (attempt === safeAttempts - 1) {
+        throw new HttpsError("unknown", redactErrors
+          ? "Quest-Erzeugung ist nicht verfuegbar."
+          : `Netzwerk-Fehler zur KI: ${err.message}`);
       }
       await sleep(2000);
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 }
@@ -84,10 +112,20 @@ async function callOpenRouter(messages) {
 /**
  * Text-only generation
  */
-async function callGemini(prompt) {
-  return await callOpenRouter([
-    { role: "user", content: prompt }
-  ]);
+function buildTextMessages(promptOrMessages) {
+  if (promptOrMessages && typeof promptOrMessages === "object") {
+    const system = String(promptOrMessages.system || "").trim();
+    const user = String(promptOrMessages.user || "").trim();
+    const messages = [];
+    if (system) messages.push({ role: "system", content: system });
+    if (user) messages.push({ role: "user", content: user });
+    return messages;
+  }
+  return [{ role: "user", content: String(promptOrMessages || "") }];
+}
+
+async function callGemini(promptOrMessages, options = {}) {
+  return await callOpenRouter(buildTextMessages(promptOrMessages), options);
 }
 
 /**
@@ -147,4 +185,4 @@ function parseJSON(text, fallback = null) {
   }
 }
 
-module.exports = { callGemini, callGeminiWithImage, callGeminiWithImages, parseJSON };
+module.exports = { buildTextMessages, callGemini, callGeminiWithImage, callGeminiWithImages, parseJSON };
