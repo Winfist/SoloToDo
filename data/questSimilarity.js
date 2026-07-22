@@ -286,14 +286,20 @@ export function buildQuestExclusionCorpus(state = {}, {
     addCorpusEntry(entries, seen, "recent_completed", "soft", quest, occurredAtMs);
   }
   const negativeCutoff = finiteNonNegative(nowMs) - Math.max(1, negativeWindowDays) * 86400000;
-  for (const [source, values] of [["recent_disliked", state?.questSignals?.recentDisliked], ["recent_expired", state?.questSignals?.recentExpired]]) {
+  // recent_deleted ist bewusst nur "soft": stilles Loeschen demotet im Ranking,
+  // blockt aber nie hart (vielleicht hatte der User nur heute keine Zeit).
+  for (const [source, values, severity] of [
+    ["recent_disliked", state?.questSignals?.recentDisliked, "hard"],
+    ["recent_expired", state?.questSignals?.recentExpired, "hard"],
+    ["recent_deleted", state?.questSignals?.recentDeleted, "soft"],
+  ]) {
     const recentValues = (Array.isArray(values) ? values : [])
       .map((value) => ({ value, occurredAtMs: entryDateMs(value) }))
       .filter((entry) => !entry.occurredAtMs || entry.occurredAtMs >= negativeCutoff)
       .sort((left, right) => right.occurredAtMs - left.occurredAtMs
         || normalizeQuestText(left.value?.title).localeCompare(normalizeQuestText(right.value?.title)));
     for (const { value, occurredAtMs } of recentValues) {
-      addCorpusEntry(entries, seen, source, "hard", { title: value?.title, category: value?.category, estimatedMinutes: value?.estimatedMinutes }, occurredAtMs);
+      addCorpusEntry(entries, seen, source, severity, { title: value?.title, category: value?.category, estimatedMinutes: value?.estimatedMinutes }, occurredAtMs);
     }
   }
 
@@ -318,6 +324,8 @@ export function matchQuestAgainstCorpus(quest, corpus = []) {
         || similarity.similarity >= 0.95;
       if (!nearlyIdentical) level = similarity.level === "none" ? "none" : "soft";
     }
+    // Stille Loeschungen demoten hoechstens (soft) — nie hart blocken.
+    if (entry.source === "recent_deleted" && level === "hard") level = "soft";
     const candidate = { ...similarity, level, source: entry.source, entry };
     const stronger = MATCH_PRIORITY[candidate.level] > MATCH_PRIORITY[best.level]
       || (MATCH_PRIORITY[candidate.level] === MATCH_PRIORITY[best.level] && candidate.similarity > best.similarity);

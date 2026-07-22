@@ -383,7 +383,7 @@ export function recommendForgeSet(state, proposals, selectableCount) {
     const avoided = new Set(dossier.avoidCategories || []);
     const liked = new Set(dossier.likedCategories || []);
     const reliable = new Set(dossier.reliableCategories || []);
-    const negativeTitles = new Set([...(state?.questSignals?.recentDisliked || []), ...(state?.questSignals?.recentExpired || [])]
+    const negativeTitles = new Set([...(state?.questSignals?.recentDisliked || []), ...(state?.questSignals?.recentExpired || []), ...(state?.questSignals?.recentDeleted || [])]
       .map((entry) => normalizeTitle(entry?.title)).filter(Boolean));
     const activeGoals = getActiveGoalTitles(state);
     const weakestStats = getWeakestStats(state);

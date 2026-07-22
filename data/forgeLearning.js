@@ -501,8 +501,11 @@ export function getForgeLearningDossier(stateOrLearning, { nowMs = Date.now() } 
     const explicitPreference = learning.preferencesByRecipe[group.recipeKey]?.value || "neutral";
     const netLikes = group.liked - group.disliked;
     const netDislikes = group.disliked - group.liked;
+    // Wiederholt geloescht + nie abgeschlossen wirkt wie Netto-Dislike;
+    // ein einziger Abschluss hebt die Loesch-Meidung wieder auf.
     const avoided = explicitPreference === "avoid"
-      || (explicitPreference !== "prefer" && netDislikes >= 2);
+      || (explicitPreference !== "prefer"
+        && (netDislikes >= 2 || (group.deleted >= 2 && group.completed === 0)));
     const preferred = explicitPreference === "prefer"
       || (explicitPreference !== "avoid" && netLikes >= 2);
     return {

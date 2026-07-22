@@ -3,6 +3,8 @@ import {
   recordQuestsAssigned, recordQuestsExpired, recordQuestCompleted, recordQuestsSwapped,
   applyQuestRating, applyDislikeNote, recordAppOpen, recordUserAction,
   recordInterventionShown, resolveInterventionOutcomes, getHourBucket,
+  recordQuestDeleted, applyDeletedQuestDislike, revertQuestDeleted, recordQuestPruned,
+  isSignalDeletableQuest,
 } from "../data/signals.js";
 
 let failures = 0;
@@ -97,10 +99,46 @@ sc = recordInterventionShown(sc, "habitReminder", "coaching", "2026-07-26");
 sc = resolveInterventionOutcomes(sc, "2026-07-27");
 check(sc.coachSignals.byType.habitReminder.actedSameDay === 1 && sc.coachSignals.byType.habitReminder.consecutiveIgnored === 0, "acted setzt Ignoranz zurueck");
 
+// ── Loesch-Signale (Spec 2026-07-22) ──
+const delQ = { id: "d1", templateId: "t_del", category: "cha", title: "Sprich eine fremde Person an", isSystem: true, type: "daily" };
+let sd = recordQuestDeleted({}, delQ, "2026-07-20");
+check(sd.questSignals.byTemplate.t_del.deleted === 1 && sd.questSignals.byTemplate.t_del.lastDeletedAt === "2026-07-20", "deleted + lastDeletedAt am Template");
+check(sd.questSignals.byCategory.cha.deleted === 1, "deleted je Kategorie");
+check(sd.questSignals.recentDeleted[0].questId === "d1" && sd.questSignals.recentDeleted[0].date === "2026-07-20", "recentDeleted gefuellt");
+// eigene Quest bleibt signal-frei
+const ownDel = { id: "d2", category: "str", title: "Eigene Aufgabe", isSystem: false };
+check(recordQuestDeleted(sd, ownDel, "2026-07-20").questSignals.byCategory.str === undefined, "eigene Quest erzeugt kein Loesch-Signal");
+check(!isSignalDeletableQuest(ownDel) && isSignalDeletableQuest(delQ) && isSignalDeletableQuest({ origin: "forge" }), "isSignalDeletableQuest-Guard");
+// recentDeleted-Deckel 10
+let sdCap = sd;
+for (let i = 0; i < 12; i++) sdCap = recordQuestDeleted(sdCap, { id: `dx${i}`, category: "int", title: `DQ${i}`, isSystem: true }, "2026-07-20");
+check(sdCap.questSignals.recentDeleted.length === 10, "recentDeleted Deckel 10");
+
+// Chip "Kein Interesse": Dislike-Upgrade + Listen-Umzug
+let su = applyDeletedQuestDislike(sd, delQ, "2026-07-20");
+check(su.questSignals.byTemplate.t_del.disliked === 1 && su.questSignals.byTemplate.t_del.lastDislikedAt === "2026-07-20", "Dislike-Upgrade am Template");
+check(su.questSignals.byCategory.cha.disliked === 1, "Dislike-Upgrade je Kategorie");
+check(su.questSignals.recentDisliked[0].questId === "d1", "Eintrag zieht nach recentDisliked um");
+check(su.questSignals.recentDeleted.every(e => e.questId !== "d1"), "recentDeleted-Eintrag entfernt");
+check(applyDeletedQuestDislike(su, ownDel, "2026-07-20").questSignals.byCategory.str === undefined, "eigene Quest: kein Dislike-Upgrade");
+
+// Chip "Schon erledigt": Revert (Floor 0, doppelt frisst nichts Fremdes)
+let sv = revertQuestDeleted(sd, delQ);
+check(sv.questSignals.byTemplate.t_del.deleted === 0 && sv.questSignals.byCategory.cha.deleted === 0, "Revert dekrementiert");
+check(sv.questSignals.recentDeleted.every(e => e.questId !== "d1"), "Revert entfernt recentDeleted-Eintrag");
+sv = revertQuestDeleted(sv, delQ);
+check(sv.questSignals.byTemplate.t_del.deleted === 0, "doppeltes Revert floort bei 0");
+
+// Prune-Zaehler in sessionSignals
+let sp = recordQuestPruned({}, "2026-07-20");
+sp = recordQuestPruned(sp, "2026-07-20");
+check(sp.sessionSignals.days["2026-07-20"].prunes === 2, "prunes gezaehlt");
+
 // ── Defensiv ──
 check(recordQuestsAssigned(null, null, null), "null-State wirft nicht");
 check(recordQuestCompleted({}, null, NaN), "kaputte Inputs werfen nicht");
 check(applyQuestRating({}, "missing", "liked", "2026-07-15"), "unbekannte Quest wirft nicht");
+check(recordQuestDeleted(null, delQ, null) !== undefined && revertQuestDeleted({}, null), "Loesch-Recorder werfen nicht");
 
 // ── defaultState enthaelt die Felder ──
 import { DEFAULT_STATE } from "../data/defaultState.js";

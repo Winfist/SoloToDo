@@ -185,11 +185,12 @@ function getSystemNotificationMeta(message, type) {
   return meta;
 }
 
-function SystemNotification({ message, type = "info", onDone, slot = 0, actionLabel, onAction }) {
+function SystemNotification({ message, type = "info", onDone, slot = 0, actionLabel, onAction, chips, onChip, durationMs = 3200 }) {
   const [exiting, setExiting] = useState(false);
   const onDoneRef = useRef(onDone);
+  const hasChips = Array.isArray(chips) && chips.length > 0;
   useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
-  useEffect(() => { const t1 = setTimeout(() => setExiting(true), 3200); const t2 = setTimeout(() => onDoneRef.current?.(), 3620); return () => { clearTimeout(t1); clearTimeout(t2); }; }, []);
+  useEffect(() => { const t1 = setTimeout(() => setExiting(true), durationMs); const t2 = setTimeout(() => onDoneRef.current?.(), durationMs + 420); return () => { clearTimeout(t1); clearTimeout(t2); }; }, [durationMs]);
   const meta = useMemo(() => getSystemNotificationMeta(message, type), [message, type]);
   const c = meta.color;
   const dim = slot > 0 ? Math.max(0.72, 1 - slot * 0.09) : 1;
@@ -202,7 +203,7 @@ function SystemNotification({ message, type = "info", onDone, slot = 0, actionLa
       zIndex: 240 - slot,
       animation: exiting ? "sysNotifOut 360ms cubic-bezier(0.4,0,0.2,1) forwards" : "sysNotifIn 420ms cubic-bezier(0.16,1,0.3,1) both",
       transition: "top 180ms cubic-bezier(0.4,0,0.2,1)",
-      pointerEvents: actionLabel ? "auto" : "none",
+      pointerEvents: actionLabel || hasChips ? "auto" : "none",
       width: "min(466px, calc(100vw - 28px))",
       opacity: dim,
       willChange: "transform, opacity",
@@ -223,7 +224,7 @@ function SystemNotification({ message, type = "info", onDone, slot = 0, actionLa
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(255,255,255,0.08), transparent 38%)", opacity: 0.55, pointerEvents: "none" }} />
         <div style={{ position: "absolute", inset: 0, background: `repeating-linear-gradient(180deg, transparent 0 7px, ${c}10 8px, transparent 9px)`, opacity: 0.45, pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 3, background: `linear-gradient(180deg, transparent, ${c}, transparent)`, boxShadow: `0 0 18px ${c}`, animation: "sysNotifRail 1.8s ease-in-out infinite", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 2, background: `linear-gradient(90deg, ${c}, ${c}66, transparent)`, transformOrigin: "left", animation: "sysNotifTimer 3.2s linear forwards", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 2, background: `linear-gradient(90deg, ${c}, ${c}66, transparent)`, transformOrigin: "left", animation: `sysNotifTimer ${durationMs}ms linear forwards`, pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: 0, left: "-45%", width: "42%", height: "100%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.13), transparent)", animation: "sysNotifSweep 2.6s ease-out 0.12s 1", pointerEvents: "none" }} />
 
         <div style={{ position: "relative", display: "grid", gridTemplateColumns: "42px 1fr", gap: 12, alignItems: "center", padding: "11px 15px 12px 13px" }}>
@@ -257,6 +258,15 @@ function SystemNotification({ message, type = "info", onDone, slot = 0, actionLa
               <button type="button" onClick={onAction} style={{ marginTop: 8, padding: "5px 8px", borderRadius: 7, border: `1px solid ${c}66`, background: `${c}18`, color: c, cursor: "pointer", fontSize: 9, fontWeight: 900, letterSpacing: 0.8, fontFamily: "'JetBrains Mono',monospace" }}>
                 {actionLabel}
               </button>
+            )}
+            {hasChips && (
+              <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                {chips.map((chip) => (
+                  <button key={chip.key} type="button" onClick={() => onChip?.(chip.key)} style={{ padding: "6px 10px", borderRadius: 999, border: `1px solid ${c}66`, background: `${c}18`, color: c, cursor: "pointer", fontSize: 9, fontWeight: 900, letterSpacing: 0.8, fontFamily: "'JetBrains Mono',monospace" }}>
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </div>

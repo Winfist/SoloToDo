@@ -19,6 +19,7 @@ export const DEFAULT_QUEST_SIGNALS = {
   completionWeekdays: [0, 0, 0, 0, 0, 0, 0],
   recentExpired: [],
   recentDisliked: [],
+  recentDeleted: [],
 };
 export const DEFAULT_SESSION_SIGNALS = { days: {} };
 export const DEFAULT_COACH_SIGNALS = {
@@ -56,16 +57,17 @@ function getQuestSignals(state) {
       ? [...qs.completionWeekdays] : [0, 0, 0, 0, 0, 0, 0],
     recentExpired: Array.isArray(qs.recentExpired) ? [...qs.recentExpired] : [],
     recentDisliked: Array.isArray(qs.recentDisliked) ? [...qs.recentDisliked] : [],
+    recentDeleted: Array.isArray(qs.recentDeleted) ? [...qs.recentDeleted] : [],
   };
 }
 
 const templateEntry = (map, id) => ({
-  assigned: 0, completed: 0, expired: 0, swapped: 0, liked: 0, disliked: 0,
-  lastAssignedAt: null, lastDislikedAt: null,
+  assigned: 0, completed: 0, expired: 0, swapped: 0, liked: 0, disliked: 0, deleted: 0,
+  lastAssignedAt: null, lastDislikedAt: null, lastDeletedAt: null,
   ...(map[id] || {}),
 });
 const categoryEntry = (map, cat) => ({
-  assigned: 0, completed: 0, expired: 0, liked: 0, disliked: 0,
+  assigned: 0, completed: 0, expired: 0, liked: 0, disliked: 0, deleted: 0,
   ...(map[cat] || {}),
 });
 const bump = (entry, field, delta = 1) => ({ ...entry, [field]: Math.max(0, (Number(entry[field]) || 0) + delta) });
@@ -155,6 +157,74 @@ export function recordQuestsSwapped(state, replacedQuests, today, { implicitDisl
   });
 }
 
+// Loesch-Signale betreffen nur System-/KI-Quests; eigene Aufgaben bleiben
+// signal-frei (gleiche Philosophie wie die Feedback-Chips im Reward-Moment).
+export const isSignalDeletableQuest = (quest) => Boolean(
+  quest && (quest.isSystem || quest.aiGenerated || quest.origin === "forge")
+);
+
+// Neutrales Loesch-Signal. Der Aufrufer klassifiziert vorher (Duplikat/Prune
+// werden hier gar nicht erst erfasst) — siehe classifyQuestDeletion.
+export function recordQuestDeleted(state, quest, today) {
+  try {
+    if (!isSignalDeletableQuest(quest)) return state || {};
+    const day = dayKey(today);
+    const qs = getQuestSignals(state);
+    if (quest.templateId) {
+      qs.byTemplate[quest.templateId] = { ...bump(templateEntry(qs.byTemplate, quest.templateId), "deleted"), lastDeletedAt: day };
+    }
+    if (CATS.includes(quest.category)) {
+      qs.byCategory[quest.category] = bump(categoryEntry(qs.byCategory, quest.category), "deleted");
+    }
+    if (quest.title) {
+      qs.recentDeleted = pushRecent(qs.recentDeleted, { questId: quest.id || null, title: String(quest.title).slice(0, 140), category: quest.category || null, date: day });
+    }
+    qs.byTemplate = capTemplates(qs.byTemplate);
+    return { ...(state || {}), questSignals: qs };
+  } catch {
+    return state || {};
+  }
+}
+
+// Chip "Kein Interesse": Upgrade der Loeschung zum vollen Dislike. Der
+// recentDeleted-Eintrag zieht nach recentDisliked um (kein Doppel-Eintrag).
+export function applyDeletedQuestDislike(state, quest, today) {
+  try {
+    if (!isSignalDeletableQuest(quest)) return state || {};
+    const day = dayKey(today);
+    const qs = getQuestSignals(state);
+    if (quest.templateId) {
+      qs.byTemplate[quest.templateId] = { ...bump(templateEntry(qs.byTemplate, quest.templateId), "disliked"), lastDislikedAt: day };
+    }
+    if (CATS.includes(quest.category)) {
+      qs.byCategory[quest.category] = bump(categoryEntry(qs.byCategory, quest.category), "disliked");
+    }
+    if (quest.id) qs.recentDeleted = qs.recentDeleted.filter((entry) => entry.questId !== quest.id);
+    if (quest.title) {
+      qs.recentDisliked = pushRecent(qs.recentDisliked, { questId: quest.id || null, title: String(quest.title).slice(0, 140), category: quest.category || null, note: "", date: day });
+    }
+    qs.byTemplate = capTemplates(qs.byTemplate);
+    return { ...(state || {}), questSignals: qs };
+  } catch {
+    return state || {};
+  }
+}
+
+// Chip "Schon erledigt": nimmt genau das neutrale Loesch-Signal zurueck
+// (bump floort bei 0 — doppeltes Revert frisst keine fremden Zaehler).
+export function revertQuestDeleted(state, quest) {
+  try {
+    if (!isSignalDeletableQuest(quest)) return state || {};
+    const qs = getQuestSignals(state);
+    if (quest.templateId) qs.byTemplate[quest.templateId] = bump(templateEntry(qs.byTemplate, quest.templateId), "deleted", -1);
+    if (CATS.includes(quest.category)) qs.byCategory[quest.category] = bump(categoryEntry(qs.byCategory, quest.category), "deleted", -1);
+    if (quest.id) qs.recentDeleted = qs.recentDeleted.filter((entry) => entry.questId !== quest.id);
+    return { ...(state || {}), questSignals: qs };
+  } catch {
+    return state || {};
+  }
+}
+
 // rating: "liked" | "disliked" | null (null = Undo). Setzt quest.userRating
 // und haelt die Zaehler per Delta konsistent.
 export function applyQuestRating(state, questId, rating, today) {
@@ -237,6 +307,9 @@ function bumpSessionDay(state, today, field) {
 
 export function recordAppOpen(state, today) { return bumpSessionDay(state, today, "opens"); }
 export function recordUserAction(state, today) { return bumpSessionDay(state, today, "actions"); }
+// Aufraeum-Loeschung (Overload/Bulk): Volumen-Signal statt Inhalts-Signal.
+// Konsument folgt im Paket "adaptive Intensitaet".
+export function recordQuestPruned(state, today) { return bumpSessionDay(state, today, "prunes"); }
 
 function getCoachSignals(state) {
   const cs = state?.coachSignals || {};

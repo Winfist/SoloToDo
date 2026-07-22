@@ -56,6 +56,7 @@ export const DEFAULT_STATE = {
     completionWeekdays: [0, 0, 0, 0, 0, 0, 0],
     recentExpired: [],
     recentDisliked: [],
+    recentDeleted: [],
   },
   sessionSignals: { days: {} },
   coachSignals: {

@@ -269,4 +269,53 @@ assert.equal(
   "Spaetere Mutation einer vor dem Reset zugewiesenen Quest umgeht den Tombstone nicht",
 );
 
+// ── deleted fliesst in die avoided-Entscheidung (Spec 2026-07-22 §6.5) ──
+const DELETED_RECIPE = "r1|communicate|social|quick";
+const deletedOutcome = (id, extra = {}) => ({
+  recipeKey: DELETED_RECIPE,
+  dnaSource: "declared",
+  dnaConfidence: "high",
+  origin: "forge",
+  assignedAtMs: NOW - DAY,
+  deletedAtMs: NOW - DAY + 1000,
+  updatedAtMs: NOW - DAY + 1000,
+  ...extra,
+});
+const deletedLearning = {
+  version: 1,
+  resetAtMs: 0,
+  updatedAtMs: NOW,
+  outcomesByQuestId: {
+    del1: deletedOutcome("del1"),
+    del2: deletedOutcome("del2"),
+  },
+  preferencesByRecipe: {},
+};
+const deletedDossier = getForgeLearningDossier(deletedLearning, { nowMs: NOW });
+const deletedRecipeRow = deletedDossier.recipes.find((row) => row.recipeKey === DELETED_RECIPE);
+assert.equal(deletedRecipeRow.deleted, 2, "beide Loeschungen gezaehlt");
+assert.equal(deletedRecipeRow.avoided, true, "2x geloescht + 0 Abschluesse -> avoided");
+
+// Ein Abschluss im selben Rezept hebt die Loesch-Meidung auf
+const mixedLearning = {
+  ...deletedLearning,
+  outcomesByQuestId: {
+    ...deletedLearning.outcomesByQuestId,
+    done1: deletedOutcome("done1", { deletedAtMs: 0, completedAtMs: NOW - DAY + 2000, updatedAtMs: NOW - DAY + 2000 }),
+  },
+};
+const mixedRow = getForgeLearningDossier(mixedLearning, { nowMs: NOW }).recipes
+  .find((row) => row.recipeKey === DELETED_RECIPE);
+assert.equal(mixedRow.avoided, false, "ein Abschluss hebt Loesch-Meidung auf");
+
+// Explizites prefer schlaegt die Loesch-Heuristik
+const preferredLearning = setForgeRecipePreference(deletedLearning, {
+  recipeKey: DELETED_RECIPE,
+  value: "prefer",
+  nowMs: NOW,
+});
+const preferredRow = getForgeLearningDossier(preferredLearning, { nowMs: NOW }).recipes
+  .find((row) => row.recipeKey === DELETED_RECIPE);
+assert.equal(preferredRow.avoided, false, "prefer ueberstimmt deleted-Heuristik");
+
 console.log("test-forge-learning: all assertions passed.");

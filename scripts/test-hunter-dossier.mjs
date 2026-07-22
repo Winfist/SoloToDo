@@ -68,6 +68,29 @@ const cruising = { streak: 8, questSignals: { byCategory: { str: cat(10, 8) } },
 check(getCoachPosture(cruising) === "cruising", "cruising bei Streak+Quote");
 check(getCoachPosture({ streak: 8, questSignals: { byCategory: { str: cat(4, 4) } } }) === "neutral", "unter Daten-Gate neutral");
 
+// ── deleted: Kategorie-Meidung (Spec 2026-07-22 §6.4) ──
+const delCatState = { questSignals: { byCategory: {
+  cha: cat(0, 3, { deleted: 4 }),  // 4 > 3 -> gemieden
+  str: cat(0, 4, { deleted: 4 }),  // 4 = 4 -> nicht gemieden
+  int: cat(0, 0, { deleted: 3 }),  // unter Minimum 4 -> nicht gemieden
+} } };
+check(getAvoidedCategories(delCatState).includes("cha"), "avoided: Loeschungen ueberwiegen Abschluesse");
+check(!getAvoidedCategories(delCatState).includes("str"), "avoided: Gleichstand reicht nicht");
+check(!getAvoidedCategories(delCatState).includes("int"), "avoided: unter Loesch-Minimum nicht gemieden");
+
+// ── deleted: Template-Cooldown (2x geloescht, nie abgeschlossen, 14 Tage) ──
+const delCooldownState = { questSignals: { byTemplate: {
+  t_fresh: { assigned: 2, completed: 0, deleted: 2, lastDeletedAt: "2026-07-18" },
+  t_done: { assigned: 2, completed: 1, deleted: 2, lastDeletedAt: "2026-07-18" },
+  t_old: { assigned: 2, completed: 0, deleted: 2, lastDeletedAt: "2026-06-01" },
+  t_once: { assigned: 2, completed: 0, deleted: 1, lastDeletedAt: "2026-07-18" },
+} } };
+const delBlocked = getTemplateCooldowns(delCooldownState, "2026-07-20");
+check(delBlocked.has("t_fresh"), "Cooldown: 2x geloescht + nie abgeschlossen");
+check(!delBlocked.has("t_done"), "Cooldown: ein Abschluss hebt Loesch-Block auf");
+check(!delBlocked.has("t_old"), "Cooldown: alte Loeschung ausserhalb 14 Tagen");
+check(!delBlocked.has("t_once"), "Cooldown: einmal loeschen reicht nicht");
+
 // ── Summary ──
 const summary = getDossierSummary(cruising);
 check(summary.posture === "cruising" && Array.isArray(summary.reliableCategories), "Summary buendelt Selektoren");

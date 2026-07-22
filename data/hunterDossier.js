@@ -9,6 +9,10 @@ const MIN_SESSION_DAYS = 7;
 const NET_RATING_THRESHOLD = 2;
 const COOLDOWN_DAYS = 14;
 const AVOID_RATE = 0.25;
+// Stille Loeschungen brauchen bewusst mehr Volumen als explizite Dislikes:
+// erst ab 4 Loeschungen, und nur wenn sie die Abschluesse ueberwiegen.
+const DELETED_AVOID_MIN = 4;
+const DELETED_COOLDOWN_MIN = 2;
 const RELIABLE_RATE = 0.75;
 const STRUGGLING_GHOST_RATE = 0.4;
 const STRUGGLING_COMPLETION_RATE = 0.3;
@@ -43,7 +47,11 @@ export function getAvoidedCategories(state) {
   return CATS.filter((cat) => {
     const entry = categories(state)[cat];
     const netDislikes = num(entry?.disliked) - num(entry?.liked);
-    return (rates[cat] !== undefined && rates[cat] < AVOID_RATE) || netDislikes >= NET_RATING_THRESHOLD;
+    const deletedHeavy = num(entry?.deleted) >= DELETED_AVOID_MIN
+      && num(entry?.deleted) > num(entry?.completed);
+    return (rates[cat] !== undefined && rates[cat] < AVOID_RATE)
+      || netDislikes >= NET_RATING_THRESHOLD
+      || deletedHeavy;
   });
 }
 
@@ -89,7 +97,9 @@ export function getTemplateCooldowns(state, todayKey) {
     const ignoredHard = num(entry?.assigned) >= 3 && num(entry?.completed) === 0
       && withinDays(entry?.lastAssignedAt, todayKey, COOLDOWN_DAYS);
     const disliked = num(entry?.disliked) >= 1 && withinDays(entry?.lastDislikedAt, todayKey, COOLDOWN_DAYS);
-    if (ignoredHard || disliked) blocked.add(templateId);
+    const deletedRepeated = num(entry?.deleted) >= DELETED_COOLDOWN_MIN && num(entry?.completed) === 0
+      && withinDays(entry?.lastDeletedAt, todayKey, COOLDOWN_DAYS);
+    if (ignoredHard || disliked || deletedRepeated) blocked.add(templateId);
   }
   return blocked;
 }

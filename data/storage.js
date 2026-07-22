@@ -259,7 +259,7 @@ function mergeCounterMapDeep(primary = {}, fallback = {}) {
     const fields = new Set([...Object.keys(left), ...Object.keys(right)]);
     const entry = {};
     for (const field of fields) {
-      entry[field] = field === "lastAssignedAt" || field === "lastDislikedAt" || field === "mutedUntil"
+      entry[field] = field === "lastAssignedAt" || field === "lastDislikedAt" || field === "lastDeletedAt" || field === "mutedUntil"
         ? maxDateString(left[field], right[field])
         : Math.max(toFiniteNumber(left[field]), toFiniteNumber(right[field]));
     }
@@ -547,6 +547,7 @@ export function mergeStateProgress(primary, fallback) {
       )),
       recentExpired: mergeRecentList(primary.questSignals?.recentExpired, fallback.questSignals?.recentExpired),
       recentDisliked: mergeRecentList(primary.questSignals?.recentDisliked, fallback.questSignals?.recentDisliked),
+      recentDeleted: mergeRecentList(primary.questSignals?.recentDeleted, fallback.questSignals?.recentDeleted),
     },
     sessionSignals: { days: mergeCounterMapDeep(primary.sessionSignals?.days, fallback.sessionSignals?.days) },
     coachSignals: {

@@ -314,6 +314,7 @@ function App({ initialHunterName, onLogout }) {
     completeGoalMilestone,
     completeSubQuest,
     deleteQuest,
+    resolveDeleteFeedback,
     getReplacementCandidates,
     replaceSystemQuest,
     rateQuest,
@@ -1526,6 +1527,12 @@ function App({ initialHunterName, onLogout }) {
                 if (n.action.view) navigateTo(n.action.view);
                 removeNotif(n.id);
               } : undefined}
+              chips={n.action?.kind === "delete_feedback" ? n.action.chips : undefined}
+              onChip={n.action?.kind === "delete_feedback" ? (chipKey) => {
+                removeNotif(n.id);
+                resolveDeleteFeedback(n.action, chipKey);
+              } : undefined}
+              durationMs={n.action?.kind === "delete_feedback" ? 6500 : undefined}
               onDone={() => removeNotif(n.id)}
             />
           ))}

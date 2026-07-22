@@ -40,7 +40,8 @@ import {
   wasTitleCompletedRecently
 } from '../data/questUtils.js';
 import { getSystemQuestPoolForLocale } from '../data/localizedQuestPool.js';
-import { recordQuestsAssigned, recordQuestsExpired, recordQuestsSwapped, recordAppOpen, recordUserAction, resolveInterventionOutcomes, applyQuestRating, applyDislikeNote, DEFAULT_QUEST_SIGNALS, DEFAULT_SESSION_SIGNALS, DEFAULT_COACH_SIGNALS } from '../data/signals.js';
+import { recordQuestsAssigned, recordQuestsExpired, recordQuestsSwapped, recordAppOpen, recordUserAction, resolveInterventionOutcomes, applyQuestRating, applyDislikeNote, recordQuestDeleted, recordQuestPruned, applyDeletedQuestDislike, revertQuestDeleted, isSignalDeletableQuest, DEFAULT_QUEST_SIGNALS, DEFAULT_SESSION_SIGNALS, DEFAULT_COACH_SIGNALS } from '../data/signals.js';
+import { classifyQuestDeletion } from '../data/questFeedback.js';
 import {
   cleanupQuestAttachmentBlobsForState,
   getQuestAttachmentReferenceSignature
@@ -1236,8 +1237,11 @@ export function useGameState(initialHunterName, onLogout) {
   }, [getActiveGemBoosters]);
 
   const completeQuest = useCallback((questId, rect, verificationBonus = false) => {
-    if (!state) return;
-    const quest = state.quests.find(q => q.id === questId);
+    // stateRef statt Closure-State: erlaubt Ketten direkt nach persist()
+    // (z. B. Loesch-Toast "Schon erledigt" = Restore + sofortiger Abschluss).
+    const current = stateRef.current || state;
+    if (!current) return;
+    const quest = current.quests.find(q => q.id === questId);
     if (!quest) return;
 
     // Check wait time for manual quests
@@ -1247,7 +1251,7 @@ export function useGameState(initialHunterName, onLogout) {
       const requiredMs = waitHours * 3600 * 1000;
       if (elapsedMs < requiredMs) {
         const remainingHours = ((requiredMs - elapsedMs) / 3600000).toFixed(1);
-        notify(ltState(state, "quests.waitMaturing", { hours: remainingHours }), "warning");
+        notify(ltState(current, "quests.waitMaturing", { hours: remainingHours }), "warning");
         return;
       }
     }
@@ -1263,10 +1267,10 @@ export function useGameState(initialHunterName, onLogout) {
     } catch (e) { /* Graceful fallback */ }
 
     const { xpMult: gemBoosterMult } = getGemBoosterMultipliers();
-    const result = buildCompleteQuestState(questId, state, processAchievementsPure, gemBoosterMult, verificationBonus);
+    const result = buildCompleteQuestState(questId, current, processAchievementsPure, gemBoosterMult, verificationBonus);
     if (!result) return;
 
-    const showDayRecap = shouldShowDayRecap(state, result.nextState);
+    const showDayRecap = shouldShowDayRecap(current, result.nextState);
     const nextStateFinal = showDayRecap
       ? { ...result.nextState, lastDayRecapDate: getToday() }
       : result.nextState;
@@ -1292,10 +1296,10 @@ export function useGameState(initialHunterName, onLogout) {
       });
     }
 
-    const flow = buildQuestRewardFlow(result, state.level, rect, getStateLocale(state));
+    const flow = buildQuestRewardFlow(result, current.level, rect, getStateLocale(current));
     enqueueRewardFlow(flow);
     if (showDayRecap) {
-      enqueueRewardFlow(buildDayRecapFlow(nextStateFinal, getStateLocale(state)));
+      enqueueRewardFlow(buildDayRecapFlow(nextStateFinal, getStateLocale(current)));
     }
   }, [state, persist, processAchievementsPure, enqueueRewardFlow, notify, getGemBoosterMultipliers]);
 
@@ -1448,11 +1452,64 @@ export function useGameState(initialHunterName, onLogout) {
   }, [processWidgetActionQueue]);
 
 
-  const deleteQuest = id => persist({
-    ...state,
-    quests: state.quests.filter(q => q.id !== id),
-    reminders: (state.reminders || []).filter(r => r.questId !== id),
-  });
+  // Loeschen einer System-/KI-Quest ist Feedback: klassifizieren (Duplikat/
+  // Prune/Content, Spec 2026-07-22 §5.1), Signal erfassen, Grund-Chips anbieten.
+  // Eigene Quests bleiben signal- und toast-frei.
+  const deleteQuest = useCallback((id) => {
+    const current = stateRef.current || state;
+    if (!current) return;
+    const quest = (current.quests || []).find(q => q.id === id);
+    if (!quest) return;
+    const removed = {
+      ...current,
+      quests: (current.quests || []).filter(q => q.id !== id),
+      reminders: (current.reminders || []).filter(r => r.questId !== id),
+    };
+    if (!isSignalDeletableQuest(quest)) {
+      persist(removed);
+      return;
+    }
+    const today = getToday();
+    const deleteSignal = classifyQuestDeletion(current, quest, { today, nowMs: Date.now() });
+    let next = removed;
+    if (deleteSignal === "content") next = recordQuestDeleted(next, quest, today);
+    if (deleteSignal === "prune") next = recordQuestPruned(next, today);
+    next = recordUserAction(next, today);
+    persist(next);
+    notify(ltState(current, "deleteFeedback.removed", { title: quest.title }), "info", {
+      kind: "delete_feedback",
+      deleteSignal,
+      quest: { ...quest },
+      chips: [
+        { key: "not_interested", label: ltState(current, "deleteFeedback.notInterested") },
+        { key: "already_done", label: ltState(current, "deleteFeedback.alreadyDone") },
+      ],
+    });
+  }, [state, persist, notify]);
+
+  // Chip-Antwort auf den Loesch-Toast. "Kein Interesse" schlaegt jede
+  // Klassifikation; "Schon erledigt" macht aus der Loeschung einen regulaeren
+  // Abschluss (persist stellt stateRef synchron, completeQuest liest stateRef).
+  const resolveDeleteFeedback = useCallback((payload, reason) => {
+    const current = stateRef.current || state;
+    const quest = payload?.quest;
+    if (!current || !quest?.id) return;
+    const today = getToday();
+    if (reason === "not_interested") {
+      let next = applyDeletedQuestDislike(current, quest, today);
+      next = recordUserAction(next, today);
+      persist(next);
+      notify(ltState(current, "deleteFeedback.thanks"), "success");
+      return;
+    }
+    if (reason === "already_done") {
+      if ((current.quests || []).some(q => q.id === quest.id)) return;
+      let next = payload.deleteSignal === "content" ? revertQuestDeleted(current, quest) : current;
+      next = { ...next, quests: [...(next.quests || []), quest] };
+      persist(next);
+      completeQuest(quest.id);
+    }
+  }, [state, persist, notify, completeQuest]);
 
   const togglePinnedQuest = useCallback((questId) => {
     if (!state || !questId) return;
@@ -3203,6 +3260,7 @@ export function useGameState(initialHunterName, onLogout) {
     completeGoalMilestone,
     completeSubQuest,
     deleteQuest,
+    resolveDeleteFeedback,
     getReplacementCandidates,
     replaceSystemQuest,
     rateQuest,

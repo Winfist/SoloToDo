@@ -770,6 +770,12 @@ export const en = {
     soulLinkReviveSent: "Streak Revive sent to {name}!",
     soulLinkReviveFailed: "Revive failed.",
   },
+  deleteFeedback: {
+    removed: "“{title}” removed.",
+    notInterested: "Not interested",
+    alreadyDone: "Already done",
+    thanks: "Registered. The System adapts.",
+  },
   rewards: {
     successPrefix: "SUCCESS: {title}",
     earned: "Reward earned: +{xp} XP, +{gold} Gold",

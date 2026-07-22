@@ -185,6 +185,21 @@ assert.equal(matchQuestAgainstCorpus({
   category: "agi",
 }, completedSimilarityCorpus).level, "hard", "nearly identical completed work stays hard");
 
+// Silently deleted quests demote (soft) but never hard-block (Spec 2026-07-22 §6.4).
+const deletedCorpus = buildQuestExclusionCorpus(baseState({
+  questSignals: {
+    byCategory: {},
+    recentDisliked: [],
+    recentExpired: [],
+    recentDeleted: [{ title: "Plane deine Woche im Kalender", category: "int", date: TODAY }],
+  },
+}), { nowMs: NOW });
+const deletedEntry = deletedCorpus.find((entry) => entry.source === "recent_deleted");
+assert.equal(deletedEntry?.severity, "soft", "recent_deleted enters the corpus as soft");
+const deletedMatch = matchQuestAgainstCorpus({ title: "Plane deine Woche im Kalender", category: "int" }, deletedCorpus);
+assert.equal(deletedMatch.source, "recent_deleted");
+assert.equal(deletedMatch.level, "soft", "exact title against deleted history caps at soft");
+
 // Context facts: equal stats produce no fake weakest stat; target order and
 // exact replacement-minute budget are stable and testable.
 const coldContext = buildForgeContext(baseState(), { today: TODAY, nowMs: NOW, exploration: false });
