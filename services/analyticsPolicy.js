@@ -20,6 +20,7 @@ const DURATION = enumField("quick", "standard", "deep", "unknown");
 const LATENCY = enumField("under_2s", "2_to_5s", "5_to_15s", "15_to_30s", "30_to_60s", "over_60s", "unknown");
 const CATEGORY = enumField("str", "int", "vit", "agi", "cha", "unknown");
 const DIFFICULTY = enumField("easy", "normal", "hard", "boss", "unknown");
+const DELETE_SIGNAL = enumField("content", "duplicate", "prune");
 
 // Only declared values may reach Firebase. There is deliberately no schema
 // field for Quest/Goal IDs, titles, notes, fingerprints, hashes or raw messages.
@@ -63,6 +64,8 @@ export const ANALYTICS_EVENT_SCHEMAS = Object.freeze({
   dungeon_entered: { rank: enumField("e", "d", "c", "b", "a", "s", "unknown"), floors: numberField, won: booleanField },
   shop_purchase: { cost: numberField, currency: enumField("gold", "gems") },
   memory_action: { policy_version: POLICY, memory_action: enumField("prefer", "neutral", "avoid", "reset") },
+  quest_delete_classified: { delete_signal: DELETE_SIGNAL, category: CATEGORY, difficulty: DIFFICULTY, origin: SOURCE },
+  delete_feedback_chip: { chip_action: enumField("not_interested", "already_done"), delete_signal: DELETE_SIGNAL },
 });
 
 export function sanitizeAnalyticsName(value) {

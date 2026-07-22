@@ -1476,6 +1476,12 @@ export function useGameState(initialHunterName, onLogout) {
     if (deleteSignal === "prune") next = recordQuestPruned(next, today);
     next = recordUserAction(next, today);
     persist(next);
+    trackEvent('quest_delete_classified', {
+      delete_signal: deleteSignal,
+      category: quest.category || "unknown",
+      difficulty: quest.difficulty || "unknown",
+      origin: quest.origin || (quest.isSystem ? "system" : "manual"),
+    });
     notify(ltState(current, "deleteFeedback.removed", { title: quest.title }), "info", {
       kind: "delete_feedback",
       deleteSignal,
@@ -1500,6 +1506,7 @@ export function useGameState(initialHunterName, onLogout) {
       next = recordUserAction(next, today);
       persist(next);
       notify(ltState(current, "deleteFeedback.thanks"), "success");
+      trackEvent('delete_feedback_chip', { chip_action: reason, delete_signal: payload.deleteSignal });
       return;
     }
     if (reason === "already_done") {
@@ -1508,6 +1515,7 @@ export function useGameState(initialHunterName, onLogout) {
       next = { ...next, quests: [...(next.quests || []), quest] };
       persist(next);
       completeQuest(quest.id);
+      trackEvent('delete_feedback_chip', { chip_action: reason, delete_signal: payload.deleteSignal });
     }
   }, [state, persist, notify, completeQuest]);
 

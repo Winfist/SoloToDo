@@ -49,6 +49,27 @@ assert.deepEqual(sanitizeEventParams("forge_accepted", {
   decision_latency_bucket: "2_to_5s",
 });
 
+// Loesch-Instrumentierung: nur Enums kommen durch, Sentinels fallen weg
+assert.deepEqual(sanitizeEventParams("quest_delete_classified", {
+  delete_signal: "prune",
+  category: "cha",
+  difficulty: "easy",
+  origin: "system",
+  ...sentinels,
+}), {
+  delete_signal: "prune",
+  category: "cha",
+  difficulty: "easy",
+  origin: "system",
+});
+assert.deepEqual(sanitizeEventParams("delete_feedback_chip", {
+  chip_action: "already_done",
+  delete_signal: "made_up_signal",
+  ...sentinels,
+}), {
+  chip_action: "already_done",
+});
+
 assert.deepEqual(sanitizeEventParams("unknown_event", sentinels), {});
 assert.equal(Object.keys(ANALYTICS_EVENT_SCHEMAS).length >= 20, true);
 

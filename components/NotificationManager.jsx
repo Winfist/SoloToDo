@@ -5,6 +5,7 @@ import { auth, db } from "../firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { getStateLocale, translate } from "../data/i18n.js";
 import { canFireNotification, getNotificationPreset, isEssentialCategory, computeInactivityComebackAt } from "../data/notificationPresets.js";
+import { getActivityReminderHours, getActivityWindowStartHour } from "../data/notificationTiming.js";
 
 import { Capacitor } from '@capacitor/core';
 
@@ -108,10 +109,11 @@ function incrementNonEssentialNotificationCountToday(category, today = getToday(
 
 // ── CHECK FUNCTIONS ──────────────────────────────────────────
 
-// NEW: General daily activity reminder — fires at 11, 14, or 17 Uhr if nothing done today
+// General daily activity reminder — window starts at the user's learned best
+// time bucket (fallback 11 Uhr without data), ends 21 Uhr.
 function checkDailyActivity(state) {
     const hour = new Date().getHours();
-    if (hour < 11 || hour > 21) return null;
+    if (hour < getActivityWindowStartHour(state) || hour > 21) return null;
 
     const today = getToday();
     const questsToday = (state?.completedQuests || []).filter(q => q.completedAt === today).length;
@@ -399,14 +401,16 @@ export async function scheduleBackgroundNotifications(state) {
         const habitsToday = (state?.habits || []).filter(h => h.history?.[today]?.completed).length;
         const hasActivity = questsToday > 0 || habitsToday > 0;
 
-        // Daily activity reminders at 11, 14, 17 if no activity yet
+        // Daily activity reminders anchored to the user's learned best time
+        // bucket (fallback 11/14/17). Text is chosen by the HOUR, not the
+        // ladder index — a morning user's last slot at 14 Uhr must not claim
+        // the day is ending.
         if (!hasActivity) {
-            const d11 = new Date(); d11.setHours(11, 0, 0, 0);
-            const d14 = new Date(); d14.setHours(14, 0, 0, 0);
-            const d17 = new Date(); d17.setHours(17, 0, 0, 0);
-            addNotif(nt(state, "notifications.noActivityTitle"), nt(state, "notifications.noActivityBody"), d11, "daily_activity");
-            addNotif(nt(state, "notifications.noQuestTitle"), nt(state, "notifications.noQuestBody"), d14, "daily_activity");
-            addNotif(nt(state, "notifications.dayEndingTitle"), nt(state, "notifications.dayEndingBody"), d17, "daily_activity");
+            for (const reminderHour of getActivityReminderHours(state)) {
+                const at = new Date(); at.setHours(reminderHour, 0, 0, 0);
+                const textKey = reminderHour < 13 ? "noActivity" : reminderHour < 17 ? "noQuest" : "dayEnding";
+                addNotif(nt(state, `notifications.${textKey}Title`), nt(state, `notifications.${textKey}Body`), at, "daily_activity");
+            }
         }
 
         // Streak protection at 19:00
