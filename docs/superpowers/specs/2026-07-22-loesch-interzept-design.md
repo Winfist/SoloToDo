@@ -44,16 +44,54 @@ Verworfen als Alleinlösung: verliert die wertvollste Unterscheidung („schon e
 User löscht System-/KI-Quest (Karten-Menü oder QuestDetailModal)
   │
   ├─ Quest verschwindet sofort (wie heute)
-  ├─ Neutral-Signal wird IMMER erfasst (recordQuestDeleted, reason=null)
+  ├─ Löschung wird KLASSIFIZIERT (siehe 5.1): content | duplicate | prune
+  │    ├─ content   → Neutral-Signal (deleted-Bumps + recentDeleted)
+  │    ├─ duplicate → KEIN Negativ-Signal (ähnliche offene Quest existiert)
+  │    └─ prune     → nur Aufräum-Zähler (sessionSignals), kein Inhalts-Signal
   │
   └─ Toast erscheint (~6 s, auto-dismiss):
        „‚{Titel}' entfernt."   [ Kein Interesse ]  [ Schon erledigt ]
          │
-         ├─ Tipp „Kein Interesse" → Dislike-Upgrade des Signals, Toast → „Verstanden."
-         ├─ Tipp „Schon erledigt" → Neutral-Signal zurückgenommen, Quest wird
+         ├─ Tipp „Kein Interesse" → IMMER volles Dislike (explizit schlägt Heuristik)
+         ├─ Tipp „Schon erledigt" → ggf. Neutral-Signal zurückgenommen, Quest wird
          │    wiederhergestellt + regulär abgeschlossen (voller Reward-Flow)
-         └─ Kein Tipp / Dismiss → Neutral-Signal bleibt (schwaches Negativ)
+         └─ Kein Tipp / Dismiss → Klassifikations-Ergebnis bleibt stehen
 ```
+
+### 5.1 Lösch-Klassifikation (automatisch, vor Signal-Erfassung)
+
+Nicht jede Löschung ist Ablehnung. Zwei Fälle würden ohne Klassifikation **falsch** gelernt:
+
+**Duplikat-Guard.** Der User löscht die System-Quest, weil er inhaltlich Gleiches
+schon auf dem Board hat (eigene Quest oder andere System-Quest). Ein Negativ-Signal
+wäre exakt verkehrt herum — er *mag* diese Art Aufgabe ja. Regel: Die gelöschte
+Quest wird per `compareQuestSimilarity` (bestehende Fingerprint-Maschinerie) gegen
+alle **verbleibenden offenen** Quests geprüft. Level `hard` **oder** `soft` →
+Klassifikation `duplicate` → keine `deleted`-Bumps, kein `recentDeleted`-Eintrag.
+Bewusst großzügig Richtung Unterdrückung: ein entgangenes Neutral-Signal kostet
+fast nichts, ein falsches Negativ-Signal vergiftet das Profil.
+
+**Überlast-Guard.** Der User räumt auf, weil es zu viele Quests sind — Ablehnung
+des *Volumens*, nicht des Inhalts. Regel (ODER-verknüpft):
+- Das Board ist beim Löschen im Overload-Zustand (`getQuestPlanningSnapshot(state).overloadStatus.overloaded`), **oder**
+- heute wurden bereits ≥ 2 Content-Löschungen erfasst (Zählung: `recentDeleted`-Einträge mit heutigem Datum — kein neues State-Feld nötig).
+
+→ Klassifikation `prune`: keine Inhalts-Signale, stattdessen `sessionSignals.days[today].prunes += 1`
+(neues Feld im bestehenden Tages-Objekt, 14-Tage-Fenster inklusive). Der Zähler hat
+in diesem Paket noch keinen Konsumenten — er ist das Fundament für das separate
+Paket „adaptive Intensität" (System schlägt Runterschalten vor, wenn geprunt wird).
+
+Die ersten beiden Löschungen eines Tages bleiben volle Content-Signale — ein
+einzelner gezielter Löschvorgang ist das wertvollste Negativ-Signal, das wir haben.
+
+**Chips schlagen Klassifikation:** „Kein Interesse" erzeugt immer das volle
+Dislike (auch bei `duplicate`/`prune`), „Schon erledigt" revertiert nur, was
+tatsächlich erfasst wurde — dafür trägt das Toast-Payload die Klassifikation
+(`deleteSignal: "content" | "duplicate" | "prune"`).
+
+**Ort:** `classifyQuestDeletion(state, quest, { today })` als pure Funktion in
+`data/questFeedback.js` (darf questSimilarity/questPlanning importieren —
+signals.js bleibt import-frei). Prüfreihenfolge: duplicate → prune → content.
 
 Eigene Quests (weder `isSystem` noch `aiGenerated`/`origin: "forge"`): Verhalten exakt wie heute — löschen, kein Toast, kein Signal. (`forgeLearning` stempelt `deletedAtMs` weiterhin automatisch über `reconcileForgeLearning`, das bleibt unberührt.)
 
@@ -70,6 +108,11 @@ Eigene Quests (weder `isSystem` noch `aiGenerated`/`origin: "forge"`): Verhalten
   - Guard: nur `quest.isSystem || quest.aiGenerated || quest.origin === "forge"`, sonst State unverändert.
   - Bump `deleted` auf Template + Kategorie, `lastDeletedAt = today` am Template.
   - Push in `recentDeleted`.
+  - Wird vom Aufrufer **nur bei Klassifikation `content`** aufgerufen — signals.js
+    bleibt import-frei (nur dateUtils); die Klassifikation (Similarity, Overload)
+    lebt beim Aufrufer in `useGameState`.
+- **Neu `recordQuestPruned(state, today)`**: `bumpSessionDay(state, today, "prunes")` —
+  gleiche Mechanik wie `opens`/`actions`, gleiches 14-Tage-Fenster.
 - **Neu `applyDeletedQuestDislike(state, questSnapshot, today)`** (Chip „Kein Interesse"):
   - Bump `disliked` + `lastDislikedAt` auf Template + Kategorie.
   - Push in `recentDisliked` (→ landet im **harten** Negativ-Korpus, 28 Tage).
@@ -83,14 +126,17 @@ Eigene Quests (weder `isSystem` noch `aiGenerated`/`origin: "forge"`): Verhalten
 - `deleteQuest(id)` (Signatur unverändert, Aufrufer unverändert):
   1. Quest per id suchen; nicht gefunden → no-op.
   2. Eigene Quest: Pfad byte-identisch zu heute (nur Filter + persist, keine neuen Aufrufe).
-  3. System-/KI-Quest: State persistieren mit Quest + Reminder entfernt, `recordQuestDeleted`, `recordUserAction`; danach Toast auslösen. Notification-Objekt trägt statt Callback ein deklaratives Action-Payload (Muster wie `action.view` heute):
+  3. System-/KI-Quest: klassifizieren (5.1: duplicate → prune → content), dann
+     persistieren mit Quest + Reminder entfernt + je nach Klassifikation
+     `recordQuestDeleted` **oder** `recordQuestPruned` (duplicate: keins von beiden)
+     + `recordUserAction`; danach Toast auslösen (Payload trägt `deleteSignal`). Notification-Objekt trägt statt Callback ein deklaratives Action-Payload (Muster wie `action.view` heute):
      `action: { kind: "delete_feedback", quest: { id, title, category, templateId, difficulty, type, desc, xpMult, createdAt, createdAtMs, isSystem, aiGenerated, origin, forgeMeta, questDNA, subQuests, dueDate } }`
      — der Snapshot muss reich genug sein, um die Quest für „Schon erledigt" wiederherzustellen und regulär abzuschließen.
 - **Neu `resolveDeleteFeedback(questSnapshot, reason)`**:
   - `reason === "not_interested"`: `applyDeletedQuestDislike` + persist. Toast wechselt für ~1,5 s auf den `thanks`-Text (ohne Chips) und schließt dann.
   - `reason === "already_done"`:
     1. Guard: Quest-id darf nicht bereits wieder in `state.quests` existieren (Doppel-Tipp, Race mit Tagesreset).
-    2. `revertQuestDeleted` + Quest in `state.quests` re-inserten + persist.
+    2. `revertQuestDeleted` (nur wenn `deleteSignal === "content"`) + Quest in `state.quests` re-inserten + persist.
     3. Regulären `completeQuest(questSnapshot.id)`-Pfad aufrufen → voller Reward-Flow. (Bewusst volle XP: identisches Vertrauensniveau wie ein normaler Complete-Tipp. Aus einer Löschung wird ein Erfolgsmoment.)
   - Beide Pfade entfernen den Toast.
 
@@ -131,6 +177,10 @@ Neue Keys in `data/locales` (de mit echten Umlauten gemäß aktueller de.js-Konv
 | Fall | Verhalten |
 |---|---|
 | Eigene Quest gelöscht | Wie heute: kein Toast, kein questSignal (nur forgeLearning-Stempel wie bisher) |
+| Ähnliche offene Quest existiert (eigene oder System) | Klassifikation `duplicate`: kein Negativ-Signal; Toast erscheint trotzdem (Chips bleiben nutzbar) |
+| Board überladen / ≥ 2 Content-Löschungen heute | Klassifikation `prune`: nur `sessionSignals.prunes`; Toast erscheint trotzdem |
+| „Kein Interesse" bei `duplicate`/`prune` | Explizit schlägt Heuristik: volles Dislike wird trotzdem erfasst |
+| „Schon erledigt" bei `duplicate`/`prune` | Kein Revert nötig (nichts erfasst); Restore + Complete läuft normal |
 | „Schon erledigt", aber Quest-id existiert wieder (Reset/Race) | No-op, Toast schließt |
 | „Schon erledigt" auf Daily nach Mitternacht | Guard über id-Existenz; Restore+Complete läuft mit Original-`createdAt` — Abschluss zählt für den aktuellen Tag (wie ein später Complete) |
 | Zwei Deletes kurz nacheinander | Neuer Toast ersetzt alten; Neutral-Signale beider bereits erfasst |
@@ -142,7 +192,8 @@ Neue Keys in `data/locales` (de mit echten Umlauten gemäß aktueller de.js-Konv
 
 Bestehende Runner-Konvention (`scripts/test-*.mjs`, npm-Scripts):
 
-- **`test-signals.mjs`** (erweitern): `recordQuestDeleted` neutral (Guard eigene Quest, Bumps, recentDeleted-Cap), `applyDeletedQuestDislike` (Dislike-Bumps, Listen-Umzug recentDeleted→recentDisliked), `revertQuestDeleted` (Dekrement, min 0, Listen-Entfernung), Defensivität (kaputter State wirft nicht).
+- **`test-signals.mjs`** (erweitern): `recordQuestDeleted` neutral (Guard eigene Quest, Bumps, recentDeleted-Cap), `applyDeletedQuestDislike` (Dislike-Bumps, Listen-Umzug recentDeleted→recentDisliked), `revertQuestDeleted` (Dekrement, min 0, Listen-Entfernung), `recordQuestPruned` (Tages-Bump, Fenster-Trim), Defensivität (kaputter State wirft nicht).
+- **Klassifikations-Tests** (in test-signals.mjs oder eigener Block): Duplikat-Unterdrückung bei ähnlicher offener Quest; Prune ab 3. Content-Löschung des Tages; Prune bei Overload; „Kein Interesse" überstimmt beide.
 - **`test-hunter-dossier.mjs`** (erweitern): Template-Cooldown via 2× deleted; Kategorie-Meidung via `deleted>=4 && deleted>completed`; Gegenprobe: viele Deletes + noch mehr Completions ≠ avoided.
 - **`test-forge-learning.mjs`** (erweitern): Rezept `avoided` via `deleted>=2 && completed===0`; `prefer`-Override schlägt deleted; „Schon erledigt"-Fall (deleted+completed) nicht avoided.
 - **Similarity/Compiler-Test** (bestehende Datei für `buildQuestExclusionCorpus` erweitern): `recent_deleted`-Quelle erscheint mit Severity soft; gleicher Titel in recentDisliked bleibt hard.
